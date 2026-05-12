@@ -821,7 +821,7 @@ function EmailTemplate({
     "To submit your assignments, you'll use the Nibras CLI tool. Here's how to get started:",
     '',
     '1. Install the CLI:',
-    '   npm install -g @nibras/cli@1.0.2',
+    '   npm install -g https://github.com/NibrasPlatform/nibras-cli/releases/download/v1.0.2/nibras-cli-1.0.2.tgz',
     '',
     '2. Log in with your GitHub account:',
     `   nibras login --api-base-url ${apiBaseUrl ?? '<api-url>'}`,
@@ -1256,10 +1256,9 @@ export default function OnboardingPage() {
             onToggleComplete={() => toggleStep('step-02')}
           >
             <p className={styles.bodyText}>
-              Install the current CLI release from npm. This pins the install to{' '}
-              <code className={styles.inlineCode}>{PINNED_RELEASE_TAG}</code> and makes the{' '}
-              <code className={styles.inlineCode}>nibras</code> command available everywhere in your
-              terminal.
+              Install the current CLI release ({PINNED_RELEASE_TAG}) directly from the GitHub
+              release. This makes the <code className={styles.inlineCode}>nibras</code> command
+              available everywhere in your terminal.
             </p>
             <VideoPlaceholder title="Installing the Nibras CLI" />
 
@@ -1285,9 +1284,7 @@ export default function OnboardingPage() {
               windows={NPM_INSTALL_COMMAND}
             />
             <p className={styles.hint}>
-              If npm returns <code className={styles.inlineCode}>404 Not Found</code>, publish the
-              tagged <code className={styles.inlineCode}>@nibras/cli</code> release before sending
-              students these instructions.
+              This installs directly from the tagged GitHub release — no npm registry required.
             </p>
             <p className={styles.hint}>
               Verify: <code className={styles.inlineCode}>nibras --version</code> should start with{' '}
