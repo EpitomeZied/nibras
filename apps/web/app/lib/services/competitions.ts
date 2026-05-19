@@ -1,4 +1,35 @@
-import { serviceFetch, serviceFetchOptional } from '../api-clients/service-fetch';
+import {
+  serviceFetch,
+  serviceFetchOptional,
+  type ServiceFetchInit,
+} from '../api-clients/service-fetch';
+import { ApiError } from '../api-clients/errors';
+
+/**
+ * Try a list of path candidates in order, returning the first non-404 result.
+ * Mirrors the legacy dashboard's `requestCompetitionsWithCompatibility` helper
+ * (`nibras-student-dashboard/client/services/api.js:1800-1830`) which is
+ * tolerant of the backend renaming `/contests/{id}/reminder` →
+ * `/user-contests/{id}/reminder` → `/user/contests/{id}/reminder` over time.
+ */
+async function fetchFirstAvailable<T>(
+  paths: string[],
+  init: ServiceFetchInit = {}
+): Promise<T> {
+  let lastError: unknown = null;
+  for (const path of paths) {
+    try {
+      return await serviceFetch<T>('competitions', path, init);
+    } catch (error) {
+      lastError = error;
+      // Only fall through on 404 — other errors (401/500/network) propagate.
+      if (!(error instanceof ApiError) || error.status !== 404) {
+        throw error;
+      }
+    }
+  }
+  throw lastError ?? new Error('No compatible competitions endpoint found.');
+}
 
 export type Contest = {
   id: string;
@@ -52,34 +83,34 @@ export type LinkedAccount = {
 };
 
 // ── Contests ────────────────────────────────────────────────────────────────
+// `listContests` is anonymous in the legacy backend; matches `auth: false` so
+// `/competitions` renders even before sign-in.
 export async function listContests(filters: { upcoming?: boolean; host?: string } = {}) {
   return serviceFetch<Contest[]>('competitions', '/contests', {
-    auth: true,
+    auth: false,
     query: filters as Record<string, string | boolean>,
   });
 }
 
 export async function setContestReminder(contestId: string, on: boolean) {
-  return serviceFetch<{ reminderSet: boolean }>(
-    'competitions',
-    `/user-contests/${contestId}/reminder`,
-    {
-      method: 'POST',
-      auth: true,
-      body: { on },
-    }
+  return fetchFirstAvailable<{ reminderSet: boolean }>(
+    [
+      `/user-contests/${contestId}/reminder`,
+      `/user/contests/${contestId}/reminder`,
+      `/contests/user-contests/${contestId}/reminder`,
+    ],
+    { method: 'POST', auth: true, body: { on } }
   );
 }
 
 export async function setContestBookmark(contestId: string, on: boolean) {
-  return serviceFetch<{ bookmarked: boolean }>(
-    'competitions',
-    `/user-contests/${contestId}/bookmark`,
-    {
-      method: 'POST',
-      auth: true,
-      body: { on },
-    }
+  return fetchFirstAvailable<{ bookmarked: boolean }>(
+    [
+      `/user-contests/${contestId}/bookmark`,
+      `/user/contests/${contestId}/bookmark`,
+      `/contests/user-contests/${contestId}/bookmark`,
+    ],
+    { method: 'POST', auth: true, body: { on } }
   );
 }
 
@@ -135,15 +166,15 @@ export async function getRanking(host?: string): Promise<RankingEntry[]> {
 
 // ── History ─────────────────────────────────────────────────────────────────
 export async function getMyHistory(host?: string): Promise<ContestHistoryEntry[]> {
-  const data = await serviceFetchOptional<ContestHistoryEntry[]>(
-    'competitions',
-    '/contests/user-contests/history',
-    {
+  const query = host ? { host } : undefined;
+  for (const path of ['/contests/user-contests/history', '/user-contests/history']) {
+    const data = await serviceFetchOptional<ContestHistoryEntry[]>('competitions', path, {
       auth: true,
-      query: host ? { host } : undefined,
-    }
-  );
-  return data ?? [];
+      query,
+    });
+    if (data) return data;
+  }
+  return [];
 }
 
 // ── Linked accounts ─────────────────────────────────────────────────────────

@@ -119,9 +119,11 @@ function normalizeVoteResponse(
 }
 
 // ── Questions ───────────────────────────────────────────────────────────────
+// Reads are anonymous — matches the legacy dashboard's `auth: false` so that
+// `/community` and `/community/q/[id]` render before sign-in.
 export async function listQuestions(filters: QuestionFilters = {}) {
   return serviceFetch<Paginated<CommunityQuestion>>('community', '/community/questions', {
-    auth: true,
+    auth: false,
     query: toQuery(filters),
   });
 }
@@ -130,7 +132,7 @@ export async function getQuestion(questionId: string) {
   return serviceFetch<CommunityQuestion>(
     'community',
     `/community/questions/${questionId}`,
-    { auth: true }
+    { auth: false }
   );
 }
 
@@ -160,7 +162,7 @@ export async function listAnswers(questionId: string) {
   return serviceFetch<CommunityAnswer[]>(
     'community',
     `/community/answers/question/${questionId}`,
-    { auth: true }
+    { auth: false }
   );
 }
 
@@ -298,7 +300,7 @@ export async function listTags(): Promise<CommunityTag[]> {
   const data = await serviceFetch<CommunityTag[] | { tags: CommunityTag[] }>(
     'community',
     '/community/tags',
-    { auth: true }
+    { auth: false }
   );
   if (Array.isArray(data)) return data;
   return data?.tags ?? [];

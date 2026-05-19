@@ -15,7 +15,15 @@ export type ServiceFetchInit = Omit<RequestInit, 'body'> & {
 function readSessionToken(): string | null {
   if (typeof window === 'undefined') return null;
   try {
-    return window.localStorage.getItem(WEB_SESSION_TOKEN_KEY);
+    // Try `nibras.webSession` first (set by /connect and CLI), fall back to
+    // the legacy dashboard's `token` key — users who logged in to the old
+    // vanilla-JS dashboard already have that set, and we want their tokens
+    // to keep working on the Next.js surface without a re-sign-in.
+    return (
+      window.localStorage.getItem(WEB_SESSION_TOKEN_KEY) ||
+      window.localStorage.getItem('token') ||
+      null
+    );
   } catch {
     return null;
   }

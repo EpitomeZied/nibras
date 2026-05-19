@@ -22,18 +22,35 @@ import styles from './page.module.css';
 const RAILWAY_API_BASE = 'https://nibras-backend.up.railway.app/api';
 const SESSION_KEY = 'nibras.webSession';
 
+type TokenBundle = {
+  token?: string;
+  accessToken?: string;
+};
+
 type LoginResponse = {
   // The backend returns one of these shapes; we try each in order.
   token?: string;
   accessToken?: string;
   refreshToken?: string;
+  tokens?: {
+    access?: TokenBundle;
+    refresh?: TokenBundle;
+    accessToken?: string;
+    refreshToken?: string;
+  };
   data?: {
     token?: string;
     accessToken?: string;
-    tokens?: { access?: { token?: string } };
-    user?: { id?: string; username?: string; email?: string };
+    refreshToken?: string;
+    tokens?: {
+      access?: TokenBundle;
+      refresh?: TokenBundle;
+      accessToken?: string;
+      refreshToken?: string;
+    };
+    user?: Record<string, unknown>;
   };
-  user?: { id?: string; username?: string; email?: string };
+  user?: Record<string, unknown>;
   message?: string;
 };
 
@@ -41,11 +58,30 @@ function extractToken(payload: LoginResponse): string | null {
   return (
     payload.accessToken ||
     payload.token ||
+    payload.tokens?.access?.token ||
+    payload.tokens?.accessToken ||
     payload.data?.accessToken ||
     payload.data?.token ||
     payload.data?.tokens?.access?.token ||
+    payload.data?.tokens?.accessToken ||
     null
   );
+}
+
+function extractRefreshToken(payload: LoginResponse): string | null {
+  return (
+    payload.refreshToken ||
+    payload.tokens?.refresh?.token ||
+    payload.tokens?.refreshToken ||
+    payload.data?.refreshToken ||
+    payload.data?.tokens?.refresh?.token ||
+    payload.data?.tokens?.refreshToken ||
+    null
+  );
+}
+
+function extractUser(payload: LoginResponse): Record<string, unknown> | null {
+  return payload.user ?? payload.data?.user ?? null;
 }
 
 export default function ConnectDashboardPage() {
@@ -83,10 +119,21 @@ export default function ConnectDashboardPage() {
       if (!token) {
         throw new Error('Login succeeded but no token was returned. Tell the backend admin.');
       }
+      // `nibras.webSession` is what our `serviceFetch` reads. `token` is the
+      // legacy localStorage key that the old vanilla-JS dashboard pages
+      // (community.js, etc.) and any imported snippets still consult; storing
+      // both keeps the Next.js port and the legacy code paths interoperable.
       window.localStorage.setItem(SESSION_KEY, token);
-      const user = payload.user || payload.data?.user;
+      window.localStorage.setItem('token', token);
+      const refreshToken = extractRefreshToken(payload);
+      if (refreshToken) {
+        window.localStorage.setItem('refreshToken', refreshToken);
+      }
+      const user = extractUser(payload);
       if (user) {
-        window.localStorage.setItem('nibras.dashboardUser', JSON.stringify(user));
+        const userJson = JSON.stringify(user);
+        window.localStorage.setItem('user', userJson);
+        window.localStorage.setItem('nibras.dashboardUser', userJson);
       }
       // Redirect to community as the immediate proof-of-life.
       router.push('/community');
@@ -100,6 +147,9 @@ export default function ConnectDashboardPage() {
   function disconnect() {
     try {
       window.localStorage.removeItem(SESSION_KEY);
+      window.localStorage.removeItem('token');
+      window.localStorage.removeItem('refreshToken');
+      window.localStorage.removeItem('user');
       window.localStorage.removeItem('nibras.dashboardUser');
     } catch {
       /* ignore */
