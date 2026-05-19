@@ -18,5 +18,5 @@ export type MyReputation = {
 };
 
 export async function getMyReputation(): Promise<MyReputation> {
-  return serviceFetch<MyReputation>('admin', '/reputation/me', { auth: true });
+  return serviceFetch<MyReputation>('admin', '/v1/reputation/me', { auth: true });
 }

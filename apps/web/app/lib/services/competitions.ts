@@ -86,7 +86,7 @@ export type LinkedAccount = {
 // `listContests` is anonymous in the legacy backend; matches `auth: false` so
 // `/competitions` renders even before sign-in.
 export async function listContests(filters: { upcoming?: boolean; host?: string } = {}) {
-  return serviceFetch<Contest[]>('competitions', '/contests', {
+  return serviceFetch<Contest[]>('competitions', '/v1/contests', {
     auth: false,
     query: filters as Record<string, string | boolean>,
   });
@@ -95,9 +95,7 @@ export async function listContests(filters: { upcoming?: boolean; host?: string 
 export async function setContestReminder(contestId: string, on: boolean) {
   return fetchFirstAvailable<{ reminderSet: boolean }>(
     [
-      `/user-contests/${contestId}/reminder`,
-      `/user/contests/${contestId}/reminder`,
-      `/contests/user-contests/${contestId}/reminder`,
+      `/v1/user-contests/${contestId}/reminder`,
     ],
     { method: 'POST', auth: true, body: { on } }
   );
@@ -106,9 +104,7 @@ export async function setContestReminder(contestId: string, on: boolean) {
 export async function setContestBookmark(contestId: string, on: boolean) {
   return fetchFirstAvailable<{ bookmarked: boolean }>(
     [
-      `/user-contests/${contestId}/bookmark`,
-      `/user/contests/${contestId}/bookmark`,
-      `/contests/user-contests/${contestId}/bookmark`,
+      `/v1/user-contests/${contestId}/bookmark`,
     ],
     { method: 'POST', auth: true, body: { on } }
   );
@@ -126,7 +122,7 @@ export async function listProblems(filters: {
 } = {}) {
   return serviceFetch<{ items: PracticeProblem[]; total: number }>(
     'competitions',
-    '/problems',
+    '/v1/problems',
     {
       auth: true,
       query: filters as Record<string, string | number>,
@@ -144,7 +140,7 @@ export async function setProblemBookmark(
 ): Promise<{ bookmarked: boolean }> {
   const data = await serviceFetchOptional<{ bookmarked: boolean }>(
     'competitions',
-    `/problems/${problemId}/bookmark`,
+    `/v1/problems/${problemId}/bookmark`,
     {
       method: 'POST',
       auth: true,
@@ -157,7 +153,7 @@ export async function setProblemBookmark(
 // ── Ranking ─────────────────────────────────────────────────────────────────
 // Invented endpoint — degrades to empty list when backend returns 404.
 export async function getRanking(host?: string): Promise<RankingEntry[]> {
-  const data = await serviceFetchOptional<RankingEntry[]>('competitions', '/ranking', {
+  const data = await serviceFetchOptional<RankingEntry[]>('competitions', '/v1/ranking', {
     auth: true,
     query: host ? { host } : undefined,
   });
@@ -167,7 +163,7 @@ export async function getRanking(host?: string): Promise<RankingEntry[]> {
 // ── History ─────────────────────────────────────────────────────────────────
 export async function getMyHistory(host?: string): Promise<ContestHistoryEntry[]> {
   const query = host ? { host } : undefined;
-  for (const path of ['/contests/user-contests/history', '/user-contests/history']) {
+  for (const path of ['/v1/user-contests/history']) {
     const data = await serviceFetchOptional<ContestHistoryEntry[]>('competitions', path, {
       auth: true,
       query,
@@ -183,14 +179,14 @@ export async function getMyHistory(host?: string): Promise<ContestHistoryEntry[]
 export async function getLinkedAccounts(): Promise<LinkedAccount[]> {
   const data = await serviceFetchOptional<LinkedAccount[]>(
     'competitions',
-    '/contests/accounts',
+    '/v1/contests/accounts',
     { auth: true }
   );
   return data ?? [];
 }
 
 export async function linkAccount(payload: { host: string; handle: string; token?: string }) {
-  return serviceFetch<LinkedAccount>('competitions', '/contests/accounts/link', {
+  return serviceFetch<LinkedAccount>('competitions', '/v1/contests/accounts/link', {
     method: 'POST',
     auth: true,
     // Legacy contract uses `platform`, not `host`.
@@ -206,7 +202,7 @@ export async function linkAccount(payload: { host: string; handle: string; token
 export async function unlinkAccount(host: string): Promise<{ unlinked: true } | null> {
   return serviceFetchOptional<{ unlinked: true }>(
     'competitions',
-    `/contests/accounts/${host}`,
+    `/v1/contests/accounts/${host}`,
     {
       method: 'DELETE',
       auth: true,

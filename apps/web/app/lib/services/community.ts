@@ -227,7 +227,7 @@ export async function listQuestions(filters: QuestionFilters = {}) {
 export async function getQuestion(questionId: string) {
   const raw = await serviceFetch<unknown>(
     'community',
-    `/community/questions/${questionId}`,
+    `/v1/community/questions/${questionId}`,
     { auth: false }
   );
   const wire = raw as { question?: WireQuestion } | WireQuestion;
@@ -263,7 +263,7 @@ export async function voteQuestion(questionId: string, direction: VoteValue) {
 export async function listAnswers(questionId: string) {
   const raw = await serviceFetch<unknown>(
     'community',
-    `/community/answers/question/${questionId}`,
+    `/v1/community/answers/question/${questionId}`,
     { auth: false }
   );
   const wire = raw as { answers?: WireAnswer[] } | WireAnswer[];
@@ -274,7 +274,7 @@ export async function listAnswers(questionId: string) {
 export async function createAnswer(questionId: string, body: string) {
   const raw = await serviceFetch<unknown>(
     'community',
-    `/community/answers/${questionId}`,
+    `/v1/community/answers/${questionId}`,
     {
       method: 'POST',
       auth: true,
@@ -298,7 +298,7 @@ export async function voteAnswer(answerId: string, direction: VoteValue) {
 export async function acceptAnswer(answerId: string) {
   return serviceFetch<{ accepted: true }>(
     'community',
-    `/community/answers/${answerId}/accept`,
+    `/v1/community/answers/${answerId}/accept`,
     {
       method: 'PATCH',
       auth: true,
@@ -314,7 +314,7 @@ export async function acceptAnswer(answerId: string) {
 export async function listThreads(courseId: string, filters: ThreadFilters = {}) {
   return serviceFetch<Paginated<CommunityThread>>(
     'community',
-    `/community/threads/course/${courseId}`,
+    `/v1/community/threads/course/${courseId}`,
     {
       auth: true,
       query: toQuery(filters),
@@ -325,7 +325,7 @@ export async function listThreads(courseId: string, filters: ThreadFilters = {})
 export async function getThread(threadId: string) {
   return serviceFetch<CommunityThread>(
     'community',
-    `/community/threads/${threadId}`,
+    `/v1/community/threads/${threadId}`,
     { auth: true }
   );
 }
@@ -340,7 +340,7 @@ export async function createThread(
 ) {
   return serviceFetch<CommunityThread>(
     'community',
-    `/community/threads/${courseId}`,
+    `/v1/community/threads/${courseId}`,
     {
       method: 'POST',
       auth: true,
@@ -352,7 +352,7 @@ export async function createThread(
 export async function setThreadPinned(threadId: string, pinned: boolean) {
   return serviceFetch<CommunityThread>(
     'community',
-    `/community/threads/${threadId}/${pinned ? 'pin' : 'unpin'}`,
+    `/v1/community/threads/${threadId}/${pinned ? 'pin' : 'unpin'}`,
     {
       method: 'PATCH',
       auth: true,
@@ -364,7 +364,7 @@ export async function setThreadPinned(threadId: string, pinned: boolean) {
 export async function setThreadClosed(threadId: string, closed: boolean) {
   return serviceFetch<CommunityThread>(
     'community',
-    `/community/threads/${threadId}/${closed ? 'close' : 'open'}`,
+    `/v1/community/threads/${threadId}/${closed ? 'close' : 'open'}`,
     {
       method: 'PATCH',
       auth: true,
@@ -377,7 +377,7 @@ export async function setThreadClosed(threadId: string, closed: boolean) {
 export async function listPosts(threadId: string) {
   return serviceFetch<CommunityPost[]>(
     'community',
-    `/community/posts/thread/${threadId}`,
+    `/v1/community/posts/thread/${threadId}`,
     { auth: true }
   );
 }
@@ -385,7 +385,7 @@ export async function listPosts(threadId: string) {
 export async function createPost(threadId: string, body: string) {
   return serviceFetch<CommunityPost>(
     'community',
-    `/community/posts/${threadId}`,
+    `/v1/community/posts/${threadId}`,
     {
       method: 'POST',
       auth: true,
@@ -407,7 +407,7 @@ export async function votePost(postId: string, direction: VoteValue) {
 export async function listTags(): Promise<CommunityTag[]> {
   const raw = await serviceFetch<unknown>(
     'community',
-    '/community/tags',
+    '/v1/community/tags',
     { auth: false }
   );
   const wire = raw as { tags?: WireTag[] } | WireTag[];

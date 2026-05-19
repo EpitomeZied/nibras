@@ -53,11 +53,11 @@ export type AssignmentSubmission = {
 
 // ── Courses ─────────────────────────────────────────────────────────────────
 export async function listCourses() {
-  return serviceFetch<BackendCourse[]>('admin', '/courses', { auth: true });
+  return serviceFetch<BackendCourse[]>('admin', '/v1/courses', { auth: true });
 }
 
 export async function getCourse(courseId: string) {
-  return serviceFetch<BackendCourse>('admin', `/courses/${courseId}`, { auth: true });
+  return serviceFetch<BackendCourse>('admin', `/v1/courses/${courseId}`, { auth: true });
 }
 
 // ── Videos ──────────────────────────────────────────────────────────────────
@@ -66,7 +66,7 @@ export async function getCourse(courseId: string) {
 export async function listVideos(courseId: string): Promise<CourseVideo[]> {
   const data = await serviceFetchOptional<CourseVideo[]>(
     'admin',
-    `/courses/${courseId}/videos`,
+    `/v1/courses/${courseId}/videos`,
     { auth: true }
   );
   return data ?? [];
@@ -78,7 +78,7 @@ export async function setVideoProgress(
 ): Promise<{ watched: boolean; watchedProgress: number }> {
   const data = await serviceFetchOptional<{ watched: boolean; watchedProgress: number }>(
     'admin',
-    `/videos/${videoId}/progress`,
+    `/v1/videos/${videoId}/progress`,
     {
       method: 'POST',
       auth: true,
@@ -92,13 +92,13 @@ export async function setVideoProgress(
 export async function listAssignments(courseId: string) {
   return serviceFetch<BackendAssignment[]>(
     'admin',
-    `/assignments/course/${courseId}`,
+    `/v1/assignments/course/${courseId}`,
     { auth: true }
   );
 }
 
 export async function getAssignmentById(assignmentId: string) {
-  return serviceFetch<AssignmentDetail>('admin', `/assignments/${assignmentId}`, {
+  return serviceFetch<AssignmentDetail>('admin', `/v1/assignments/${assignmentId}`, {
     auth: true,
   });
 }
@@ -110,7 +110,7 @@ export async function submitAssignment(
 ): Promise<AssignmentSubmission | null> {
   return serviceFetchOptional<AssignmentSubmission>(
     'admin',
-    `/assignments/${assignmentId}/submit`,
+    `/v1/assignments/${assignmentId}/submit`,
     {
       method: 'POST',
       auth: true,

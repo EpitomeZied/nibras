@@ -55,7 +55,7 @@ export type MyRank = {
 export async function getAllBadges(): Promise<Badge[]> {
   const data = await serviceFetch<Badge[] | { badges: Badge[] }>(
     'admin',
-    '/gamification/all-badges',
+    '/v1/gamification/all-badges',
     { auth: true }
   );
   if (Array.isArray(data)) return data;
@@ -65,7 +65,7 @@ export async function getAllBadges(): Promise<Badge[]> {
 export async function checkAwardBadges(studentId?: string): Promise<Badge[]> {
   const data = await serviceFetch<Badge[] | { awarded: Badge[] }>(
     'admin',
-    '/gamification/check-award',
+    '/v1/gamification/check-award',
     {
       method: 'POST',
       auth: true,
@@ -85,7 +85,7 @@ export async function getLeaderboard(
   if (filters.courseId) query.courseId = filters.courseId;
   if (filters.page) query.page = filters.page;
   if (filters.limit) query.limit = filters.limit;
-  return serviceFetch<LeaderboardResponse>('admin', '/gamification/leaderboards', {
+  return serviceFetch<LeaderboardResponse>('admin', '/v1/gamification/leaderboards', {
     auth: true,
     query,
   });
@@ -98,14 +98,14 @@ export async function getMyLeaderboardRank(
   if (filters.period) query.period = filters.period;
   if (filters.scope) query.scope = filters.scope;
   if (filters.courseId) query.courseId = filters.courseId;
-  return serviceFetch<MyRank>('admin', '/gamification/leaderboards/me', {
+  return serviceFetch<MyRank>('admin', '/v1/gamification/leaderboards/me', {
     auth: true,
     query,
   });
 }
 
 export async function getLeaderboardConfig(): Promise<LeaderboardConfig> {
-  return serviceFetch<LeaderboardConfig>('admin', '/gamification/leaderboards/config', {
+  return serviceFetch<LeaderboardConfig>('admin', '/v1/gamification/leaderboards/config', {
     auth: true,
   });
 }
