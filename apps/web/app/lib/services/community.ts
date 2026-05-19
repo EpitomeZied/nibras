@@ -261,15 +261,18 @@ export async function voteQuestion(questionId: string, direction: VoteValue) {
 
 // ── Answers ─────────────────────────────────────────────────────────────────
 export async function listAnswers(questionId: string) {
-  return serviceFetch<CommunityAnswer[]>(
+  const raw = await serviceFetch<unknown>(
     'community',
     `/community/answers/question/${questionId}`,
     { auth: false }
   );
+  const wire = raw as { answers?: WireAnswer[] } | WireAnswer[];
+  const list = Array.isArray(wire) ? wire : (wire.answers ?? []);
+  return list.map(normalizeAnswer);
 }
 
 export async function createAnswer(questionId: string, body: string) {
-  return serviceFetch<CommunityAnswer>(
+  const raw = await serviceFetch<unknown>(
     'community',
     `/community/answers/${questionId}`,
     {
@@ -278,6 +281,9 @@ export async function createAnswer(questionId: string, body: string) {
       body: { body },
     }
   );
+  const wire = raw as { answer?: WireAnswer } | WireAnswer;
+  const a = (wire as { answer?: WireAnswer }).answer ?? (wire as WireAnswer);
+  return normalizeAnswer(a);
 }
 
 export async function voteAnswer(answerId: string, direction: VoteValue) {
@@ -399,11 +405,12 @@ export async function votePost(postId: string, direction: VoteValue) {
 
 // ── Tags ────────────────────────────────────────────────────────────────────
 export async function listTags(): Promise<CommunityTag[]> {
-  const data = await serviceFetch<CommunityTag[] | { tags: CommunityTag[] }>(
+  const raw = await serviceFetch<unknown>(
     'community',
     '/community/tags',
     { auth: false }
   );
-  if (Array.isArray(data)) return data;
-  return data?.tags ?? [];
+  const wire = raw as { tags?: WireTag[] } | WireTag[];
+  const list = Array.isArray(wire) ? wire : (wire.tags ?? []);
+  return list.map(normalizeTag);
 }
