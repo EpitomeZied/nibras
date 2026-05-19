@@ -24,6 +24,7 @@ import { registerTrackingRoutes } from './features/tracking/routes';
 import { registerAdminRoutes } from './features/admin/routes';
 import { registerNotificationRoutes } from './features/notifications/routes';
 import { registerProgramRoutes } from './features/programs/routes';
+import { registerCommunityRoutes } from './features/community/routes';
 
 function normalizeOrigin(value: string | undefined): string | null {
   if (!value) {
@@ -130,6 +131,7 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
           { name: 'tracking', description: 'Courses, milestones, and student progress' },
           { name: 'programs', description: 'Academic programs, tracks, and program sheets' },
           { name: 'admin', description: 'Admin-only operations' },
+          { name: 'community', description: 'Community Q&A, discussions, tags, and chatbot' },
           { name: 'system', description: 'Health, readiness, and metrics' },
         ],
       },
@@ -326,6 +328,7 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
   registerProgramRoutes(app, store);
   registerAdminRoutes(app, store);
   registerNotificationRoutes(app, store);
+  registerCommunityRoutes(app, store, getSharedPrisma());
 
   return app;
 }

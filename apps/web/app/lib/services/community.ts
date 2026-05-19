@@ -206,7 +206,7 @@ function normalizeTag(t: WireTag): CommunityTag {
 // Reads are anonymous — matches the legacy dashboard's `auth: false` so that
 // `/community` and `/community/q/[id]` render before sign-in.
 export async function listQuestions(filters: QuestionFilters = {}) {
-  const raw = await serviceFetch<unknown>('community', '/community/questions', {
+  const raw = await serviceFetch<unknown>('community', '/v1/community/questions', {
     auth: false,
     query: toQuery(filters),
   });
@@ -240,7 +240,7 @@ export async function createQuestion(payload: {
   body: string;
   tags?: string[];
 }) {
-  const raw = await serviceFetch<unknown>('community', '/community/questions', {
+  const raw = await serviceFetch<unknown>('community', '/v1/community/questions', {
     method: 'POST',
     auth: true,
     body: payload as Record<string, unknown>,
@@ -251,7 +251,7 @@ export async function createQuestion(payload: {
 }
 
 export async function voteQuestion(questionId: string, direction: VoteValue) {
-  const body = await serviceFetch<LegacyVoteResponse>('community', '/community/votes', {
+  const body = await serviceFetch<LegacyVoteResponse>('community', '/v1/community/votes', {
     method: 'POST',
     auth: true,
     body: { targetType: 'question', targetId: questionId, value: direction },
@@ -287,7 +287,7 @@ export async function createAnswer(questionId: string, body: string) {
 }
 
 export async function voteAnswer(answerId: string, direction: VoteValue) {
-  const body = await serviceFetch<LegacyVoteResponse>('community', '/community/votes', {
+  const body = await serviceFetch<LegacyVoteResponse>('community', '/v1/community/votes', {
     method: 'POST',
     auth: true,
     body: { targetType: 'answer', targetId: answerId, value: direction },
@@ -395,7 +395,7 @@ export async function createPost(threadId: string, body: string) {
 }
 
 export async function votePost(postId: string, direction: VoteValue) {
-  const body = await serviceFetch<LegacyVoteResponse>('community', '/community/votes', {
+  const body = await serviceFetch<LegacyVoteResponse>('community', '/v1/community/votes', {
     method: 'POST',
     auth: true,
     body: { targetType: 'post', targetId: postId, value: direction },

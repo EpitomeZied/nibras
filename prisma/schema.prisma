@@ -206,6 +206,11 @@ model User {
   submittedPetitions Petition[]        @relation("ProgramPetitionSubmitter")
   reviewedPetitions Petition[]         @relation("ProgramPetitionReviewer")
   reviewedProgramApprovals ProgramApproval[]
+  communityQuestions       CommunityQuestion[] @relation("CommunityQuestionAuthor")
+  communityAnswers         CommunityAnswer[]   @relation("CommunityAnswerAuthor")
+  communityVotes           CommunityVote[]     @relation("CommunityVoteUser")
+  communityThreads         CommunityThread[]   @relation("CommunityThreadAuthor")
+  communityPosts           CommunityPost[]     @relation("CommunityPostAuthor")
 
   @@index([systemRole])
   @@index([yearLevel])
@@ -226,6 +231,7 @@ model Course {
   projectTemplates ProjectTemplate[]
   invites     CourseInvite[]
   auditLogs   AuditLog[]
+  communityThreads CommunityThread[]
 }
 
 model CourseInvite {
@@ -956,4 +962,105 @@ model NotificationPreference {
 
   @@unique([userId, type])
   @@index([userId])
+}
+
+// ── Community Q&A ───────────────────────────────────────────────────────────
+
+enum CommunityVoteTargetType {
+  question
+  answer
+  post
+}
+
+model CommunityQuestion {
+  id               String            @id @default(cuid())
+  authorId         String
+  title            String
+  body             String
+  tags             String[]
+  votesCount       Int               @default(0)
+  answersCount     Int               @default(0)
+  acceptedAnswerId String?
+  viewCount        Int               @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  author           User              @relation("CommunityQuestionAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  answers          CommunityAnswer[]
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model CommunityAnswer {
+  id         String            @id @default(cuid())
+  questionId String
+  authorId   String
+  body       String
+  votesCount Int               @default(0)
+  accepted   Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  question   CommunityQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  author     User              @relation("CommunityAnswerAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@index([authorId])
+}
+
+model CommunityVote {
+  id         String                    @id @default(cuid())
+  targetType CommunityVoteTargetType
+  targetId   String
+  value      Int
+  userId     String
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
+  user       User                      @relation("CommunityVoteUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+}
+
+model CommunityTag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String   @default("")
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CommunityThread {
+  id         String          @id @default(cuid())
+  courseId    String
+  authorId   String
+  title      String
+  body       String          @default("")
+  tags       String[]
+  pinned     Boolean         @default(false)
+  closed     Boolean         @default(false)
+  postsCount Int             @default(0)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  course     Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  author     User            @relation("CommunityThreadAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  posts      CommunityPost[]
+
+  @@index([courseId, createdAt])
+  @@index([authorId])
+}
+
+model CommunityPost {
+  id         String          @id @default(cuid())
+  threadId   String
+  authorId   String
+  body       String
+  votesCount Int             @default(0)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  thread     CommunityThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author     User            @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@index([authorId])
 }
