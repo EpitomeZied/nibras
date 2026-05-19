@@ -118,22 +118,121 @@ function normalizeVoteResponse(
   return { score, myVote };
 }
 
+// ── Wire shapes returned by the Railway backend ─────────────────────────────
+
+type WireAuthor = {
+  _id?: string;
+  name?: string;
+  email?: string;
+  avatarUrl?: string;
+  reputationScore?: number;
+  reputation?: { total?: number };
+};
+
+type WireQuestion = {
+  _id: string;
+  title: string;
+  body: string;
+  author: WireAuthor;
+  tags?: string[];
+  votesCount?: number;
+  myVote?: 1 | 0 | -1;
+  answersCount?: number;
+  acceptedAnswerId?: string | null;
+  views?: number;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+type WireAnswer = {
+  _id: string;
+  questionId: string;
+  body: string;
+  author: WireAuthor;
+  votesCount?: number;
+  myVote?: 1 | 0 | -1;
+  accepted?: boolean;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+type WireTag = { _id?: string; name: string; description?: string; usageCount?: number };
+
+function normalizeAuthor(author: WireAuthor | null | undefined): CommunityAuthor {
+  return {
+    userId: author?._id ?? '',
+    username: author?.name ?? 'Unknown',
+    avatarUrl: author?.avatarUrl,
+    reputation: author?.reputation?.total ?? author?.reputationScore,
+  };
+}
+
+function normalizeQuestion(q: WireQuestion): CommunityQuestion {
+  return {
+    id: q._id,
+    title: q.title,
+    body: q.body,
+    author: normalizeAuthor(q.author),
+    tags: q.tags ?? [],
+    score: q.votesCount ?? 0,
+    myVote: q.myVote,
+    answerCount: q.answersCount ?? 0,
+    acceptedAnswerId: q.acceptedAnswerId ?? null,
+    views: q.views,
+    createdAt: q.createdAt,
+    updatedAt: q.updatedAt,
+  };
+}
+
+function normalizeAnswer(a: WireAnswer): CommunityAnswer {
+  return {
+    id: a._id,
+    questionId: a.questionId,
+    body: a.body,
+    author: normalizeAuthor(a.author),
+    score: a.votesCount ?? 0,
+    myVote: a.myVote,
+    accepted: a.accepted ?? false,
+    createdAt: a.createdAt,
+    updatedAt: a.updatedAt,
+  };
+}
+
+function normalizeTag(t: WireTag): CommunityTag {
+  return { name: t.name, count: t.usageCount ?? 0, description: t.description };
+}
+
 // ── Questions ───────────────────────────────────────────────────────────────
 // Reads are anonymous — matches the legacy dashboard's `auth: false` so that
 // `/community` and `/community/q/[id]` render before sign-in.
 export async function listQuestions(filters: QuestionFilters = {}) {
-  return serviceFetch<Paginated<CommunityQuestion>>('community', '/community/questions', {
+  const raw = await serviceFetch<unknown>('community', '/community/questions', {
     auth: false,
     query: toQuery(filters),
   });
+  const wire = raw as {
+    questions?: WireQuestion[];
+    pagination?: { page?: number; limit?: number; total?: number };
+  } | WireQuestion[];
+  const items = (Array.isArray(wire) ? wire : (wire.questions ?? [])).map(normalizeQuestion);
+  const pag = Array.isArray(wire) ? null : (wire.pagination ?? null);
+  return {
+    items,
+    total: pag?.total ?? items.length,
+    page: pag?.page ?? filters.page ?? 1,
+    limit: pag?.limit ?? filters.limit ?? items.length,
+  } satisfies Paginated<CommunityQuestion>;
 }
 
 export async function getQuestion(questionId: string) {
-  return serviceFetch<CommunityQuestion>(
+  const raw = await serviceFetch<unknown>(
     'community',
     `/community/questions/${questionId}`,
     { auth: false }
   );
+  const wire = raw as { question?: WireQuestion } | WireQuestion;
+  const q = (wire as { question?: WireQuestion }).question ?? (wire as WireQuestion);
+  return normalizeQuestion(q);
 }
 
 export async function createQuestion(payload: {
@@ -141,11 +240,14 @@ export async function createQuestion(payload: {
   body: string;
   tags?: string[];
 }) {
-  return serviceFetch<CommunityQuestion>('community', '/community/questions', {
+  const raw = await serviceFetch<unknown>('community', '/community/questions', {
     method: 'POST',
     auth: true,
     body: payload as Record<string, unknown>,
   });
+  const wire = raw as { question?: WireQuestion } | WireQuestion;
+  const q = (wire as { question?: WireQuestion }).question ?? (wire as WireQuestion);
+  return normalizeQuestion(q);
 }
 
 export async function voteQuestion(questionId: string, direction: VoteValue) {
