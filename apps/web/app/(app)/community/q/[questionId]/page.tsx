@@ -10,7 +10,6 @@ import {
   acceptAnswer,
   createAnswer,
   getQuestion,
-  listAnswers,
   voteAnswer,
   voteQuestion,
   type CommunityAnswer,
@@ -44,7 +43,7 @@ export default function QuestionPage() {
     setLoading(true);
     setError(null);
     try {
-      const [q, a] = await Promise.all([getQuestion(questionId), listAnswers(questionId)]);
+      const { question: q, answers: a } = await getQuestion(questionId);
       setQuestion(q);
       setAnswers(a);
     } catch (err) {

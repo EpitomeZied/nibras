@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
-import { listThreads, type CommunityThread } from '../../../lib/services/community';
+import { createThread, listThreads, type CommunityThread } from '../../../lib/services/community';
 import { useSession } from '../../_components/session-context';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 import { listCourses, type BackendCourse } from '../../../lib/services/backend-courses';
@@ -27,12 +28,39 @@ function formatRelative(iso?: string): string {
 }
 
 export default function DiscussionsPage() {
+  const router = useRouter();
   const { user } = useSession();
   const [threads, setThreads] = useState<CommunityThread[]>([]);
   const [courseId, setCourseId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [courseList, setCourseList] = useState<BackendCourse[]>([]);
+
+  const [threadOpen, setThreadOpen] = useState(false);
+  const [threadTitle, setThreadTitle] = useState('');
+  const [threadBody, setThreadBody] = useState('');
+  const [threadSubmitting, setThreadSubmitting] = useState(false);
+  const [threadError, setThreadError] = useState<string | null>(null);
+
+  async function handleThreadSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    const title = threadTitle.trim();
+    const body = threadBody.trim();
+    if (!title || !courseId) return;
+    setThreadSubmitting(true);
+    setThreadError(null);
+    try {
+      const created = await createThread(courseId, { title, body: body || undefined });
+      setThreadOpen(false);
+      setThreadTitle('');
+      setThreadBody('');
+      router.push(`/community/discussions/${created.id}`);
+    } catch (err) {
+      setThreadError(friendlyMessage(err));
+    } finally {
+      setThreadSubmitting(false);
+    }
+  }
 
   const courses = useMemo(() => {
     return (user?.memberships ?? []).map((m) => ({ id: m.courseId, role: m.role }));
@@ -95,10 +123,65 @@ export default function DiscussionsPage() {
             Long-form threads scoped to your courses — announcements, study groups, project chatter.
           </p>
         </div>
-        <button type="button" className={styles.startBtn} disabled>
+        <button type="button" className={styles.startBtn} disabled={!courseId} onClick={() => setThreadOpen(true)}>
           Start a thread
         </button>
       </header>
+
+      {threadOpen && (
+        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Start a thread">
+          <form className={styles.modal} onSubmit={handleThreadSubmit}>
+            <h2 className={styles.modalTitle}>Start a thread</h2>
+            <p className={styles.modalHint}>
+              Threads are scoped to the selected course. Keep the title focused.
+            </p>
+            <div className={styles.formRow}>
+              <label className={styles.formLabel} htmlFor="thread-title">Title</label>
+              <input
+                id="thread-title"
+                className={styles.formInput}
+                value={threadTitle}
+                onChange={(e) => setThreadTitle(e.target.value)}
+                placeholder="What do you want to discuss?"
+                maxLength={160}
+                autoFocus
+                required
+              />
+            </div>
+            <div className={styles.formRow}>
+              <label className={styles.formLabel} htmlFor="thread-body">Details (optional)</label>
+              <textarea
+                id="thread-body"
+                className={styles.formTextarea}
+                value={threadBody}
+                onChange={(e) => setThreadBody(e.target.value)}
+                placeholder="Add context, links, or questions to kick off the discussion."
+                rows={6}
+              />
+            </div>
+            {threadError && (
+              <p style={{ color: 'var(--danger, #ef4444)', fontSize: 12, margin: 0 }}>{threadError}</p>
+            )}
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.cancelBtn}
+                onClick={() => { setThreadOpen(false); setThreadError(null); }}
+                disabled={threadSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className={styles.submitBtn}
+                disabled={threadSubmitting || !threadTitle.trim()}
+              >
+                {threadSubmitting ? 'Posting...' : 'Start thread'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {courses.length > 0 && (
         <div className={styles.filters}>

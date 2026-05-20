@@ -224,15 +224,16 @@ export async function listQuestions(filters: QuestionFilters = {}) {
   } satisfies Paginated<CommunityQuestion>;
 }
 
-export async function getQuestion(questionId: string) {
+export async function getQuestion(questionId: string): Promise<{ question: CommunityQuestion; answers: CommunityAnswer[] }> {
   const raw = await serviceFetch<unknown>(
     'community',
     `/v1/community/questions/${questionId}`,
     { auth: false }
   );
-  const wire = raw as { question?: WireQuestion } | WireQuestion;
-  const q = (wire as { question?: WireQuestion }).question ?? (wire as WireQuestion);
-  return normalizeQuestion(q);
+  const wire = raw as { question?: WireQuestion & { answers?: WireAnswer[] } } | (WireQuestion & { answers?: WireAnswer[] });
+  const q = (wire as { question?: WireQuestion & { answers?: WireAnswer[] } }).question ?? (wire as WireQuestion & { answers?: WireAnswer[] });
+  const inlineAnswers = q.answers ?? [];
+  return { question: normalizeQuestion(q), answers: inlineAnswers.map(normalizeAnswer) };
 }
 
 export async function createQuestion(payload: {

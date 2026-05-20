@@ -559,6 +559,7 @@ export function registerCommunityRoutes(
         answer: `I'm the Nibras AI tutor. You asked: "${body.question}". This feature is being set up — please check back soon.`,
         citations: [],
         followUps: [],
+        placeholder: true,
       };
     }
   );
