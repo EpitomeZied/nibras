@@ -9,6 +9,7 @@ import styles from './app-shell.module.css';
 
 type ShellSessionPayload = {
   user: {
+    id: string;
     username: string;
     email: string;
     githubLogin: string;

@@ -4,15 +4,14 @@ import { requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
 import { AppStore } from '../../store';
 
-const authorSelect = { id: true, username: true, email: true } as const;
+const authorSelect = { id: true, username: true } as const;
 
-function presentAuthor(author: { id: string; username: string; email?: string }) {
+function presentAuthor(author: { id: string; username: string }) {
   return {
     _id: author.id,
     userId: author.id,
     name: author.username,
     username: author.username,
-    email: author.email,
   };
 }
 
