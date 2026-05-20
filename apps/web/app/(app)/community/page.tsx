@@ -47,6 +47,8 @@ export default function CommunityPage() {
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [askOpen, setAskOpen] = useState(false);
   const [askTitle, setAskTitle] = useState('');
@@ -84,7 +86,7 @@ export default function CommunityPage() {
     }
   }
 
-  const filters = useMemo<QuestionFilters>(() => ({ sort, tag, q, limit: 30 }), [sort, tag, q]);
+  const filters = useMemo<QuestionFilters>(() => ({ sort, tag, q, page, limit: 30 }), [sort, tag, q, page]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,6 +95,9 @@ export default function CommunityPage() {
       const [qResult, tagResult] = await Promise.allSettled([listQuestions(filters), listTags()]);
       if (qResult.status === 'fulfilled') {
         setQuestions(qResult.value.items ?? []);
+        const total = qResult.value.total ?? 0;
+        const limit = qResult.value.limit ?? 30;
+        setTotalPages(Math.max(1, Math.ceil(total / limit)));
       } else {
         setQuestions([]);
         setError(friendlyMessage(qResult.reason));
@@ -106,6 +111,8 @@ export default function CommunityPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => { setPage(1); }, [sort, tag, q]);
 
   return (
     <div className={styles.page}>
