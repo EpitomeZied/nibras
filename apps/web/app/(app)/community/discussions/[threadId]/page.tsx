@@ -152,7 +152,7 @@ export default function ThreadPage() {
             </span>
           ))}
         </div>
-        {thread.body && <p className={styles.threadBody}>{thread.body}</p>}
+        {thread.body && <div className={styles.threadBody} dangerouslySetInnerHTML={{ __html: renderMarkdown(thread.body) }} />}
         {isInstructorOrTa && (
           <div className={styles.actions}>
             <button
@@ -196,9 +196,7 @@ export default function ThreadPage() {
                 }}
                 ariaLabel="Vote on post"
               />
-              <div className={styles.postBody}>
-                <p>{post.body}</p>
-              </div>
+              <div className={styles.postBody} dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }} />
               <div className={styles.postAuthor}>
                 <strong>{post.author.username}</strong>
                 <span>{formatTimestamp(post.createdAt)}</span>
