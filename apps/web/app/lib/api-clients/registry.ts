@@ -1,17 +1,17 @@
 /**
  * Multi-backend service URL registry.
  *
- * The web app currently talks to a single Nibras API via Next.js rewrites
- * (`apiFetch` in `app/lib/session.ts`). The ported student-dashboard features
- * also consume four EXTERNAL production backends (Railway monolith for admin
- * + community + gamification + reputation, Fly.dev for tracking, Railway for
- * competitions, Railway for the recommendation model). This registry resolves
- * the base URL for each service from, in priority order:
+ * Services that have been migrated to the local Prisma-backed API (admin,
+ * community, tracking, competitions) default to the page origin so requests
+ * go through the Next.js `/v1/*` rewrite proxy — keeping cookies same-origin
+ * and hitting the correct session store. The recommendation service still
+ * points to its external Railway backend.
  *
+ * Resolution priority:
  *   1. `?<service>Api=URL` query string parameter (debug per-tab override)
  *   2. `localStorage.nibras_<service>_api_url`
  *   3. `NEXT_PUBLIC_NIBRAS_<SERVICE>_API_URL` env var
- *   4. Hard-coded default mirroring `nibras-student-dashboard/client/config.js`
+ *   4. Page origin (migrated services) or hard-coded external URL
  */
 export type ApiServiceName =
   | 'admin'
@@ -20,12 +20,17 @@ export type ApiServiceName =
   | 'competitions'
   | 'recommendation';
 
-const DEFAULT_SERVICE_URLS: Record<ApiServiceName, string> = {
-  admin: process.env.NEXT_PUBLIC_NIBRAS_API_BASE_URL || 'http://localhost:4848',
-  community: process.env.NEXT_PUBLIC_NIBRAS_API_BASE_URL || 'http://localhost:4848',
-  tracking: process.env.NEXT_PUBLIC_NIBRAS_API_BASE_URL || 'http://localhost:4848',
-  competitions: process.env.NEXT_PUBLIC_NIBRAS_API_BASE_URL || 'http://localhost:4848',
-  recommendation: 'https://recommendationmodel-production-0f8e.up.railway.app/api',
+function getPageOrigin(): string {
+  if (typeof window !== 'undefined') return window.location.origin;
+  return process.env.NEXT_PUBLIC_NIBRAS_API_BASE_URL || 'http://localhost:4848';
+}
+
+const DEFAULT_SERVICE_URLS: Record<ApiServiceName, () => string> = {
+  admin: getPageOrigin,
+  community: getPageOrigin,
+  tracking: getPageOrigin,
+  competitions: getPageOrigin,
+  recommendation: () => 'https://recommendationmodel-production-0f8e.up.railway.app/api',
 };
 
 const ENV_KEYS: Record<ApiServiceName, string> = {
@@ -89,12 +94,12 @@ export function resolveServiceBaseUrl(service: ApiServiceName): string {
     readQuery(service) ??
     readStorage(service) ??
     readEnv(service) ??
-    DEFAULT_SERVICE_URLS[service]
+    DEFAULT_SERVICE_URLS[service]()
   );
 }
 
 export function getDefaultServiceBaseUrl(service: ApiServiceName): string {
-  return DEFAULT_SERVICE_URLS[service];
+  return DEFAULT_SERVICE_URLS[service]();
 }
 
 export function getAllServiceBaseUrls(): Record<ApiServiceName, string> {

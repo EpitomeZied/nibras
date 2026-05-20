@@ -96,6 +96,7 @@ function prepareInit(init: ServiceFetchInit, token: string | null): RequestInit 
     ...rest,
     headers,
     body: body ?? undefined,
+    ...(init.auth !== false ? { credentials: 'include' as RequestCredentials } : {}),
   };
 }
 
