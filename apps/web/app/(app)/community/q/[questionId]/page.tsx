@@ -18,6 +18,7 @@ import {
 } from '../../../../lib/services/community';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
 import { useSession } from '../../../_components/session-context';
+import { renderMarkdown } from '../../../../lib/markdown';
 
 function formatTimestamp(iso: string): string {
   try {
@@ -146,7 +147,7 @@ export default function QuestionPage() {
               </span>
             ))}
           </div>
-          <p className={styles.markdown}>{question.body}</p>
+          <div className={styles.markdown} dangerouslySetInnerHTML={{ __html: renderMarkdown(question.body) }} />
         </div>
         <div className={styles.authorCard}>
           <span className={styles.authorName}>{question.author.username}</span>
@@ -201,7 +202,7 @@ export default function QuestionPage() {
                     Accepted
                   </span>
                 )}
-                <p className={styles.markdown}>{answer.body}</p>
+                <div className={styles.markdown} dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.body) }} />
                 {!accepted && !question.acceptedAnswerId && user?.id === question.author.userId && (
                   <button
                     type="button"

@@ -331,6 +331,30 @@ export default function CommunityPage() {
           ))}
         </div>
       )}
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', marginTop: 16 }}>
+          <button
+            type="button"
+            className={styles.cancelBtn}
+            disabled={page <= 1}
+            onClick={() => setPage(Math.max(1, page - 1))}
+          >
+            &larr; Previous
+          </button>
+          <span style={{ fontSize: 13, opacity: 0.7 }}>
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className={styles.cancelBtn}
+            disabled={page >= totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next &rarr;
+          </button>
+        </div>
+      )}
     </div>
   );
 }

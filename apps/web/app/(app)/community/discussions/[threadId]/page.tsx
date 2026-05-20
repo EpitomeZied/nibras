@@ -18,6 +18,7 @@ import {
 } from '../../../../lib/services/community';
 import { useSession } from '../../../_components/session-context';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
+import { renderMarkdown } from '../../../../lib/markdown';
 
 function formatTimestamp(iso: string): string {
   try {
