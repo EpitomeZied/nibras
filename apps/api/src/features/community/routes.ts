@@ -1,5 +1,7 @@
 import { FastifyInstance } from 'fastify';
-import { PrismaClient, CommunityVoteTargetType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+
+type CommunityVoteTargetType = 'question' | 'answer' | 'post';
 import { requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
 import { AppStore } from '../../store';
