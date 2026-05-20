@@ -221,20 +221,26 @@ export default function QuestionPage() {
         })
       )}
 
-      <form className={styles.composer} onSubmit={handleSubmit}>
-        <span className={styles.composerLabel}>Your answer</span>
-        <textarea
-          className={styles.composerInput}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="Explain the approach, share code, and link references…"
-        />
-        <div className={styles.composerActions}>
-          <button type="submit" className={styles.submitBtn} disabled={submitting || !draft.trim()}>
-            {submitting ? 'Posting…' : 'Post answer'}
-          </button>
+      {user ? (
+        <form className={styles.composer} onSubmit={handleSubmit}>
+          <span className={styles.composerLabel}>Your answer</span>
+          <textarea
+            className={styles.composerInput}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Explain the approach, share code, and link references…"
+          />
+          <div className={styles.composerActions}>
+            <button type="submit" className={styles.submitBtn} disabled={submitting || !draft.trim()}>
+              {submitting ? 'Posting…' : 'Post answer'}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className={styles.composer}>
+          <Link href="/connect" className={styles.submitBtn}>Sign in to answer</Link>
         </div>
-      </form>
+      )}
     </div>
   );
 }

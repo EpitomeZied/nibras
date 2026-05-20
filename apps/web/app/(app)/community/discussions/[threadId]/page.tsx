@@ -208,7 +208,7 @@ export default function ThreadPage() {
 
       {thread.closed ? (
         <div className={styles.closedNotice}>This thread is closed. No new replies can be added.</div>
-      ) : (
+      ) : user ? (
         <form className={styles.composer} onSubmit={handleSubmit}>
           <span className={styles.composerLabel}>Reply</span>
           <textarea
@@ -223,6 +223,10 @@ export default function ThreadPage() {
             </button>
           </div>
         </form>
+      ) : (
+        <div className={styles.composer}>
+          <Link href="/connect" className={styles.submitBtn}>Sign in to reply</Link>
+        </div>
       )}
     </div>
   );
