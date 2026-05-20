@@ -14,6 +14,7 @@ import {
   type QuestionFilters,
 } from '../../lib/services/community';
 import { friendlyMessage } from '../../lib/api-clients/errors';
+import { useSession } from '../_components/session-context';
 
 const SORTS: Array<{ value: NonNullable<QuestionFilters['sort']>; label: string }> = [
   { value: 'newest', label: 'Newest' },
@@ -40,6 +41,7 @@ function formatRelative(iso: string): string {
 
 export default function CommunityPage() {
   const router = useRouter();
+  const { user } = useSession();
   const [questions, setQuestions] = useState<CommunityQuestion[]>([]);
   const [tags, setTags] = useState<CommunityTag[]>([]);
   const [sort, setSort] = useState<NonNullable<QuestionFilters['sort']>>('newest');
@@ -121,9 +123,15 @@ export default function CommunityPage() {
           <h1 className={styles.title}>Community</h1>
           <p className={styles.subtitle}>Ask, answer, and learn from your classmates.</p>
         </div>
-        <button type="button" className={styles.askBtn} onClick={() => setAskOpen(true)}>
-          Ask a question
-        </button>
+        {user ? (
+          <button type="button" className={styles.askBtn} onClick={() => setAskOpen(true)}>
+            Ask a question
+          </button>
+        ) : (
+          <Link href="/connect" className={styles.askBtn}>
+            Sign in to ask
+          </Link>
+        )}
       </header>
 
       {askOpen && (
