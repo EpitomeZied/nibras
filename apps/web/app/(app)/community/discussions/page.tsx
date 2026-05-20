@@ -7,6 +7,7 @@ import EmptyState from '../../_components/widgets/EmptyState';
 import { listThreads, type CommunityThread } from '../../../lib/services/community';
 import { useSession } from '../../_components/session-context';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
+import { listCourses, type BackendCourse } from '../../../lib/services/backend-courses';
 
 function formatRelative(iso?: string): string {
   if (!iso) return '';
@@ -31,10 +32,23 @@ export default function DiscussionsPage() {
   const [courseId, setCourseId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [courseList, setCourseList] = useState<BackendCourse[]>([]);
 
   const courses = useMemo(() => {
     return (user?.memberships ?? []).map((m) => ({ id: m.courseId, role: m.role }));
   }, [user]);
+
+  const courseNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of courseList) {
+      map.set(c.id, c.title || c.code);
+    }
+    return map;
+  }, [courseList]);
+
+  useEffect(() => {
+    void listCourses().then(setCourseList).catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     if (!courseId) {
@@ -98,7 +112,7 @@ export default function DiscussionsPage() {
                 className={`${styles.courseChip} ${courseId === c.id ? styles.courseChipActive : ''}`}
                 onClick={() => setCourseId(c.id)}
               >
-                {c.id}
+                {courseNameMap.get(c.id) || c.id}
               </button>
             ))}
           </div>

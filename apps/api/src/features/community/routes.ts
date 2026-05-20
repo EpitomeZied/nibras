@@ -195,9 +195,10 @@ export function registerCommunityRoutes(
         },
         include: { author: { select: authorSelect } },
       });
+      const answerCount = await prisma.communityAnswer.count({ where: { questionId } });
       await prisma.communityQuestion.update({
         where: { id: questionId },
-        data: { answersCount: { increment: 1 } },
+        data: { answersCount: answerCount },
       });
       reply.code(201);
       return { answer: { ...answer, _id: answer.id, author: presentAuthor(answer.author) } };
@@ -588,9 +589,10 @@ export function registerCommunityRoutes(
           body: body.answer,
         },
       });
+      const publishedCount = await prisma.communityAnswer.count({ where: { questionId: question.id } });
       await prisma.communityQuestion.update({
         where: { id: question.id },
-        data: { answersCount: 1 },
+        data: { answersCount: publishedCount },
       });
       return { questionId: question.id, url: `/community/q/${question.id}` };
     }
