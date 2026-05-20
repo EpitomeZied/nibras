@@ -51,7 +51,14 @@ export default function ReputationPage() {
         <header className={styles.header}>
           <h1 className={styles.title}>Reputation</h1>
         </header>
-        <div style={{ height: 280, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 280,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       </div>
     );
   }
@@ -64,7 +71,9 @@ export default function ReputationPage() {
         </header>
         <EmptyState
           title="No reputation data yet"
-          description={error ?? "Once your account starts accruing points, you'll see the breakdown here."}
+          description={
+            error ?? "Once your account starts accruing points, you'll see the breakdown here."
+          }
           tone={error ? 'error' : 'default'}
           action={error ? { label: 'Retry', onClick: () => void load() } : undefined}
         />
@@ -79,7 +88,8 @@ export default function ReputationPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>Reputation</h1>
         <p className={styles.subtitle}>
-          Your reputation grows as you submit projects, help peers in the community, and earn badges.
+          Your reputation grows as you submit projects, help peers in the community, and earn
+          badges.
         </p>
       </header>
 
@@ -87,12 +97,16 @@ export default function ReputationPage() {
         <StatTile label="Total" value={reputation.total.toLocaleString()} />
         <StatTile
           label="This Week"
-          value={reputation.weeklyDelta >= 0 ? `+${reputation.weeklyDelta}` : reputation.weeklyDelta}
+          value={
+            reputation.weeklyDelta >= 0 ? `+${reputation.weeklyDelta}` : reputation.weeklyDelta
+          }
           trend={reputation.weeklyDelta > 0 ? 'up' : reputation.weeklyDelta < 0 ? 'down' : 'flat'}
         />
         <StatTile
           label="This Month"
-          value={reputation.monthlyDelta >= 0 ? `+${reputation.monthlyDelta}` : reputation.monthlyDelta}
+          value={
+            reputation.monthlyDelta >= 0 ? `+${reputation.monthlyDelta}` : reputation.monthlyDelta
+          }
           trend={reputation.monthlyDelta > 0 ? 'up' : reputation.monthlyDelta < 0 ? 'down' : 'flat'}
         />
         <StatTile

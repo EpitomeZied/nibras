@@ -122,12 +122,7 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
   ),
   Analytics: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-      <path
-        d="M2 14V3M2 14h12"
-        stroke="currentColor"
-        strokeWidth="1.3"
-        strokeLinecap="round"
-      />
+      <path d="M2 14V3M2 14h12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
       <rect x="4" y="8" width="2.5" height="4.5" rx="0.6" fill="currentColor" opacity=".8" />
       <rect x="8" y="5" width="2.5" height="7.5" rx="0.6" fill="currentColor" opacity=".85" />
       <rect x="12" y="10" width="2.5" height="2.5" rx="0.6" fill="currentColor" opacity=".6" />

@@ -85,16 +85,16 @@ export async function setVideoProgress(
       body: payload as Record<string, unknown>,
     }
   );
-  return data ?? { watched: payload.watched ?? false, watchedProgress: payload.watchedProgress ?? 0 };
+  return (
+    data ?? { watched: payload.watched ?? false, watchedProgress: payload.watchedProgress ?? 0 }
+  );
 }
 
 // ── Assignments ─────────────────────────────────────────────────────────────
 export async function listAssignments(courseId: string) {
-  return serviceFetch<BackendAssignment[]>(
-    'admin',
-    `/v1/assignments/course/${courseId}`,
-    { auth: true }
-  );
+  return serviceFetch<BackendAssignment[]>('admin', `/v1/assignments/course/${courseId}`, {
+    auth: true,
+  });
 }
 
 export async function getAssignmentById(assignmentId: string) {

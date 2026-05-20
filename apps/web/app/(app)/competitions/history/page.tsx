@@ -4,10 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
 import Sparkline from '../../_components/widgets/Sparkline';
-import {
-  getMyHistory,
-  type ContestHistoryEntry,
-} from '../../../lib/services/competitions';
+import { getMyHistory, type ContestHistoryEntry } from '../../../lib/services/competitions';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 
 function formatDate(iso: string): string {
@@ -59,7 +56,14 @@ export default function HistoryPage() {
       </header>
 
       {loading ? (
-        <div style={{ height: 280, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 280,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error || entries.length === 0 ? (
         <EmptyState
           title={error ? 'Could not load history' : 'No history yet'}

@@ -109,9 +109,7 @@ function toQuery(filters: Record<string, unknown>): Record<string, string | numb
   return out;
 }
 
-function normalizeVoteResponse(
-  body: LegacyVoteResponse
-): { score: number; myVote: 1 | 0 | -1 } {
+function normalizeVoteResponse(body: LegacyVoteResponse): { score: number; myVote: 1 | 0 | -1 } {
   const score = typeof body.votesCount === 'number' ? body.votesCount : 0;
   const raw = typeof body.voteValue === 'number' ? body.voteValue : 0;
   const myVote = raw === 1 ? 1 : raw === -1 ? -1 : 0;
@@ -210,10 +208,12 @@ export async function listQuestions(filters: QuestionFilters = {}) {
     auth: false,
     query: toQuery(filters),
   });
-  const wire = raw as {
-    questions?: WireQuestion[];
-    pagination?: { page?: number; limit?: number; total?: number };
-  } | WireQuestion[];
+  const wire = raw as
+    | {
+        questions?: WireQuestion[];
+        pagination?: { page?: number; limit?: number; total?: number };
+      }
+    | WireQuestion[];
   const items = (Array.isArray(wire) ? wire : (wire.questions ?? [])).map(normalizeQuestion);
   const pag = Array.isArray(wire) ? null : (wire.pagination ?? null);
   return {
@@ -224,23 +224,23 @@ export async function listQuestions(filters: QuestionFilters = {}) {
   } satisfies Paginated<CommunityQuestion>;
 }
 
-export async function getQuestion(questionId: string): Promise<{ question: CommunityQuestion; answers: CommunityAnswer[] }> {
-  const raw = await serviceFetch<unknown>(
-    'community',
-    `/v1/community/questions/${questionId}`,
-    { auth: false }
-  );
-  const wire = raw as { question?: WireQuestion & { answers?: WireAnswer[] } } | (WireQuestion & { answers?: WireAnswer[] });
-  const q = (wire as { question?: WireQuestion & { answers?: WireAnswer[] } }).question ?? (wire as WireQuestion & { answers?: WireAnswer[] });
+export async function getQuestion(
+  questionId: string
+): Promise<{ question: CommunityQuestion; answers: CommunityAnswer[] }> {
+  const raw = await serviceFetch<unknown>('community', `/v1/community/questions/${questionId}`, {
+    auth: false,
+  });
+  const wire = raw as
+    | { question?: WireQuestion & { answers?: WireAnswer[] } }
+    | (WireQuestion & { answers?: WireAnswer[] });
+  const q =
+    (wire as { question?: WireQuestion & { answers?: WireAnswer[] } }).question ??
+    (wire as WireQuestion & { answers?: WireAnswer[] });
   const inlineAnswers = q.answers ?? [];
   return { question: normalizeQuestion(q), answers: inlineAnswers.map(normalizeAnswer) };
 }
 
-export async function createQuestion(payload: {
-  title: string;
-  body: string;
-  tags?: string[];
-}) {
+export async function createQuestion(payload: { title: string; body: string; tags?: string[] }) {
   const raw = await serviceFetch<unknown>('community', '/v1/community/questions', {
     method: 'POST',
     auth: true,
@@ -273,15 +273,11 @@ export async function listAnswers(questionId: string) {
 }
 
 export async function createAnswer(questionId: string, body: string) {
-  const raw = await serviceFetch<unknown>(
-    'community',
-    `/v1/community/answers/${questionId}`,
-    {
-      method: 'POST',
-      auth: true,
-      body: { body },
-    }
-  );
+  const raw = await serviceFetch<unknown>('community', `/v1/community/answers/${questionId}`, {
+    method: 'POST',
+    auth: true,
+    body: { body },
+  });
   const wire = raw as { answer?: WireAnswer } | WireAnswer;
   const a = (wire as { answer?: WireAnswer }).answer ?? (wire as WireAnswer);
   return normalizeAnswer(a);
@@ -297,15 +293,11 @@ export async function voteAnswer(answerId: string, direction: VoteValue) {
 }
 
 export async function acceptAnswer(answerId: string) {
-  return serviceFetch<{ accepted: true }>(
-    'community',
-    `/v1/community/answers/${answerId}/accept`,
-    {
-      method: 'PATCH',
-      auth: true,
-      body: {},
-    }
-  );
+  return serviceFetch<{ accepted: true }>('community', `/v1/community/answers/${answerId}/accept`, {
+    method: 'PATCH',
+    auth: true,
+    body: {},
+  });
 }
 
 // ── Discussions / Threads ───────────────────────────────────────────────────
@@ -324,11 +316,9 @@ export async function listThreads(courseId: string, filters: ThreadFilters = {})
 }
 
 export async function getThread(threadId: string) {
-  return serviceFetch<CommunityThread>(
-    'community',
-    `/v1/community/threads/${threadId}`,
-    { auth: true }
-  );
+  return serviceFetch<CommunityThread>('community', `/v1/community/threads/${threadId}`, {
+    auth: true,
+  });
 }
 
 export async function createThread(
@@ -339,15 +329,11 @@ export async function createThread(
     tags?: string[];
   }
 ) {
-  return serviceFetch<CommunityThread>(
-    'community',
-    `/v1/community/threads/${courseId}`,
-    {
-      method: 'POST',
-      auth: true,
-      body: payload as Record<string, unknown>,
-    }
-  );
+  return serviceFetch<CommunityThread>('community', `/v1/community/threads/${courseId}`, {
+    method: 'POST',
+    auth: true,
+    body: payload as Record<string, unknown>,
+  });
 }
 
 export async function setThreadPinned(threadId: string, pinned: boolean) {
@@ -376,23 +362,17 @@ export async function setThreadClosed(threadId: string, closed: boolean) {
 
 // ── Posts ───────────────────────────────────────────────────────────────────
 export async function listPosts(threadId: string) {
-  return serviceFetch<CommunityPost[]>(
-    'community',
-    `/v1/community/posts/thread/${threadId}`,
-    { auth: true }
-  );
+  return serviceFetch<CommunityPost[]>('community', `/v1/community/posts/thread/${threadId}`, {
+    auth: true,
+  });
 }
 
 export async function createPost(threadId: string, body: string) {
-  return serviceFetch<CommunityPost>(
-    'community',
-    `/v1/community/posts/${threadId}`,
-    {
-      method: 'POST',
-      auth: true,
-      body: { body },
-    }
-  );
+  return serviceFetch<CommunityPost>('community', `/v1/community/posts/${threadId}`, {
+    method: 'POST',
+    auth: true,
+    body: { body },
+  });
 }
 
 export async function votePost(postId: string, direction: VoteValue) {
@@ -406,11 +386,7 @@ export async function votePost(postId: string, direction: VoteValue) {
 
 // ── Tags ────────────────────────────────────────────────────────────────────
 export async function listTags(): Promise<CommunityTag[]> {
-  const raw = await serviceFetch<unknown>(
-    'community',
-    '/v1/community/tags',
-    { auth: false }
-  );
+  const raw = await serviceFetch<unknown>('community', '/v1/community/tags', { auth: false });
   const wire = raw as { tags?: WireTag[] } | WireTag[];
   const list = Array.isArray(wire) ? wire : (wire.tags ?? []);
   return list.map(normalizeTag);

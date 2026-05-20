@@ -117,7 +117,14 @@ export default function AnalyticsOverviewPage() {
       )}
 
       {loading ? (
-        <div style={{ height: 360, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 360,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error || !data ? (
         <EmptyState
           title="Analytics not loaded"
@@ -147,10 +154,7 @@ export default function AnalyticsOverviewPage() {
               delta={`${formatDelta(Math.round(data.kpis.passRateDelta * 100))}%`}
               trend={deltaTrend(data.kpis.passRateDelta)}
             />
-            <StatTile
-              label="Median Grade"
-              value={data.kpis.medianGrade.toFixed(1)}
-            />
+            <StatTile label="Median Grade" value={data.kpis.medianGrade.toFixed(1)} />
           </div>
 
           <div className={styles.chartGrid}>
@@ -188,11 +192,7 @@ export default function AnalyticsOverviewPage() {
                   {data.topRisingTopics.map((t) => (
                     <li key={t.topic} className={styles.listRow}>
                       <span>{t.topic}</span>
-                      <span
-                        className={
-                          t.delta >= 0 ? styles.deltaPositive : styles.deltaNegative
-                        }
-                      >
+                      <span className={t.delta >= 0 ? styles.deltaPositive : styles.deltaNegative}>
                         {formatDelta(t.delta)}
                       </span>
                     </li>
@@ -210,9 +210,7 @@ export default function AnalyticsOverviewPage() {
                     <li key={`${c.cohort}-${idx}`} className={styles.listRow}>
                       <div>
                         <strong>{c.cohort}</strong>
-                        <div style={{ color: 'var(--text-muted)', fontSize: 11.5 }}>
-                          {c.reason}
-                        </div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: 11.5 }}>{c.reason}</div>
                       </div>
                       <span className={styles.flagBadge}>Review</span>
                     </li>

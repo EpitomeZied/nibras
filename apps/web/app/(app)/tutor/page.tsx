@@ -38,9 +38,7 @@ export default function TutorPage() {
 
   const updateActive = useCallback(
     (mut: (conv: Conversation) => Conversation) => {
-      setConversations((prev) =>
-        prev.map((conv) => (conv.id === activeId ? mut(conv) : conv))
-      );
+      setConversations((prev) => prev.map((conv) => (conv.id === activeId ? mut(conv) : conv)));
     },
     [activeId]
   );
@@ -88,9 +86,7 @@ export default function TutorPage() {
         updateActive((conv) => ({
           ...conv,
           messages: conv.messages.map((m) =>
-            m.id === placeholderId
-              ? { ...m, content: message, pending: false, error: message }
-              : m
+            m.id === placeholderId ? { ...m, content: message, pending: false, error: message } : m
           ),
         }));
       } finally {
@@ -113,7 +109,7 @@ export default function TutorPage() {
         <div>
           <h1 className={styles.title}>AI Tutor</h1>
           <p className={styles.subtitle}>
-            Ask any question about your courses, projects, or concepts you're stuck on.
+            Ask any question about your courses, projects, or concepts you&apos;re stuck on.
           </p>
         </div>
       </header>
@@ -150,9 +146,7 @@ export default function TutorPage() {
                     onClick={() => setActiveId(conv.id)}
                   >
                     <span className={styles.conversationTitle}>{conv.title}</span>
-                    <span className={styles.conversationMeta}>
-                      {conv.messages.length} messages
-                    </span>
+                    <span className={styles.conversationMeta}>{conv.messages.length} messages</span>
                   </button>
                 </li>
               ))}

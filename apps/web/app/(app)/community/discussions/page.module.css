@@ -93,7 +93,9 @@
   border-radius: 12px;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .thread:hover {

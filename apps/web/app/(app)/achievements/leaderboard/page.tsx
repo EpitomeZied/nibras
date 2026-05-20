@@ -3,9 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
-import LeaderboardTable, {
-  type LeaderboardRow,
-} from '../../_components/widgets/LeaderboardTable';
+import LeaderboardTable, { type LeaderboardRow } from '../../_components/widgets/LeaderboardTable';
 import {
   getLeaderboard,
   getMyLeaderboardRank,
@@ -119,7 +117,9 @@ export default function LeaderboardPage() {
             {myRank.delta !== undefined && myRank.delta !== 0 && (
               <div
                 className={styles.myDelta}
-                style={{ color: myRank.delta > 0 ? 'var(--primary, #22c55e)' : 'var(--danger, #ef4444)' }}
+                style={{
+                  color: myRank.delta > 0 ? 'var(--primary, #22c55e)' : 'var(--danger, #ef4444)',
+                }}
               >
                 {myRank.delta > 0 ? '▲' : '▼'} {Math.abs(myRank.delta)}
               </div>

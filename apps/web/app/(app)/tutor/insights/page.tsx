@@ -33,11 +33,9 @@ export default function LearningInsightsPage() {
     setLoading(true);
     setError(null);
     try {
-      const insights = await serviceFetch<LearningInsights>(
-        'community',
-        '/chatbot/insights',
-        { auth: true }
-      );
+      const insights = await serviceFetch<LearningInsights>('community', '/chatbot/insights', {
+        auth: true,
+      });
       setData(insights);
     } catch (err) {
       setError(friendlyMessage(err));
@@ -56,7 +54,14 @@ export default function LearningInsightsPage() {
         <header className={styles.header}>
           <h1 className={styles.title}>Learning Insights</h1>
         </header>
-        <div style={{ height: 280, borderRadius: 14, border: '1px solid var(--border)', background: 'var(--surface)' }} />
+        <div
+          style={{
+            height: 280,
+            borderRadius: 14,
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+          }}
+        />
       </div>
     );
   }
@@ -69,7 +74,10 @@ export default function LearningInsightsPage() {
         </header>
         <EmptyState
           title="No insights yet"
-          description={error ?? "Spend some time on the platform and the tutor will summarize your activity here."}
+          description={
+            error ??
+            'Spend some time on the platform and the tutor will summarize your activity here.'
+          }
           tone={error ? 'error' : 'default'}
           action={error ? { label: 'Retry', onClick: () => void load() } : undefined}
         />
@@ -82,14 +90,23 @@ export default function LearningInsightsPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>Learning Insights</h1>
         <p className={styles.subtitle}>
-          Personalized summaries of where you're strong, where you're struggling, and what to study next.
+          Personalized summaries of where you&apos;re strong, where you&apos;re struggling, and what
+          to study next.
         </p>
       </header>
 
       <div className={styles.kpis}>
         <StatTile label="This Week" value={`${data.weeklyMinutes} min`} caption="time spent" />
-        <StatTile label="All Time" value={`${Math.round(data.totalMinutes / 60)} h`} caption="cumulative" />
-        <StatTile label="Streak" value={`${data.streakDays} days`} trend={data.streakDays > 0 ? 'up' : 'flat'} />
+        <StatTile
+          label="All Time"
+          value={`${Math.round(data.totalMinutes / 60)} h`}
+          caption="cumulative"
+        />
+        <StatTile
+          label="Streak"
+          value={`${data.streakDays} days`}
+          trend={data.streakDays > 0 ? 'up' : 'flat'}
+        />
         <StatTile label="Active Courses" value={data.activeCourses} />
       </div>
 

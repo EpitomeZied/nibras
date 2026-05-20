@@ -34,15 +34,11 @@ export default function SmartRoutingPage() {
     setBusy(true);
     setError(null);
     try {
-      const response = await serviceFetch<SmartRoutingResponse>(
-        'community',
-        '/chatbot/routing',
-        {
-          method: 'POST',
-          auth: true,
-          body: { goal: trimmed },
-        }
-      );
+      const response = await serviceFetch<SmartRoutingResponse>('community', '/chatbot/routing', {
+        method: 'POST',
+        auth: true,
+        body: { goal: trimmed },
+      });
       setRoute(response);
     } catch (err) {
       setError(friendlyMessage(err));
@@ -62,7 +58,8 @@ export default function SmartRoutingPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>Smart Routing</h1>
         <p className={styles.subtitle}>
-          The tutor maps your goal to the right material, picking the shortest path through prerequisites.
+          The tutor maps your goal to the right material, picking the shortest path through
+          prerequisites.
         </p>
       </header>
 
@@ -105,7 +102,9 @@ export default function SmartRoutingPage() {
                 {step.description && <p className={styles.stepDescription}>{step.description}</p>}
                 <div className={styles.stepMeta}>
                   {step.course && <span>{step.course}</span>}
-                  {step.estimatedMinutes !== undefined && <span>· {step.estimatedMinutes} min</span>}
+                  {step.estimatedMinutes !== undefined && (
+                    <span>· {step.estimatedMinutes} min</span>
+                  )}
                   <span
                     className={`${styles.stepStatus} ${
                       step.ready ? styles.statusReady : styles.statusLocked

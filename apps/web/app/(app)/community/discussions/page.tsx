@@ -75,7 +75,9 @@ export default function DiscussionsPage() {
   }, [courseList]);
 
   useEffect(() => {
-    void listCourses().then(setCourseList).catch(() => {});
+    void listCourses()
+      .then(setCourseList)
+      .catch(() => {});
   }, []);
 
   const load = useCallback(async () => {
@@ -124,7 +126,12 @@ export default function DiscussionsPage() {
           </p>
         </div>
         {user ? (
-          <button type="button" className={styles.startBtn} disabled={!courseId} onClick={() => setThreadOpen(true)}>
+          <button
+            type="button"
+            className={styles.startBtn}
+            disabled={!courseId}
+            onClick={() => setThreadOpen(true)}
+          >
             Start a thread
           </button>
         ) : (
@@ -135,14 +142,21 @@ export default function DiscussionsPage() {
       </header>
 
       {threadOpen && (
-        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Start a thread">
+        <div
+          className={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Start a thread"
+        >
           <form className={styles.modal} onSubmit={handleThreadSubmit}>
             <h2 className={styles.modalTitle}>Start a thread</h2>
             <p className={styles.modalHint}>
               Threads are scoped to the selected course. Keep the title focused.
             </p>
             <div className={styles.formRow}>
-              <label className={styles.formLabel} htmlFor="thread-title">Title</label>
+              <label className={styles.formLabel} htmlFor="thread-title">
+                Title
+              </label>
               <input
                 id="thread-title"
                 className={styles.formInput}
@@ -155,7 +169,9 @@ export default function DiscussionsPage() {
               />
             </div>
             <div className={styles.formRow}>
-              <label className={styles.formLabel} htmlFor="thread-body">Details (optional)</label>
+              <label className={styles.formLabel} htmlFor="thread-body">
+                Details (optional)
+              </label>
               <textarea
                 id="thread-body"
                 className={styles.formTextarea}
@@ -166,13 +182,18 @@ export default function DiscussionsPage() {
               />
             </div>
             {threadError && (
-              <p style={{ color: 'var(--danger, #ef4444)', fontSize: 12, margin: 0 }}>{threadError}</p>
+              <p style={{ color: 'var(--danger, #ef4444)', fontSize: 12, margin: 0 }}>
+                {threadError}
+              </p>
             )}
             <div className={styles.modalActions}>
               <button
                 type="button"
                 className={styles.cancelBtn}
-                onClick={() => { setThreadOpen(false); setThreadError(null); }}
+                onClick={() => {
+                  setThreadOpen(false);
+                  setThreadError(null);
+                }}
                 disabled={threadSubmitting}
               >
                 Cancel
@@ -218,7 +239,14 @@ export default function DiscussionsPage() {
           }
         />
       ) : loading ? (
-        <div style={{ height: 280, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 280,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error ? (
         <EmptyState
           title="Discussions unavailable"

@@ -109,9 +109,10 @@ async function tryRefreshToken(): Promise<string | null> {
       credentials: 'include',
     });
     if (!response.ok) return null;
-    const payload = (await response.json().catch(() => null)) as
-      | { accessToken?: string; data?: { accessToken?: string } }
-      | null;
+    const payload = (await response.json().catch(() => null)) as {
+      accessToken?: string;
+      data?: { accessToken?: string };
+    } | null;
     const next = payload?.accessToken || payload?.data?.accessToken || null;
     if (next) writeSessionToken(next);
     return next;
@@ -162,7 +163,8 @@ export async function serviceFetch<T = unknown>(
       status: response.status,
       code:
         typeof body === 'object' && body !== null
-          ? ((body as { code?: string }).code ?? (body as { error?: { code?: string } }).error?.code)
+          ? ((body as { code?: string }).code ??
+            (body as { error?: { code?: string } }).error?.code)
           : undefined,
       body,
     });

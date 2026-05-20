@@ -5,7 +5,11 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../../../_components/widgets/EmptyState';
-import { listVideos, setVideoProgress, type CourseVideo } from '../../../../lib/services/backend-courses';
+import {
+  listVideos,
+  setVideoProgress,
+  type CourseVideo,
+} from '../../../../lib/services/backend-courses';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
 
 function formatDuration(seconds: number): string {
@@ -46,10 +50,7 @@ export default function CourseVideosPage() {
     void load();
   }, [load]);
 
-  const active = useMemo(
-    () => videos.find((v) => v.id === activeId) ?? null,
-    [videos, activeId]
-  );
+  const active = useMemo(() => videos.find((v) => v.id === activeId) ?? null, [videos, activeId]);
 
   async function markWatched(video: CourseVideo) {
     try {
@@ -105,7 +106,14 @@ export default function CourseVideosPage() {
       <h1 className={styles.title}>Videos</h1>
 
       {loading ? (
-        <div style={{ height: 320, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 320,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error || videos.length === 0 ? (
         <EmptyState
           title={error ? 'Could not load videos' : 'No videos'}
@@ -124,7 +132,6 @@ export default function CourseVideosPage() {
                 onClick={() => setActiveId(video.id)}
               >
                 {video.thumbnailUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img src={video.thumbnailUrl} alt="" className={styles.thumb} />
                 ) : (
                   <div className={styles.thumb} />
@@ -143,7 +150,9 @@ export default function CourseVideosPage() {
                 <div className={styles.videoFrame}>
                   {active.url.includes('youtube.com') || active.url.includes('youtu.be') ? (
                     <iframe
-                      src={active.url.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                      src={active.url
+                        .replace('watch?v=', 'embed/')
+                        .replace('youtu.be/', 'youtube.com/embed/')}
                       title={active.title}
                       allow="accelerometer; encrypted-media; picture-in-picture"
                       allowFullScreen

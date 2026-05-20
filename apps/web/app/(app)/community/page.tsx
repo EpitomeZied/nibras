@@ -88,7 +88,10 @@ export default function CommunityPage() {
     }
   }
 
-  const filters = useMemo<QuestionFilters>(() => ({ sort, tag, q, page, limit: 30 }), [sort, tag, q, page]);
+  const filters = useMemo<QuestionFilters>(
+    () => ({ sort, tag, q, page, limit: 30 }),
+    [sort, tag, q, page]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -114,7 +117,9 @@ export default function CommunityPage() {
     void load();
   }, [load]);
 
-  useEffect(() => { setPage(1); }, [sort, tag, q]);
+  useEffect(() => {
+    setPage(1);
+  }, [sort, tag, q]);
 
   return (
     <div className={styles.page}>
@@ -135,14 +140,21 @@ export default function CommunityPage() {
       </header>
 
       {askOpen && (
-        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Ask a question">
+        <div
+          className={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Ask a question"
+        >
           <form className={styles.modal} onSubmit={handleAskSubmit}>
             <h2 className={styles.modalTitle}>Ask a question</h2>
             <p className={styles.modalHint}>
               Keep the title focused and the body specific. Add up to 5 comma-separated tags.
             </p>
             <div className={styles.formRow}>
-              <label className={styles.formLabel} htmlFor="ask-title">Title</label>
+              <label className={styles.formLabel} htmlFor="ask-title">
+                Title
+              </label>
               <input
                 id="ask-title"
                 className={styles.formInput}
@@ -155,7 +167,9 @@ export default function CommunityPage() {
               />
             </div>
             <div className={styles.formRow}>
-              <label className={styles.formLabel} htmlFor="ask-body">Details</label>
+              <label className={styles.formLabel} htmlFor="ask-body">
+                Details
+              </label>
               <textarea
                 id="ask-body"
                 className={styles.formTextarea}
@@ -167,7 +181,9 @@ export default function CommunityPage() {
               />
             </div>
             <div className={styles.formRow}>
-              <label className={styles.formLabel} htmlFor="ask-tags">Tags (optional)</label>
+              <label className={styles.formLabel} htmlFor="ask-tags">
+                Tags (optional)
+              </label>
               <input
                 id="ask-tags"
                 className={styles.formInput}
@@ -290,7 +306,14 @@ export default function CommunityPage() {
       )}
 
       {loading ? (
-        <div style={{ height: 320, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 320,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error && questions.length === 0 ? (
         <EmptyState
           title="Community feed unavailable"
@@ -311,7 +334,9 @@ export default function CommunityPage() {
                 <span className={styles.stat}>
                   <strong>{question.score}</strong> votes
                 </span>
-                <span className={`${styles.stat} ${question.acceptedAnswerId ? styles.statAccepted : ''}`}>
+                <span
+                  className={`${styles.stat} ${question.acceptedAnswerId ? styles.statAccepted : ''}`}
+                >
                   <strong>{question.answerCount}</strong> answers
                 </span>
                 {typeof question.views === 'number' && (
@@ -341,7 +366,15 @@ export default function CommunityPage() {
       )}
 
       {totalPages > 1 && (
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', marginTop: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 12,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginTop: 16,
+          }}
+        >
           <button
             type="button"
             className={styles.cancelBtn}

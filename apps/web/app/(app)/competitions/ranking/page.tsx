@@ -3,9 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
-import LeaderboardTable, {
-  type LeaderboardRow,
-} from '../../_components/widgets/LeaderboardTable';
+import LeaderboardTable, { type LeaderboardRow } from '../../_components/widgets/LeaderboardTable';
 import { getRanking, type RankingEntry } from '../../../lib/services/competitions';
 import { useSession } from '../../_components/session-context';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
@@ -43,9 +41,7 @@ export default function RankingPage() {
     delta: entry.delta,
     badges: entry.badges,
     meta:
-      entry.contestsLast30d !== undefined
-        ? `${entry.contestsLast30d} contests · 30d`
-        : undefined,
+      entry.contestsLast30d !== undefined ? `${entry.contestsLast30d} contests · 30d` : undefined,
   }));
 
   return (
@@ -74,7 +70,14 @@ export default function RankingPage() {
       </header>
 
       {loading ? (
-        <div style={{ height: 320, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 320,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error || rows.length === 0 ? (
         <EmptyState
           title={error ? 'Could not load ranking' : 'No ranking data'}

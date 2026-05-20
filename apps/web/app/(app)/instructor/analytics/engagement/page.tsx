@@ -39,7 +39,14 @@ export default function EngagementPage() {
       </header>
 
       {loading ? (
-        <div style={{ height: 320, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 320,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error || !data ? (
         <EmptyState
           title="No engagement data"

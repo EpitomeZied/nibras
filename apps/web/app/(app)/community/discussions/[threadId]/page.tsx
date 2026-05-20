@@ -41,9 +41,7 @@ export default function ThreadPage() {
 
   const isInstructorOrTa =
     user?.systemRole === 'admin' ||
-    (user?.memberships ?? []).some((m) =>
-      ['instructor', 'ta'].includes(m.role.toLowerCase())
-    );
+    (user?.memberships ?? []).some((m) => ['instructor', 'ta'].includes(m.role.toLowerCase()));
 
   const load = useCallback(async () => {
     if (!threadId) return;
@@ -109,7 +107,14 @@ export default function ThreadPage() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <div style={{ height: 240, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 240,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       </div>
     );
   }
@@ -139,8 +144,12 @@ export default function ThreadPage() {
       <article className={styles.threadHeader}>
         <div className={styles.threadTitleRow}>
           <h1 className={styles.threadTitle}>{thread.title}</h1>
-          {thread.pinned && <span className={`${styles.statusTag} ${styles.tagPinned}`}>Pinned</span>}
-          {thread.closed && <span className={`${styles.statusTag} ${styles.tagClosed}`}>Closed</span>}
+          {thread.pinned && (
+            <span className={`${styles.statusTag} ${styles.tagPinned}`}>Pinned</span>
+          )}
+          {thread.closed && (
+            <span className={`${styles.statusTag} ${styles.tagClosed}`}>Closed</span>
+          )}
         </div>
         <div className={styles.metaRow}>
           <span>{thread.author.username}</span>
@@ -152,7 +161,12 @@ export default function ThreadPage() {
             </span>
           ))}
         </div>
-        {thread.body && <div className={styles.threadBody} dangerouslySetInnerHTML={{ __html: renderMarkdown(thread.body) }} />}
+        {thread.body && (
+          <div
+            className={styles.threadBody}
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(thread.body) }}
+          />
+        )}
         {isInstructorOrTa && (
           <div className={styles.actions}>
             <button
@@ -187,16 +201,17 @@ export default function ThreadPage() {
                   const result = await votePost(post.id, direction);
                   setPosts((prev) =>
                     prev.map((p) =>
-                      p.id === post.id
-                        ? { ...p, score: result.score, myVote: result.myVote }
-                        : p
+                      p.id === post.id ? { ...p, score: result.score, myVote: result.myVote } : p
                     )
                   );
                   return result;
                 }}
                 ariaLabel="Vote on post"
               />
-              <div className={styles.postBody} dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }} />
+              <div
+                className={styles.postBody}
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }}
+              />
               <div className={styles.postAuthor}>
                 <strong>{post.author.username}</strong>
                 <span>{formatTimestamp(post.createdAt)}</span>
@@ -207,7 +222,9 @@ export default function ThreadPage() {
       </div>
 
       {thread.closed ? (
-        <div className={styles.closedNotice}>This thread is closed. No new replies can be added.</div>
+        <div className={styles.closedNotice}>
+          This thread is closed. No new replies can be added.
+        </div>
       ) : user ? (
         <form className={styles.composer} onSubmit={handleSubmit}>
           <span className={styles.composerLabel}>Reply</span>
@@ -218,14 +235,20 @@ export default function ThreadPage() {
             placeholder="Share an update, a question, or a useful resource…"
           />
           <div className={styles.composerActions}>
-            <button type="submit" className={styles.submitBtn} disabled={submitting || !draft.trim()}>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={submitting || !draft.trim()}
+            >
               {submitting ? 'Posting…' : 'Post reply'}
             </button>
           </div>
         </form>
       ) : (
         <div className={styles.composer}>
-          <Link href="/connect" className={styles.submitBtn}>Sign in to reply</Link>
+          <Link href="/connect" className={styles.submitBtn}>
+            Sign in to reply
+          </Link>
         </div>
       )}
     </div>

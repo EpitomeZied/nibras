@@ -139,7 +139,9 @@ export function registerCommunityRoutes(
         ),
       ]);
       reply.code(201);
-      return { question: { ...question, _id: question.id, author: presentAuthor(question.author) } };
+      return {
+        question: { ...question, _id: question.id, author: presentAuthor(question.author) },
+      };
     }
   );
 
@@ -264,7 +266,9 @@ export function registerCommunityRoutes(
       const value = body.value === 1 ? 1 : body.value === -1 ? -1 : 0;
 
       const existing = await prisma.communityVote.findUnique({
-        where: { userId_targetType_targetId: { userId: auth.user.id, targetType, targetId: body.targetId } },
+        where: {
+          userId_targetType_targetId: { userId: auth.user.id, targetType, targetId: body.targetId },
+        },
       });
 
       let action: string;
@@ -316,7 +320,9 @@ export function registerCommunityRoutes(
       }
 
       const currentVote = await prisma.communityVote.findUnique({
-        where: { userId_targetType_targetId: { userId: auth.user.id, targetType, targetId: body.targetId } },
+        where: {
+          userId_targetType_targetId: { userId: auth.user.id, targetType, targetId: body.targetId },
+        },
       });
 
       return { action, voteValue: currentVote?.value ?? 0, votesCount };
@@ -368,7 +374,12 @@ export function registerCommunityRoutes(
       ]);
 
       return {
-        items: threads.map((t) => ({ ...t, _id: t.id, author: presentAuthor(t.author), replyCount: t.postsCount })),
+        items: threads.map((t) => ({
+          ...t,
+          _id: t.id,
+          author: presentAuthor(t.author),
+          replyCount: t.postsCount,
+        })),
         total,
         page,
         limit,
@@ -391,7 +402,12 @@ export function registerCommunityRoutes(
         reply.code(404).send(Errors.notFound('Thread'));
         return;
       }
-      return { ...thread, _id: thread.id, author: presentAuthor(thread.author), replyCount: thread.postsCount };
+      return {
+        ...thread,
+        _id: thread.id,
+        author: presentAuthor(thread.author),
+        replyCount: thread.postsCount,
+      };
     }
   );
 
@@ -434,7 +450,12 @@ export function registerCommunityRoutes(
         data: { pinned: true },
         include: { author: { select: authorSelect } },
       });
-      return { ...thread, _id: thread.id, author: presentAuthor(thread.author), replyCount: thread.postsCount };
+      return {
+        ...thread,
+        _id: thread.id,
+        author: presentAuthor(thread.author),
+        replyCount: thread.postsCount,
+      };
     }
   );
 
@@ -450,7 +471,12 @@ export function registerCommunityRoutes(
         data: { pinned: false },
         include: { author: { select: authorSelect } },
       });
-      return { ...thread, _id: thread.id, author: presentAuthor(thread.author), replyCount: thread.postsCount };
+      return {
+        ...thread,
+        _id: thread.id,
+        author: presentAuthor(thread.author),
+        replyCount: thread.postsCount,
+      };
     }
   );
 
@@ -466,7 +492,12 @@ export function registerCommunityRoutes(
         data: { closed: true },
         include: { author: { select: authorSelect } },
       });
-      return { ...thread, _id: thread.id, author: presentAuthor(thread.author), replyCount: thread.postsCount };
+      return {
+        ...thread,
+        _id: thread.id,
+        author: presentAuthor(thread.author),
+        replyCount: thread.postsCount,
+      };
     }
   );
 
@@ -482,7 +513,12 @@ export function registerCommunityRoutes(
         data: { closed: false },
         include: { author: { select: authorSelect } },
       });
-      return { ...thread, _id: thread.id, author: presentAuthor(thread.author), replyCount: thread.postsCount };
+      return {
+        ...thread,
+        _id: thread.id,
+        author: presentAuthor(thread.author),
+        replyCount: thread.postsCount,
+      };
     }
   );
 
@@ -570,7 +606,12 @@ export function registerCommunityRoutes(
     async (request, reply) => {
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
-      const body = request.body as { question?: string; answer?: string; title?: string; tags?: string[] };
+      const body = request.body as {
+        question?: string;
+        answer?: string;
+        title?: string;
+        tags?: string[];
+      };
       if (!body.question || !body.answer) {
         reply.code(400).send(Errors.validation('question and answer are required.'));
         return;
@@ -590,7 +631,9 @@ export function registerCommunityRoutes(
           body: body.answer,
         },
       });
-      const publishedCount = await prisma.communityAnswer.count({ where: { questionId: question.id } });
+      const publishedCount = await prisma.communityAnswer.count({
+        where: { questionId: question.id },
+      });
       await prisma.communityQuestion.update({
         where: { id: question.id },
         data: { answersCount: publishedCount },

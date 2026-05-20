@@ -115,7 +115,9 @@
   padding: 4px 10px;
   border-radius: 999px;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .tagChip:hover {
@@ -196,7 +198,9 @@
   padding: 14px 18px;
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .row:hover {

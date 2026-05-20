@@ -13,12 +13,7 @@
  *   3. `NEXT_PUBLIC_NIBRAS_<SERVICE>_API_URL` env var
  *   4. Page origin (migrated services) or hard-coded external URL
  */
-export type ApiServiceName =
-  | 'admin'
-  | 'community'
-  | 'tracking'
-  | 'competitions'
-  | 'recommendation';
+export type ApiServiceName = 'admin' | 'community' | 'tracking' | 'competitions' | 'recommendation';
 
 function getPageOrigin(): string {
   if (typeof window !== 'undefined') return window.location.origin;

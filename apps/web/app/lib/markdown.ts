@@ -97,7 +97,12 @@ export function renderMarkdown(source: string): string {
     // Paragraph (collect consecutive non-blank, non-special lines)
     const para: string[] = [line];
     i += 1;
-    while (i < lines.length && lines[i].trim() !== '' && !lines[i].startsWith('```') && !/^(#{1,3}|\s*[-*])\s+/.test(lines[i])) {
+    while (
+      i < lines.length &&
+      lines[i].trim() !== '' &&
+      !lines[i].startsWith('```') &&
+      !/^(#{1,3}|\s*[-*])\s+/.test(lines[i])
+    ) {
       para.push(lines[i]);
       i += 1;
     }

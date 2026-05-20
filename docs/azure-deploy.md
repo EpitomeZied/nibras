@@ -197,17 +197,17 @@ Go to https://github.com/NibrasPlatform/nibras-cli/settings/secrets/actions
 
 **Secrets** (Actions → New repository secret):
 
-| Name | Value |
-|---|---|
+| Name                | Value                     |
+| ------------------- | ------------------------- |
 | `AZURE_CREDENTIALS` | the JSON blob from step 5 |
 
 **Variables** (Actions → Variables tab → New repository variable):
 
-| Name | Value |
-|---|---|
-| `AZURE_RESOURCE_GROUP` | `nibras-rg` |
-| `NIBRAS_API_BASE_URL` | `https://nibras-api.<your-env-domain>` |
-| `NIBRAS_WEB_BASE_URL` | `https://nibras-web.<your-env-domain>` |
+| Name                      | Value                                  |
+| ------------------------- | -------------------------------------- |
+| `AZURE_RESOURCE_GROUP`    | `nibras-rg`                            |
+| `NIBRAS_API_BASE_URL`     | `https://nibras-api.<your-env-domain>` |
+| `NIBRAS_WEB_BASE_URL`     | `https://nibras-web.<your-env-domain>` |
 | `NIBRAS_API_INTERNAL_URL` | `https://nibras-api.<your-env-domain>` |
 
 (Replace `<your-env-domain>` with the value printed at the end of step 3.)
@@ -232,12 +232,12 @@ Watch progress at https://github.com/NibrasPlatform/nibras-cli/actions
 Once the URLs are live, go to
 https://github.com/settings/apps/nibras-platfrom and set:
 
-| Field | URL |
-|---|---|
-| **Homepage URL** | `https://nibras-web.<env-domain>` |
+| Field            | URL                                                        |
+| ---------------- | ---------------------------------------------------------- |
+| **Homepage URL** | `https://nibras-web.<env-domain>`                          |
 | **Callback URL** | `https://nibras-api.<env-domain>/v1/github/oauth/callback` |
-| **Setup URL** | `https://nibras-web.<env-domain>/install/complete` |
-| **Webhook URL** | `https://nibras-api.<env-domain>/v1/github/webhooks` |
+| **Setup URL**    | `https://nibras-web.<env-domain>/install/complete`         |
+| **Webhook URL**  | `https://nibras-api.<env-domain>/v1/github/webhooks`       |
 
 ### 9. (Optional) Make the ghcr.io packages public
 

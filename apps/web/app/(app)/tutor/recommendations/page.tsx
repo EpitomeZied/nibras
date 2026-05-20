@@ -56,7 +56,14 @@ export default function RecommendationsPage() {
       </header>
 
       {loading ? (
-        <div style={{ height: 220, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 220,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error ? (
         <EmptyState
           title="Couldn't compute recommendations"
@@ -80,7 +87,9 @@ export default function RecommendationsPage() {
                   <h2 className={styles.trackName}>{track.name}</h2>
                   <span className={styles.trackScore}>{Math.round(track.score * 100)}%</span>
                 </div>
-                {track.description && <p className={styles.trackDescription}>{track.description}</p>}
+                {track.description && (
+                  <p className={styles.trackDescription}>{track.description}</p>
+                )}
                 {track.matchedSkills && track.matchedSkills.length > 0 && (
                   <div className={styles.skillsRow}>
                     <span className={styles.skillsLabel}>You already have</span>

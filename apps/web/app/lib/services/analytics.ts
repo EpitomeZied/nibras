@@ -93,9 +93,7 @@ export async function getOverview(filters: DateRangeFilters = {}) {
   });
 }
 
-export async function getCourseSummaries(
-  filters: DateRangeFilters = {}
-): Promise<CourseSummary[]> {
+export async function getCourseSummaries(filters: DateRangeFilters = {}): Promise<CourseSummary[]> {
   const data = await serviceFetchOptional<CourseSummary[]>('admin', '/v1/analytics/courses', {
     auth: true,
     query: toQuery(filters),

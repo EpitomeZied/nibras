@@ -45,7 +45,10 @@ export default function CompetitionsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [c, a] = await Promise.allSettled([listContests({ upcoming: true }), getLinkedAccounts()]);
+      const [c, a] = await Promise.allSettled([
+        listContests({ upcoming: true }),
+        getLinkedAccounts(),
+      ]);
       setContests(c.status === 'fulfilled' ? c.value : []);
       setAccounts(a.status === 'fulfilled' ? a.value : []);
       if (c.status === 'rejected') setError(friendlyMessage(c.reason));
@@ -60,9 +63,7 @@ export default function CompetitionsPage() {
 
   async function toggleReminder(contest: Contest) {
     const next = !contest.reminderSet;
-    setContests((prev) =>
-      prev.map((c) => (c.id === contest.id ? { ...c, reminderSet: next } : c))
-    );
+    setContests((prev) => prev.map((c) => (c.id === contest.id ? { ...c, reminderSet: next } : c)));
     try {
       const result = await setContestReminder(contest.id, next);
       setContests((prev) =>
@@ -77,9 +78,7 @@ export default function CompetitionsPage() {
 
   async function toggleBookmark(contest: Contest) {
     const next = !contest.bookmarked;
-    setContests((prev) =>
-      prev.map((c) => (c.id === contest.id ? { ...c, bookmarked: next } : c))
-    );
+    setContests((prev) => prev.map((c) => (c.id === contest.id ? { ...c, bookmarked: next } : c)));
     try {
       const result = await setContestBookmark(contest.id, next);
       setContests((prev) =>
@@ -111,14 +110,21 @@ export default function CompetitionsPage() {
           {accounts.map((acc) => (
             <span key={`${acc.host}-${acc.handle}`} className={styles.linkedChip}>
               {acc.host}: <span className={styles.linkedChipHandle}>{acc.handle}</span>
-              {!acc.verified && <span style={{ fontSize: 10, color: 'var(--warning, #f59e0b)' }}>unverified</span>}
+              {!acc.verified && (
+                <span style={{ fontSize: 10, color: 'var(--warning, #f59e0b)' }}>unverified</span>
+              )}
             </span>
           ))}
         </div>
       )}
 
       {linkModal && (
-        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Link account">
+        <div
+          className={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Link account"
+        >
           <form
             className={styles.modal}
             onSubmit={async (event) => {
@@ -172,7 +178,9 @@ export default function CompetitionsPage() {
               />
             </div>
             {linkError && (
-              <p style={{ color: 'var(--danger, #ef4444)', fontSize: 12, margin: 0 }}>{linkError}</p>
+              <p style={{ color: 'var(--danger, #ef4444)', fontSize: 12, margin: 0 }}>
+                {linkError}
+              </p>
             )}
             <div className={styles.modalActions}>
               <button
@@ -195,7 +203,14 @@ export default function CompetitionsPage() {
       )}
 
       {loading ? (
-        <div style={{ height: 280, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 280,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error || contests.length === 0 ? (
         <EmptyState
           title={error ? 'Could not load contests' : 'No upcoming contests'}
@@ -234,7 +249,12 @@ export default function CompetitionsPage() {
                   {contest.bookmarked ? 'Saved' : 'Save'}
                 </button>
                 {contest.url && (
-                  <a className={styles.iconBtn} href={contest.url} target="_blank" rel="noopener noreferrer">
+                  <a
+                    className={styles.iconBtn}
+                    href={contest.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     Open
                   </a>
                 )}

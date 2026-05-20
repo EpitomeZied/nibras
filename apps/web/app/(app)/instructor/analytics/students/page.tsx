@@ -99,7 +99,14 @@ export default function StudentsAnalyticsPage() {
       )}
 
       {loading ? (
-        <div style={{ height: 300, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 300,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error || rows.length === 0 ? (
         <EmptyState
           title="No student data"
@@ -147,14 +154,15 @@ export default function StudentsAnalyticsPage() {
                   <td>
                     <Sparkline
                       values={Array.from({ length: 8 }, (_, idx) =>
-                        Math.max(0, row.averageGrade + (row.trend ?? 0) * (idx / 8) + (idx % 2 ? -0.2 : 0.2))
+                        Math.max(
+                          0,
+                          row.averageGrade + (row.trend ?? 0) * (idx / 8) + (idx % 2 ? -0.2 : 0.2)
+                        )
                       )}
                       width={80}
                       height={28}
                       color={
-                        (row.trend ?? 0) >= 0
-                          ? 'var(--primary, #22c55e)'
-                          : 'var(--danger, #ef4444)'
+                        (row.trend ?? 0) >= 0 ? 'var(--primary, #22c55e)' : 'var(--danger, #ef4444)'
                       }
                     />
                   </td>

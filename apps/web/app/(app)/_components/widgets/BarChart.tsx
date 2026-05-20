@@ -40,12 +40,7 @@ export default function BarChart({
 
   return (
     <figure className={styles.chart} aria-label={ariaLabel}>
-      <svg
-        width="100%"
-        viewBox={`0 0 ${width} ${height}`}
-        role="img"
-        preserveAspectRatio="none"
-      >
+      <svg width="100%" viewBox={`0 0 ${width} ${height}`} role="img" preserveAspectRatio="none">
         {/* y-axis grid */}
         {[0, 0.25, 0.5, 0.75, 1].map((tick) => {
           const y = paddingTop + innerHeight * (1 - tick);

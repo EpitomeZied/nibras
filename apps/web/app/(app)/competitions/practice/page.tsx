@@ -99,7 +99,14 @@ export default function PracticePage() {
       </div>
 
       {loading ? (
-        <div style={{ height: 280, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 280,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error || problems.length === 0 ? (
         <EmptyState
           title={error ? 'Could not load problems' : 'No problems match'}

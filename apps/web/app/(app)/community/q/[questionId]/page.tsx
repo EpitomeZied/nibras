@@ -69,9 +69,7 @@ export default function QuestionPage() {
   async function handleAccept(answerId: string) {
     try {
       await acceptAnswer(answerId);
-      setAnswers((prev) =>
-        prev.map((a) => ({ ...a, accepted: a.id === answerId }))
-      );
+      setAnswers((prev) => prev.map((a) => ({ ...a, accepted: a.id === answerId })));
       setQuestion((q) => (q ? { ...q, acceptedAnswerId: answerId } : q));
     } catch (err) {
       setError(friendlyMessage(err));
@@ -97,7 +95,14 @@ export default function QuestionPage() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <div style={{ height: 200, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 200,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       </div>
     );
   }
@@ -146,12 +151,17 @@ export default function QuestionPage() {
               </span>
             ))}
           </div>
-          <div className={styles.markdown} dangerouslySetInnerHTML={{ __html: renderMarkdown(question.body) }} />
+          <div
+            className={styles.markdown}
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(question.body) }}
+          />
         </div>
         <div className={styles.authorCard}>
           <span className={styles.authorName}>{question.author.username}</span>
           <span>{formatTimestamp(question.createdAt)}</span>
-          {question.author.reputation !== undefined && <span>{question.author.reputation} rep</span>}
+          {question.author.reputation !== undefined && (
+            <span>{question.author.reputation} rep</span>
+          )}
         </div>
       </article>
 
@@ -169,8 +179,7 @@ export default function QuestionPage() {
         />
       ) : (
         sortedAnswers.map((answer) => {
-          const accepted =
-            answer.accepted || question.acceptedAnswerId === answer.id;
+          const accepted = answer.accepted || question.acceptedAnswerId === answer.id;
           return (
             <article
               key={answer.id}
@@ -183,9 +192,7 @@ export default function QuestionPage() {
                   const result = await voteAnswer(answer.id, direction);
                   setAnswers((prev) =>
                     prev.map((a) =>
-                      a.id === answer.id
-                        ? { ...a, score: result.score, myVote: result.myVote }
-                        : a
+                      a.id === answer.id ? { ...a, score: result.score, myVote: result.myVote } : a
                     )
                   );
                   return result;
@@ -196,12 +203,21 @@ export default function QuestionPage() {
                 {accepted && (
                   <span className={styles.acceptedBadge}>
                     <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-                      <path d="M2 5.5L4.5 8l4.5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M2 5.5L4.5 8l4.5-5"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                     Accepted
                   </span>
                 )}
-                <div className={styles.markdown} dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.body) }} />
+                <div
+                  className={styles.markdown}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.body) }}
+                />
                 {!accepted && !question.acceptedAnswerId && user?.id === question.author.userId && (
                   <button
                     type="button"
@@ -231,14 +247,20 @@ export default function QuestionPage() {
             placeholder="Explain the approach, share code, and link references…"
           />
           <div className={styles.composerActions}>
-            <button type="submit" className={styles.submitBtn} disabled={submitting || !draft.trim()}>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={submitting || !draft.trim()}
+            >
               {submitting ? 'Posting…' : 'Post answer'}
             </button>
           </div>
         </form>
       ) : (
         <div className={styles.composer}>
-          <Link href="/connect" className={styles.submitBtn}>Sign in to answer</Link>
+          <Link href="/connect" className={styles.submitBtn}>
+            Sign in to answer
+          </Link>
         </div>
       )}
     </div>

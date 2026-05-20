@@ -80,9 +80,7 @@ export default function ChatPanel({
               } ${message.pending ? styles.pendingMessage : ''}`}
             >
               <header className={styles.messageHeader}>
-                <span className={styles.role}>
-                  {message.role === 'user' ? 'You' : 'Tutor'}
-                </span>
+                <span className={styles.role}>{message.role === 'user' ? 'You' : 'Tutor'}</span>
                 {message.pending && <span className={styles.pendingPill}>thinking…</span>}
                 {message.error && <span className={styles.errorPill}>error</span>}
               </header>
@@ -136,7 +134,9 @@ export default function ChatPanel({
           disabled={busy}
         />
         <div className={styles.composerFooter}>
-          <span className={styles.hint}>{composerHint ?? 'Enter to send · Shift+Enter for newline'}</span>
+          <span className={styles.hint}>
+            {composerHint ?? 'Enter to send · Shift+Enter for newline'}
+          </span>
           <button type="submit" className={styles.sendBtn} disabled={!draft.trim() || busy}>
             Send
           </button>

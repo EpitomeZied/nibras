@@ -165,7 +165,9 @@
   padding: 4px 10px;
   border-radius: 999px;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .followUpChip:hover {

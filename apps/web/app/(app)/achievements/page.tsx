@@ -115,17 +115,34 @@ export default function AchievementsPage() {
       <header className={styles.header}>
         <div>
           <h1 className={styles.title}>Achievements</h1>
-          <p className={styles.subtitle}>Track the badges you've earned and the ones still ahead.</p>
+          <p className={styles.subtitle}>
+            Track the badges you&apos;ve earned and the ones still ahead.
+          </p>
         </div>
       </header>
 
       <div className={styles.summary}>
-        <StatTile label="Badges Earned" value={earned.length} icon={TrophyIcon} caption={`of ${badges.length}`} />
+        <StatTile
+          label="Badges Earned"
+          value={earned.length}
+          icon={TrophyIcon}
+          caption={`of ${badges.length}`}
+        />
         <StatTile
           label="Reputation"
           value={reputation?.total ?? '—'}
-          delta={reputation?.weeklyDelta ? `${reputation.weeklyDelta >= 0 ? '+' : ''}${reputation.weeklyDelta} this week` : undefined}
-          trend={reputation?.weeklyDelta && reputation.weeklyDelta > 0 ? 'up' : reputation?.weeklyDelta && reputation.weeklyDelta < 0 ? 'down' : 'flat'}
+          delta={
+            reputation?.weeklyDelta
+              ? `${reputation.weeklyDelta >= 0 ? '+' : ''}${reputation.weeklyDelta} this week`
+              : undefined
+          }
+          trend={
+            reputation?.weeklyDelta && reputation.weeklyDelta > 0
+              ? 'up'
+              : reputation?.weeklyDelta && reputation.weeklyDelta < 0
+                ? 'down'
+                : 'flat'
+          }
           icon={SparkleIcon}
         />
         <StatTile

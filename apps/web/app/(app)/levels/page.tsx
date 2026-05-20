@@ -92,9 +92,7 @@ export default function LevelsPage() {
               <div className={styles.progressMeta}>
                 <span>{next ? `Next: ${next.label}` : 'Max tier reached'}</span>
                 <span>
-                  {next
-                    ? `${(next.threshold - total).toLocaleString()} to go`
-                    : 'Legendary status'}
+                  {next ? `${(next.threshold - total).toLocaleString()} to go` : 'Legendary status'}
                 </span>
               </div>
               <div className={styles.progressTrack}>

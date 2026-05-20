@@ -12,10 +12,7 @@ import { ApiError } from '../api-clients/errors';
  * tolerant of the backend renaming `/contests/{id}/reminder` →
  * `/user-contests/{id}/reminder` → `/user/contests/{id}/reminder` over time.
  */
-async function fetchFirstAvailable<T>(
-  paths: string[],
-  init: ServiceFetchInit = {}
-): Promise<T> {
+async function fetchFirstAvailable<T>(paths: string[], init: ServiceFetchInit = {}): Promise<T> {
   let lastError: unknown = null;
   for (const path of paths) {
     try {
@@ -94,40 +91,35 @@ export async function listContests(filters: { upcoming?: boolean; host?: string 
 
 export async function setContestReminder(contestId: string, on: boolean) {
   return fetchFirstAvailable<{ reminderSet: boolean }>(
-    [
-      `/v1/user-contests/${contestId}/reminder`,
-    ],
+    [`/v1/user-contests/${contestId}/reminder`],
     { method: 'POST', auth: true, body: { on } }
   );
 }
 
 export async function setContestBookmark(contestId: string, on: boolean) {
-  return fetchFirstAvailable<{ bookmarked: boolean }>(
-    [
-      `/v1/user-contests/${contestId}/bookmark`,
-    ],
-    { method: 'POST', auth: true, body: { on } }
-  );
+  return fetchFirstAvailable<{ bookmarked: boolean }>([`/v1/user-contests/${contestId}/bookmark`], {
+    method: 'POST',
+    auth: true,
+    body: { on },
+  });
 }
 
 // ── Practice problems ───────────────────────────────────────────────────────
-export async function listProblems(filters: {
-  tag?: string;
-  difficultyMin?: number;
-  difficultyMax?: number;
-  host?: string;
-  q?: string;
-  page?: number;
-  limit?: number;
-} = {}) {
-  return serviceFetch<{ items: PracticeProblem[]; total: number }>(
-    'competitions',
-    '/v1/problems',
-    {
-      auth: true,
-      query: filters as Record<string, string | number>,
-    }
-  );
+export async function listProblems(
+  filters: {
+    tag?: string;
+    difficultyMin?: number;
+    difficultyMax?: number;
+    host?: string;
+    q?: string;
+    page?: number;
+    limit?: number;
+  } = {}
+) {
+  return serviceFetch<{ items: PracticeProblem[]; total: number }>('competitions', '/v1/problems', {
+    auth: true,
+    query: filters as Record<string, string | number>,
+  });
 }
 
 // Invented by the port: legacy dashboard doesn't expose problem bookmarks.
@@ -200,12 +192,8 @@ export async function linkAccount(payload: { host: string; handle: string; token
 
 // Invented by the port: legacy dashboard has no unlink endpoint.
 export async function unlinkAccount(host: string): Promise<{ unlinked: true } | null> {
-  return serviceFetchOptional<{ unlinked: true }>(
-    'competitions',
-    `/v1/contests/accounts/${host}`,
-    {
-      method: 'DELETE',
-      auth: true,
-    }
-  );
+  return serviceFetchOptional<{ unlinked: true }>('competitions', `/v1/contests/accounts/${host}`, {
+    method: 'DELETE',
+    auth: true,
+  });
 }
