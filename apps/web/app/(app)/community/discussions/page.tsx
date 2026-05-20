@@ -123,9 +123,15 @@ export default function DiscussionsPage() {
             Long-form threads scoped to your courses — announcements, study groups, project chatter.
           </p>
         </div>
-        <button type="button" className={styles.startBtn} disabled={!courseId} onClick={() => setThreadOpen(true)}>
-          Start a thread
-        </button>
+        {user ? (
+          <button type="button" className={styles.startBtn} disabled={!courseId} onClick={() => setThreadOpen(true)}>
+            Start a thread
+          </button>
+        ) : (
+          <Link href="/connect" className={styles.startBtn}>
+            Sign in to post
+          </Link>
+        )}
       </header>
 
       {threadOpen && (
