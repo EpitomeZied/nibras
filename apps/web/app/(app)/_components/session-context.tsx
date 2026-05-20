@@ -2,6 +2,7 @@
 import React, { createContext, useContext } from 'react';
 
 export interface ShellUser {
+  id: string;
   username: string;
   email: string;
   githubLogin: string | null;

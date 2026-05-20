@@ -93,10 +93,6 @@ export function registerCommunityRoutes(
         reply.code(404).send(Errors.notFound('Question'));
         return;
       }
-      await prisma.communityQuestion.update({
-        where: { id: questionId },
-        data: { viewCount: { increment: 1 } },
-      });
       return {
         question: {
           ...question,
@@ -124,22 +120,24 @@ export function registerCommunityRoutes(
         return;
       }
       const tags = body.tags ?? [];
-      const question = await prisma.communityQuestion.create({
-        data: {
-          authorId: auth.user.id,
-          title: body.title.trim(),
-          body: body.body.trim(),
-          tags,
-        },
-        include: { author: { select: authorSelect } },
-      });
-      for (const tag of tags) {
-        await prisma.communityTag.upsert({
-          where: { name: tag },
-          create: { name: tag, usageCount: 1 },
-          update: { usageCount: { increment: 1 } },
-        });
-      }
+      const [question] = await prisma.$transaction([
+        prisma.communityQuestion.create({
+          data: {
+            authorId: auth.user.id,
+            title: body.title.trim(),
+            body: body.body.trim(),
+            tags,
+          },
+          include: { author: { select: authorSelect } },
+        }),
+        ...tags.map((tag) =>
+          prisma.communityTag.upsert({
+            where: { name: tag },
+            create: { name: tag, usageCount: 1 },
+            update: { usageCount: { increment: 1 } },
+          })
+        ),
+      ]);
       reply.code(201);
       return { question: { ...question, _id: question.id, author: presentAuthor(question.author) } };
     }

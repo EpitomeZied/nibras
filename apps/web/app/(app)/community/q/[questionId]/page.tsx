@@ -17,6 +17,7 @@ import {
   type CommunityQuestion,
 } from '../../../../lib/services/community';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
+import { useSession } from '../../../_components/session-context';
 
 function formatTimestamp(iso: string): string {
   try {
@@ -29,6 +30,7 @@ function formatTimestamp(iso: string): string {
 export default function QuestionPage() {
   const params = useParams<{ questionId: string }>();
   const questionId = params?.questionId ?? '';
+  const { user } = useSession();
   const [question, setQuestion] = useState<CommunityQuestion | null>(null);
   const [answers, setAnswers] = useState<CommunityAnswer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -200,7 +202,7 @@ export default function QuestionPage() {
                   </span>
                 )}
                 <p className={styles.markdown}>{answer.body}</p>
-                {!accepted && !question.acceptedAnswerId && (
+                {!accepted && !question.acceptedAnswerId && user?.id === question.author.userId && (
                   <button
                     type="button"
                     className={styles.acceptBtn}
