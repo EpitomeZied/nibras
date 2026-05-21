@@ -3,6 +3,7 @@ import { PrismaClient, CompPlatform } from '@prisma/client';
 import { requireUser, optionalUser } from '../../lib/auth';
 import { AppStore } from '../../store';
 import { enqueueCompetitionsJob } from '../../lib/competitions-queue';
+import { fetchers } from './fetchers/index';
 
 export function registerCompetitionsRoutes(
   app: FastifyInstance,
@@ -509,6 +510,65 @@ export function registerCompetitionsRoutes(
       });
 
       return { syncing: true };
+    }
+  );
+
+  app.post(
+    '/v1/contests/accounts/:host/verify',
+    { schema: { tags: ['competitions'], summary: 'Verify account ownership' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const { host } = request.params as { host: string };
+
+      const account = await prisma.linkedAccount.findUnique({
+        where: { userId_platform: { userId: auth.user.id, platform: host as CompPlatform } },
+      });
+
+      if (!account) {
+        return reply.status(404).send({ error: 'Account not found' });
+      }
+
+      const fetcher = fetchers[host];
+      if (!fetcher) {
+        return reply.status(400).send({ error: 'Unknown platform' });
+      }
+
+      let verified = false;
+      if (fetcher.verifyOwnership) {
+        const result = await fetcher.verifyOwnership(account.handle);
+        verified = result.verified;
+      } else {
+        const result = await fetcher.verifyHandle(account.handle);
+        verified = result.valid;
+      }
+
+      if (verified) {
+        const handleInfo = await fetcher.verifyHandle(account.handle);
+        await prisma.linkedAccount.update({
+          where: { id: account.id },
+          data: {
+            verificationStatus: 'verified',
+            verifiedAt: new Date(),
+            platformRating: handleInfo.rating ?? null,
+            platformMaxRating: handleInfo.maxRating ?? null,
+          },
+        });
+
+        await enqueueCompetitionsJob({
+          type: 'account-stats-sync',
+        });
+
+        return {
+          verified: true,
+          host: account.platform,
+          handle: account.handle,
+          rating: handleInfo.rating,
+          maxRating: handleInfo.maxRating,
+        };
+      }
+
+      return { verified: false };
     }
   );
 }

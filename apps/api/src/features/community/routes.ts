@@ -652,6 +652,8 @@ export function registerCommunityRoutes(
 
   // ── Chatbot ─────────────────────────────────────────────────────────────
 
+  const CHATBOT_V1_URL = process.env.CHATBOT_V1_URL || '';
+
   app.post(
     '/v1/community/chatbot/ask',
     { schema: { tags: ['community'], summary: 'Ask the AI tutor' } },
@@ -663,12 +665,52 @@ export function registerCommunityRoutes(
         reply.code(400).send(Errors.validation('Question is required.'));
         return;
       }
-      return {
-        answer: `I'm the Nibras AI tutor. You asked: "${body.question}". This feature is being set up — please check back soon.`,
-        citations: [],
-        followUps: [],
-        placeholder: true,
-      };
+      if (!CHATBOT_V1_URL) {
+        reply.code(503).send(Errors.unavailable('AI Tutor service is not configured.'));
+        return;
+      }
+      try {
+        const resp = await fetch(`${CHATBOT_V1_URL}/api/ask`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: body.question }),
+          signal: AbortSignal.timeout(30000),
+        });
+        if (!resp.ok) {
+          const text = await resp.text().catch(() => '');
+          reply
+            .code(502)
+            .send(
+              Errors.unavailable(`AI Tutor service returned ${resp.status}: ${text.slice(0, 200)}`)
+            );
+          return;
+        }
+        const chatBotResponse = (await resp.json()) as {
+          type?: string;
+          data?: {
+            answer?: string;
+            hints?: string[];
+            tags?: string[];
+            question_id?: string;
+            question?: string;
+          };
+          message?: string;
+        };
+        if (chatBotResponse.type === 'refused') {
+          reply.code(403).send(Errors.forbidden());
+          return;
+        }
+        const data = chatBotResponse.data;
+        return {
+          finalAnswer: data?.answer || '',
+          hints: data?.hints || [],
+          tags: data?.tags || [],
+          communityQuestion: data?.question_id || null,
+        };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        reply.code(502).send(Errors.unavailable(`AI Tutor request failed: ${message}`));
+      }
     }
   );
 

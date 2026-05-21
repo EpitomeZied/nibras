@@ -36,4 +36,5 @@ export type PlatformFetcher = {
   fetchProblems(): Promise<RawProblem[]>;
   verifyHandle(handle: string): Promise<{ valid: boolean; rating?: number; maxRating?: number }>;
   fetchUserStats(handle: string): Promise<RawUserStats>;
+  verifyOwnership?(handle: string): Promise<{ verified: boolean }>;
 };

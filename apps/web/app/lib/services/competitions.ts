@@ -207,6 +207,24 @@ export async function unlinkAccount(host: string): Promise<{ unlinked: true } | 
   });
 }
 
+export async function verifyAccount(host: string): Promise<{
+  verified: boolean;
+  handle?: string;
+  rating?: number;
+  maxRating?: number;
+}> {
+  const data = await serviceFetch<{
+    verified: boolean;
+    handle?: string;
+    rating?: number;
+    maxRating?: number;
+  }>('competitions', `/v1/contests/accounts/${host}/verify`, {
+    method: 'POST',
+    auth: true,
+  });
+  return data;
+}
+
 export async function resyncAccount(host: string): Promise<{ syncing: boolean } | null> {
   return serviceFetchOptional<{ syncing: boolean }>(
     'competitions',

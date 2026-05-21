@@ -37,6 +37,7 @@ type CfProblem = {
 
 type CfSubmission = {
   id: number;
+  creationTimeSeconds: number;
   problem: CfProblem;
   verdict?: string;
 };
@@ -97,6 +98,25 @@ export const codeforcesFetcher: PlatformFetcher = {
       return { valid: true, rating: user?.rating, maxRating: user?.maxRating };
     } catch {
       return { valid: false };
+    }
+  },
+
+  async verifyOwnership(handle: string): Promise<{ verified: boolean }> {
+    try {
+      const submissions = await cfGet<CfSubmission[]>(
+        `/user.status?handle=${encodeURIComponent(handle)}&from=1&count=15`
+      );
+      const fiveMinAgo = Math.floor(Date.now() / 1000) - 5 * 60;
+      const found = submissions.some(
+        (s) =>
+          s.problem.contestId === 844 &&
+          s.problem.index === 'A' &&
+          s.verdict === 'COMPILATION_ERROR' &&
+          s.creationTimeSeconds > fiveMinAgo
+      );
+      return { verified: found };
+    } catch {
+      return { verified: false };
     }
   },
 
