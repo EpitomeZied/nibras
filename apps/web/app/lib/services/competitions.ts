@@ -78,6 +78,13 @@ export type ContestHistoryEntry = {
   ratingAfter: number;
 };
 
+export type VerificationProblem = {
+  contestId: number;
+  index: string;
+  name: string;
+  url: string;
+};
+
 export type LinkedAccount = {
   host: 'codeforces' | 'leetcode' | 'atcoder' | 'codechef' | 'vjudge' | string;
   handle: string;
@@ -87,6 +94,7 @@ export type LinkedAccount = {
   maxRating?: number;
   lastSyncAt?: string;
   linkedAt?: string;
+  verificationProblem?: VerificationProblem | null;
 };
 
 // ── Contests ────────────────────────────────────────────────────────────────

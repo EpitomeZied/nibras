@@ -17,6 +17,7 @@ import {
   verifyAccount,
   type Contest,
   type LinkedAccount,
+  type VerificationProblem,
 } from '../../lib/services/competitions';
 import { friendlyMessage } from '../../lib/api-clients/errors';
 
@@ -105,6 +106,7 @@ export default function CompetitionsPage() {
     rating?: number;
     maxRating?: number;
   } | null>(null);
+  const [verifyProblem, setVerifyProblem] = useState<VerificationProblem | null>(null);
   const [copied, setCopied] = useState(false);
 
   const timerActive = linkStep === 'cf-verify';
@@ -120,6 +122,7 @@ export default function CompetitionsPage() {
     setLinkError(null);
     setLinkSubmitting(false);
     setVerifyResult(null);
+    setVerifyProblem(null);
     setCopied(false);
     setLinkModal(true);
   }
@@ -137,6 +140,7 @@ export default function CompetitionsPage() {
       setAccounts((prev) => [...prev.filter((a) => a.host !== created.host), created]);
 
       if (linkHost === 'codeforces') {
+        if (created.verificationProblem) setVerifyProblem(created.verificationProblem);
         setLinkStep('cf-verify');
       } else {
         setLinkStep('simple-verify');
@@ -190,8 +194,11 @@ export default function CompetitionsPage() {
         );
         setLinkStep('success');
       } else {
+        const pLabel = verifyProblem
+          ? `Problem ${verifyProblem.contestId}${verifyProblem.index}`
+          : 'the assigned problem';
         setLinkError(
-          'No recent compilation error found on Problem 844A. Make sure you submitted and try again.'
+          `No recent compilation error found on ${pLabel}. Make sure you submitted and try again.`
         );
       }
     } catch (err) {
@@ -508,12 +515,18 @@ export default function CompetitionsPage() {
                         Copy the code below or any other code that gives a compilation error and
                         submit it to{' '}
                         <a
-                          href="https://codeforces.com/problemset/problem/844/A"
+                          href={
+                            verifyProblem?.url ?? 'https://codeforces.com/problemset/problem/4/A'
+                          }
                           target="_blank"
                           rel="noopener noreferrer"
                           className={styles.stepLink}
                         >
-                          Problem 844A
+                          Problem{' '}
+                          {verifyProblem
+                            ? `${verifyProblem.contestId}${verifyProblem.index}`
+                            : '4A'}{' '}
+                          — {verifyProblem?.name ?? 'Watermelon'}
                         </a>{' '}
                         on Codeforces. Make sure you&apos;re logged in as{' '}
                         <strong>{linkHandle}</strong>. Click the problem link, go to Submit tab,

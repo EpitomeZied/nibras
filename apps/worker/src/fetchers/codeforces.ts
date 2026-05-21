@@ -101,18 +101,27 @@ export const codeforcesFetcher: PlatformFetcher = {
     }
   },
 
-  async verifyOwnership(handle: string): Promise<{ verified: boolean }> {
+  async verifyOwnership(handle: string, problemSpec?: string): Promise<{ verified: boolean }> {
     try {
       const submissions = await cfGet<CfSubmission[]>(
         `/user.status?handle=${encodeURIComponent(handle)}&from=1&count=15`
       );
-      const fiveMinAgo = Math.floor(Date.now() / 1000) - 5 * 60;
+      const twoMinAgo = Math.floor(Date.now() / 1000) - 2 * 60;
+
+      let contestId = 4;
+      let index = 'A';
+      if (problemSpec) {
+        const parts = problemSpec.split('/');
+        contestId = parseInt(parts[0], 10);
+        index = parts[1] ?? 'A';
+      }
+
       const found = submissions.some(
         (s) =>
-          s.problem.contestId === 844 &&
-          s.problem.index === 'A' &&
+          s.problem.contestId === contestId &&
+          s.problem.index === index &&
           s.verdict === 'COMPILATION_ERROR' &&
-          s.creationTimeSeconds > fiveMinAgo
+          s.creationTimeSeconds > twoMinAgo
       );
       return { verified: found };
     } catch {

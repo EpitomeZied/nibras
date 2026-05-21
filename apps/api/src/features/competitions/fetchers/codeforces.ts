@@ -56,6 +56,23 @@ type CfUserInfo = {
   maxRating?: number;
 };
 
+const VERIFY_PROBLEMS = [
+  { contestId: 1, index: 'A', name: 'Theatre Square' },
+  { contestId: 4, index: 'A', name: 'Watermelon' },
+  { contestId: 71, index: 'A', name: 'Way Too Long Words' },
+  { contestId: 158, index: 'A', name: 'Next Round' },
+  { contestId: 231, index: 'A', name: 'Team' },
+  { contestId: 263, index: 'A', name: 'Beautiful Matrix' },
+  { contestId: 282, index: 'A', name: 'Bit++' },
+  { contestId: 339, index: 'A', name: 'Helpful Maths' },
+  { contestId: 469, index: 'A', name: 'I Wanna Be the Guy' },
+  { contestId: 546, index: 'A', name: 'Soldier and Bananas' },
+];
+
+export function pickVerificationProblem() {
+  return VERIFY_PROBLEMS[Math.floor(Math.random() * VERIFY_PROBLEMS.length)];
+}
+
 export const codeforcesFetcher: PlatformFetcher = {
   async fetchContests(): Promise<RawContest[]> {
     const contests = await cfGet<CfContest[]>('/contest.list');
@@ -101,18 +118,27 @@ export const codeforcesFetcher: PlatformFetcher = {
     }
   },
 
-  async verifyOwnership(handle: string): Promise<{ verified: boolean }> {
+  async verifyOwnership(handle: string, problemSpec?: string): Promise<{ verified: boolean }> {
     try {
       const submissions = await cfGet<CfSubmission[]>(
         `/user.status?handle=${encodeURIComponent(handle)}&from=1&count=15`
       );
-      const fiveMinAgo = Math.floor(Date.now() / 1000) - 5 * 60;
+      const twoMinAgo = Math.floor(Date.now() / 1000) - 2 * 60;
+
+      let contestId = 4;
+      let index = 'A';
+      if (problemSpec) {
+        const parts = problemSpec.split('/');
+        contestId = parseInt(parts[0], 10);
+        index = parts[1] ?? 'A';
+      }
+
       const found = submissions.some(
         (s) =>
-          s.problem.contestId === 844 &&
-          s.problem.index === 'A' &&
+          s.problem.contestId === contestId &&
+          s.problem.index === index &&
           s.verdict === 'COMPILATION_ERROR' &&
-          s.creationTimeSeconds > fiveMinAgo
+          s.creationTimeSeconds > twoMinAgo
       );
       return { verified: found };
     } catch {

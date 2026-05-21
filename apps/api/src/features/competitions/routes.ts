@@ -4,6 +4,7 @@ import { requireUser, optionalUser } from '../../lib/auth';
 import { AppStore } from '../../store';
 import { enqueueCompetitionsJob } from '../../lib/competitions-queue';
 import { fetchers } from './fetchers/index';
+import { pickVerificationProblem } from './fetchers/codeforces';
 
 export function registerCompetitionsRoutes(
   app: FastifyInstance,
@@ -448,17 +449,18 @@ export function registerCompetitionsRoutes(
       const platform = body.platform as CompPlatform;
       const handle = body.handle.trim();
 
+      let verificationProblem: string | null = null;
+      let verificationProblemMeta: { contestId: number; index: string; name: string } | null = null;
+      if (platform === 'codeforces') {
+        const picked = pickVerificationProblem();
+        verificationProblem = `${picked.contestId}/${picked.index}`;
+        verificationProblemMeta = picked;
+      }
+
       const account = await prisma.linkedAccount.upsert({
         where: { userId_platform: { userId: auth.user.id, platform } },
-        create: { userId: auth.user.id, platform, handle },
-        update: { handle, verificationStatus: 'pending', verifiedAt: null },
-      });
-
-      await enqueueCompetitionsJob({
-        type: 'account-verify',
-        userId: auth.user.id,
-        platform,
-        handle,
+        create: { userId: auth.user.id, platform, handle, verificationProblem },
+        update: { handle, verificationStatus: 'pending', verifiedAt: null, verificationProblem },
       });
 
       return {
@@ -466,6 +468,14 @@ export function registerCompetitionsRoutes(
         handle: account.handle,
         verified: false,
         linkedAt: account.createdAt.toISOString(),
+        verificationProblem: verificationProblemMeta
+          ? {
+              contestId: verificationProblemMeta.contestId,
+              index: verificationProblemMeta.index,
+              name: verificationProblemMeta.name,
+              url: `https://codeforces.com/problemset/problem/${verificationProblemMeta.contestId}/${verificationProblemMeta.index}`,
+            }
+          : null,
       };
     }
   );
@@ -536,7 +546,10 @@ export function registerCompetitionsRoutes(
 
       let verified = false;
       if (fetcher.verifyOwnership) {
-        const result = await fetcher.verifyOwnership(account.handle);
+        const result = await fetcher.verifyOwnership(
+          account.handle,
+          account.verificationProblem ?? undefined
+        );
         verified = result.verified;
       } else {
         const result = await fetcher.verifyHandle(account.handle);
