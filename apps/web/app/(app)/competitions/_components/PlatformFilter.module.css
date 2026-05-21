@@ -1,0 +1,30 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.chip {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--primary, #22c55e);
+  color: var(--text);
+}
+
+.chipActive {
+  background: color-mix(in oklab, var(--primary, #22c55e) 18%, transparent);
+  border-color: var(--primary, #22c55e);
+  color: var(--primary, #22c55e);
+}
