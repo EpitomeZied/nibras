@@ -211,6 +211,13 @@ model User {
   communityVotes           CommunityVote[]     @relation("CommunityVoteUser")
   communityThreads         CommunityThread[]   @relation("CommunityThreadAuthor")
   communityPosts           CommunityPost[]     @relation("CommunityPostAuthor")
+  contestBookmarks         ContestBookmark[]
+  contestReminders         ContestReminder[]
+  problemBookmarks         ProblemBookmark[]
+  problemProgress          UserProblemProgress[]
+  linkedAccounts           LinkedAccount[]
+  contestParticipations    UserContestParticipation[]
+  cachedRankings           CachedRanking[]
 
   @@index([systemRole])
   @@index([yearLevel])
@@ -1063,4 +1070,183 @@ model CommunityPost {
 
   @@index([threadId, createdAt])
   @@index([authorId])
+}
+
+// ── Competitions ────────────────────────────────────────────────────────────
+
+enum CompPlatform {
+  codeforces
+  leetcode
+  atcoder
+  codechef
+  vjudge
+}
+
+enum AccountVerificationStatus {
+  pending
+  verified
+  failed
+}
+
+model Contest {
+  id                String       @id @default(cuid())
+  platform          CompPlatform
+  platformContestId String
+  name              String
+  url               String
+  startsAt          DateTime
+  endsAt            DateTime
+  durationMinutes   Int
+  phase             String       @default("BEFORE")
+  tags              String[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  bookmarks         ContestBookmark[]
+  reminders         ContestReminder[]
+  participations    UserContestParticipation[]
+
+  @@unique([platform, platformContestId])
+  @@index([startsAt])
+  @@index([platform, startsAt])
+}
+
+model ContestBookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  contestId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest   Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId])
+  @@index([userId])
+}
+
+model ContestReminder {
+  id            String   @id @default(cuid())
+  userId        String
+  contestId     String
+  minutesBefore Int      @default(30)
+  notified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest       Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId])
+  @@index([notified, contestId])
+}
+
+model Problem {
+  id                String       @id @default(cuid())
+  platform          CompPlatform
+  platformProblemId String
+  title             String
+  url               String
+  difficulty        Int          @default(0)
+  tags              String[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  userProgress      UserProblemProgress[]
+  bookmarks         ProblemBookmark[]
+
+  @@unique([platform, platformProblemId])
+  @@index([platform])
+  @@index([difficulty])
+}
+
+model ProblemBookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  problemId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+  @@index([userId])
+}
+
+model UserProblemProgress {
+  id        String    @id @default(cuid())
+  userId    String
+  problemId String
+  solved    Boolean   @default(false)
+  solvedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem   Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+  @@index([userId, solved])
+}
+
+model LinkedAccount {
+  id                 String                    @id @default(cuid())
+  userId             String
+  platform           CompPlatform
+  handle             String
+  verificationStatus AccountVerificationStatus @default(pending)
+  verifiedAt         DateTime?
+  platformRating     Int?
+  platformMaxRating  Int?
+  lastSyncAt         DateTime?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  user               User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@unique([platform, handle])
+  @@index([userId])
+}
+
+model UserContestParticipation {
+  id           String       @id @default(cuid())
+  userId       String
+  contestId    String
+  platform     CompPlatform
+  rank         Int?
+  participants Int?
+  ratingBefore Int?
+  ratingAfter  Int?
+  delta        Int?
+  solvedCount  Int?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest      Contest      @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId])
+  @@index([userId, platform])
+  @@index([userId, createdAt])
+}
+
+model CachedRanking {
+  id              String   @id @default(cuid())
+  userId          String
+  scope           String
+  platform        String
+  rank            Int
+  rating          Int
+  delta           Int      @default(0)
+  contestsLast30d Int      @default(0)
+  calculatedAt    DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scope, platform])
+  @@index([scope, platform, rank])
+}
+
+model CompSyncLog {
+  id           String   @id @default(cuid())
+  jobType      String
+  platform     String?
+  status       String
+  itemCount    Int      @default(0)
+  errorMessage String?
+  startedAt    DateTime
+  finishedAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([jobType, createdAt])
 }
