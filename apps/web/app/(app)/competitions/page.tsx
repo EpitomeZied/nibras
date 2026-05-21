@@ -59,7 +59,16 @@ export default function CompetitionsPage() {
   const loadCalendar = useCallback(async () => {
     try {
       const data = await getCalendarContests(calMonth, calYear);
-      setCalContests(data.days);
+      const localDays: Record<string, Contest[]> = {};
+      for (const contests of Object.values(data.days)) {
+        for (const c of contests) {
+          const d = new Date(c.startsAt);
+          const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          if (!localDays[key]) localDays[key] = [];
+          localDays[key].push(c);
+        }
+      }
+      setCalContests(localDays);
     } catch {
       // Calendar data load is non-critical
     }
@@ -71,7 +80,6 @@ export default function CompetitionsPage() {
     try {
       const [c, a] = await Promise.allSettled([
         listContests({
-          upcoming: true,
           host: platformFilter === 'all' ? undefined : platformFilter,
         }),
         getLinkedAccounts(),
@@ -336,8 +344,8 @@ export default function CompetitionsPage() {
         />
       ) : error || contests.length === 0 ? (
         <EmptyState
-          title={error ? 'Could not load contests' : 'No upcoming contests'}
-          description={error ?? 'Linked accounts will surface upcoming rounds here.'}
+          title={error ? 'Could not load contests' : 'No contests found'}
+          description={error ?? 'Contests will appear here once the sync worker runs.'}
           tone={error ? 'error' : 'default'}
           action={error ? { label: 'Retry', onClick: () => void load() } : undefined}
         />

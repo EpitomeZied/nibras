@@ -57,7 +57,10 @@ function formatTime(iso: string): string {
 }
 
 function dateKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 function MonthView({
@@ -161,14 +164,12 @@ function WeekView({
   month: number;
   contests: Record<string, Contest[]>;
 }) {
-  const today = new Date();
-  const todayKey = dateKey(today);
-
   const weekStart = useMemo(() => {
+    const now = new Date();
     const d = new Date(
       year,
       month - 1,
-      today.getMonth() + 1 === month && today.getFullYear() === year ? today.getDate() : 1
+      now.getMonth() + 1 === month && now.getFullYear() === year ? now.getDate() : 1
     );
     d.setDate(d.getDate() - d.getDay());
     return d;

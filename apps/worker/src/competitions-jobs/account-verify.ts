@@ -1,4 +1,5 @@
 import { PrismaClient, CompPlatform } from '@prisma/client';
+import { syncSingleAccount } from './account-stats-sync';
 
 type FetcherModule = {
   fetchers: Record<
@@ -41,7 +42,7 @@ export async function runAccountVerify(
   try {
     const result = await fetcher.verifyHandle(handle);
 
-    await prisma.linkedAccount.update({
+    const account = await prisma.linkedAccount.update({
       where: {
         userId_platform: { userId, platform: platform as CompPlatform },
       },
@@ -59,6 +60,27 @@ export async function runAccountVerify(
       handle,
       valid: result.valid,
     });
+
+    if (result.valid) {
+      try {
+        await syncSingleAccount(prisma, {
+          id: account.id,
+          userId,
+          platform: platform as CompPlatform,
+          handle,
+        });
+        log('info', `Immediate stats sync after verify: ${platform}/${handle}`, {
+          userId,
+          platform,
+        });
+      } catch (syncErr) {
+        const syncMsg = syncErr instanceof Error ? syncErr.message : String(syncErr);
+        log('warn', `Immediate stats sync failed (non-fatal): ${platform}/${handle}`, {
+          userId,
+          error: syncMsg,
+        });
+      }
+    }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     log('warn', `Account verify failed: ${platform}/${handle}`, {
