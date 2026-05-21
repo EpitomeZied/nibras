@@ -324,6 +324,8 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
     }
     const { closeQueue } = await import('./lib/queue');
     await closeQueue();
+    const { closeCompetitionsQueue } = await import('./lib/competitions-queue');
+    await closeCompetitionsQueue();
     if (_sharedPrisma) {
       await _sharedPrisma.$disconnect();
       _sharedPrisma = null;
@@ -338,7 +340,7 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
   registerNotificationRoutes(app, store);
   registerCommunityRoutes(app, store, getSharedPrisma());
   registerGamificationRoutes(app, store);
-  registerCompetitionsRoutes(app, store);
+  registerCompetitionsRoutes(app, store, getSharedPrisma());
   registerReputationRoutes(app, store);
   registerAnalyticsRoutes(app, store, getSharedPrisma());
 

@@ -343,14 +343,35 @@ export function registerCommunityRoutes(
         let contentTitle = '';
         let contentLink = '';
         if (targetType === 'question') {
-          const q = await prisma.communityQuestion.findUnique({ where: { id: body.targetId }, select: { authorId: true, title: true } });
-          if (q) { contentAuthorId = q.authorId; contentTitle = q.title; contentLink = `/community/q/${body.targetId}`; }
+          const q = await prisma.communityQuestion.findUnique({
+            where: { id: body.targetId },
+            select: { authorId: true, title: true },
+          });
+          if (q) {
+            contentAuthorId = q.authorId;
+            contentTitle = q.title;
+            contentLink = `/community/q/${body.targetId}`;
+          }
         } else if (targetType === 'answer') {
-          const a = await prisma.communityAnswer.findUnique({ where: { id: body.targetId }, select: { authorId: true, questionId: true } });
-          if (a) { contentAuthorId = a.authorId; contentLink = `/community/q/${a.questionId}`; contentTitle = 'your answer'; }
+          const a = await prisma.communityAnswer.findUnique({
+            where: { id: body.targetId },
+            select: { authorId: true, questionId: true },
+          });
+          if (a) {
+            contentAuthorId = a.authorId;
+            contentLink = `/community/q/${a.questionId}`;
+            contentTitle = 'your answer';
+          }
         } else if (targetType === 'post') {
-          const p = await prisma.communityPost.findUnique({ where: { id: body.targetId }, select: { authorId: true, threadId: true } });
-          if (p) { contentAuthorId = p.authorId; contentLink = `/community/discussions/${p.threadId}`; contentTitle = 'your post'; }
+          const p = await prisma.communityPost.findUnique({
+            where: { id: body.targetId },
+            select: { authorId: true, threadId: true },
+          });
+          if (p) {
+            contentAuthorId = p.authorId;
+            contentLink = `/community/discussions/${p.threadId}`;
+            contentTitle = 'your post';
+          }
         }
         if (contentAuthorId && contentAuthorId !== auth.user.id) {
           void store.createNotification(requestBaseUrl(request), contentAuthorId, {

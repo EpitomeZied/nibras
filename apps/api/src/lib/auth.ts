@@ -72,6 +72,23 @@ export async function requireUser(
   return { authKind, token, user, memberships };
 }
 
+export async function optionalUser(
+  request: FastifyRequest,
+  _reply: FastifyReply,
+  store: AppStore
+): Promise<AuthenticatedRequest['user'] | null> {
+  const apiBaseUrl = requestBaseUrl(request);
+  const bearerToken = getBearerToken(request);
+  const webSessionToken = getWebSessionToken(request);
+  const token = bearerToken || webSessionToken;
+  if (!token) return null;
+  const user = bearerToken
+    ? ((await store.getUserByToken(apiBaseUrl, token)) ??
+      (await store.getUserByWebSession(apiBaseUrl, token)))
+    : await store.getUserByWebSession(apiBaseUrl, token);
+  return user ?? null;
+}
+
 export function hasCourseRole(
   auth: AuthenticatedRequest,
   courseId: string,
