@@ -5,13 +5,6 @@ import {
 } from '../api-clients/service-fetch';
 import { ApiError } from '../api-clients/errors';
 
-/**
- * Try a list of path candidates in order, returning the first non-404 result.
- * Mirrors the legacy dashboard's `requestCompetitionsWithCompatibility` helper
- * (`nibras-student-dashboard/client/services/api.js:1800-1830`) which is
- * tolerant of the backend renaming `/contests/{id}/reminder` →
- * `/user-contests/{id}/reminder` → `/user/contests/{id}/reminder` over time.
- */
 async function fetchFirstAvailable<T>(paths: string[], init: ServiceFetchInit = {}): Promise<T> {
   let lastError: unknown = null;
   for (const path of paths) {
@@ -19,7 +12,6 @@ async function fetchFirstAvailable<T>(paths: string[], init: ServiceFetchInit = 
       return await serviceFetch<T>('competitions', path, init);
     } catch (error) {
       lastError = error;
-      // Only fall through on 404 — other errors (401/500/network) propagate.
       if (!(error instanceof ApiError) || error.status !== 404) {
         throw error;
       }
@@ -31,14 +23,28 @@ async function fetchFirstAvailable<T>(paths: string[], init: ServiceFetchInit = 
 export type Contest = {
   id: string;
   name: string;
-  host: 'codeforces' | 'leetcode' | 'atcoder' | 'nibras' | string;
+  host: 'codeforces' | 'leetcode' | 'atcoder' | 'codechef' | 'vjudge' | string;
   startsAt: string;
   endsAt: string;
   durationMinutes: number;
   url?: string;
+  phase?: string;
+  tags?: string[];
   registered?: boolean;
   reminderSet?: boolean;
   bookmarked?: boolean;
+};
+
+export type CalendarDay = {
+  [dateKey: string]: Contest[];
+};
+
+export type CalendarData = {
+  month: number;
+  year: number;
+  calendarStart: string;
+  calendarEnd: string;
+  days: CalendarDay;
 };
 
 export type PracticeProblem = {
@@ -73,19 +79,29 @@ export type ContestHistoryEntry = {
 };
 
 export type LinkedAccount = {
-  host: 'codeforces' | 'leetcode' | string;
+  host: 'codeforces' | 'leetcode' | 'atcoder' | 'codechef' | 'vjudge' | string;
   handle: string;
   verified: boolean;
+  verificationStatus?: string;
+  rating?: number;
+  maxRating?: number;
+  lastSyncAt?: string;
   linkedAt?: string;
 };
 
 // ── Contests ────────────────────────────────────────────────────────────────
-// `listContests` is anonymous in the legacy backend; matches `auth: false` so
-// `/competitions` renders even before sign-in.
+
 export async function listContests(filters: { upcoming?: boolean; host?: string } = {}) {
   return serviceFetch<Contest[]>('competitions', '/v1/contests', {
     auth: false,
     query: filters as Record<string, string | boolean>,
+  });
+}
+
+export async function getCalendarContests(month: number, year: number) {
+  return serviceFetch<CalendarData>('competitions', '/v1/contests/calendar', {
+    auth: false,
+    query: { month: String(month), year: String(year) },
   });
 }
 
@@ -105,6 +121,7 @@ export async function setContestBookmark(contestId: string, on: boolean) {
 }
 
 // ── Practice problems ───────────────────────────────────────────────────────
+
 export async function listProblems(
   filters: {
     tag?: string;
@@ -114,6 +131,7 @@ export async function listProblems(
     q?: string;
     page?: number;
     limit?: number;
+    solved?: string;
   } = {}
 ) {
   return serviceFetch<{ items: PracticeProblem[]; total: number }>('competitions', '/v1/problems', {
@@ -122,10 +140,6 @@ export async function listProblems(
   });
 }
 
-// Invented by the port: legacy dashboard doesn't expose problem bookmarks.
-// Optional variant swallows 404 so the UI can hide the affordance silently.
-// Returns the optimistic `on` value when the endpoint is unavailable so the
-// caller can continue without crashing on `null`.
 export async function setProblemBookmark(
   problemId: string,
   on: boolean
@@ -133,41 +147,38 @@ export async function setProblemBookmark(
   const data = await serviceFetchOptional<{ bookmarked: boolean }>(
     'competitions',
     `/v1/problems/${problemId}/bookmark`,
-    {
-      method: 'POST',
-      auth: true,
-      body: { on },
-    }
+    { method: 'POST', auth: true, body: { on } }
   );
   return data ?? { bookmarked: on };
 }
 
 // ── Ranking ─────────────────────────────────────────────────────────────────
-// Invented endpoint — degrades to empty list when backend returns 404.
-export async function getRanking(host?: string): Promise<RankingEntry[]> {
+
+export async function getRanking(host?: string, scope?: string): Promise<RankingEntry[]> {
+  const query: Record<string, string> = {};
+  if (host) query.host = host;
+  if (scope) query.scope = scope;
   const data = await serviceFetchOptional<RankingEntry[]>('competitions', '/v1/ranking', {
     auth: true,
-    query: host ? { host } : undefined,
+    query: Object.keys(query).length > 0 ? query : undefined,
   });
   return data ?? [];
 }
 
 // ── History ─────────────────────────────────────────────────────────────────
+
 export async function getMyHistory(host?: string): Promise<ContestHistoryEntry[]> {
   const query = host ? { host } : undefined;
-  for (const path of ['/v1/user-contests/history']) {
-    const data = await serviceFetchOptional<ContestHistoryEntry[]>('competitions', path, {
-      auth: true,
-      query,
-    });
-    if (data) return data;
-  }
-  return [];
+  const data = await serviceFetchOptional<ContestHistoryEntry[]>(
+    'competitions',
+    '/v1/user-contests/history',
+    { auth: true, query }
+  );
+  return data ?? [];
 }
 
 // ── Linked accounts ─────────────────────────────────────────────────────────
-// Legacy backend has no GET list endpoint — only verify-flow POSTs. Degrade
-// to empty so the chips section just renders empty.
+
 export async function getLinkedAccounts(): Promise<LinkedAccount[]> {
   const data = await serviceFetchOptional<LinkedAccount[]>(
     'competitions',
@@ -181,7 +192,6 @@ export async function linkAccount(payload: { host: string; handle: string; token
   return serviceFetch<LinkedAccount>('competitions', '/v1/contests/accounts/link', {
     method: 'POST',
     auth: true,
-    // Legacy contract uses `platform`, not `host`.
     body: {
       platform: payload.host,
       handle: payload.handle,
@@ -190,10 +200,17 @@ export async function linkAccount(payload: { host: string; handle: string; token
   });
 }
 
-// Invented by the port: legacy dashboard has no unlink endpoint.
 export async function unlinkAccount(host: string): Promise<{ unlinked: true } | null> {
   return serviceFetchOptional<{ unlinked: true }>('competitions', `/v1/contests/accounts/${host}`, {
     method: 'DELETE',
     auth: true,
   });
+}
+
+export async function resyncAccount(host: string): Promise<{ syncing: boolean } | null> {
+  return serviceFetchOptional<{ syncing: boolean }>(
+    'competitions',
+    `/v1/contests/accounts/${host}/resync`,
+    { method: 'POST', auth: true }
+  );
 }

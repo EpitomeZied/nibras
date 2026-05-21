@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
 import Sparkline from '../../_components/widgets/Sparkline';
+import PlatformFilter from '../_components/PlatformFilter';
 import { getMyHistory, type ContestHistoryEntry } from '../../../lib/services/competitions';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 
@@ -20,6 +21,7 @@ function formatDate(iso: string): string {
 }
 
 export default function HistoryPage() {
+  const [host, setHost] = useState('all');
   const [entries, setEntries] = useState<ContestHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,13 +30,13 @@ export default function HistoryPage() {
     setLoading(true);
     setError(null);
     try {
-      setEntries(await getMyHistory());
+      setEntries(await getMyHistory(host === 'all' ? undefined : host));
     } catch (err) {
       setError(friendlyMessage(err));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [host]);
 
   useEffect(() => {
     void load();
@@ -54,6 +56,8 @@ export default function HistoryPage() {
           Your past contest performance — rank, rating delta, and trend.
         </p>
       </header>
+
+      <PlatformFilter selected={host} onChange={setHost} />
 
       {loading ? (
         <div
@@ -92,7 +96,7 @@ export default function HistoryPage() {
                   <th>Contest</th>
                   <th>Date</th>
                   <th className={styles.numeric}>Rank</th>
-                  <th className={styles.numeric}>Δ</th>
+                  <th className={styles.numeric}>Delta</th>
                   <th className={styles.numeric}>Rating</th>
                 </tr>
               </thead>

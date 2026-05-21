@@ -19,6 +19,7 @@ import {
 } from '@nibras/grading';
 import { runSandboxed } from './sandbox';
 import { VERIFICATION_QUEUE_NAME, parseRedisUrl, type VerificationJobPayload } from './queue';
+import { COMPETITIONS_QUEUE_NAME, type CompetitionsJobPayload } from './competitions-queue';
 import { sendSubmissionStatusEmail, sendReviewReadyEmail } from './email';
 import {
   MAX_CLAIM_AGE_MS,
@@ -27,6 +28,12 @@ import {
   MAX_STUDENT_LEVEL,
   GIT_CLONE_TIMEOUT_MS,
 } from './constants';
+import { runContestSync } from './competitions-jobs/contest-sync';
+import { runProblemSync } from './competitions-jobs/problem-sync';
+import { runAccountVerify } from './competitions-jobs/account-verify';
+import { runAccountStatsSync } from './competitions-jobs/account-stats-sync';
+import { runRankingCalc } from './competitions-jobs/ranking-calc';
+import { runContestReminder } from './competitions-jobs/contest-reminder';
 
 const execFileAsync = promisify(execFile);
 
@@ -934,12 +941,99 @@ async function main(): Promise<void> {
       if (process.env.SENTRY_DSN) Sentry.captureException(err);
     });
 
+    // ── Competitions BullMQ worker ─────────────────────────────────────────
+    const compWorker = new BullWorker<CompetitionsJobPayload>(
+      COMPETITIONS_QUEUE_NAME,
+      async (job) => {
+        const payload = job.data;
+        log('info', `Competitions job: ${payload.type}`, { jobName: payload.type });
+        switch (payload.type) {
+          case 'contest-sync':
+            await runContestSync(prisma);
+            break;
+          case 'problem-sync':
+            await runProblemSync(prisma);
+            break;
+          case 'account-verify':
+            await runAccountVerify(prisma, payload.userId, payload.platform, payload.handle);
+            break;
+          case 'account-stats-sync':
+            await runAccountStatsSync(prisma);
+            break;
+          case 'ranking-calc':
+            await runRankingCalc(prisma);
+            break;
+          case 'contest-reminder':
+            await runContestReminder(prisma);
+            break;
+        }
+      },
+      {
+        connection: parseRedisUrl(redisUrl),
+        concurrency: 1,
+      }
+    );
+
+    compWorker.on('error', (err) => {
+      log('error', 'Competitions worker error', { error: err.message });
+      if (process.env.SENTRY_DSN) Sentry.captureException(err);
+    });
+
+    // Register repeatable jobs
+    const compQueue = (await import('bullmq')).Queue;
+    const compQ = new compQueue<CompetitionsJobPayload>(COMPETITIONS_QUEUE_NAME, {
+      connection: parseRedisUrl(redisUrl),
+    });
+    await compQ.add(
+      'contest-sync',
+      { type: 'contest-sync' },
+      {
+        repeat: { every: 15 * 60 * 1000 },
+        jobId: 'contest-sync-repeat',
+      }
+    );
+    await compQ.add(
+      'problem-sync',
+      { type: 'problem-sync' },
+      {
+        repeat: { every: 6 * 60 * 60 * 1000 },
+        jobId: 'problem-sync-repeat',
+      }
+    );
+    await compQ.add(
+      'account-stats-sync',
+      { type: 'account-stats-sync' },
+      {
+        repeat: { every: 2 * 60 * 60 * 1000 },
+        jobId: 'account-stats-sync-repeat',
+      }
+    );
+    await compQ.add(
+      'ranking-calc',
+      { type: 'ranking-calc' },
+      {
+        repeat: { every: 30 * 60 * 1000 },
+        jobId: 'ranking-calc-repeat',
+      }
+    );
+    await compQ.add(
+      'contest-reminder',
+      { type: 'contest-reminder' },
+      {
+        repeat: { every: 60 * 1000 },
+        jobId: 'contest-reminder-repeat',
+      }
+    );
+    log('info', 'Competitions repeatable jobs registered');
+
     // Wait until shutdown signal
     await new Promise<void>((resolve) => {
       const check = () => (shuttingDown ? resolve() : setTimeout(check, 500));
       check();
     });
 
+    await compWorker.close();
+    await compQ.close();
     await bullWorker.close();
   } else {
     // ── DB polling mode: backward-compatible fallback ─────────────────────────
