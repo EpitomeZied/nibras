@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 type CommunityVoteTargetType = 'question' | 'answer' | 'post';
 import { requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
+import { requestBaseUrl } from '../../lib/request-base-url';
 import { AppStore } from '../../store';
 
 const authorSelect = { id: true, username: true } as const;
@@ -204,6 +205,14 @@ export function registerCommunityRoutes(
         where: { id: questionId },
         data: { answersCount: answerCount },
       });
+      if (question.authorId !== auth.user.id) {
+        void store.createNotification(requestBaseUrl(request), question.authorId, {
+          type: 'community_answer',
+          title: 'New answer',
+          body: `${auth.user.username} answered your question "${question.title.slice(0, 80)}".`,
+          link: `/community/q/${questionId}`,
+        });
+      }
       reply.code(201);
       return { answer: { ...answer, _id: answer.id, author: presentAuthor(answer.author) } };
     }
@@ -242,6 +251,14 @@ export function registerCommunityRoutes(
           data: { acceptedAnswerId: answerId },
         }),
       ]);
+      if (answer.authorId !== auth.user.id) {
+        void store.createNotification(requestBaseUrl(request), answer.authorId, {
+          type: 'community_answer_accepted',
+          title: 'Answer accepted',
+          body: `Your answer was accepted on "${answer.question.title.slice(0, 80)}".`,
+          link: `/community/q/${answer.questionId}`,
+        });
+      }
       return { accepted: true };
     }
   );
@@ -319,6 +336,30 @@ export function registerCommunityRoutes(
           data: { votesCount: { increment: delta } },
         });
         votesCount = updated.votesCount;
+      }
+
+      if (action === 'voted' && value === 1) {
+        let contentAuthorId: string | null = null;
+        let contentTitle = '';
+        let contentLink = '';
+        if (targetType === 'question') {
+          const q = await prisma.communityQuestion.findUnique({ where: { id: body.targetId }, select: { authorId: true, title: true } });
+          if (q) { contentAuthorId = q.authorId; contentTitle = q.title; contentLink = `/community/q/${body.targetId}`; }
+        } else if (targetType === 'answer') {
+          const a = await prisma.communityAnswer.findUnique({ where: { id: body.targetId }, select: { authorId: true, questionId: true } });
+          if (a) { contentAuthorId = a.authorId; contentLink = `/community/q/${a.questionId}`; contentTitle = 'your answer'; }
+        } else if (targetType === 'post') {
+          const p = await prisma.communityPost.findUnique({ where: { id: body.targetId }, select: { authorId: true, threadId: true } });
+          if (p) { contentAuthorId = p.authorId; contentLink = `/community/discussions/${p.threadId}`; contentTitle = 'your post'; }
+        }
+        if (contentAuthorId && contentAuthorId !== auth.user.id) {
+          void store.createNotification(requestBaseUrl(request), contentAuthorId, {
+            type: 'community_vote',
+            title: 'Upvote',
+            body: `${auth.user.username} upvoted ${contentTitle.startsWith('your') ? contentTitle : `"${contentTitle.slice(0, 80)}"`}.`,
+            link: contentLink,
+          });
+        }
       }
 
       const currentVote = await prisma.communityVote.findUnique({
@@ -575,6 +616,14 @@ export function registerCommunityRoutes(
         where: { id: threadId },
         data: { postsCount: { increment: 1 } },
       });
+      if (thread.authorId !== auth.user.id) {
+        void store.createNotification(requestBaseUrl(request), thread.authorId, {
+          type: 'community_reply',
+          title: 'New reply',
+          body: `${auth.user.username} replied in "${thread.title.slice(0, 80)}".`,
+          link: `/community/discussions/${threadId}`,
+        });
+      }
       reply.code(201);
       return { ...post, _id: post.id, author: presentAuthor(post.author) };
     }
