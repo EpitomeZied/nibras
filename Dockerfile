@@ -3,6 +3,7 @@ FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 COPY apps/api/package.json ./apps/api/
+COPY apps/cli/package.json ./apps/cli/
 COPY apps/worker/package.json ./apps/worker/
 COPY apps/proxy/package.json ./apps/proxy/
 COPY apps/web/package.json ./apps/web/
