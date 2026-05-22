@@ -1,8 +1,13 @@
 import { Queue } from 'bullmq';
 
-const COMPETITIONS_QUEUE_NAME = 'nibras:competitions';
+const COMPETITIONS_QUEUE_NAME = 'nibras-competitions';
 
-type RedisConnection = { host: string; port: number; password?: string };
+type RedisConnection = {
+  host: string;
+  port: number;
+  password?: string;
+  tls?: Record<string, never>;
+};
 
 function parseRedisUrl(url: string): RedisConnection {
   const parsed = new URL(url);
@@ -10,6 +15,7 @@ function parseRedisUrl(url: string): RedisConnection {
     host: parsed.hostname,
     port: Number(parsed.port) || 6379,
     password: parsed.password || undefined,
+    tls: parsed.protocol === 'rediss:' ? ({} as Record<string, never>) : undefined,
   };
 }
 

@@ -3,7 +3,7 @@
  * Used by both the BullMQ producer (API) and the BullMQ consumer (worker).
  */
 
-export const VERIFICATION_QUEUE_NAME = 'nibras:verification';
+export const VERIFICATION_QUEUE_NAME = 'nibras-verification';
 
 export type VerificationJobPayload = {
   jobId: string;

@@ -1,4 +1,4 @@
-export const COMPETITIONS_QUEUE_NAME = 'nibras:competitions';
+export const COMPETITIONS_QUEUE_NAME = 'nibras-competitions';
 
 export type ContestSyncPayload = { type: 'contest-sync' };
 export type ProblemSyncPayload = { type: 'problem-sync' };
