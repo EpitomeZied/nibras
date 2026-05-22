@@ -28,6 +28,7 @@ export function registerCompetitionsRoutes(
       };
 
       const where: Record<string, unknown> = {};
+      const hasDateFilter = query.upcoming || query.from || query.to;
       if (query.upcoming === 'true') {
         where.startsAt = { gte: new Date() };
       }
@@ -50,7 +51,7 @@ export function registerCompetitionsRoutes(
       const [contests, total] = await Promise.all([
         prisma.contest.findMany({
           where,
-          orderBy: { startsAt: 'asc' },
+          orderBy: { startsAt: hasDateFilter ? 'asc' : 'desc' },
           skip: (page - 1) * limit,
           take: limit,
         }),

@@ -92,6 +92,10 @@
   border-right: none;
 }
 
+.dayCell:nth-last-child(-n + 7) {
+  border-bottom: none;
+}
+
 .dayCellOutside {
   opacity: 0.35;
 }
@@ -196,7 +200,11 @@
   min-height: 36px;
 }
 
-.weekSlot:nth-child(8n) {
+.weekSlot:last-child {
+  border-right: none;
+}
+
+.weekHeaderCell:last-child {
   border-right: none;
 }
 

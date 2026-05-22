@@ -242,6 +242,7 @@ export default function CompetitionsPage() {
     try {
       const [c, a] = await Promise.allSettled([
         listContests({
+          upcoming: true,
           host: platformFilter === 'all' ? undefined : platformFilter,
         }),
         getLinkedAccounts(),
