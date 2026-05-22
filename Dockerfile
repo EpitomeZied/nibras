@@ -14,8 +14,12 @@ COPY packages/grading/package.json ./packages/grading/
 RUN npm ci --ignore-scripts
 
 FROM deps AS build
+ARG NEXT_PUBLIC_NIBRAS_API_BASE_URL
+ARG NEXT_PUBLIC_NIBRAS_WEB_BASE_URL
+ENV NEXT_PUBLIC_NIBRAS_API_BASE_URL=$NEXT_PUBLIC_NIBRAS_API_BASE_URL
+ENV NEXT_PUBLIC_NIBRAS_WEB_BASE_URL=$NEXT_PUBLIC_NIBRAS_WEB_BASE_URL
 COPY . .
-RUN npm run build
+RUN npm run build && npm run web:build
 
 # ── API service ──────────────────────────────────────────────────────────────
 FROM node:20-alpine AS api
