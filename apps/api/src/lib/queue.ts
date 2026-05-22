@@ -21,7 +21,7 @@ function parseRedisUrl(url: string): RedisConnection {
   return {
     host: parsed.hostname,
     port: Number(parsed.port) || 6379,
-    password: parsed.password || undefined,
+    password: parsed.password ? decodeURIComponent(parsed.password) : undefined,
     tls: parsed.protocol === 'rediss:' ? ({} as Record<string, never>) : undefined,
   };
 }
