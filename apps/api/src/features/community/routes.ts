@@ -660,7 +660,12 @@ export function registerCommunityRoutes(
     async (request, reply) => {
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
-      const body = request.body as { question?: string; context?: string; history?: unknown[] };
+      const body = request.body as {
+        question?: string;
+        context?: string;
+        history?: Array<{ role: string; content: string }>;
+        conversationId?: string;
+      };
       if (!body.question?.trim()) {
         reply.code(400).send(Errors.validation('Question is required.'));
         return;
@@ -673,7 +678,10 @@ export function registerCommunityRoutes(
         const resp = await fetch(`${CHATBOT_V1_URL}/api/ask`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: body.question }),
+          body: JSON.stringify({
+            question: body.question,
+            history: body.history ?? [],
+          }),
           signal: AbortSignal.timeout(30000),
         });
         if (!resp.ok) {
@@ -693,20 +701,76 @@ export function registerCommunityRoutes(
             tags?: string[];
             question_id?: string;
             question?: string;
+            match_score?: number;
+            xai?: {
+              reasoning?: string;
+              concepts_used?: string[];
+              might_be_unclear?: string[];
+            };
           };
           message?: string;
         };
         if (chatBotResponse.type === 'refused') {
-          reply.code(403).send(Errors.forbidden());
-          return;
+          return {
+            answer:
+              chatBotResponse.message || 'This question is outside the scope of this platform.',
+            refused: true,
+            hints: [],
+            tags: [],
+            xai: null,
+          };
         }
         const data = chatBotResponse.data;
-        return {
-          finalAnswer: data?.answer || '',
+        const result = {
+          answer: data?.answer || '',
           hints: data?.hints || [],
           tags: data?.tags || [],
           communityQuestion: data?.question_id || null,
+          matchScore: data?.match_score || null,
+          xai: data?.xai || null,
         };
+
+        if (body.conversationId) {
+          try {
+            const conv = await prisma.tutorConversation.findFirst({
+              where: { id: body.conversationId, userId: auth.user.id },
+            });
+            if (conv) {
+              await prisma.tutorMessage.createMany({
+                data: [
+                  {
+                    conversationId: conv.id,
+                    role: 'user',
+                    content: body.question!,
+                    tags: [],
+                    xaiConcepts: [],
+                    xaiUnclear: [],
+                  },
+                  {
+                    conversationId: conv.id,
+                    role: 'assistant',
+                    content: result.answer,
+                    tags: result.tags,
+                    xaiReasoning: result.xai?.reasoning ?? null,
+                    xaiConcepts: result.xai?.concepts_used ?? [],
+                    xaiUnclear: result.xai?.might_be_unclear ?? [],
+                    responseType: chatBotResponse.type ?? null,
+                    communityQuestionId: result.communityQuestion,
+                    matchScore: result.matchScore,
+                  },
+                ],
+              });
+              await prisma.tutorConversation.update({
+                where: { id: conv.id },
+                data: { updatedAt: new Date() },
+              });
+            }
+          } catch {
+            // persistence failure is non-critical
+          }
+        }
+
+        return result;
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         reply.code(502).send(Errors.unavailable(`AI Tutor request failed: ${message}`));
@@ -753,6 +817,284 @@ export function registerCommunityRoutes(
         data: { answersCount: publishedCount },
       });
       return { questionId: question.id, url: `/community/q/${question.id}` };
+    }
+  );
+
+  // ── Chatbot insights ─────────────────────────────────────────────────────
+
+  app.get(
+    '/v1/community/chatbot/insights',
+    { schema: { tags: ['community'], summary: 'Get learning insights' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+
+      const now = new Date();
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const [totalQuestions, totalConversations, weeklyQuestions, tagRows] = await Promise.all([
+        prisma.tutorMessage.count({
+          where: { conversation: { userId: auth.user.id }, role: 'user' },
+        }),
+        prisma.tutorConversation.count({ where: { userId: auth.user.id } }),
+        prisma.tutorMessage.count({
+          where: {
+            conversation: { userId: auth.user.id },
+            role: 'user',
+            createdAt: { gte: weekAgo },
+          },
+        }),
+        prisma.tutorMessage.findMany({
+          where: { conversation: { userId: auth.user.id }, role: 'assistant' },
+          select: { tags: true, createdAt: true },
+        }),
+      ]);
+
+      const tagCounts: Record<string, number> = {};
+      let streakDays = 0;
+      const activeDays = new Set<string>();
+      for (const row of tagRows) {
+        for (const t of row.tags) {
+          tagCounts[t] = (tagCounts[t] || 0) + 1;
+        }
+        activeDays.add(row.createdAt.toISOString().slice(0, 10));
+      }
+
+      const today = new Date();
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        if (activeDays.has(d.toISOString().slice(0, 10))) {
+          streakDays++;
+        } else {
+          break;
+        }
+      }
+
+      const topTags = Object.entries(tagCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 15)
+        .map(([tag, count]) => ({ tag, count }));
+
+      const stats = { totalQuestions, totalConversations, streakDays, weeklyQuestions, topTags };
+
+      if (!CHATBOT_V1_URL || totalQuestions === 0) {
+        return {
+          hardMetrics: stats,
+          aiSummary: {
+            strengths: [],
+            weaknesses: [],
+            nextActions: [
+              'Ask the AI Tutor some questions to start building your learning profile.',
+            ],
+            overallAssessment: 'Not enough data yet. Keep asking questions!',
+          },
+        };
+      }
+
+      try {
+        const resp = await fetch(`${CHATBOT_V1_URL}/api/insights`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ stats }),
+          signal: AbortSignal.timeout(20000),
+        });
+        if (resp.ok) {
+          return await resp.json();
+        }
+      } catch {
+        // fall through to local-only response
+      }
+
+      return {
+        hardMetrics: stats,
+        aiSummary: {
+          strengths: [],
+          weaknesses: [],
+          nextActions: ['AI summary is temporarily unavailable.'],
+          overallAssessment: 'Could not generate summary.',
+        },
+      };
+    }
+  );
+
+  // ── Chatbot routing ──────────────────────────────────────────────────────
+
+  app.post(
+    '/v1/community/chatbot/routing',
+    { schema: { tags: ['community'], summary: 'Compute a learning path' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const body = request.body as { goal?: string };
+      if (!body.goal?.trim()) {
+        reply.code(400).send(Errors.validation('goal is required.'));
+        return;
+      }
+      if (!CHATBOT_V1_URL) {
+        reply.code(503).send(Errors.unavailable('AI Tutor service is not configured.'));
+        return;
+      }
+      try {
+        const resp = await fetch(`${CHATBOT_V1_URL}/api/routing`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ goal: body.goal }),
+          signal: AbortSignal.timeout(30000),
+        });
+        if (!resp.ok) {
+          const text = await resp.text().catch(() => '');
+          reply
+            .code(502)
+            .send(
+              Errors.unavailable(`Routing service returned ${resp.status}: ${text.slice(0, 200)}`)
+            );
+          return;
+        }
+        return await resp.json();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        reply.code(502).send(Errors.unavailable(`Routing request failed: ${message}`));
+      }
+    }
+  );
+
+  // ── Tutor conversation CRUD ──────────────────────────────────────────────
+
+  app.get(
+    '/v1/tutor/conversations',
+    { schema: { tags: ['community'], summary: 'List tutor conversations' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const query = request.query as { page?: string; limit?: string };
+      const page = Math.max(1, parseInt(query.page ?? '1', 10));
+      const limit = Math.min(50, Math.max(1, parseInt(query.limit ?? '30', 10)));
+
+      const [conversations, total] = await Promise.all([
+        prisma.tutorConversation.findMany({
+          where: { userId: auth.user.id },
+          orderBy: { updatedAt: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+          select: {
+            id: true,
+            title: true,
+            createdAt: true,
+            updatedAt: true,
+            _count: { select: { messages: true } },
+          },
+        }),
+        prisma.tutorConversation.count({ where: { userId: auth.user.id } }),
+      ]);
+
+      void reply.header('x-total-count', String(total));
+      return conversations.map((c) => ({
+        id: c.id,
+        title: c.title,
+        messageCount: c._count.messages,
+        createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
+      }));
+    }
+  );
+
+  app.post(
+    '/v1/tutor/conversations',
+    { schema: { tags: ['community'], summary: 'Create tutor conversation' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const body = request.body as { title?: string };
+      const conv = await prisma.tutorConversation.create({
+        data: {
+          userId: auth.user.id,
+          title: body?.title || 'New conversation',
+        },
+      });
+      return { id: conv.id, title: conv.title, createdAt: conv.createdAt.toISOString() };
+    }
+  );
+
+  app.get(
+    '/v1/tutor/conversations/:id',
+    { schema: { tags: ['community'], summary: 'Get tutor conversation with messages' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const { id } = request.params as { id: string };
+      const conv = await prisma.tutorConversation.findFirst({
+        where: { id, userId: auth.user.id },
+        include: { messages: { orderBy: { createdAt: 'asc' } } },
+      });
+      if (!conv) {
+        return reply.code(404).send({ error: 'Conversation not found' });
+      }
+      return {
+        id: conv.id,
+        title: conv.title,
+        createdAt: conv.createdAt.toISOString(),
+        updatedAt: conv.updatedAt.toISOString(),
+        messages: conv.messages.map((m) => ({
+          id: m.id,
+          role: m.role,
+          content: m.content,
+          tags: m.tags,
+          xai: m.xaiReasoning
+            ? {
+                reasoning: m.xaiReasoning,
+                concepts_used: m.xaiConcepts,
+                might_be_unclear: m.xaiUnclear,
+              }
+            : null,
+          responseType: m.responseType,
+          createdAt: m.createdAt.toISOString(),
+        })),
+      };
+    }
+  );
+
+  app.delete(
+    '/v1/tutor/conversations/:id',
+    { schema: { tags: ['community'], summary: 'Delete tutor conversation' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const { id } = request.params as { id: string };
+      const conv = await prisma.tutorConversation.findFirst({
+        where: { id, userId: auth.user.id },
+      });
+      if (!conv) {
+        return reply.code(404).send({ error: 'Conversation not found' });
+      }
+      await prisma.tutorConversation.delete({ where: { id } });
+      return { deleted: true };
+    }
+  );
+
+  app.patch(
+    '/v1/tutor/conversations/:id',
+    { schema: { tags: ['community'], summary: 'Rename tutor conversation' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const { id } = request.params as { id: string };
+      const body = request.body as { title?: string };
+      if (!body.title?.trim()) {
+        reply.code(400).send(Errors.validation('title is required.'));
+        return;
+      }
+      const conv = await prisma.tutorConversation.findFirst({
+        where: { id, userId: auth.user.id },
+      });
+      if (!conv) {
+        return reply.code(404).send({ error: 'Conversation not found' });
+      }
+      const updated = await prisma.tutorConversation.update({
+        where: { id },
+        data: { title: body.title.trim() },
+      });
+      return { id: updated.id, title: updated.title };
     }
   );
 }
