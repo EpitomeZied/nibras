@@ -194,7 +194,7 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
   },
   '/tutor': {
     title: ‘Hassona’,
-    subtitle: ‘Chat with Hassona about any topic you’re working through.’,
+    subtitle: "Chat with Hassona about any topic you’re working through.",
   },
   '/tutor/insights': {
     title: 'Learning Insights',
