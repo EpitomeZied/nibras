@@ -193,12 +193,12 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: 'Tier progression based on reputation and contributions.',
   },
   '/tutor': {
-    title: ‘Hassona’,
-    subtitle: "Chat with Hassona about any topic you’re working through.",
+    title: ‘Hassona',
+    subtitle: "Chat with Hassona about any topic you're working through.",
   },
   '/tutor/insights': {
     title: 'Learning Insights',
-    subtitle: 'Where you’re strong, where you’re struggling, and what to study next.',
+    subtitle: "Where you're strong, where you're struggling, and what to study next.",
   },
   '/tutor/routing': {
     title: 'Smart Routing',
