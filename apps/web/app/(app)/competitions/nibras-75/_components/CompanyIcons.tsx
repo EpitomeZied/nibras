@@ -12,7 +12,6 @@ export type CompanyDto = {
 
 type CompanyIconsProps = {
   companies: CompanyDto[];
-  askedByCount: number;
 };
 
 function logoSrc(company: CompanyDto): string {
@@ -44,12 +43,11 @@ function CompanyLogo({ company }: { company: CompanyDto }) {
   );
 }
 
-export default function CompanyIcons({ companies, askedByCount }: CompanyIconsProps) {
+export default function CompanyIcons({ companies }: CompanyIconsProps) {
   const visible = companies.slice(0, 6);
-  const extra = Math.max(0, askedByCount - visible.length);
 
   return (
-    <div className={styles.companyRow} aria-label={`Asked by ${askedByCount} companies`}>
+    <div className={styles.companyRow}>
       <span className={styles.askedByLabel}>Asked by</span>
       <div className={styles.companyIcons}>
         {visible.map((c) => (
@@ -62,7 +60,6 @@ export default function CompanyIcons({ companies, askedByCount }: CompanyIconsPr
             <CompanyLogo company={c} />
           </span>
         ))}
-        {extra > 0 && <span className={styles.companyMore}>+{extra}</span>}
       </div>
     </div>
   );

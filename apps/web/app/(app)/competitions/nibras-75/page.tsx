@@ -260,10 +260,7 @@ export default function Nibras75Page() {
                     {problem.difficulty}
                   </span>
                 </div>
-                <CompanyIcons
-                  companies={problem.companies ?? []}
-                  askedByCount={problem.askedByCount}
-                />
+                <CompanyIcons companies={problem.companies ?? []} />
                 <p className={styles.description}>{problem.description}</p>
                 <div className={styles.tags}>
                   {problem.tags.map((tag) => (
