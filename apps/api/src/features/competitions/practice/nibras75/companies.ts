@@ -72,6 +72,7 @@ export function pickCompaniesForProblem(slug: string, askedByCount: number): Com
   return picked;
 }
 
-export function companyIconUrl(domain: string): string {
-  return `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=64`;
+/** Static logos served from the web app (`public/companies/{id}.svg`). */
+export function companyIconUrl(id: CompanyId): string {
+  return `/companies/${id}.svg`;
 }

@@ -166,7 +166,7 @@ export async function fetchNibras75Problems(
       id: c.id,
       name: c.name,
       domain: c.domain,
-      iconUrl: companyIconUrl(c.domain),
+      iconUrl: companyIconUrl(c.id),
     }));
 
     rows.push({
