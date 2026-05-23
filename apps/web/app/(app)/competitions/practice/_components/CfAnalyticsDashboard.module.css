@@ -1,0 +1,65 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.handleLine {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.statCard {
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.statValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.chartRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.chartBox {
+  flex: 1 1 48%;
+  min-width: 280px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.chartFull {
+  flex: 1 1 100%;
+}
+
+.chartHalf {
+  flex: 1 1 48%;
+  max-width: 560px;
+}

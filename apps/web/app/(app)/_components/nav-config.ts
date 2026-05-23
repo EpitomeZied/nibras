@@ -222,7 +222,7 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
   },
   '/competitions/practice': {
     title: 'Practice',
-    subtitle: 'Problems from Codeforces, LeetCode, and AtCoder.',
+    subtitle: 'Multi-platform problems and Codeforces analytics.',
   },
   '/competitions/ranking': {
     title: 'Ranking',
@@ -231,10 +231,6 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/competitions/history': {
     title: 'Contest History',
     subtitle: 'Your past contest performance and rating trend.',
-  },
-  '/competitions/codehunt': {
-    title: 'Codehunt',
-    subtitle: 'uHunt and Codeforces problem grids with solved highlighting.',
   },
   '/instructor/analytics': {
     title: 'Analytics',

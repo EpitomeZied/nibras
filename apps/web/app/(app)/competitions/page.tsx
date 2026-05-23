@@ -47,7 +47,6 @@ const PLATFORM_LABELS: Record<string, string> = {
   atcoder: 'AtCoder',
   codechef: 'CodeChef',
   vjudge: 'VJudge',
-  uhunt: 'uHunt (UVa)',
 };
 
 type LinkStep = 'select' | 'cf-verify' | 'simple-verify' | 'success' | 'failed';
@@ -377,11 +376,11 @@ export default function CompetitionsPage() {
         <PlatformFilter selected={platformFilter} onChange={setPlatformFilter} />
         {displayMode === 'calendar' && <CalendarViewToggle view={calView} onChange={setCalView} />}
         <Link
-          href="/competitions/codehunt"
+          href="/competitions/practice?tab=codeforces"
           className={styles.linkBtn}
           style={{ marginLeft: 'auto' }}
         >
-          Codehunt (UVa + CF)
+          Codeforces practice
         </Link>
       </div>
 
@@ -466,7 +465,6 @@ export default function CompetitionsPage() {
                     <option value="atcoder">AtCoder</option>
                     <option value="codechef">CodeChef</option>
                     <option value="vjudge">VJudge</option>
-                    <option value="uhunt">uHunt (UVa)</option>
                   </select>
                 </div>
 

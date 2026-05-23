@@ -1,69 +1,8 @@
-.page {
+.section {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  height: 100%;
   min-height: 0;
-}
-
-.header {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.title {
-  font-size: 22px;
-  font-weight: 700;
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
-.subtitle {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-muted);
-  max-width: 72ch;
-}
-
-.subtitle a {
-  color: var(--primary, #22c55e);
-}
-
-.toolbar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-}
-
-.sitePicker {
-  display: inline-flex;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 3px;
-}
-
-.siteChip {
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 6px 14px;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.siteChipActive {
-  background: color-mix(in oklab, var(--primary, #22c55e) 18%, var(--surface));
-  color: var(--primary, #22c55e);
-}
-
-.stats {
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-left: auto;
 }
 
 .accounts {
@@ -71,6 +10,7 @@
   flex-wrap: wrap;
   gap: 8px;
   font-size: 12px;
+  align-items: center;
 }
 
 .accountChip {
@@ -110,6 +50,7 @@
   font-weight: 600;
   cursor: pointer;
   color: var(--text);
+  text-decoration: none;
 }
 
 .linkBtn:hover {
@@ -117,9 +58,65 @@
   color: var(--primary, #22c55e);
 }
 
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 200px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--text);
+  font-family: inherit;
+}
+
+.filterChip {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.filterPicker {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.filterChipActive {
+  background: color-mix(in oklab, var(--primary, #22c55e) 18%, var(--surface));
+  color: var(--primary, #22c55e);
+}
+
+.stats {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
 .tableWrap {
   flex: 1;
-  min-height: 0;
+  min-height: 320px;
+  max-height: 60vh;
   overflow: auto;
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -152,10 +149,6 @@
   vertical-align: middle;
 }
 
-.table tbody tr:last-child td {
-  border-bottom: none;
-}
-
 .rowAccepted {
   background-color: #b6e2a4;
 }
@@ -165,10 +158,6 @@
 }
 
 .rowAttempted {
-  background-color: #f5b8b8;
-}
-
-.rowAttemptedAlt {
   background-color: #f5b8b8;
 }
 
@@ -199,4 +188,16 @@
   border-radius: 4px;
   background: color-mix(in oklab, var(--border) 50%, transparent);
   color: var(--text-muted);
+}
+
+.analyticsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.analyticsTitle {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
 }

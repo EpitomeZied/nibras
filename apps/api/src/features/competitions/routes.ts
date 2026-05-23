@@ -5,8 +5,7 @@ import { AppStore } from '../../store';
 import { enqueueCompetitionsJob } from '../../lib/competitions-queue';
 import { fetchers } from './fetchers/index';
 import { pickVerificationProblem } from './fetchers/codeforces';
-import { verifyUhuntHandle } from './codehunt/uhunt-client';
-import { registerCodehuntRoutes } from './codehunt-routes';
+import { registerPracticeCodeforcesRoutes } from './practice-codeforces-routes';
 
 export function registerCompetitionsRoutes(
   app: FastifyInstance,
@@ -461,13 +460,8 @@ export function registerCompetitionsRoutes(
       }
 
       if (platform === 'uhunt') {
-        const valid = await verifyUhuntHandle(handle);
-        if (!valid) {
-          return reply.status(400).send({ error: 'uHunt username not found' });
-        }
+        return reply.status(400).send({ error: 'uHunt linking is no longer supported' });
       }
-
-      const uhuntVerified = platform === 'uhunt';
 
       const account = await prisma.linkedAccount.upsert({
         where: { userId_platform: { userId: auth.user.id, platform } },
@@ -476,13 +470,13 @@ export function registerCompetitionsRoutes(
           platform,
           handle,
           verificationProblem,
-          verificationStatus: uhuntVerified ? 'verified' : 'pending',
-          verifiedAt: uhuntVerified ? new Date() : null,
+          verificationStatus: 'pending',
+          verifiedAt: null,
         },
         update: {
           handle,
-          verificationStatus: uhuntVerified ? 'verified' : 'pending',
-          verifiedAt: uhuntVerified ? new Date() : null,
+          verificationStatus: 'pending',
+          verifiedAt: null,
           verificationProblem,
         },
       });
@@ -490,7 +484,7 @@ export function registerCompetitionsRoutes(
       return {
         host: account.platform,
         handle: account.handle,
-        verified: uhuntVerified,
+        verified: false,
         linkedAt: account.createdAt.toISOString(),
         verificationProblem: verificationProblemMeta
           ? {
@@ -609,5 +603,5 @@ export function registerCompetitionsRoutes(
     }
   );
 
-  registerCodehuntRoutes(app, store, prisma);
+  registerPracticeCodeforcesRoutes(app, store, prisma);
 }

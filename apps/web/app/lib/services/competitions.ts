@@ -241,9 +241,9 @@ export async function resyncAccount(host: string): Promise<{ syncing: boolean } 
   );
 }
 
-// ── Codehunt ──────────────────────────────────────────────────────────────────
+// ── Practice (Codeforces) ─────────────────────────────────────────────────────
 
-export type CodehuntProblem = {
+export type PracticeCfProblem = {
   problemId: string;
   index: string;
   name: string;
@@ -251,25 +251,78 @@ export type CodehuntProblem = {
   solved: boolean;
   attempted: boolean;
   solvedCount?: number;
-  percentageAccepted?: number;
   rating?: number;
   tags?: string[];
   contestId?: string;
 };
 
-export type CodehuntProblemsResponse = {
-  items: CodehuntProblem[];
+export type PracticeCfProblemsResponse = {
+  items: PracticeCfProblem[];
   total: number;
   solvedCount: number;
   handle: string | null;
+  page: number;
+  limit: number;
 };
 
-export async function getCodehuntProblems(
-  site: 'uhunt' | 'codeforces',
-  handle?: string
-): Promise<CodehuntProblemsResponse> {
+export type CfAnalyticsStats = {
+  totalSubmissions: number;
+  solvedProblems: number;
+  maxStreak: number;
+  totalPoints: number;
+  acRate: number;
+  highestRating: number;
+};
+
+export type CfAnalyticsPayload = {
+  rating: Record<string, number>;
+  tags: Record<string, number>;
+  lang: Record<string, number>;
+  verdicts: Record<string, number>;
+  participantType: Record<string, number>;
+  attempts: Record<string, number>;
+  timeline: Record<string, number>;
+  performance: Array<[number, number, string]>;
+  memoryPerformance: Array<[number, number, string]>;
+  speedAnalysis: Record<string, number>;
+  stats: CfAnalyticsStats;
+  handle?: string;
+};
+
+export type PracticeCfProblemsParams = {
+  handle?: string;
+  page?: number;
+  limit?: number;
+  q?: string;
+  tag?: string;
+  ratingMin?: number;
+  ratingMax?: number;
+  solved?: 'true' | 'false';
+};
+
+export async function getPracticeCfProblems(
+  params?: PracticeCfProblemsParams
+): Promise<PracticeCfProblemsResponse> {
+  const query: Record<string, string> = {};
+  if (params?.handle) query.handle = params.handle;
+  if (params?.page) query.page = String(params.page);
+  if (params?.limit) query.limit = String(params.limit);
+  if (params?.q) query.q = params.q;
+  if (params?.tag) query.tag = params.tag;
+  if (params?.ratingMin !== undefined) query.ratingMin = String(params.ratingMin);
+  if (params?.ratingMax !== undefined) query.ratingMax = String(params.ratingMax);
+  if (params?.solved) query.solved = params.solved;
+
+  return serviceFetch<PracticeCfProblemsResponse>(
+    'competitions',
+    '/v1/practice/codeforces/problems',
+    { auth: true, query: Object.keys(query).length ? query : undefined }
+  );
+}
+
+export async function getPracticeCfAnalytics(handle?: string): Promise<CfAnalyticsPayload> {
   const query = handle ? { handle } : undefined;
-  return serviceFetch<CodehuntProblemsResponse>('competitions', `/v1/codehunt/${site}/problems`, {
+  return serviceFetch<CfAnalyticsPayload>('competitions', '/v1/practice/codeforces/analytics', {
     auth: true,
     query,
   });
