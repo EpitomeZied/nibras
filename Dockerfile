@@ -32,6 +32,7 @@ COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/packages ./packages
 COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/courses ./courses
 EXPOSE 4848
 CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node apps/api/dist/server.js"]
 
