@@ -273,9 +273,70 @@
 }
 
 .companyIcon {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   object-fit: contain;
+  display: block;
+}
+
+.companyFallback {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.companyIconWrap[data-company='google'] {
+  background: #fff;
+}
+.companyIconWrap[data-company='meta'] {
+  background: #fff;
+}
+.companyIconWrap[data-company='amazon'] {
+  background: #fff;
+}
+.companyIconWrap[data-company='apple'] {
+  background: #f5f5f7;
+}
+.companyIconWrap[data-company='microsoft'] {
+  background: #f3f3f3;
+}
+.companyIconWrap[data-company='netflix'] {
+  background: #000;
+}
+.companyIconWrap[data-company='netflix'] .companyIcon {
+  filter: brightness(0) invert(1);
+}
+.companyIconWrap[data-company='uber'] {
+  background: #000;
+}
+.companyIconWrap[data-company='uber'] .companyIcon {
+  filter: brightness(0) invert(1);
+}
+.companyIconWrap[data-company='bloomberg'] {
+  background: #2800d7;
+  border-color: #2800d7;
+}
+.companyIconWrap[data-company='bloomberg'] .companyIcon {
+  filter: brightness(0) invert(1);
+}
+.companyIconWrap[data-company='linkedin'] {
+  background: #0a66c2;
+  border-color: #0a66c2;
+}
+.companyIconWrap[data-company='linkedin'] .companyIcon {
+  filter: brightness(0) invert(1);
+}
+.companyIconWrap[data-company='stripe'] {
+  background: #635bff;
+  border-color: #635bff;
+}
+.companyIconWrap[data-company='stripe'] .companyIcon {
+  filter: brightness(0) invert(1);
 }
 
 .companyMore {
