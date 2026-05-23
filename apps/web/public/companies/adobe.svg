@@ -1,1 +1,5 @@
-<svg role="img" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><title>Adobe</title><path d="M13.966 22.624l-1.69-4.281H8.122l3.892-9.144 5.662 13.425zM8.884 1.376H0v21.248zm15.116 0h-8.884L24 22.624Z"/></svg>
+<?xml version="1.0" encoding="utf-8"?><!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+<svg width="800px" height="800px" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+   <circle cx="512" cy="512" r="512" style="fill:red"/>
+   <path d="M578.2 298.6h189.9v426.8L578.2 298.6zm-132.3 0H256v426.8l189.9-426.8zm66.2 157.9 119.5 268.9h-81.1L516.4 640h-87.5l83.2-183.5z" style="fill:#fff"/>
+</svg>
