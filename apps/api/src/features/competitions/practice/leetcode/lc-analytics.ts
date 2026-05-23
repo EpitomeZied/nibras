@@ -25,6 +25,7 @@ export function processLcProfile(
     tags: {},
     lang: {},
     verdicts: {},
+    participantType: {},
     attempts: {},
     timeline: {},
     performance: [],

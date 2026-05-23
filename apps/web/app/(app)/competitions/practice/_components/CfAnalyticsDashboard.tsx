@@ -25,7 +25,8 @@ const ATTEMPT_LABELS: Record<string, string> = {
   tryMore: '> 5 tries',
 };
 
-function pieOption(title: string, dataObj: Record<string, number>) {
+function pieOption(title: string, dataObj: Record<string, number> | null | undefined) {
+  if (!dataObj) return null;
   const dataArr = Object.entries(dataObj)
     .map(([name, value]) => ({ name, value }))
     .sort((a, b) => b.value - a.value);
@@ -63,9 +64,36 @@ type CfAnalyticsDashboardProps = {
   handle?: string | null;
 };
 
+const EMPTY_STATS: CfAnalyticsPayload['stats'] = {
+  totalSubmissions: 0,
+  solvedProblems: 0,
+  maxStreak: 0,
+  totalPoints: 0,
+  acRate: 0,
+  highestRating: 0,
+};
+
+function normalizePayload(data: CfAnalyticsPayload) {
+  return {
+    rating: data.rating ?? {},
+    tags: data.tags ?? {},
+    lang: data.lang ?? {},
+    verdicts: data.verdicts ?? {},
+    participantType: data.participantType ?? {},
+    attempts: data.attempts ?? {},
+    timeline: data.timeline ?? {},
+    performance: data.performance ?? [],
+    memoryPerformance: data.memoryPerformance ?? [],
+    speedAnalysis: data.speedAnalysis ?? {},
+    stats: data.stats ?? EMPTY_STATS,
+  };
+}
+
 export default function CfAnalyticsDashboard({ data, handle }: CfAnalyticsDashboardProps) {
+  const payload = useMemo(() => normalizePayload(data), [data]);
+
   const timelineOption = useMemo(() => {
-    const keys = Object.keys(data.timeline).sort();
+    const keys = Object.keys(payload.timeline).sort();
     if (keys.length === 0) return null;
     return {
       title: { text: 'Activity timeline (monthly)', left: 'center' },
@@ -82,14 +110,14 @@ export default function CfAnalyticsDashboard({ data, handle }: CfAnalyticsDashbo
           areaStyle: { opacity: 0.3, color: '#0073e6' },
           lineStyle: { color: '#0073e6' },
           itemStyle: { color: '#0073e6' },
-          data: keys.map((k) => data.timeline[k]),
+          data: keys.map((k) => payload.timeline[k]),
         },
       ],
     };
-  }, [data.timeline]);
+  }, [payload.timeline]);
 
   const ratingOption = useMemo(() => {
-    const keys = Object.keys(data.rating).sort((a, b) => Number(a) - Number(b));
+    const keys = Object.keys(payload.rating).sort((a, b) => Number(a) - Number(b));
     if (keys.length === 0) return null;
     return {
       title: { text: 'Problems solved by difficulty', left: 'center' },
@@ -102,24 +130,24 @@ export default function CfAnalyticsDashboard({ data, handle }: CfAnalyticsDashbo
           type: 'bar',
           barWidth: '60%',
           data: keys.map((k) => ({
-            value: data.rating[k],
+            value: payload.rating[k],
             itemStyle: { color: getRatingColor(Number(k)) },
           })),
         },
       ],
     };
-  }, [data.rating]);
+  }, [payload.rating]);
 
   const attemptsData = useMemo(() => {
     const localized: Record<string, number> = {};
-    for (const [key, value] of Object.entries(data.attempts)) {
+    for (const [key, value] of Object.entries(payload.attempts)) {
       localized[ATTEMPT_LABELS[key] ?? key] = value;
     }
     return localized;
-  }, [data.attempts]);
+  }, [payload.attempts]);
 
   const performanceOption = useMemo(() => {
-    if (data.performance.length === 0) return null;
+    if (payload.performance.length === 0) return null;
     return {
       title: { text: 'Execution time vs rating', left: 'center', textStyle: { fontSize: 14 } },
       grid: { left: '3%', right: '8%', bottom: '3%', containLabel: true },
@@ -135,15 +163,15 @@ export default function CfAnalyticsDashboard({ data, handle }: CfAnalyticsDashbo
         {
           type: 'scatter',
           symbolSize: 6,
-          data: data.performance,
+          data: payload.performance,
           itemStyle: { color: 'rgba(0, 115, 230, 0.6)' },
         },
       ],
     };
-  }, [data.performance]);
+  }, [payload.performance]);
 
   const memoryOption = useMemo(() => {
-    if (data.memoryPerformance.length === 0) return null;
+    if (payload.memoryPerformance.length === 0) return null;
     return {
       title: { text: 'Memory vs rating', left: 'center', textStyle: { fontSize: 14 } },
       grid: { left: '3%', right: '8%', bottom: '3%', containLabel: true },
@@ -159,16 +187,16 @@ export default function CfAnalyticsDashboard({ data, handle }: CfAnalyticsDashbo
         {
           type: 'scatter',
           symbolSize: 6,
-          data: data.memoryPerformance,
+          data: payload.memoryPerformance,
           itemStyle: { color: 'rgba(40, 167, 69, 0.6)' },
         },
       ],
     };
-  }, [data.memoryPerformance]);
+  }, [payload.memoryPerformance]);
 
   const speedOption = useMemo(() => {
     const categories = ['0-10min', '10-30min', '30-60min', '1-2h', '2-4h', '>4h'];
-    const values = categories.map((c) => data.speedAnalysis[c] || 0);
+    const values = categories.map((c) => payload.speedAnalysis[c] || 0);
     if (values.every((v) => v === 0)) return null;
     return {
       title: { text: 'Contest speed', left: 'center', textStyle: { fontSize: 14 } },
@@ -178,17 +206,17 @@ export default function CfAnalyticsDashboard({ data, handle }: CfAnalyticsDashbo
       yAxis: { type: 'value', name: 'Submissions' },
       series: [{ type: 'bar', data: values, itemStyle: { color: '#188df0' } }],
     };
-  }, [data.speedAnalysis]);
+  }, [payload.speedAnalysis]);
 
   const pies = [
-    { id: 'tags', option: pieOption('Tags solved', data.tags) },
-    { id: 'lang', option: pieOption('Languages', data.lang) },
-    { id: 'verdict', option: pieOption('Verdicts', data.verdicts) },
+    { id: 'tags', option: pieOption('Tags solved', payload.tags) },
+    { id: 'lang', option: pieOption('Languages', payload.lang) },
+    { id: 'verdict', option: pieOption('Verdicts', payload.verdicts) },
     { id: 'attempts', option: pieOption('Attempts to AC', attemptsData) },
-    { id: 'participant', option: pieOption('Participant type', data.participantType) },
+    { id: 'participant', option: pieOption('Participant type', payload.participantType) },
   ].filter((p) => p.option);
 
-  const stats = data.stats;
+  const stats = payload.stats;
 
   return (
     <div className={analyticsStyles.dashboard}>
@@ -217,7 +245,7 @@ export default function CfAnalyticsDashboard({ data, handle }: CfAnalyticsDashbo
         </div>
         <div className={analyticsStyles.statCard}>
           <span className={analyticsStyles.statLabel}>AC rate</span>
-          <span className={analyticsStyles.statValue}>{stats.acRate.toFixed(1)}%</span>
+          <span className={analyticsStyles.statValue}>{(stats.acRate ?? 0).toFixed(1)}%</span>
         </div>
         <div className={analyticsStyles.statCard}>
           <span className={analyticsStyles.statLabel}>Highest rating solved</span>

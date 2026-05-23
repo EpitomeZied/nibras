@@ -35,6 +35,7 @@ export type LcAnalyticsPayload = {
   tags: Record<string, number>;
   lang: Record<string, number>;
   verdicts: Record<string, number>;
+  participantType: Record<string, number>;
   attempts: Record<string, number>;
   timeline: Record<string, number>;
   performance: Array<[number, number, string]>;
