@@ -7,8 +7,10 @@ import EmptyState from '../../_components/widgets/EmptyState';
 import {
   getNibras75Problems,
   linkAccount,
+  setNibras75ProblemSolved,
   type Nibras75Problem,
 } from '../../../lib/services/competitions';
+import CompanyIcons from './_components/CompanyIcons';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 import { useSession } from '../../_components/session-context';
 
@@ -34,6 +36,7 @@ export default function Nibras75Page() {
   const [linkHandle, setLinkHandle] = useState('');
   const [linking, setLinking] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
+  const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q.trim()), 300);
@@ -72,6 +75,27 @@ export default function Nibras75Page() {
     if (curriculumTotal <= 0) return 0;
     return Math.round((completedInSet / curriculumTotal) * 100);
   }, [completedInSet, curriculumTotal]);
+
+  async function toggleSolved(problem: Nibras75Problem) {
+    if (!user) return;
+    const next = !problem.solved;
+    setTogglingSlug(problem.problemId);
+    try {
+      await setNibras75ProblemSolved(problem.problemId, next);
+      setItems((prev) =>
+        prev.map((p) =>
+          p.problemId === problem.problemId
+            ? { ...p, solved: next, attempted: true, userMarked: true }
+            : p
+        )
+      );
+      setCompletedInSet((prev) => prev + (next ? 1 : -1));
+    } catch (err) {
+      setError(friendlyMessage(err));
+    } finally {
+      setTogglingSlug(null);
+    }
+  }
 
   async function handleLink() {
     const handle = linkHandle.trim();
@@ -148,7 +172,7 @@ export default function Nibras75Page() {
 
       {!user && (
         <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
-          <Link href="/connect">Sign in</Link> and link LeetCode to highlight completed problems.
+          <Link href="/connect">Sign in</Link> to mark problems solved and track your progress.
         </p>
       )}
 
@@ -210,10 +234,24 @@ export default function Nibras75Page() {
               key={problem.problemId}
               className={`${styles.card} ${problem.solved ? styles.cardSolved : ''}`}
             >
-              <span className={styles.rank}>#{problem.rank}</span>
+              {user ? (
+                <button
+                  type="button"
+                  className={`${styles.solvedToggle} ${problem.solved ? styles.solvedToggleOn : ''}`}
+                  aria-pressed={problem.solved}
+                  aria-label={problem.solved ? 'Mark as not solved' : 'Mark as solved'}
+                  disabled={togglingSlug === problem.problemId}
+                  onClick={() => void toggleSolved(problem)}
+                >
+                  {togglingSlug === problem.problemId ? '…' : problem.solved ? '✓' : ''}
+                </button>
+              ) : (
+                <span className={styles.rank}>#{problem.rank}</span>
+              )}
               <div className={styles.body}>
                 <div className={styles.cardHeader}>
                   <h2 className={styles.problemTitle}>
+                    <span className={styles.rankInline}>#{problem.rank}</span>{' '}
                     <a href={problem.url} target="_blank" rel="noopener noreferrer">
                       {problem.name}
                     </a>
@@ -221,8 +259,11 @@ export default function Nibras75Page() {
                   <span className={`${styles.difficulty} ${difficultyClass(problem.difficulty)}`}>
                     {problem.difficulty}
                   </span>
-                  <span className={styles.askedBy}>Asked by +{problem.askedByCount}</span>
                 </div>
+                <CompanyIcons
+                  companies={problem.companies ?? []}
+                  askedByCount={problem.askedByCount}
+                />
                 <p className={styles.description}>{problem.description}</p>
                 <div className={styles.tags}>
                   {problem.tags.map((tag) => (

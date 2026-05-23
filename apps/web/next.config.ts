@@ -66,7 +66,7 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: https://avatars.githubusercontent.com https://i.ytimg.com",
+      "img-src 'self' data: https://avatars.githubusercontent.com https://i.ytimg.com https://www.google.com",
       `connect-src ${connectSrc}`,
       "font-src 'self'",
       "object-src 'none'",

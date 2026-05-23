@@ -393,6 +393,13 @@ export async function getPracticeLcAnalytics(handle?: string): Promise<LcAnalyti
 
 // ── Nibras 75 (interview) ─────────────────────────────────────────────────────
 
+export type Nibras75Company = {
+  id: string;
+  name: string;
+  domain: string;
+  iconUrl: string;
+};
+
 export type Nibras75Problem = {
   rank: number;
   problemId: string;
@@ -402,8 +409,10 @@ export type Nibras75Problem = {
   description: string;
   tags: string[];
   askedByCount: number;
+  companies: Nibras75Company[];
   solved: boolean;
   attempted: boolean;
+  userMarked: boolean;
 };
 
 export type Nibras75ProblemsResponse = {
@@ -437,4 +446,15 @@ export async function getNibras75Problems(
     auth: true,
     query: Object.keys(query).length ? query : undefined,
   });
+}
+
+export async function setNibras75ProblemSolved(
+  slug: string,
+  solved: boolean
+): Promise<{ solved: boolean; problemId: string }> {
+  return serviceFetch<{ solved: boolean; problemId: string }>(
+    'competitions',
+    `/v1/practice/nibras-75/problems/${encodeURIComponent(slug)}/solved`,
+    { method: 'POST', auth: true, body: { solved } }
+  );
 }

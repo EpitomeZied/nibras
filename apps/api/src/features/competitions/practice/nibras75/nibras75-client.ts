@@ -1,6 +1,13 @@
 import { PrismaClient } from '@prisma/client';
 import { getLcUserStatus, questionUrl } from '../leetcode/lc-api';
+import { companyIconUrl, pickCompaniesForProblem } from './companies';
 import { NIBRAS_75_CURRICULUM, NIBRAS_75_TOTAL, type Nibras75Entry } from './curriculum';
+export type Nibras75CompanyDto = {
+  id: string;
+  name: string;
+  domain: string;
+  iconUrl: string;
+};
 
 export type Nibras75ProblemRow = {
   rank: number;
@@ -11,8 +18,10 @@ export type Nibras75ProblemRow = {
   description: string;
   tags: string[];
   askedByCount: number;
+  companies: Nibras75CompanyDto[];
   solved: boolean;
   attempted: boolean;
+  userMarked: boolean;
   acRate?: number;
 };
 
@@ -22,13 +31,14 @@ export type Nibras75ProblemsQuery = {
   solved?: 'true' | 'false';
 };
 
-async function loadDbSolvedSlugs(
+async function loadDbProgress(
   prisma: PrismaClient,
   userId: string | undefined
 ): Promise<Map<string, { solved: boolean; attempted: boolean }>> {
   const map = new Map<string, { solved: boolean; attempted: boolean }>();
   if (!userId) return map;
 
+  const slugs = new Set(NIBRAS_75_CURRICULUM.map((e) => e.slug));
   const progress = await prisma.userProblemProgress.findMany({
     where: { userId, problem: { platform: 'leetcode' } },
     select: { solved: true, problem: { select: { platformProblemId: true } } },
@@ -36,12 +46,61 @@ async function loadDbSolvedSlugs(
 
   for (const row of progress) {
     const slug = row.problem.platformProblemId;
-    const existing = map.get(slug) ?? { solved: false, attempted: false };
-    if (row.solved) existing.solved = true;
-    existing.attempted = true;
-    map.set(slug, existing);
+    if (!slugs.has(slug)) continue;
+    map.set(slug, { solved: row.solved, attempted: true });
   }
   return map;
+}
+
+function findCurriculumEntry(slug: string): Nibras75Entry | undefined {
+  return NIBRAS_75_CURRICULUM.find((e) => e.slug === slug);
+}
+
+export async function setNibras75ProblemSolved(
+  prisma: PrismaClient,
+  userId: string,
+  slug: string,
+  solved: boolean
+): Promise<{ solved: boolean; problemId: string }> {
+  const entry = findCurriculumEntry(slug);
+  if (!entry) {
+    throw new Error('Problem is not part of Nibras 75');
+  }
+
+  const problem = await prisma.problem.upsert({
+    where: {
+      platform_platformProblemId: { platform: 'leetcode', platformProblemId: slug },
+    },
+    create: {
+      platform: 'leetcode',
+      platformProblemId: slug,
+      title: entry.title,
+      url: questionUrl(slug),
+      difficulty:
+        entry.difficulty === 'Easy' ? 800 : entry.difficulty === 'Medium' ? 1500 : 2200,
+      tags: entry.tags,
+    },
+    update: {
+      title: entry.title,
+      url: questionUrl(slug),
+    },
+  });
+
+  await prisma.userProblemProgress.upsert({
+    where: { userId_problemId: { userId, problemId: problem.id } },
+    create: {
+      userId,
+      problemId: problem.id,
+      solved,
+      solvedAt: solved ? new Date() : null,
+    },
+    update: {
+      solved,
+      solvedAt: solved ? new Date() : null,
+    },
+  });
+
+  return { solved, problemId: slug };
 }
 
 function matchesQuery(entry: Nibras75Entry, query: Nibras75ProblemsQuery): boolean {
@@ -74,17 +133,21 @@ export async function fetchNibras75Problems(
   solvedCount: number;
   completedInSet: number;
 }> {
-  const [lcStatus, dbStatus] = await Promise.all([
+  const [lcStatus, dbProgress] = await Promise.all([
     getLcUserStatus(handle),
-    loadDbSolvedSlugs(prisma, userId),
+    loadDbProgress(prisma, userId),
   ]);
 
   const mergeStatus = (slug: string) => {
+    const db = dbProgress.get(slug);
+    if (db !== undefined) {
+      return { solved: db.solved, attempted: db.attempted, userMarked: true };
+    }
     const lc = lcStatus.get(slug);
-    const db = dbStatus.get(slug);
     return {
-      solved: (lc?.solved ?? false) || (db?.solved ?? false),
-      attempted: (lc?.attempted ?? false) || (db?.attempted ?? false),
+      solved: lc?.solved ?? false,
+      attempted: lc?.attempted ?? false,
+      userMarked: false,
     };
   };
 
@@ -99,6 +162,13 @@ export async function fetchNibras75Problems(
     if (query.solved === 'false' && st.solved) continue;
     if (!matchesQuery(entry, query)) continue;
 
+    const companies = pickCompaniesForProblem(entry.slug, entry.askedByCount).map((c) => ({
+      id: c.id,
+      name: c.name,
+      domain: c.domain,
+      iconUrl: companyIconUrl(c.domain),
+    }));
+
     rows.push({
       rank: entry.rank,
       problemId: entry.slug,
@@ -108,8 +178,10 @@ export async function fetchNibras75Problems(
       description: entry.description,
       tags: entry.tags,
       askedByCount: entry.askedByCount,
+      companies,
       solved: st.solved,
       attempted: st.attempted,
+      userMarked: st.userMarked,
     });
   }
 
