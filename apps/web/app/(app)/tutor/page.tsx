@@ -396,7 +396,7 @@ export default function TutorPage() {
           >
             &#9776;
           </button>
-          <h1 className={styles.topTitle}>{activeConv ? activeConv.title : 'AI Tutor'}</h1>
+          <h1 className={styles.topTitle}>{activeConv ? activeConv.title : 'Hassona'}</h1>
         </header>
 
         {error && (
@@ -415,7 +415,7 @@ export default function TutorPage() {
             onFollowUp={(text) => void handleSend(text)}
             onRetry={handleRetry}
             busy={busy}
-            emptyTitle="AI Tutor"
+            emptyTitle="Hassona"
             emptyDescription="Ask any question about your courses, projects, or concepts you're stuck on."
             suggestedPrompts={!activeConv ? SUGGESTED_PROMPTS : undefined}
             renderContent={(message) =>

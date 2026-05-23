@@ -87,7 +87,7 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
       />
     </svg>
   ),
-  Tutor: (
+  Hassona: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path
         d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.5 3.5l1.5 1.5M11 11l1.5 1.5M3.5 12.5L5 11M11 5l1.5-1.5"

@@ -176,7 +176,7 @@ export default function ChatPanel({
               } ${message.pending ? styles.pendingMessage : ''}`}
             >
               <header className={styles.messageHeader}>
-                <span className={styles.role}>{message.role === 'user' ? 'You' : 'Tutor'}</span>
+                <span className={styles.role}>{message.role === 'user' ? 'You' : 'Hassona'}</span>
                 {message.pending && <span className={styles.pendingPill}>thinking&hellip;</span>}
                 {message.error && (
                   <>

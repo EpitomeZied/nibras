@@ -43,7 +43,7 @@ export const appNavItems: AppNavItem[] = [
   },
   {
     href: '/tutor',
-    label: 'Tutor',
+    label: 'Hassona',
     description: 'Chat, insights, smart routing, and recommendations.',
     visibility: 'all',
   },
@@ -193,8 +193,8 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: 'Tier progression based on reputation and contributions.',
   },
   '/tutor': {
-    title: 'AI Tutor',
-    subtitle: 'Chat with the tutor about any topic you’re working through.',
+    title: ‘Hassona’,
+    subtitle: ‘Chat with Hassona about any topic you’re working through.’,
   },
   '/tutor/insights': {
     title: 'Learning Insights',

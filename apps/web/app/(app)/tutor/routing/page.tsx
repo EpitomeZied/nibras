@@ -41,7 +41,7 @@ export default function SmartRoutingPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>Smart Routing</h1>
         <p className={styles.subtitle}>
-          The tutor maps your goal to the right material, picking the shortest path through
+          Hassona maps your goal to the right material, picking the shortest path through
           prerequisites.
         </p>
       </header>
@@ -72,7 +72,7 @@ export default function SmartRoutingPage() {
       ) : !route ? (
         <EmptyState
           title="No route computed"
-          description="Describe a goal above and the tutor will plan a path through topics and exercises."
+          description="Describe a goal above and Hassona will plan a path through topics and exercises."
         />
       ) : (
         <>

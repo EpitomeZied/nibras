@@ -57,7 +57,7 @@ export default function LearningInsightsPage() {
           title="No insights yet"
           description={
             error ??
-            'Spend some time on the platform and the tutor will summarize your activity here.'
+            'Spend some time on the platform and Hassona will summarize your activity here.'
           }
           tone={error ? 'error' : 'default'}
           action={error ? { label: 'Retry', onClick: () => void load() } : undefined}
