@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { Fragment, useMemo } from 'react';
 import styles from './ContestCalendar.module.css';
 import type { CalendarView } from './CalendarViewToggle';
 import type { Contest } from '../../../lib/services/competitions';
@@ -194,7 +194,7 @@ function WeekView({
         </div>
       ))}
       {hours.map((h) => (
-        <div key={h} style={{ display: 'contents' }}>
+        <Fragment key={h}>
           <div className={styles.weekTimeLabel}>
             {h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}
           </div>
@@ -220,7 +220,7 @@ function WeekView({
               </div>
             );
           })}
-        </div>
+        </Fragment>
       ))}
     </div>
   );
@@ -249,7 +249,7 @@ function DayView({
       {hours.map((h) => {
         const hourContests = dayContests.filter((c) => new Date(c.startsAt).getHours() === h);
         return (
-          <div key={h} style={{ display: 'contents' }}>
+          <Fragment key={h}>
             <div className={styles.dayTimeLabel}>
               {h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}
             </div>
@@ -267,7 +267,7 @@ function DayView({
                 </a>
               ))}
             </div>
-          </div>
+          </Fragment>
         );
       })}
     </div>

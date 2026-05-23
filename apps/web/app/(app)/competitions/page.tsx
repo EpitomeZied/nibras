@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../_components/widgets/EmptyState';
@@ -46,6 +47,7 @@ const PLATFORM_LABELS: Record<string, string> = {
   atcoder: 'AtCoder',
   codechef: 'CodeChef',
   vjudge: 'VJudge',
+  uhunt: 'uHunt (UVa)',
 };
 
 type LinkStep = 'select' | 'cf-verify' | 'simple-verify' | 'success' | 'failed';
@@ -142,6 +144,8 @@ export default function CompetitionsPage() {
       if (linkHost === 'codeforces') {
         if (created.verificationProblem) setVerifyProblem(created.verificationProblem);
         setLinkStep('cf-verify');
+      } else if (created.verified) {
+        setLinkStep('success');
       } else {
         setLinkStep('simple-verify');
         const result = await verifyAccount(linkHost);
@@ -372,6 +376,13 @@ export default function CompetitionsPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <PlatformFilter selected={platformFilter} onChange={setPlatformFilter} />
         {displayMode === 'calendar' && <CalendarViewToggle view={calView} onChange={setCalView} />}
+        <Link
+          href="/competitions/codehunt"
+          className={styles.linkBtn}
+          style={{ marginLeft: 'auto' }}
+        >
+          Codehunt (UVa + CF)
+        </Link>
       </div>
 
       {accounts.length > 0 && (
@@ -455,6 +466,7 @@ export default function CompetitionsPage() {
                     <option value="atcoder">AtCoder</option>
                     <option value="codechef">CodeChef</option>
                     <option value="vjudge">VJudge</option>
+                    <option value="uhunt">uHunt (UVa)</option>
                   </select>
                 </div>
 
@@ -667,15 +679,17 @@ export default function CompetitionsPage() {
       )}
 
       {displayMode === 'calendar' ? (
-        <ContestCalendar
-          view={calView}
-          year={calYear}
-          month={calMonth}
-          contests={filteredCalContests}
-          onPrev={handlePrev}
-          onNext={handleNext}
-          onToday={handleToday}
-        />
+        <div className={styles.calendarSection}>
+          <ContestCalendar
+            view={calView}
+            year={calYear}
+            month={calMonth}
+            contests={filteredCalContests}
+            onPrev={handlePrev}
+            onNext={handleNext}
+            onToday={handleToday}
+          />
+        </div>
       ) : loading ? (
         <div
           style={{

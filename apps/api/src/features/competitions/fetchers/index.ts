@@ -4,6 +4,7 @@ import { leetcodeFetcher } from './leetcode';
 import { atcoderFetcher } from './atcoder';
 import { codechefFetcher } from './codechef';
 import { vjudgeFetcher } from './vjudge';
+import { uhuntFetcher } from './uhunt';
 
 export type { RawContest, RawProblem, RawUserStats, PlatformFetcher } from './types';
 
@@ -13,4 +14,5 @@ export const fetchers: Record<string, PlatformFetcher> = {
   atcoder: atcoderFetcher,
   codechef: codechefFetcher,
   vjudge: vjudgeFetcher,
+  uhunt: uhuntFetcher,
 };

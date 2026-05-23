@@ -2,6 +2,13 @@
   display: flex;
   flex-direction: column;
   gap: 22px;
+  width: 100%;
+  min-width: 0;
+}
+
+.calendarSection {
+  width: 100%;
+  min-width: 0;
 }
 
 .header {

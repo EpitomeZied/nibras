@@ -5,6 +5,8 @@ import { AppStore } from '../../store';
 import { enqueueCompetitionsJob } from '../../lib/competitions-queue';
 import { fetchers } from './fetchers/index';
 import { pickVerificationProblem } from './fetchers/codeforces';
+import { verifyUhuntHandle } from './codehunt/uhunt-client';
+import { registerCodehuntRoutes } from './codehunt-routes';
 
 export function registerCompetitionsRoutes(
   app: FastifyInstance,
@@ -458,16 +460,37 @@ export function registerCompetitionsRoutes(
         verificationProblemMeta = picked;
       }
 
+      if (platform === 'uhunt') {
+        const valid = await verifyUhuntHandle(handle);
+        if (!valid) {
+          return reply.status(400).send({ error: 'uHunt username not found' });
+        }
+      }
+
+      const uhuntVerified = platform === 'uhunt';
+
       const account = await prisma.linkedAccount.upsert({
         where: { userId_platform: { userId: auth.user.id, platform } },
-        create: { userId: auth.user.id, platform, handle, verificationProblem },
-        update: { handle, verificationStatus: 'pending', verifiedAt: null, verificationProblem },
+        create: {
+          userId: auth.user.id,
+          platform,
+          handle,
+          verificationProblem,
+          verificationStatus: uhuntVerified ? 'verified' : 'pending',
+          verifiedAt: uhuntVerified ? new Date() : null,
+        },
+        update: {
+          handle,
+          verificationStatus: uhuntVerified ? 'verified' : 'pending',
+          verifiedAt: uhuntVerified ? new Date() : null,
+          verificationProblem,
+        },
       });
 
       return {
         host: account.platform,
         handle: account.handle,
-        verified: false,
+        verified: uhuntVerified,
         linkedAt: account.createdAt.toISOString(),
         verificationProblem: verificationProblemMeta
           ? {
@@ -585,4 +608,6 @@ export function registerCompetitionsRoutes(
       return { verified: false };
     }
   );
+
+  registerCodehuntRoutes(app, store, prisma);
 }

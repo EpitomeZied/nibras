@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   gap: 0;
+  width: 100%;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: 14px;
   overflow: hidden;
@@ -58,7 +60,8 @@
 /* Month view */
 .weekdayHeader {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  width: 100%;
   border-bottom: 1px solid var(--border);
 }
 
@@ -74,18 +77,21 @@
 
 .monthGrid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-auto-rows: minmax(90px, auto);
+  width: 100%;
 }
 
 .dayCell {
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   padding: 6px;
+  min-width: 0;
   min-height: 90px;
   display: flex;
   flex-direction: column;
   gap: 3px;
+  overflow: hidden;
 }
 
 .dayCell:nth-child(7n) {
@@ -181,7 +187,9 @@
 /* Week view */
 .weekGrid {
   display: grid;
-  grid-template-columns: 60px repeat(7, 1fr);
+  grid-template-columns: 56px repeat(7, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
 }
 
 .weekTimeLabel {
@@ -197,14 +205,13 @@
   border-right: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   padding: 2px 4px;
+  min-width: 0;
   min-height: 36px;
+  overflow: hidden;
 }
 
-.weekSlot:last-child {
-  border-right: none;
-}
-
-.weekHeaderCell:last-child {
+.weekHeaderCell:nth-child(8n),
+.weekSlot:nth-child(8n) {
   border-right: none;
 }
 
@@ -226,7 +233,9 @@
 /* Day view */
 .dayGrid {
   display: grid;
-  grid-template-columns: 60px 1fr;
+  grid-template-columns: 56px minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
 }
 
 .daySlot {

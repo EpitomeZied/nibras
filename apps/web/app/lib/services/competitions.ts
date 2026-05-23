@@ -240,3 +240,37 @@ export async function resyncAccount(host: string): Promise<{ syncing: boolean } 
     { method: 'POST', auth: true }
   );
 }
+
+// ── Codehunt ──────────────────────────────────────────────────────────────────
+
+export type CodehuntProblem = {
+  problemId: string;
+  index: string;
+  name: string;
+  url: string;
+  solved: boolean;
+  attempted: boolean;
+  solvedCount?: number;
+  percentageAccepted?: number;
+  rating?: number;
+  tags?: string[];
+  contestId?: string;
+};
+
+export type CodehuntProblemsResponse = {
+  items: CodehuntProblem[];
+  total: number;
+  solvedCount: number;
+  handle: string | null;
+};
+
+export async function getCodehuntProblems(
+  site: 'uhunt' | 'codeforces',
+  handle?: string
+): Promise<CodehuntProblemsResponse> {
+  const query = handle ? { handle } : undefined;
+  return serviceFetch<CodehuntProblemsResponse>('competitions', `/v1/codehunt/${site}/problems`, {
+    auth: true,
+    query,
+  });
+}

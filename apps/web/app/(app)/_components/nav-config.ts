@@ -232,6 +232,10 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     title: 'Contest History',
     subtitle: 'Your past contest performance and rating trend.',
   },
+  '/competitions/codehunt': {
+    title: 'Codehunt',
+    subtitle: 'uHunt and Codeforces problem grids with solved highlighting.',
+  },
   '/instructor/analytics': {
     title: 'Analytics',
     subtitle: 'Aggregate cross-course signal and risk callouts.',
