@@ -26,25 +26,23 @@ FROM node:20-alpine AS api
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/packages ./packages
 COPY --from=build /app/prisma ./prisma
 EXPOSE 4848
-CMD ["node", "apps/api/dist/server.js"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node apps/api/dist/server.js"]
 
 # ── Worker service ────────────────────────────────────────────────────────────
 FROM node:20-alpine AS worker
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/apps/worker/dist ./apps/worker/dist
 COPY --from=build /app/apps/worker/package.json ./apps/worker/package.json
 COPY --from=build /app/packages ./packages
 COPY --from=build /app/prisma ./prisma
-CMD ["node", "apps/worker/dist/worker.js"]
+CMD ["sh", "-c", "npx prisma generate && node apps/worker/dist/worker.js"]
 
 # ── Web service ───────────────────────────────────────────────────────────────
 FROM node:20-alpine AS web
