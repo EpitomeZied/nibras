@@ -92,7 +92,7 @@ export default function CfAnalyticsDashboard({ data, handle }: CfAnalyticsDashbo
     const keys = Object.keys(data.rating).sort((a, b) => Number(a) - Number(b));
     if (keys.length === 0) return null;
     return {
-      title: { text: 'Problem ratings solved', left: 'center' },
+      title: { text: 'Problems solved by difficulty', left: 'center' },
       tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
       grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
       xAxis: { type: 'category', data: keys },

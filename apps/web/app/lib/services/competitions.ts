@@ -327,3 +327,66 @@ export async function getPracticeCfAnalytics(handle?: string): Promise<CfAnalyti
     query,
   });
 }
+
+// ── Practice (LeetCode) ───────────────────────────────────────────────────────
+
+export type PracticeLcProblem = {
+  problemId: string;
+  index: string;
+  name: string;
+  url: string;
+  solved: boolean;
+  attempted: boolean;
+  rating?: number;
+  difficultyLabel?: string;
+  tags?: string[];
+  acRate?: number;
+};
+
+export type PracticeLcProblemsResponse = {
+  items: PracticeLcProblem[];
+  total: number;
+  solvedCount: number;
+  handle: string | null;
+  page: number;
+  limit: number;
+};
+
+export type LcAnalyticsPayload = CfAnalyticsPayload;
+
+export type PracticeLcProblemsParams = {
+  handle?: string;
+  page?: number;
+  limit?: number;
+  q?: string;
+  tag?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  solved?: 'true' | 'false';
+};
+
+export async function getPracticeLcProblems(
+  params?: PracticeLcProblemsParams
+): Promise<PracticeLcProblemsResponse> {
+  const query: Record<string, string> = {};
+  if (params?.handle) query.handle = params.handle;
+  if (params?.page) query.page = String(params.page);
+  if (params?.limit) query.limit = String(params.limit);
+  if (params?.q) query.q = params.q;
+  if (params?.tag) query.tag = params.tag;
+  if (params?.difficulty) query.difficulty = params.difficulty;
+  if (params?.solved) query.solved = params.solved;
+
+  return serviceFetch<PracticeLcProblemsResponse>(
+    'competitions',
+    '/v1/practice/leetcode/problems',
+    { auth: true, query: Object.keys(query).length ? query : undefined }
+  );
+}
+
+export async function getPracticeLcAnalytics(handle?: string): Promise<LcAnalyticsPayload> {
+  const query = handle ? { handle } : undefined;
+  return serviceFetch<LcAnalyticsPayload>('competitions', '/v1/practice/leetcode/analytics', {
+    auth: true,
+    query,
+  });
+}

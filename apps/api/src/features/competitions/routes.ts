@@ -6,6 +6,7 @@ import { enqueueCompetitionsJob } from '../../lib/competitions-queue';
 import { fetchers } from './fetchers/index';
 import { pickVerificationProblem } from './fetchers/codeforces';
 import { registerPracticeCodeforcesRoutes } from './practice-codeforces-routes';
+import { registerPracticeLeetcodeRoutes } from './practice-leetcode-routes';
 
 export function registerCompetitionsRoutes(
   app: FastifyInstance,
@@ -604,4 +605,5 @@ export function registerCompetitionsRoutes(
   );
 
   registerPracticeCodeforcesRoutes(app, store, prisma);
+  registerPracticeLeetcodeRoutes(app, store, prisma);
 }

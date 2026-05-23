@@ -5,13 +5,19 @@ import { Suspense, useCallback } from 'react';
 import styles from './page.module.css';
 import AllPlatformsPractice from './_components/AllPlatformsPractice';
 import CodeforcesPractice from './_components/CodeforcesPractice';
+import LeetcodePractice from './_components/LeetcodePractice';
 
-type PracticeTab = 'all' | 'codeforces';
+type PracticeTab = 'all' | 'codeforces' | 'leetcode';
+
+function tabFromParam(value: string | null): PracticeTab {
+  if (value === 'codeforces' || value === 'leetcode') return value;
+  return 'all';
+}
 
 function PracticeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const tab: PracticeTab = searchParams.get('tab') === 'codeforces' ? 'codeforces' : 'all';
+  const tab = tabFromParam(searchParams.get('tab'));
 
   const setTab = useCallback(
     (next: PracticeTab) => {
@@ -33,8 +39,8 @@ function PracticeContent() {
         <div>
           <h1 className={styles.title}>Practice</h1>
           <p className={styles.subtitle}>
-            Browse problems across platforms, or use the Codeforces tab for the full problemset,
-            solved highlighting, and submission analytics.
+            Browse problems across platforms, or open Codeforces / LeetCode for the full problemset,
+            solved highlighting, and analytics.
           </p>
         </div>
       </header>
@@ -58,9 +64,24 @@ function PracticeContent() {
         >
           Codeforces
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'leetcode'}
+          className={`${styles.tabChip} ${tab === 'leetcode' ? styles.tabChipActive : ''}`}
+          onClick={() => setTab('leetcode')}
+        >
+          LeetCode
+        </button>
       </div>
 
-      {tab === 'all' ? <AllPlatformsPractice /> : <CodeforcesPractice />}
+      {tab === 'all' ? (
+        <AllPlatformsPractice />
+      ) : tab === 'codeforces' ? (
+        <CodeforcesPractice />
+      ) : (
+        <LeetcodePractice />
+      )}
     </div>
   );
 }

@@ -154,11 +154,26 @@ export const leetcodeFetcher: PlatformFetcher = {
         delta: i > 0 ? Math.round(h.rating - arr[i - 1].rating) : 0,
       }));
 
+    let solvedProblemIds: string[] = [];
+    try {
+      const acData = await gql<{
+        recentAcSubmissionList: Array<{ titleSlug: string }>;
+      }>(
+        `query($username: String!) {
+          recentAcSubmissionList(username: $username, limit: 20) { titleSlug }
+        }`,
+        { username: handle }
+      );
+      solvedProblemIds = (acData.recentAcSubmissionList ?? []).map((s) => s.titleSlug);
+    } catch {
+      solvedProblemIds = [];
+    }
+
     return {
       rating,
       maxRating: rating,
       contestHistory: history,
-      solvedProblemIds: [],
+      solvedProblemIds,
     };
   },
 };
