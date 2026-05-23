@@ -26,6 +26,7 @@ FROM node:20-alpine AS api
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/packages ./packages
@@ -38,6 +39,7 @@ FROM node:20-alpine AS worker
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=build /app/apps/worker/dist ./apps/worker/dist
 COPY --from=build /app/apps/worker/package.json ./apps/worker/package.json
 COPY --from=build /app/packages ./packages
@@ -48,9 +50,10 @@ CMD ["node", "apps/worker/dist/worker.js"]
 FROM node:20-alpine AS web
 WORKDIR /app
 ENV NODE_ENV=production
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=build /app/apps/web/.next ./apps/web/.next
-COPY --from=build /app/apps/web/package.json ./apps/web/package.json
-COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/apps/web/.next/standalone ./
+COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build /app/apps/web/public ./apps/web/public
 EXPOSE 3000
-CMD ["npm", "run", "start", "--workspace=@nibras/web"]
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+CMD ["node", "apps/web/server.js"]
