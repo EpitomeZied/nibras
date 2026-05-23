@@ -390,3 +390,51 @@ export async function getPracticeLcAnalytics(handle?: string): Promise<LcAnalyti
     query,
   });
 }
+
+// ── Nibras 75 (interview) ─────────────────────────────────────────────────────
+
+export type Nibras75Problem = {
+  rank: number;
+  problemId: string;
+  name: string;
+  url: string;
+  difficulty: string;
+  description: string;
+  tags: string[];
+  askedByCount: number;
+  solved: boolean;
+  attempted: boolean;
+};
+
+export type Nibras75ProblemsResponse = {
+  title: string;
+  subtitle: string;
+  totalCurriculum: number;
+  items: Nibras75Problem[];
+  total: number;
+  solvedCount: number;
+  completedInSet: number;
+  handle: string | null;
+};
+
+export type Nibras75ProblemsParams = {
+  handle?: string;
+  q?: string;
+  difficulty?: 'easy' | 'medium' | 'hard';
+  solved?: 'true' | 'false';
+};
+
+export async function getNibras75Problems(
+  params?: Nibras75ProblemsParams
+): Promise<Nibras75ProblemsResponse> {
+  const query: Record<string, string> = {};
+  if (params?.handle) query.handle = params.handle;
+  if (params?.q) query.q = params.q;
+  if (params?.difficulty) query.difficulty = params.difficulty;
+  if (params?.solved) query.solved = params.solved;
+
+  return serviceFetch<Nibras75ProblemsResponse>('competitions', '/v1/practice/nibras-75/problems', {
+    auth: true,
+    query: Object.keys(query).length ? query : undefined,
+  });
+}

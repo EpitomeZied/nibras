@@ -1,16 +1,15 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, useCallback } from 'react';
+import { Suspense, useCallback, useEffect } from 'react';
 import styles from './page.module.css';
 import AllPlatformsPractice from './_components/AllPlatformsPractice';
 import CodeforcesPractice from './_components/CodeforcesPractice';
-import LeetcodePractice from './_components/LeetcodePractice';
 
-type PracticeTab = 'all' | 'codeforces' | 'leetcode';
+type PracticeTab = 'all' | 'codeforces';
 
 function tabFromParam(value: string | null): PracticeTab {
-  if (value === 'codeforces' || value === 'leetcode') return value;
+  if (value === 'codeforces') return 'codeforces';
   return 'all';
 }
 
@@ -18,6 +17,12 @@ function PracticeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tab = tabFromParam(searchParams.get('tab'));
+
+  useEffect(() => {
+    if (searchParams.get('tab') === 'leetcode') {
+      router.replace('/competitions/nibras-75');
+    }
+  }, [searchParams, router]);
 
   const setTab = useCallback(
     (next: PracticeTab) => {
@@ -39,8 +44,12 @@ function PracticeContent() {
         <div>
           <h1 className={styles.title}>Practice</h1>
           <p className={styles.subtitle}>
-            Browse problems across platforms, or open Codeforces / LeetCode for the full problemset,
-            solved highlighting, and analytics.
+            Browse problems across platforms, or use Codeforces for the full problemset and
+            analytics. For interview prep, see{' '}
+            <a href="/competitions/nibras-75" style={{ color: 'var(--primary, #22c55e)' }}>
+              Nibras 75
+            </a>
+            .
           </p>
         </div>
       </header>
@@ -64,24 +73,9 @@ function PracticeContent() {
         >
           Codeforces
         </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'leetcode'}
-          className={`${styles.tabChip} ${tab === 'leetcode' ? styles.tabChipActive : ''}`}
-          onClick={() => setTab('leetcode')}
-        >
-          LeetCode
-        </button>
       </div>
 
-      {tab === 'all' ? (
-        <AllPlatformsPractice />
-      ) : tab === 'codeforces' ? (
-        <CodeforcesPractice />
-      ) : (
-        <LeetcodePractice />
-      )}
+      {tab === 'all' ? <AllPlatformsPractice /> : <CodeforcesPractice />}
     </div>
   );
 }

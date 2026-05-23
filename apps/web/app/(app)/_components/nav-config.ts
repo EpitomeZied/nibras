@@ -222,7 +222,11 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
   },
   '/competitions/practice': {
     title: 'Practice',
-    subtitle: 'Multi-platform problems plus Codeforces and LeetCode analytics.',
+    subtitle: 'Multi-platform problems and Codeforces analytics.',
+  },
+  '/competitions/nibras-75': {
+    title: 'Nibras 75',
+    subtitle: 'Curated LeetCode interview list — 75 essential DSA problems.',
   },
   '/competitions/ranking': {
     title: 'Ranking',
