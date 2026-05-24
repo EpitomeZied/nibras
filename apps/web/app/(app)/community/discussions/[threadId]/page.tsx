@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './page.module.css';
 import Avatar from '../../../_components/widgets/Avatar';
 import EmptyState from '../../../_components/widgets/EmptyState';
 import Skeleton from '../../../_components/widgets/Skeleton';
+import MarkdownToolbar from '../../../_components/widgets/MarkdownToolbar';
 import VoteButton from '../../../_components/widgets/VoteButton';
 import {
   createPost,
@@ -41,6 +42,7 @@ export default function ThreadPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const replyRef = useRef<HTMLTextAreaElement>(null);
 
   const isInstructorOrTa =
     user?.systemRole === 'admin' ||
@@ -229,7 +231,9 @@ export default function ThreadPage() {
       ) : user ? (
         <form className={styles.composer} onSubmit={handleSubmit}>
           <span className={styles.composerLabel}>Reply</span>
+          <MarkdownToolbar textareaRef={replyRef} onChange={setDraft} />
           <textarea
+            ref={replyRef}
             className={styles.composerInput}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}

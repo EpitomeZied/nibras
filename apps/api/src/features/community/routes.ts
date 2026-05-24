@@ -412,6 +412,115 @@ export function registerCommunityRoutes(
     }
   );
 
+  app.get(
+    '/v1/community/tags/admin',
+    { schema: { tags: ['community'], summary: 'List all tags (admin)' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      if (auth.user.systemRole !== 'admin') {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const tags = await prisma.communityTag.findMany({ orderBy: { name: 'asc' } });
+      return { tags: tags.map((t) => ({ ...t, _id: t.id })) };
+    }
+  );
+
+  app.post(
+    '/v1/community/tags',
+    { schema: { tags: ['community'], summary: 'Create a tag (admin)' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      if (auth.user.systemRole !== 'admin') {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const body = request.body as { name?: string; description?: string };
+      if (!body.name?.trim()) {
+        reply.code(400).send(Errors.validation('Tag name is required.'));
+        return;
+      }
+      const existing = await prisma.communityTag.findUnique({ where: { name: body.name.trim() } });
+      if (existing) {
+        reply.code(409).send(Errors.validation('A tag with this name already exists.'));
+        return;
+      }
+      const tag = await prisma.communityTag.create({
+        data: {
+          name: body.name.trim(),
+          description: body.description?.trim() ?? null,
+        },
+      });
+      reply.code(201);
+      return { tag: { ...tag, _id: tag.id } };
+    }
+  );
+
+  app.put(
+    '/v1/community/tags/:tagId',
+    { schema: { tags: ['community'], summary: 'Update a tag (admin)' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      if (auth.user.systemRole !== 'admin') {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const { tagId } = request.params as { tagId: string };
+      const body = request.body as { name?: string; description?: string };
+      const tag = await prisma.communityTag.findUnique({ where: { id: tagId } });
+      if (!tag) {
+        reply.code(404).send(Errors.notFound('Tag'));
+        return;
+      }
+      const data: Record<string, unknown> = {};
+      if (body.name?.trim()) {
+        const trimmedName = body.name.trim();
+        if (trimmedName !== tag.name) {
+          const conflict = await prisma.communityTag.findUnique({ where: { name: trimmedName } });
+          if (conflict) {
+            reply.code(409).send(Errors.validation('A tag with this name already exists.'));
+            return;
+          }
+          data.name = trimmedName;
+        }
+      }
+      if (body.description !== undefined) {
+        data.description = body.description?.trim() || null;
+      }
+      if (Object.keys(data).length === 0) {
+        return { tag: { ...tag, _id: tag.id } };
+      }
+      const updated = await prisma.communityTag.update({ where: { id: tagId }, data });
+      return { tag: { ...updated, _id: updated.id } };
+    }
+  );
+
+  app.delete(
+    '/v1/community/tags/:tagId',
+    { schema: { tags: ['community'], summary: 'Delete a tag (admin)' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      if (auth.user.systemRole !== 'admin') {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const { tagId } = request.params as { tagId: string };
+      const tag = await prisma.communityTag.findUnique({ where: { id: tagId } });
+      if (!tag) {
+        reply.code(404).send(Errors.notFound('Tag'));
+        return;
+      }
+      await prisma.$transaction([
+        prisma.communityTag.delete({ where: { id: tagId } }),
+      ]);
+      return { deleted: true };
+    }
+  );
+
   // ── Threads ─────────────────────────────────────────────────────────────
 
   app.get(

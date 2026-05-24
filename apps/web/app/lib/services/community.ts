@@ -400,3 +400,70 @@ export async function listTags(): Promise<CommunityTag[]> {
   const list = Array.isArray(wire) ? wire : (wire.tags ?? []);
   return list.map(normalizeTag);
 }
+
+export type AdminCommunityTag = {
+  id: string;
+  name: string;
+  description: string | null;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type WireAdminTag = {
+  _id?: string;
+  id?: string;
+  name: string;
+  description?: string | null;
+  usageCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+function normalizeAdminTag(t: WireAdminTag): AdminCommunityTag {
+  return {
+    id: t._id ?? t.id ?? '',
+    name: t.name,
+    description: t.description ?? null,
+    usageCount: t.usageCount ?? 0,
+    createdAt: t.createdAt ?? '',
+    updatedAt: t.updatedAt ?? '',
+  };
+}
+
+export async function listTagsAdmin(): Promise<AdminCommunityTag[]> {
+  const raw = await serviceFetch<unknown>('community', '/v1/community/tags/admin', { auth: true });
+  const wire = raw as { tags?: WireAdminTag[] } | WireAdminTag[];
+  const list = Array.isArray(wire) ? wire : (wire.tags ?? []);
+  return list.map(normalizeAdminTag);
+}
+
+export async function createTag(payload: { name: string; description?: string }) {
+  const raw = await serviceFetch<unknown>('community', '/v1/community/tags', {
+    method: 'POST',
+    auth: true,
+    body: payload as Record<string, unknown>,
+  });
+  const wire = raw as { tag?: WireAdminTag } | WireAdminTag;
+  const t = (wire as { tag?: WireAdminTag }).tag ?? (wire as WireAdminTag);
+  return normalizeAdminTag(t);
+}
+
+export async function updateTag(tagId: string, payload: { name?: string; description?: string }) {
+  const raw = await serviceFetch<unknown>('community', `/v1/community/tags/${tagId}`, {
+    method: 'PUT',
+    auth: true,
+    body: payload as Record<string, unknown>,
+  });
+  const wire = raw as { tag?: WireAdminTag } | WireAdminTag;
+  const t = (wire as { tag?: WireAdminTag }).tag ?? (wire as WireAdminTag);
+  return normalizeAdminTag(t);
+}
+
+export async function deleteTag(tagId: string) {
+  return serviceFetch<{ deleted: true }>('community', `/v1/community/tags/${tagId}`, {
+    method: 'DELETE',
+    auth: true,
+    body: {},
+  });
+}

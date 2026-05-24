@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
 import Avatar from '../../../_components/widgets/Avatar';
 import EmptyState from '../../../_components/widgets/EmptyState';
 import Skeleton from '../../../_components/widgets/Skeleton';
+import MarkdownToolbar from '../../../_components/widgets/MarkdownToolbar';
 import VoteButton from '../../../_components/widgets/VoteButton';
 import {
   acceptAnswer,
@@ -42,6 +43,8 @@ export default function QuestionPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const load = useCallback(async () => {
     if (!questionId) return;
@@ -169,6 +172,24 @@ export default function QuestionPage() {
           {question.author.reputation !== undefined && (
             <span>{question.author.reputation} rep</span>
           )}
+          <div className={styles.questionActions}>
+            <button
+              type="button"
+              className={styles.copyBtn}
+              onClick={() => {
+                void navigator.clipboard.writeText(window.location.href).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                });
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+                <path d="M8.5 3.5V2a1.5 1.5 0 00-1.5-1.5H2A1.5 1.5 0 00.5 2v5A1.5 1.5 0 002 8.5h1.5" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
+              {copied ? 'Copied!' : 'Copy link'}
+            </button>
+          </div>
         </div>
       </article>
 
@@ -257,7 +278,9 @@ export default function QuestionPage() {
       {user ? (
         <form className={styles.composer} onSubmit={handleSubmit}>
           <span className={styles.composerLabel}>Your answer</span>
+          <MarkdownToolbar textareaRef={textareaRef} onChange={setDraft} />
           <textarea
+            ref={textareaRef}
             className={styles.composerInput}
             value={draft}
             onChange={(event) => setDraft(event.target.value)}

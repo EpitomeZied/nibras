@@ -1,0 +1,183 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.addForm {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 12px;
+}
+
+.input {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  padding: 7px 10px;
+  border-radius: 8px;
+  flex: 1 1 160px;
+  min-width: 120px;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary, #22c55e);
+}
+
+.addBtn {
+  background: var(--primary, #22c55e);
+  color: #052e16;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+}
+
+.addBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.error {
+  width: 100%;
+  color: var(--danger, #ef4444);
+  font-size: 12px;
+  margin: 0;
+}
+
+.table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tableHeader {
+  display: grid;
+  grid-template-columns: 1fr 2fr 80px 160px;
+  gap: 12px;
+  padding: 10px 16px;
+  background: color-mix(in oklab, var(--surface) 90%, var(--border));
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: 1fr 2fr 80px 160px;
+  gap: 12px;
+  padding: 10px 16px;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.tagName {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.tagDesc {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.usage {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.editBtn,
+.deleteBtn,
+.saveBtn,
+.cancelBtn {
+  border: 1px solid var(--border);
+  background: transparent;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.editBtn {
+  color: var(--text-muted);
+}
+
+.editBtn:hover {
+  border-color: var(--primary, #22c55e);
+  color: var(--primary, #22c55e);
+}
+
+.deleteBtn {
+  color: var(--danger, #ef4444);
+  border-color: color-mix(in oklab, var(--danger, #ef4444) 30%, var(--border));
+}
+
+.deleteBtn:hover {
+  border-color: var(--danger, #ef4444);
+}
+
+.deleteBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.saveBtn {
+  background: var(--primary, #22c55e);
+  border-color: var(--primary, #22c55e);
+  color: #052e16;
+}
+
+.saveBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cancelBtn {
+  color: var(--text-muted);
+}

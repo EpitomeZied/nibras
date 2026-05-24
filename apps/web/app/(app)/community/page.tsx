@@ -20,6 +20,7 @@ import {
 import { friendlyMessage } from '../../lib/api-clients/errors';
 import { useSession } from '../_components/session-context';
 import { useDebounce } from '../../lib/hooks/use-debounce';
+import { useBookmarks } from '../../lib/hooks/use-bookmarks';
 import { stripMarkdown } from '../../lib/strip-markdown';
 
 const SORTS: Array<{ value: NonNullable<QuestionFilters['sort']>; label: string }> = [
@@ -48,10 +49,13 @@ function formatRelative(iso: string): string {
 export default function CommunityPage() {
   const router = useRouter();
   const { user } = useSession();
+  const { toggle: toggleBookmark, isBookmarked } = useBookmarks();
   const [questions, setQuestions] = useState<CommunityQuestion[]>([]);
   const [tags, setTags] = useState<CommunityTag[]>([]);
   const [sort, setSort] = useState<NonNullable<QuestionFilters['sort']>>('newest');
-  const [tag, setTag] = useState<string | undefined>();
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [mine, setMine] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +70,23 @@ export default function CommunityPage() {
   const [askTags, setAskTags] = useState('');
   const [askSubmitting, setAskSubmitting] = useState(false);
   const [askError, setAskError] = useState<string | null>(null);
+
+  const debouncedAskTitle = useDebounce(askTitle, 400);
+  const [suggestions, setSuggestions] = useState<CommunityQuestion[]>([]);
+
+  useEffect(() => {
+    if (!askOpen || debouncedAskTitle.trim().length < 5) {
+      setSuggestions([]);
+      return;
+    }
+    let cancelled = false;
+    void listQuestions({ q: debouncedAskTitle.trim(), limit: 5 }).then((res) => {
+      if (!cancelled) setSuggestions(res.items);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedAskTitle, askOpen]);
 
   async function handleAskSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -97,8 +118,15 @@ export default function CommunityPage() {
   }
 
   const filters = useMemo<QuestionFilters>(
-    () => ({ sort, tag, q: debouncedQ, page, limit: 30 }),
-    [sort, tag, debouncedQ, page]
+    () => ({
+      sort,
+      tags: selectedTags.length > 0 ? selectedTags : undefined,
+      q: debouncedQ,
+      page,
+      limit: 30,
+      authorId: mine && user ? user.id : undefined,
+    }),
+    [sort, selectedTags, debouncedQ, page, mine, user]
   );
 
   const load = useCallback(async () => {
@@ -127,7 +155,7 @@ export default function CommunityPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [sort, tag, debouncedQ]);
+  }, [sort, selectedTags, debouncedQ, mine]);
 
   useEffect(() => {
     if (!askOpen) return;
@@ -140,6 +168,16 @@ export default function CommunityPage() {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [askOpen]);
+
+  function toggleTag(name: string) {
+    setSelectedTags((prev) =>
+      prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]
+    );
+  }
+
+  const displayedQuestions = saved
+    ? questions.filter((qItem) => isBookmarked(qItem.id))
+    : questions;
 
   return (
     <div className={styles.page}>
@@ -191,6 +229,25 @@ export default function CommunityPage() {
                 autoFocus
                 required
               />
+              {suggestions.length > 0 && (
+                <div className={styles.suggestions}>
+                  <span className={styles.suggestionsLabel}>Similar questions already asked:</span>
+                  {suggestions.map((s) => (
+                    <a
+                      key={s.id}
+                      href={`/community/q/${s.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.suggestionItem}
+                    >
+                      {s.title}
+                      <span className={styles.suggestionMeta}>
+                        {s.answerCount} answers · {s.score} votes
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
             <div className={styles.formRow}>
               <label className={styles.formLabel} htmlFor="ask-body">
@@ -258,19 +315,45 @@ export default function CommunityPage() {
             onChange={(event) => setQ(event.target.value)}
           />
         </div>
-        <div role="tablist" aria-label="Sort" className={styles.tabs}>
-          {SORTS.map((s) => (
+        <div className={styles.toolbarRight}>
+          <div role="tablist" aria-label="Sort" className={styles.tabs}>
+            {SORTS.map((s) => (
+              <button
+                key={s.value}
+                type="button"
+                role="tab"
+                aria-selected={sort === s.value}
+                className={`${styles.tab} ${sort === s.value ? styles.tabActive : ''}`}
+                onClick={() => setSort(s.value)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          {user && (
             <button
-              key={s.value}
               type="button"
-              role="tab"
-              aria-selected={sort === s.value}
-              className={`${styles.tab} ${sort === s.value ? styles.tabActive : ''}`}
-              onClick={() => setSort(s.value)}
+              className={`${styles.filterToggle} ${mine ? styles.filterToggleActive : ''}`}
+              onClick={() => setMine(!mine)}
             >
-              {s.label}
+              Mine
             </button>
-          ))}
+          )}
+          <button
+            type="button"
+            className={`${styles.filterToggle} ${saved ? styles.filterToggleActive : ''}`}
+            onClick={() => setSaved(!saved)}
+            title="Saved questions"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path
+                d="M3 2h8v10l-4-2.5L3 12V2z"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                fill={saved ? 'currentColor' : 'none'}
+              />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -278,8 +361,8 @@ export default function CommunityPage() {
         <div className={styles.tagFilter}>
           <button
             type="button"
-            className={`${styles.tagChip} ${tag === undefined ? styles.tagChipActive : ''}`}
-            onClick={() => setTag(undefined)}
+            className={`${styles.tagChip} ${selectedTags.length === 0 ? styles.tagChipActive : ''}`}
+            onClick={() => setSelectedTags([])}
           >
             All
           </button>
@@ -287,8 +370,8 @@ export default function CommunityPage() {
             <button
               key={t.name}
               type="button"
-              className={`${styles.tagChip} ${tag === t.name ? styles.tagChipActive : ''}`}
-              onClick={() => setTag(tag === t.name ? undefined : t.name)}
+              className={`${styles.tagChip} ${selectedTags.includes(t.name) ? styles.tagChipActive : ''}`}
+              onClick={() => toggleTag(t.name)}
             >
               {t.name} <span style={{ opacity: 0.6 }}>· {t.count}</span>
             </button>
@@ -296,16 +379,24 @@ export default function CommunityPage() {
         </div>
       )}
 
-      {(tag || q.trim()) && (
+      {(selectedTags.length > 0 || q.trim() || mine) && (
         <div className={styles.activeFilters}>
-          {tag && (
-            <span className={styles.activeFilterPill}>
-              tag: <strong>{tag}</strong>
+          {selectedTags.map((tagName) => (
+            <span key={tagName} className={styles.activeFilterPill}>
+              tag: <strong>{tagName}</strong>
               <button
                 type="button"
-                aria-label={`Clear tag ${tag}`}
-                onClick={() => setTag(undefined)}
+                aria-label={`Clear tag ${tagName}`}
+                onClick={() => toggleTag(tagName)}
               >
+                ×
+              </button>
+            </span>
+          ))}
+          {mine && (
+            <span className={styles.activeFilterPill}>
+              <strong>My questions</strong>
+              <button type="button" aria-label="Clear mine filter" onClick={() => setMine(false)}>
                 ×
               </button>
             </span>
@@ -322,8 +413,9 @@ export default function CommunityPage() {
             type="button"
             className={styles.clearAllBtn}
             onClick={() => {
-              setTag(undefined);
+              setSelectedTags([]);
               setQ('');
+              setMine(false);
             }}
           >
             Clear all
@@ -342,14 +434,14 @@ export default function CommunityPage() {
           tone="error"
           action={{ label: 'Retry', onClick: () => void load() }}
         />
-      ) : questions.length === 0 ? (
+      ) : displayedQuestions.length === 0 ? (
         <EmptyState
-          title="No questions match"
-          description="Try a different tag or clear your search."
+          title={saved ? 'No saved questions' : 'No questions match'}
+          description={saved ? 'Bookmark questions to see them here.' : 'Try a different tag or clear your search.'}
         />
       ) : (
         <div className={styles.list}>
-          {questions.map((question) => (
+          {displayedQuestions.map((question) => (
             <div key={question.id} className={styles.row}>
               <VoteButton
                 score={question.score}
@@ -397,13 +489,28 @@ export default function CommunityPage() {
                 <Avatar url={question.author.avatarUrl} name={question.author.username} size={24} />
                 <span className={styles.author}>{question.author.username}</span>
                 <span className={styles.timestamp}>{formatRelative(question.createdAt)}</span>
+                <button
+                  type="button"
+                  className={styles.bookmarkBtn}
+                  onClick={() => toggleBookmark(question.id)}
+                  aria-label={isBookmarked(question.id) ? 'Remove bookmark' : 'Bookmark'}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path
+                      d="M3 2h8v10l-4-2.5L3 12V2z"
+                      stroke="currentColor"
+                      strokeWidth="1.3"
+                      fill={isBookmarked(question.id) ? 'currentColor' : 'none'}
+                    />
+                  </svg>
+                </button>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {totalPages > 1 && (
+      {totalPages > 1 && !saved && (
         <div className={styles.pagination}>
           <button
             type="button"
