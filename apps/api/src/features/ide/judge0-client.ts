@@ -32,11 +32,16 @@ function judge0Headers(): Record<string, string> {
 
 async function judge0Fetch(path: string, init?: RequestInit): Promise<Response> {
   const url = `${judge0BaseUrl()}${path}`;
+  const timeoutMs = Number.parseInt(process.env.JUDGE0_REQUEST_TIMEOUT_MS || '60000', 10);
   const headers = {
     ...judge0Headers(),
     ...(init?.headers as Record<string, string> | undefined),
   };
-  return fetch(url, { ...init, headers });
+  return fetch(url, {
+    ...init,
+    headers,
+    signal: init?.signal ?? AbortSignal.timeout(timeoutMs),
+  });
 }
 
 function decodeBase64(value: string | null | undefined): string | null {

@@ -68,7 +68,8 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https://avatars.githubusercontent.com https://i.ytimg.com",
       `connect-src ${connectSrc}`,
-      "font-src 'self'",
+      "font-src 'self' data:",
+      "worker-src 'self' blob:",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -83,6 +84,15 @@ const nextConfig: NextConfig = {
   // Required for monorepo standalone builds to correctly trace and bundle
   // workspace dependencies from the repo root. Moved out of experimental in Next.js 15.
   outputFileTracingRoot: path.join(__dirname, '../../'),
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.module.rules.push({
+        test: /\.ttf$/,
+        type: 'asset/resource',
+      });
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       {

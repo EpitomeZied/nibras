@@ -1,7 +1,8 @@
 'use client';
 
 import Editor, { type OnMount } from '@monaco-editor/react';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { configureMonacoLoader } from './monaco-bootstrap';
 import styles from '../page.module.css';
 
 type CodeEditorProps = {
@@ -19,15 +20,30 @@ export default function CodeEditor({
   onRun,
   readOnly = false,
 }: CodeEditorProps) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    configureMonacoLoader();
+    setReady(true);
+  }, []);
+
   const handleMount: OnMount = useCallback(
-    (editor, monaco) => {
-      editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
+    (editor, editorMonaco) => {
+      editor.addCommand(editorMonaco.KeyMod.CtrlCmd | editorMonaco.KeyCode.Enter, () => {
         onRun?.();
       });
       editor.focus();
     },
     [onRun]
   );
+
+  if (!ready) {
+    return (
+      <div className={styles.editorPane}>
+        <div className={styles.editorLoading}>Loading editor…</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.editorPane}>
@@ -38,6 +54,7 @@ export default function CodeEditor({
         onChange={(next) => onChange(next ?? '')}
         onMount={handleMount}
         theme="vs-dark"
+        loading={<div className={styles.editorLoading}>Loading editor…</div>}
         options={{
           readOnly,
           minimap: { enabled: false },

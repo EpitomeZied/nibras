@@ -28,12 +28,24 @@ az provider register --namespace Microsoft.ContainerInstance --wait --output non
 
 if az container show --resource-group "$RG" --name "$ACI_NAME" >/dev/null 2>&1; then
   IP=$(az container show --resource-group "$RG" --name "$ACI_NAME" --query ipAddress.ip -o tsv)
-  echo "Container group '$ACI_NAME' already exists. IP: $IP"
-  echo "Judge0 URL: http://${IP}:2358"
-  exit 0
+  if [ "${FORCE_RECREATE:-}" != "1" ]; then
+    echo "Container group '$ACI_NAME' already exists. IP: $IP"
+    echo "Judge0 URL: http://${IP}:2358"
+    echo "To upgrade resources: FORCE_RECREATE=1 $0"
+    exit 0
+  fi
+  echo "==> Deleting existing container group for recreate"
+  az container delete --resource-group "$RG" --name "$ACI_NAME" --yes --output none
 fi
 
-AUTHN_TOKEN="${JUDGE0_AUTH_TOKEN:-$(openssl rand -hex 32)}"
+# Reuse existing API auth token when recreating so secrets stay in sync.
+EXISTING_TOKEN=$(az containerapp secret show \
+  --name "$API_APP_NAME" \
+  --resource-group "$RG" \
+  --secret-name judge0-auth-token \
+  --query value -o tsv 2>/dev/null || true)
+
+AUTHN_TOKEN="${JUDGE0_AUTH_TOKEN:-${EXISTING_TOKEN:-$(openssl rand -hex 32)}}"
 REDIS_PASSWORD="${JUDGE0_REDIS_PASSWORD:-$(openssl rand -hex 16)}"
 POSTGRES_PASSWORD="${JUDGE0_POSTGRES_PASSWORD:-$(openssl rand -hex 16)}"
 SECRET_KEY_BASE="${JUDGE0_SECRET_KEY_BASE:-$(openssl rand -hex 32)}"
@@ -47,7 +59,7 @@ sed \
   -e "s/francecentral/${LOCATION}/g" \
   "$TEMPLATE" >"$DEPLOY_YAML"
 
-echo "==> Creating container group (4 containers, ~3 GB RAM total)"
+echo "==> Creating container group (5 containers, 4 vCPU / ~8.5 GB — optimized for compile speed)"
 az container create \
   --resource-group "$RG" \
   --file "$DEPLOY_YAML" \

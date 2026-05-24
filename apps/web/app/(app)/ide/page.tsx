@@ -153,7 +153,8 @@ export default function IdePage() {
           <p style={{ margin: '8px 0 0' }}>
             Local: <code>docker compose -f docker-compose.judge0.yml up -d</code>, set{' '}
             <code>JUDGE0_*</code> in <code>.env</code>, restart the API. Azure: run{' '}
-            <code>./scripts/provision-azure-judge0.sh</code> (see <code>docs/azure-judge0.md</code>).
+            <code>./scripts/provision-azure-judge0.sh</code> (see <code>docs/azure-judge0.md</code>
+            ).
           </p>
         </div>
       </div>

@@ -38,7 +38,7 @@ properties:
         resources:
           requests:
             cpu: 0.25
-            memoryInGb: 0.5
+            memoryInGb: 1.0
 
     - name: judge0-server
       properties:
@@ -72,6 +72,8 @@ properties:
             value: 'false'
           - name: JUDGE0_TELEMETRY_ENABLE
             value: 'false'
+          - name: ENABLE_WAIT_RESULT
+            value: 'true'
         resources:
           requests:
             cpu: 0.5
@@ -107,10 +109,53 @@ properties:
             value: '128000'
           - name: ENABLE_NETWORK
             value: 'false'
+          - name: COUNT
+            value: '2'
+          - name: INTERVAL
+            value: '0.05'
         resources:
           requests:
-            cpu: 0.5
-            memoryInGb: 1.0
+            cpu: 1.5
+            memoryInGb: 3.0
+        securityContext:
+          privileged: true
+
+    - name: judge0-worker-2
+      properties:
+        image: judge0/judge0:latest
+        command:
+          - ./scripts/workers
+        environmentVariables:
+          - name: REDIS_HOST
+            value: localhost
+          - name: REDIS_PASSWORD
+            secureValue: REPLACE_REDIS_PASSWORD
+          - name: POSTGRES_HOST
+            value: localhost
+          - name: POSTGRES_DB
+            value: judge0
+          - name: POSTGRES_USER
+            value: judge0
+          - name: POSTGRES_PASSWORD
+            secureValue: REPLACE_POSTGRES_PASSWORD
+          - name: AUTHN_TOKEN
+            secureValue: REPLACE_AUTHN_TOKEN
+          - name: SECRET_KEY_BASE
+            secureValue: REPLACE_SECRET_KEY_BASE
+          - name: CPU_TIME_LIMIT
+            value: '5'
+          - name: MEMORY_LIMIT
+            value: '128000'
+          - name: ENABLE_NETWORK
+            value: 'false'
+          - name: COUNT
+            value: '2'
+          - name: INTERVAL
+            value: '0.05'
+        resources:
+          requests:
+            cpu: 1.5
+            memoryInGb: 3.0
         securityContext:
           privileged: true
 
