@@ -2,13 +2,23 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { usePathname } from 'next/navigation';
 import { getInitials } from '../../lib/utils';
 import NibrasLogo from '@/app/_components/nibras-logo';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import NotificationsPanel from './notifications-panel';
-import { appNavItems, canAccessNavItem, isNavItemActive } from './nav-config';
+import {
+  getActiveNavItemInGroup,
+  getAdminNavItem,
+  getNavItemsForGroup,
+  getPrimaryNavItems,
+  isNavGroupActive,
+  isNavItemActive,
+  navDropdownGroups,
+  type AppNavItem,
+  type NavDropdownGroup,
+} from './nav-config';
 
 type ShellSessionUser = {
   username: string;
@@ -404,6 +414,215 @@ function UserDropdown({
   );
 }
 
+/* ── Nav link + grouped dropdown ─────────────────────────────────────────── */
+
+function navLinkStyle(isActive: boolean, compact: boolean): CSSProperties {
+  return {
+    padding: compact ? '4px 9px' : '5px 11px',
+    borderRadius: 7,
+    fontSize: compact ? 12 : 13,
+    fontWeight: isActive ? 600 : 500,
+    color: isActive ? '#fafafa' : 'rgba(161,161,170,0.7)',
+    textDecoration: 'none',
+    background: isActive ? 'rgba(255,255,255,0.07)' : 'transparent',
+    transition: 'background 0.15s, color 0.15s',
+    whiteSpace: 'nowrap',
+  };
+}
+
+function NavLink({
+  item,
+  compact,
+  pathname,
+}: {
+  item: AppNavItem;
+  compact: boolean;
+  pathname: string | null;
+}) {
+  const isActive = isNavItemActive(item, pathname);
+  return (
+    <Link href={item.href} title={item.description} style={navLinkStyle(isActive, compact)}>
+      {item.label}
+    </Link>
+  );
+}
+
+function NavDropdown({
+  group,
+  items,
+  compact,
+  pathname,
+}: {
+  group: NavDropdownGroup;
+  items: AppNavItem[];
+  compact: boolean;
+  pathname: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const isActive = isNavGroupActive(group.id, items, pathname);
+  const activeItem = getActiveNavItemInGroup(items, pathname);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open]);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="true"
+        title={group.description}
+        onClick={() => setOpen((value) => !value)}
+        style={{
+          ...navLinkStyle(isActive, compact),
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          border: 'none',
+          cursor: 'pointer',
+          font: 'inherit',
+        }}
+      >
+        {isActive && activeItem ? activeItem.label : group.label}
+        <svg
+          width="11"
+          height="11"
+          viewBox="0 0 12 12"
+          fill="none"
+          aria-hidden="true"
+          style={{
+            color: 'rgba(161,161,170,0.5)',
+            flexShrink: 0,
+            transition: 'transform 0.18s',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}
+        >
+          <path
+            d="M2 4l4 4 4-4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 8px)',
+            left: 0,
+            minWidth: 240,
+            background: '#111111',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 12,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4)',
+            overflow: 'hidden',
+            zIndex: 200,
+            animation: 'navDropIn 0.14s ease',
+          }}
+        >
+          <style>{`
+            @keyframes navDropIn {
+              from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+              to   { opacity: 1; transform: translateY(0)    scale(1); }
+            }
+          `}</style>
+
+          <div
+            style={{
+              padding: '12px 14px 10px',
+              borderBottom: '1px solid rgba(255,255,255,0.07)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: 'rgba(161,161,170,0.55)',
+                marginBottom: 4,
+              }}
+            >
+              {group.label}
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(161,161,170,0.65)', lineHeight: 1.4 }}>
+              {group.description}
+            </div>
+          </div>
+
+          <div style={{ padding: '6px 0' }}>
+            {items.map((item) => {
+              const itemActive = isNavItemActive(item, pathname);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  role="menuitem"
+                  title={item.description}
+                  onClick={() => setOpen(false)}
+                  style={{
+                    display: 'block',
+                    padding: '9px 14px',
+                    textDecoration: 'none',
+                    transition: 'background 0.12s',
+                    background: itemActive ? 'rgba(255,255,255,0.05)' : 'transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = itemActive
+                      ? 'rgba(255,255,255,0.05)'
+                      : 'transparent';
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 13.5,
+                      fontWeight: itemActive ? 600 : 500,
+                      color: itemActive ? '#fafafa' : 'rgba(250,250,250,0.85)',
+                      marginBottom: 2,
+                    }}
+                  >
+                    {item.label}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'rgba(161,161,170,0.6)', lineHeight: 1.35 }}>
+                    {item.description}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Top Header ──────────────────────────────────────────────────────────── */
 
 export default function TopHeader({
@@ -491,47 +710,24 @@ export default function TopHeader({
           </div>
 
           <nav style={{ display: 'flex', alignItems: 'center', gap: compact ? 0 : 2 }}>
-            {appNavItems
-              .filter((item) => canAccessNavItem(item, user))
-              .map((item) => {
-                const isActive = isNavItemActive(item, pathname);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    title={item.description}
-                    style={{
-                      padding: compact ? '4px 9px' : '5px 11px',
-                      borderRadius: 7,
-                      fontSize: compact ? 12 : 13,
-                      fontWeight: isActive ? 600 : 500,
-                      color: isActive ? '#fafafa' : 'rgba(161,161,170,0.7)',
-                      textDecoration: 'none',
-                      background: isActive ? 'rgba(255,255,255,0.07)' : 'transparent',
-                      transition: 'background 0.15s, color 0.15s',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            <Link
-              href="/settings"
-              style={{
-                padding: compact ? '4px 9px' : '5px 11px',
-                borderRadius: 7,
-                fontSize: compact ? 12 : 13,
-                fontWeight: pathname === '/settings' ? 600 : 500,
-                color: pathname === '/settings' ? '#fafafa' : 'rgba(161,161,170,0.7)',
-                textDecoration: 'none',
-                background: pathname === '/settings' ? 'rgba(255,255,255,0.07)' : 'transparent',
-                transition: 'background 0.15s, color 0.15s',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Settings
-            </Link>
+            {getPrimaryNavItems(user).map((item) => (
+              <NavLink key={item.href} item={item} compact={compact} pathname={pathname} />
+            ))}
+            {navDropdownGroups.map((group) => (
+              <NavDropdown
+                key={group.id}
+                group={group}
+                items={getNavItemsForGroup(group.id, user)}
+                compact={compact}
+                pathname={pathname}
+              />
+            ))}
+            {(() => {
+              const adminItem = getAdminNavItem(user);
+              return adminItem ? (
+                <NavLink item={adminItem} compact={compact} pathname={pathname} />
+              ) : null;
+            })()}
           </nav>
         </div>
 
