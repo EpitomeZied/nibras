@@ -4,11 +4,14 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './page.module.css';
+import Avatar from '../../_components/widgets/Avatar';
 import EmptyState from '../../_components/widgets/EmptyState';
+import Skeleton from '../../_components/widgets/Skeleton';
 import { createThread, listThreads, type CommunityThread } from '../../../lib/services/community';
 import { useSession } from '../../_components/session-context';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 import { listCourses, type BackendCourse } from '../../../lib/services/backend-courses';
+import { stripMarkdown } from '../../../lib/strip-markdown';
 
 function formatRelative(iso?: string): string {
   if (!iso) return '';
@@ -116,6 +119,18 @@ export default function DiscussionsPage() {
     });
   }, [threads]);
 
+  useEffect(() => {
+    if (!threadOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setThreadOpen(false);
+        setThreadError(null);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [threadOpen]);
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -147,6 +162,12 @@ export default function DiscussionsPage() {
           role="dialog"
           aria-modal="true"
           aria-label="Start a thread"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setThreadOpen(false);
+              setThreadError(null);
+            }
+          }}
         >
           <form className={styles.modal} onSubmit={handleThreadSubmit}>
             <h2 className={styles.modalTitle}>Start a thread</h2>
@@ -239,14 +260,9 @@ export default function DiscussionsPage() {
           }
         />
       ) : loading ? (
-        <div
-          style={{
-            height: 280,
-            borderRadius: 14,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-          }}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Skeleton variant="card" height={72} count={4} />
+        </div>
       ) : error ? (
         <EmptyState
           title="Discussions unavailable"
@@ -275,8 +291,9 @@ export default function DiscussionsPage() {
                   {thread.pinned && <span className={styles.pinnedTag}>Pinned</span>}
                   {thread.closed && <span className={styles.closedTag}>Closed</span>}
                 </div>
-                {thread.body && <p className={styles.snippet}>{thread.body}</p>}
+                {thread.body && <p className={styles.snippet}>{stripMarkdown(thread.body)}</p>}
                 <div className={styles.threadMeta}>
+                  <Avatar url={thread.author.avatarUrl} name={thread.author.username} size={18} />
                   <span>{thread.author.username}</span>
                   <span>·</span>
                   <span>{formatRelative(thread.lastActivityAt ?? thread.createdAt)}</span>

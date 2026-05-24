@@ -4,17 +4,23 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './page.module.css';
+import Avatar from '../_components/widgets/Avatar';
 import EmptyState from '../_components/widgets/EmptyState';
+import Skeleton from '../_components/widgets/Skeleton';
+import VoteButton from '../_components/widgets/VoteButton';
 import {
   createQuestion,
   listQuestions,
   listTags,
+  voteQuestion,
   type CommunityQuestion,
   type CommunityTag,
   type QuestionFilters,
 } from '../../lib/services/community';
 import { friendlyMessage } from '../../lib/api-clients/errors';
 import { useSession } from '../_components/session-context';
+import { useDebounce } from '../../lib/hooks/use-debounce';
+import { stripMarkdown } from '../../lib/strip-markdown';
 
 const SORTS: Array<{ value: NonNullable<QuestionFilters['sort']>; label: string }> = [
   { value: 'newest', label: 'Newest' },
@@ -45,12 +51,15 @@ export default function CommunityPage() {
   const [questions, setQuestions] = useState<CommunityQuestion[]>([]);
   const [tags, setTags] = useState<CommunityTag[]>([]);
   const [sort, setSort] = useState<NonNullable<QuestionFilters['sort']>>('newest');
-  const [tag, setTag] = useState<string | undefined>(undefined);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [mine, setMine] = useState(false);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const debouncedQ = useDebounce(q, 300);
 
   const [askOpen, setAskOpen] = useState(false);
   const [askTitle, setAskTitle] = useState('');
@@ -89,8 +98,8 @@ export default function CommunityPage() {
   }
 
   const filters = useMemo<QuestionFilters>(
-    () => ({ sort, tag, q, page, limit: 30 }),
-    [sort, tag, q, page]
+    () => ({ sort, tag, q: debouncedQ, page, limit: 30 }),
+    [sort, tag, debouncedQ, page]
   );
 
   const load = useCallback(async () => {
@@ -119,7 +128,19 @@ export default function CommunityPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [sort, tag, q]);
+  }, [sort, tag, debouncedQ]);
+
+  useEffect(() => {
+    if (!askOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setAskOpen(false);
+        setAskError(null);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [askOpen]);
 
   return (
     <div className={styles.page}>
@@ -145,6 +166,12 @@ export default function CommunityPage() {
           role="dialog"
           aria-modal="true"
           aria-label="Ask a question"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setAskOpen(false);
+              setAskError(null);
+            }
+          }}
         >
           <form className={styles.modal} onSubmit={handleAskSubmit}>
             <h2 className={styles.modalTitle}>Ask a question</h2>
@@ -306,14 +333,9 @@ export default function CommunityPage() {
       )}
 
       {loading ? (
-        <div
-          style={{
-            height: 320,
-            borderRadius: 14,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-          }}
-        />
+        <div className={styles.list}>
+          <Skeleton variant="card" height={72} count={5} />
+        </div>
       ) : error && questions.length === 0 ? (
         <EmptyState
           title="Community feed unavailable"
@@ -329,52 +351,65 @@ export default function CommunityPage() {
       ) : (
         <div className={styles.list}>
           {questions.map((question) => (
-            <Link key={question.id} href={`/community/q/${question.id}`} className={styles.row}>
-              <div className={styles.stats}>
-                <span className={styles.stat}>
-                  <strong>{question.score}</strong> votes
-                </span>
-                <span
-                  className={`${styles.stat} ${question.acceptedAnswerId ? styles.statAccepted : ''}`}
-                >
-                  <strong>{question.answerCount}</strong> answers
-                </span>
-                {typeof question.views === 'number' && (
-                  <span className={styles.stat}>
-                    <strong>{question.views}</strong> views
-                  </span>
-                )}
-              </div>
-              <div className={styles.body}>
-                <h2 className={styles.questionTitle}>{question.title}</h2>
-                <p className={styles.snippet}>{question.body}</p>
-                <div className={styles.metaRow}>
-                  {question.tags.slice(0, 4).map((tagName) => (
-                    <span key={tagName} className={styles.tag}>
-                      {tagName}
+            <div key={question.id} className={styles.row}>
+              <VoteButton
+                score={question.score}
+                myVote={question.myVote}
+                size="sm"
+                requireAuth={!user}
+                onAuthRequired={() => router.push('/connect')}
+                onVote={async (direction) => {
+                  const result = await voteQuestion(question.id, direction);
+                  setQuestions((prev) =>
+                    prev.map((qItem) =>
+                      qItem.id === question.id
+                        ? { ...qItem, score: result.score, myVote: result.myVote }
+                        : qItem
+                    )
+                  );
+                  return result;
+                }}
+                ariaLabel="Vote on question"
+              />
+              <Link href={`/community/q/${question.id}`} className={styles.rowLink}>
+                <div className={styles.body}>
+                  <h2 className={styles.questionTitle}>{question.title}</h2>
+                  <p className={styles.snippet}>{stripMarkdown(question.body)}</p>
+                  <div className={styles.metaRow}>
+                    <span
+                      className={`${styles.stat} ${question.acceptedAnswerId ? styles.statAccepted : ''}`}
+                    >
+                      <strong>{question.answerCount}</strong> answers
                     </span>
-                  ))}
+                    {typeof question.views === 'number' && (
+                      <span className={styles.stat}>
+                        <strong>{question.views}</strong> views
+                      </span>
+                    )}
+                    {question.tags.slice(0, 4).map((tagName) => (
+                      <span key={tagName} className={styles.tag}>
+                        {tagName}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </Link>
               <div className={styles.right}>
+                <Avatar
+                  url={question.author.avatarUrl}
+                  name={question.author.username}
+                  size={24}
+                />
                 <span className={styles.author}>{question.author.username}</span>
                 <span className={styles.timestamp}>{formatRelative(question.createdAt)}</span>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}
 
       {totalPages > 1 && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 12,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginTop: 16,
-          }}
-        >
+        <div className={styles.pagination}>
           <button
             type="button"
             className={styles.cancelBtn}
@@ -383,7 +418,7 @@ export default function CommunityPage() {
           >
             &larr; Previous
           </button>
-          <span style={{ fontSize: 13, opacity: 0.7 }}>
+          <span className={styles.paginationLabel}>
             Page {page} of {totalPages}
           </span>
           <button

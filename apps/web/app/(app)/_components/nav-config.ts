@@ -52,6 +52,7 @@ export const appNavItems: AppNavItem[] = [
     label: 'Community',
     description: 'Ask questions, share answers, and join course discussions.',
     visibility: 'all',
+    matchPrefixes: ['/community/discussions', '/community/q', '/community/tags'],
   },
   {
     href: '/competitions',

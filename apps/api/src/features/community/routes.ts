@@ -32,6 +32,8 @@ export function registerCommunityRoutes(
       const query = request.query as {
         q?: string;
         tag?: string;
+        tags?: string;
+        authorId?: string;
         sort?: string;
         page?: string;
         limit?: string;
@@ -47,8 +49,14 @@ export function registerCommunityRoutes(
           { body: { contains: query.q, mode: 'insensitive' } },
         ];
       }
-      if (query.tag) {
+      if (query.tags) {
+        const tagList = query.tags.split(',').map((t) => t.trim()).filter(Boolean);
+        if (tagList.length > 0) where.tags = { hasSome: tagList };
+      } else if (query.tag) {
         where.tags = { has: query.tag };
+      }
+      if (query.authorId) {
+        where.authorId = query.authorId;
       }
 
       const orderBy =

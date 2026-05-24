@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './page.module.css';
+import Avatar from '../../../_components/widgets/Avatar';
 import EmptyState from '../../../_components/widgets/EmptyState';
+import Skeleton from '../../../_components/widgets/Skeleton';
 import VoteButton from '../../../_components/widgets/VoteButton';
 import {
   createPost,
@@ -31,6 +33,7 @@ function formatTimestamp(iso: string): string {
 export default function ThreadPage() {
   const params = useParams<{ threadId: string }>();
   const threadId = params?.threadId ?? '';
+  const router = useRouter();
   const { user } = useSession();
   const [thread, setThread] = useState<CommunityThread | null>(null);
   const [posts, setPosts] = useState<CommunityPost[]>([]);
@@ -107,14 +110,8 @@ export default function ThreadPage() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <div
-          style={{
-            height: 240,
-            borderRadius: 14,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-          }}
-        />
+        <Skeleton variant="card" height={160} />
+        <Skeleton variant="card" height={80} count={3} />
       </div>
     );
   }
@@ -152,6 +149,7 @@ export default function ThreadPage() {
           )}
         </div>
         <div className={styles.metaRow}>
+          <Avatar url={thread.author.avatarUrl} name={thread.author.username} size={20} />
           <span>{thread.author.username}</span>
           <span>·</span>
           <span>{formatTimestamp(thread.createdAt)}</span>
@@ -197,6 +195,8 @@ export default function ThreadPage() {
                 size="sm"
                 score={post.score}
                 myVote={post.myVote}
+                requireAuth={!user}
+                onAuthRequired={() => router.push('/connect')}
                 onVote={async (direction) => {
                   const result = await votePost(post.id, direction);
                   setPosts((prev) =>
@@ -213,6 +213,7 @@ export default function ThreadPage() {
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }}
               />
               <div className={styles.postAuthor}>
+                <Avatar url={post.author.avatarUrl} name={post.author.username} size={20} />
                 <strong>{post.author.username}</strong>
                 <span>{formatTimestamp(post.createdAt)}</span>
               </div>

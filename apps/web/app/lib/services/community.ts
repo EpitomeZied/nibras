@@ -68,6 +68,8 @@ export type CommunityTag = {
 export type QuestionFilters = {
   q?: string;
   tag?: string;
+  tags?: string[];
+  authorId?: string;
   sort?: 'newest' | 'top' | 'unanswered' | 'active';
   page?: number;
   limit?: number;
@@ -120,7 +122,9 @@ function normalizeVoteResponse(body: LegacyVoteResponse): { score: number; myVot
 
 type WireAuthor = {
   _id?: string;
+  userId?: string;
   name?: string;
+  username?: string;
   email?: string;
   avatarUrl?: string;
   reputationScore?: number;
@@ -158,8 +162,8 @@ type WireTag = { _id?: string; name: string; description?: string; usageCount?: 
 
 function normalizeAuthor(author: WireAuthor | null | undefined): CommunityAuthor {
   return {
-    userId: author?._id ?? '',
-    username: author?.name ?? 'Unknown',
+    userId: author?._id ?? author?.userId ?? '',
+    username: author?.name ?? author?.username ?? 'Unknown',
     avatarUrl: author?.avatarUrl,
     reputation: author?.reputation?.total ?? author?.reputationScore,
   };
@@ -204,9 +208,14 @@ function normalizeTag(t: WireTag): CommunityTag {
 // Reads are anonymous — matches the legacy dashboard's `auth: false` so that
 // `/community` and `/community/q/[id]` render before sign-in.
 export async function listQuestions(filters: QuestionFilters = {}) {
+  const { tags, ...rest } = filters;
+  const query = toQuery(rest);
+  if (tags && tags.length > 0) {
+    (query as Record<string, string | number | boolean>).tags = tags.join(',');
+  }
   const raw = await serviceFetch<unknown>('community', '/v1/community/questions', {
     auth: false,
-    query: toQuery(filters),
+    query,
   });
   const wire = raw as
     | {

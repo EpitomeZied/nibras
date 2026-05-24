@@ -9,13 +9,6 @@ export type VoteDirection = -1 | 1;
 export type VoteButtonProps = {
   score: number;
   myVote?: VoteState;
-  /**
-   * Called with the user's CLICK direction (always 1 or -1). The legacy backend
-   * at `/community/votes` toggles the vote off when the same value is posted
-   * again — the service module forwards the click verbatim and trusts the
-   * server's returned `{ score, myVote }` to settle UI state. Resolving 0
-   * (cleared vote) only happens on the server's response.
-   */
   onVote: (
     direction: VoteDirection
   ) =>
@@ -24,6 +17,8 @@ export type VoteButtonProps = {
     | Promise<void>
     | void;
   disabled?: boolean;
+  requireAuth?: boolean;
+  onAuthRequired?: () => void;
   size?: 'sm' | 'md';
   ariaLabel?: string;
 };
@@ -33,6 +28,8 @@ export default function VoteButton({
   myVote = 0,
   onVote,
   disabled = false,
+  requireAuth = false,
+  onAuthRequired,
   size = 'md',
   ariaLabel = 'Vote',
 }: VoteButtonProps) {
@@ -50,6 +47,10 @@ export default function VoteButton({
 
   async function cast(direction: VoteDirection) {
     if (disabled || pending) return;
+    if (requireAuth) {
+      onAuthRequired?.();
+      return;
+    }
     const next: VoteState = localVote === direction ? 0 : direction;
     const previousVote = localVote;
     const previousScore = localScore;
