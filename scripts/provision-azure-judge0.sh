@@ -1,24 +1,25 @@
 #!/usr/bin/env bash
-# Provision Judge0 CE on an Azure VM and wire nibras-api Container App to it.
+# Provision Judge0 CE on Azure and wire nibras-api Container App to it.
 #
 # Judge0 needs privileged Docker (cgroup/isolate sandboxing), which Azure Container
-# Apps does not support — so we run the full stack on a small Linux VM instead.
+# Apps does not support. Two Azure options:
+#   1. Container Instances (recommended for Azure for Students — no VM quota needed)
+#   2. Linux VM (requires VM core quota in your region)
 #
 # Prerequisites:
 #   - az CLI logged in (az login)
-#   - Resource group + Container Apps env already exist (see docs/azure-deploy.md)
-#   - nibras-api Container App already created
+#   - Resource group + nibras-api Container App exist (see docs/azure-deploy.md)
 #
-# Usage:
-#   ./scripts/provision-azure-judge0.sh
-#   RG=nibras-rg LOCATION=westeurope ./scripts/provision-azure-judge0.sh
+# Usage (try ACI first on student subscriptions):
+#   ./scripts/provision-azure-judge0-aci.sh
+#   ./scripts/provision-azure-judge0.sh   # VM fallback
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 RG="${RG:-nibras-rg}"
-LOCATION="${LOCATION:-westeurope}"
+LOCATION="${LOCATION:-francecentral}"
 VM_NAME="${VM_NAME:-nibras-judge0}"
 VM_SIZE="${VM_SIZE:-Standard_B2s}"
 API_APP_NAME="${API_APP_NAME:-nibras-api}"
