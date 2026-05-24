@@ -120,7 +120,7 @@ export default function HomePage() {
             CLI
           </a>
           <a
-            href="https://github.com/EpitomeZied/nibras-cli"
+            href="https://github.com/EpitomeZied/nibras"
             target="_blank"
             rel="noopener noreferrer"
             className={styles.navStar}
@@ -555,7 +555,7 @@ export default function HomePage() {
               <span className={styles.footerColTitle}>Developers</span>
               <a href="/instructor/onboarding">CLI Setup Guide</a>
               <a
-                href="https://github.com/nibras-platform/nibras-cli"
+                href="https://github.com/nibras-platform/nibras"
                 target="_blank"
                 rel="noreferrer"
               >

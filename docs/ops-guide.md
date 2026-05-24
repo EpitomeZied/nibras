@@ -35,8 +35,8 @@ All internal services communicate over a Docker bridge network (`internal`). Onl
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/your-org/nibras-cli.git
-cd nibras-cli
+git clone https://github.com/your-org/nibras.git
+cd nibras
 
 # 2. Create production env file
 cp .env.example .env.prod

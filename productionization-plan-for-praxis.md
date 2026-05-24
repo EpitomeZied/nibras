@@ -26,7 +26,7 @@ This plan assumes the current API/web/CLI contracts stay largely intact and prio
 ### Changes
 
 - Add a worker service under `apps/worker/`.
-- Move submission progression logic out of [apps/api/src/prisma-store.ts](/home/zied/nibras-cli/apps/api/src/prisma-store.ts) and [apps/api/src/store.ts](/home/zied/nibras-cli/apps/api/src/store.ts).
+- Move submission progression logic out of [apps/api/src/prisma-store.ts](/home/zied/nibras/apps/api/src/prisma-store.ts) and [apps/api/src/store.ts](/home/zied/nibras/apps/api/src/store.ts).
 - Replace timer-based state changes with explicit job lifecycle:
   - `queued`
   - `running`
@@ -108,10 +108,10 @@ This plan assumes the current API/web/CLI contracts stay largely intact and prio
 
 ### Files likely affected
 
-- [apps/web/app/auth/complete/page.tsx](/home/zied/nibras-cli/apps/web/app/auth/complete/page.tsx)
-- [apps/web/app/lib/session.ts](/home/zied/nibras-cli/apps/web/app/lib/session.ts)
-- [apps/api/src/app.ts](/home/zied/nibras-cli/apps/api/src/app.ts)
-- [prisma/schema.prisma](/home/zied/nibras-cli/prisma/schema.prisma)
+- [apps/web/app/auth/complete/page.tsx](/home/zied/nibras/apps/web/app/auth/complete/page.tsx)
+- [apps/web/app/lib/session.ts](/home/zied/nibras/apps/web/app/lib/session.ts)
+- [apps/api/src/app.ts](/home/zied/nibras/apps/api/src/app.ts)
+- [prisma/schema.prisma](/home/zied/nibras/prisma/schema.prisma)
 
 ### Acceptance criteria
 
@@ -155,7 +155,7 @@ This plan assumes the current API/web/CLI contracts stay largely intact and prio
   - release asset upload
   - viewing submissions and verification logs
   - manual override to `needs_review` / `passed` / `failed`
-- Add project release management backed by the existing release models in [prisma/schema.prisma](/home/zied/nibras-cli/prisma/schema.prisma).
+- Add project release management backed by the existing release models in [prisma/schema.prisma](/home/zied/nibras/prisma/schema.prisma).
 - Replace seed/demo assumptions with operator-managed data.
 - Add access control for operator-only actions.
 

@@ -4,7 +4,7 @@ import { runGlobalNpm, uninstallGlobalCli } from './global-install';
 import { parseOption, hasFlag } from '../util/args';
 
 const DEFAULT_RELEASE_API_URL =
-  'https://api.github.com/repos/EpitomeZied/nibras-cli/releases/latest';
+  'https://api.github.com/repos/EpitomeZied/nibras/releases/latest';
 const DEFAULT_PACKAGE_NAME = '@nibras/cli';
 
 function normalizeTag(value: string): string {
@@ -35,7 +35,7 @@ async function resolveTargetTag(args: string[]): Promise<string> {
   const response = await fetch(releaseUrl, {
     headers: {
       accept: 'application/vnd.github+json',
-      'user-agent': 'nibras-cli',
+      'user-agent': 'nibras',
     },
   });
   if (!response.ok) {

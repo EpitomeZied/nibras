@@ -1,8 +1,9 @@
 name: Deploy
 
+# Disabled: production runs on Azure Container Apps (deploy-azure.yml).
+# Re-enable only if you need a Fly.io environment again.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 # Only run one deploy at a time; cancel in-progress if a newer push arrives
 concurrency:

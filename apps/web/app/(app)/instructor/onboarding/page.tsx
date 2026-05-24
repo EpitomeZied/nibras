@@ -1101,7 +1101,7 @@ export default function OnboardingPage() {
               {allDone ? 'Go to dashboard →' : 'Create a course first →'}
             </Link>
             <a
-              href="https://github.com/nibras-platform/nibras-cli"
+              href="https://github.com/nibras-platform/nibras"
               target="_blank"
               rel="noreferrer"
               className={styles.btnGhost}
@@ -1603,12 +1603,12 @@ export default function OnboardingPage() {
                 Still stuck? Run <code className={styles.inlineCode}>nibras ping</code>, copy the
                 full output, and share it with your instructor or open an issue at{' '}
                 <a
-                  href="https://github.com/nibras-platform/nibras-cli/issues"
+                  href="https://github.com/nibras-platform/nibras/issues"
                   target="_blank"
                   rel="noreferrer"
                   className={styles.link}
                 >
-                  github.com/nibras-platform/nibras-cli
+                  github.com/nibras-platform/nibras
                 </a>
                 .
               </p>
