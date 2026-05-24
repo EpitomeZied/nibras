@@ -100,20 +100,8 @@ az vm create \
   --custom-data "$CLOUD_INIT" \
   --output none
 
-echo "==> Opening port 2358 (Judge0 API) on the VM NSG"
-NSG=$(az network nic list --resource-group "$RG" --query "[?contains(name,'${VM_NAME}')].networkSecurityGroup.id" -o tsv | head -1)
-if [ -n "$NSG" ]; then
-  NSG_NAME=$(basename "$NSG")
-  az network nsg rule create \
-    --resource-group "$RG" \
-    --nsg-name "$NSG_NAME" \
-    --name allow-judge0 \
-    --priority 1001 \
-    --destination-port-ranges 2358 \
-    --access Allow \
-    --protocol Tcp \
-    --output none 2>/dev/null || true
-fi
+echo "==> Opening port 2358 (Judge0 API) on the VM"
+az vm open-port --resource-group "$RG" --name "$VM_NAME" --port 2358 --priority 1001 --output none
 
 PUBLIC_IP=$(az vm show -d --resource-group "$RG" --name "$VM_NAME" --query publicIps -o tsv)
 JUDGE0_URL="http://${PUBLIC_IP}:2358"

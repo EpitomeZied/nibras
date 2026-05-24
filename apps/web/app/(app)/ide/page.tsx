@@ -151,9 +151,9 @@ export default function IdePage() {
         <div className={styles.banner} role="alert">
           <strong>Code sandbox is not available.</strong>
           <p style={{ margin: '8px 0 0' }}>
-            Start Judge0 locally with <code>docker compose -f docker-compose.judge0.yml up -d</code>
-            , then set <code>JUDGE0_API_URL</code> and <code>JUDGE0_AUTH_TOKEN</code> in your API{' '}
-            <code>.env</code> and restart the API.
+            Local: <code>docker compose -f docker-compose.judge0.yml up -d</code>, set{' '}
+            <code>JUDGE0_*</code> in <code>.env</code>, restart the API. Azure: run{' '}
+            <code>./scripts/provision-azure-judge0.sh</code> (see <code>docs/azure-judge0.md</code>).
           </p>
         </div>
       </div>

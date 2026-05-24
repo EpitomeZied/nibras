@@ -870,6 +870,8 @@ npm run dev
 
 **Production:** Judge0 services are included in `docker-compose.prod.yml`. Set `JUDGE0_AUTH_TOKEN` in `.env.prod` to match `judge0/judge0.conf`, and ensure the API can reach `http://judge0-server:2358` on the internal Docker network.
 
+**Azure (Container Apps):** Judge0 runs on a dedicated VM — see [docs/azure-judge0.md](docs/azure-judge0.md) and run `./scripts/provision-azure-judge0.sh` after the main Azure deploy.
+
 Judge0 workers run untrusted code in isolated containers (`privileged: true`). Deploy on a dedicated Linux host with adequate CPU and memory; do not co-locate with sensitive data stores without network isolation.
 
 ### Environment Validation
