@@ -52,7 +52,9 @@ export default function IdePanels({ stdin, onStdinChange, result, running }: Ide
         <pre className={styles.panelOutput}>
           {running
             ? 'Executing in sandbox…'
-            : stdout || (result ? '(no stdout)' : 'Run your code to see output here.')}
+            : result
+              ? stdout.trimEnd() || '(no stdout)'
+              : 'Run your code to see output here.'}
         </pre>
       </section>
 

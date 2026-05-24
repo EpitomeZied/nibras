@@ -1,7 +1,7 @@
 'use client';
 
 import Editor, { type OnMount } from '@monaco-editor/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ensureMonacoReady } from './monaco-bootstrap';
 import styles from '../page.module.css';
 
@@ -20,8 +20,10 @@ export default function CodeEditor({
   onRun,
   readOnly = false,
 }: CodeEditorProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
+  const [height, setHeight] = useState(480);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,6 +42,20 @@ export default function CodeEditor({
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
+
+    const updateHeight = () => {
+      setHeight(Math.max(element.clientHeight, 320));
+    };
+
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [ready]);
 
   const handleMount: OnMount = useCallback(
     (editor, editorMonaco) => {
@@ -68,9 +84,9 @@ export default function CodeEditor({
   }
 
   return (
-    <div className={styles.editorPane}>
+    <div ref={containerRef} className={styles.editorPane}>
       <Editor
-        height="100%"
+        height={height}
         language={language}
         value={value}
         onChange={(next) => onChange(next ?? '')}

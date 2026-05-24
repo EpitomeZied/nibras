@@ -44,11 +44,6 @@ async function judge0Fetch(path: string, init?: RequestInit): Promise<Response> 
   });
 }
 
-function decodeBase64(value: string | null | undefined): string | null {
-  if (value == null || value === '') return null;
-  return Buffer.from(value, 'base64').toString('utf8');
-}
-
 export async function checkJudge0Reachable(): Promise<boolean> {
   if (!isJudge0Configured()) return false;
   try {
@@ -75,12 +70,12 @@ export async function runJudge0Submission(input: {
   const cpuLimit = Number.parseFloat(process.env.JUDGE0_CPU_TIME_LIMIT || '5');
   const memoryLimit = Number.parseInt(process.env.JUDGE0_MEMORY_LIMIT || '128000', 10);
 
-  const res = await judge0Fetch('/submissions?base64_encoded=true&wait=true', {
+  const res = await judge0Fetch('/submissions?base64_encoded=false&wait=true', {
     method: 'POST',
     body: JSON.stringify({
-      source_code: Buffer.from(input.sourceCode, 'utf8').toString('base64'),
+      source_code: input.sourceCode,
       language_id: input.languageId,
-      stdin: input.stdin ? Buffer.from(input.stdin, 'utf8').toString('base64') : undefined,
+      stdin: input.stdin,
       cpu_time_limit: cpuLimit,
       memory_limit: memoryLimit,
     }),
@@ -91,13 +86,7 @@ export async function runJudge0Submission(input: {
     throw new Error(`Judge0 run failed with status ${res.status}${detail ? `: ${detail}` : ''}`);
   }
 
-  const raw = (await res.json()) as Judge0SubmissionResult;
-  return {
-    ...raw,
-    stdout: decodeBase64(raw.stdout),
-    stderr: decodeBase64(raw.stderr),
-    compile_output: decodeBase64(raw.compile_output),
-  };
+  return (await res.json()) as Judge0SubmissionResult;
 }
 
 export function normalizeJudge0Result(result: Judge0SubmissionResult) {

@@ -8,13 +8,22 @@ if (typeof window !== 'undefined') {
 
 let initPromise: Promise<void> | null = null;
 
+async function verifyMonacoAssets(): Promise<void> {
+  const response = await fetch('/monaco/vs/loader.js', { method: 'HEAD' });
+  if (!response.ok) {
+    throw new Error(`Monaco editor assets are unavailable (HTTP ${response.status}).`);
+  }
+}
+
 export function ensureMonacoReady(): Promise<void> {
   if (typeof window === 'undefined') {
     return Promise.resolve();
   }
 
   if (!initPromise) {
-    initPromise = loader.init().then(() => undefined);
+    initPromise = verifyMonacoAssets()
+      .then(() => loader.init())
+      .then(() => undefined);
   }
 
   return initPromise;
