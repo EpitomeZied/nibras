@@ -583,7 +583,17 @@ export default function HomePage() {
         </div>
 
         <div className={styles.footerBottom}>
-          <span>© {new Date().getFullYear()} Nibras Platform. All rights reserved.</span>
+          <span>
+            © {new Date().getFullYear()} nibrasplatform.me. Built by{' '}
+            <a
+              href="https://github.com/EpitomeZied"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={styles.footerAuthorLink}
+            >
+              EpitomeZied
+            </a>
+          </span>
         </div>
       </footer>
     </main>

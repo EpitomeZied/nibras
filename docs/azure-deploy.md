@@ -120,6 +120,8 @@ az containerapp secret set \
     github-app-name="$GITHUB_APP_NAME" \
     github-webhook-secret="$GITHUB_WEBHOOK_SECRET" \
     github-app-private-key="$GITHUB_APP_PRIVATE_KEY"
+# Optional after Resend domain is verified (or run scripts/setup-azure-email.sh later):
+#   resend-api-key="$RESEND_API_KEY"
 
 az containerapp update \
   --name nibras-api --resource-group $RG \
@@ -128,6 +130,7 @@ az containerapp update \
     NIBRAS_API_BASE_URL="https://nibras-api.$ENV_DOMAIN" \
     NIBRAS_WEB_BASE_URL="https://nibras-web.$ENV_DOMAIN" \
     NIBRAS_WEB_CORS_ORIGINS="https://nibras-web.$ENV_DOMAIN" \
+    NIBRAS_EMAIL_FROM='Nibras <noreply@nibrasplatform.me>' \
     DATABASE_URL=secretref:database-url \
     NIBRAS_ENCRYPTION_KEY=secretref:encryption-key \
     GITHUB_APP_ID=secretref:github-app-id \
@@ -156,7 +159,9 @@ az containerapp update \
   --name nibras-worker --resource-group $RG \
   --set-env-vars \
     DATABASE_URL=secretref:database-url \
-    NIBRAS_ENCRYPTION_KEY=secretref:encryption-key
+    NIBRAS_ENCRYPTION_KEY=secretref:encryption-key \
+    NIBRAS_WEB_BASE_URL="https://nibras-web.$ENV_DOMAIN" \
+    NIBRAS_EMAIL_FROM='Nibras <noreply@nibrasplatform.me>'
 
 # ── web ─────────────────────────────────────────────────────────────────────
 az containerapp create \
@@ -371,6 +376,39 @@ az containerapp update \
 
 After this, sign-in and email links use the custom domain. Always open
 `https://nibrasplatform.me/dashboard` — the Azure FQDN is only a fallback.
+
+## Email (Resend)
+
+Nibras sends mail through [Resend](https://resend.com). Without `RESEND_API_KEY`,
+emails are silently skipped.
+
+**Both `nibras-api` and `nibras-worker` need the key** (API = review emails;
+worker = submission + instructor queue emails). `nibras-web` does not send mail.
+
+1. Resend → API Keys → create `re_...` key.
+2. Resend → Domains → verify `nibrasplatform.me` (SPF/DKIM at your DNS host).
+3. From the repo (Azure Cloud Shell or any machine with `az login`):
+
+```bash
+cd nibras
+chmod +x scripts/setup-azure-email.sh
+RESEND_API_KEY='re_...' ./scripts/setup-azure-email.sh
+```
+
+Or put `RESEND_API_KEY=re_...` in `nibras/.env` and run `./scripts/setup-azure-email.sh`.
+
+The script sets on **api + worker**:
+
+| Variable | Value |
+| -------- | ----- |
+| `RESEND_API_KEY` | secret `resend-api-key` |
+| `NIBRAS_EMAIL_FROM` | `Nibras <noreply@nibrasplatform.me>` |
+| `NIBRAS_WEB_BASE_URL` | `https://nibrasplatform.me` |
+
+Keep **worker** `min-replicas` at **1** so background jobs (including email) run.
+
+**Verify:** Resend dashboard → Emails; trigger a submission or post a review with
+notification toggles on in Settings.
 
 ## Cost expectation
 
