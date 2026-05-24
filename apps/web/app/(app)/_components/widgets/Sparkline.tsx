@@ -20,7 +20,11 @@ export default function Sparkline({
   ariaLabel = 'Trend',
 }: SparklineProps) {
   if (values.length === 0) {
-    return <span className={styles.empty} aria-label={ariaLabel}>—</span>;
+    return (
+      <span className={styles.empty} aria-label={ariaLabel}>
+        —
+      </span>
+    );
   }
 
   const max = Math.max(...values);
@@ -49,13 +53,7 @@ export default function Sparkline({
       role="img"
       aria-label={ariaLabel}
     >
-      {fill && (
-        <path
-          d={fillPath}
-          fill={color}
-          fillOpacity="0.15"
-        />
-      )}
+      {fill && <path d={fillPath} fill={color} fillOpacity="0.15" />}
       <path d={linePath} fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   );

@@ -71,7 +71,6 @@ export default function LeaderboardTable({
                 <td>
                   <div className={styles.member}>
                     {row.avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
                       <img src={row.avatarUrl} alt="" className={styles.avatar} />
                     ) : (
                       <span className={styles.avatarInitial}>{getInitials(row.username)}</span>

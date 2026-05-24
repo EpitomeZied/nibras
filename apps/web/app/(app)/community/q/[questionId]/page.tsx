@@ -1,22 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
+import Avatar from '../../../_components/widgets/Avatar';
 import EmptyState from '../../../_components/widgets/EmptyState';
+import Skeleton from '../../../_components/widgets/Skeleton';
+import MarkdownToolbar from '../../../_components/widgets/MarkdownToolbar';
 import VoteButton from '../../../_components/widgets/VoteButton';
 import {
   acceptAnswer,
   createAnswer,
   getQuestion,
-  listAnswers,
   voteAnswer,
   voteQuestion,
   type CommunityAnswer,
   type CommunityQuestion,
 } from '../../../../lib/services/community';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
+import { useSession } from '../../../_components/session-context';
+import { renderMarkdown } from '../../../../lib/markdown';
 
 function formatTimestamp(iso: string): string {
   try {
@@ -29,19 +33,26 @@ function formatTimestamp(iso: string): string {
 export default function QuestionPage() {
   const params = useParams<{ questionId: string }>();
   const questionId = params?.questionId ?? '';
+  const router = useRouter();
+  const { user } = useSession();
   const [question, setQuestion] = useState<CommunityQuestion | null>(null);
   const [answers, setAnswers] = useState<CommunityAnswer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [acceptError, setAcceptError] = useState<string | null>(null);
+  const [acceptErrorAnswerId, setAcceptErrorAnswerId] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const load = useCallback(async () => {
     if (!questionId) return;
     setLoading(true);
     setError(null);
     try {
-      const [q, a] = await Promise.all([getQuestion(questionId), listAnswers(questionId)]);
+      const { question: q, answers: a } = await getQuestion(questionId);
       setQuestion(q);
       setAnswers(a);
     } catch (err) {
@@ -65,14 +76,15 @@ export default function QuestionPage() {
   }, [load]);
 
   async function handleAccept(answerId: string) {
+    setAcceptError(null);
+    setAcceptErrorAnswerId(null);
     try {
       await acceptAnswer(answerId);
-      setAnswers((prev) =>
-        prev.map((a) => ({ ...a, accepted: a.id === answerId }))
-      );
+      setAnswers((prev) => prev.map((a) => ({ ...a, accepted: a.id === answerId })));
       setQuestion((q) => (q ? { ...q, acceptedAnswerId: answerId } : q));
     } catch (err) {
-      setError(friendlyMessage(err));
+      setAcceptErrorAnswerId(answerId);
+      setAcceptError(friendlyMessage(err));
     }
   }
 
@@ -81,12 +93,16 @@ export default function QuestionPage() {
     const trimmed = draft.trim();
     if (!trimmed || !questionId) return;
     setSubmitting(true);
+    setSubmitError(null);
     try {
       const created = await createAnswer(questionId, trimmed);
+      if (created.author.username === 'Unknown' && user) {
+        created.author = { ...created.author, username: user.username, userId: user.id };
+      }
       setAnswers((prev) => [...prev, created]);
       setDraft('');
     } catch (err) {
-      setError(friendlyMessage(err));
+      setSubmitError(friendlyMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -95,7 +111,8 @@ export default function QuestionPage() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <div style={{ height: 200, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <Skeleton variant="card" height={180} />
+        <Skeleton variant="card" height={100} count={2} />
       </div>
     );
   }
@@ -128,6 +145,8 @@ export default function QuestionPage() {
         <VoteButton
           score={question.score}
           myVote={question.myVote}
+          requireAuth={!user}
+          onAuthRequired={() => router.push('/connect')}
           onVote={async (direction) => {
             const result = await voteQuestion(question.id, direction);
             setQuestion((q) => (q ? { ...q, score: result.score, myVote: result.myVote } : q));
@@ -144,12 +163,48 @@ export default function QuestionPage() {
               </span>
             ))}
           </div>
-          <p className={styles.markdown}>{question.body}</p>
+          <div
+            className={styles.markdown}
+            dangerouslySetInnerHTML={{ __html: renderMarkdown(question.body) }}
+          />
         </div>
         <div className={styles.authorCard}>
+          <Avatar url={question.author.avatarUrl} name={question.author.username} size={28} />
           <span className={styles.authorName}>{question.author.username}</span>
           <span>{formatTimestamp(question.createdAt)}</span>
-          {question.author.reputation !== undefined && <span>{question.author.reputation} rep</span>}
+          {question.author.reputation !== undefined && (
+            <span>{question.author.reputation} rep</span>
+          )}
+          <div className={styles.questionActions}>
+            <button
+              type="button"
+              className={styles.copyBtn}
+              onClick={() => {
+                void navigator.clipboard.writeText(window.location.href).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                });
+              }}
+            >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <rect
+                  x="3.5"
+                  y="3.5"
+                  width="7"
+                  height="7"
+                  rx="1.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
+                <path
+                  d="M8.5 3.5V2a1.5 1.5 0 00-1.5-1.5H2A1.5 1.5 0 00.5 2v5A1.5 1.5 0 002 8.5h1.5"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
+              </svg>
+              {copied ? 'Copied!' : 'Copy link'}
+            </button>
+          </div>
         </div>
       </article>
 
@@ -167,8 +222,7 @@ export default function QuestionPage() {
         />
       ) : (
         sortedAnswers.map((answer) => {
-          const accepted =
-            answer.accepted || question.acceptedAnswerId === answer.id;
+          const accepted = answer.accepted || question.acceptedAnswerId === answer.id;
           return (
             <article
               key={answer.id}
@@ -177,13 +231,13 @@ export default function QuestionPage() {
               <VoteButton
                 score={answer.score}
                 myVote={answer.myVote}
+                requireAuth={!user}
+                onAuthRequired={() => router.push('/connect')}
                 onVote={async (direction) => {
                   const result = await voteAnswer(answer.id, direction);
                   setAnswers((prev) =>
                     prev.map((a) =>
-                      a.id === answer.id
-                        ? { ...a, score: result.score, myVote: result.myVote }
-                        : a
+                      a.id === answer.id ? { ...a, score: result.score, myVote: result.myVote } : a
                     )
                   );
                   return result;
@@ -194,23 +248,38 @@ export default function QuestionPage() {
                 {accepted && (
                   <span className={styles.acceptedBadge}>
                     <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
-                      <path d="M2 5.5L4.5 8l4.5-5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M2 5.5L4.5 8l4.5-5"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                     Accepted
                   </span>
                 )}
-                <p className={styles.markdown}>{answer.body}</p>
-                {!accepted && !question.acceptedAnswerId && (
-                  <button
-                    type="button"
-                    className={styles.acceptBtn}
-                    onClick={() => void handleAccept(answer.id)}
-                  >
-                    Mark as accepted
-                  </button>
+                <div
+                  className={styles.markdown}
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(answer.body) }}
+                />
+                {!accepted && !question.acceptedAnswerId && user?.id === question.author.userId && (
+                  <>
+                    <button
+                      type="button"
+                      className={styles.acceptBtn}
+                      onClick={() => void handleAccept(answer.id)}
+                    >
+                      Mark as accepted
+                    </button>
+                    {acceptErrorAnswerId === answer.id && acceptError && (
+                      <p className={styles.inlineError}>{acceptError}</p>
+                    )}
+                  </>
                 )}
               </div>
               <div className={styles.authorCard}>
+                <Avatar url={answer.author.avatarUrl} name={answer.author.username} size={24} />
                 <span className={styles.authorName}>{answer.author.username}</span>
                 <span>{formatTimestamp(answer.createdAt)}</span>
               </div>
@@ -219,20 +288,35 @@ export default function QuestionPage() {
         })
       )}
 
-      <form className={styles.composer} onSubmit={handleSubmit}>
-        <span className={styles.composerLabel}>Your answer</span>
-        <textarea
-          className={styles.composerInput}
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          placeholder="Explain the approach, share code, and link references…"
-        />
-        <div className={styles.composerActions}>
-          <button type="submit" className={styles.submitBtn} disabled={submitting || !draft.trim()}>
-            {submitting ? 'Posting…' : 'Post answer'}
-          </button>
+      {user ? (
+        <form className={styles.composer} onSubmit={handleSubmit}>
+          <span className={styles.composerLabel}>Your answer</span>
+          <MarkdownToolbar textareaRef={textareaRef} onChange={setDraft} />
+          <textarea
+            ref={textareaRef}
+            className={styles.composerInput}
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            placeholder="Explain the approach, share code, and link references…"
+          />
+          {submitError && <p className={styles.inlineError}>{submitError}</p>}
+          <div className={styles.composerActions}>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={submitting || !draft.trim()}
+            >
+              {submitting ? 'Posting…' : 'Post answer'}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className={styles.composer}>
+          <Link href="/connect" className={styles.submitBtn}>
+            Sign in to answer
+          </Link>
         </div>
-      </form>
+      )}
     </div>
   );
 }

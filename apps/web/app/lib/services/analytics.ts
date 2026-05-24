@@ -87,16 +87,14 @@ function toQuery(filters: DateRangeFilters): Record<string, string> {
 }
 
 export async function getOverview(filters: DateRangeFilters = {}) {
-  return serviceFetchOptional<OverviewResponse>('admin', '/analytics/overview', {
+  return serviceFetchOptional<OverviewResponse>('admin', '/v1/analytics/overview', {
     auth: true,
     query: toQuery(filters),
   });
 }
 
-export async function getCourseSummaries(
-  filters: DateRangeFilters = {}
-): Promise<CourseSummary[]> {
-  const data = await serviceFetchOptional<CourseSummary[]>('admin', '/analytics/courses', {
+export async function getCourseSummaries(filters: DateRangeFilters = {}): Promise<CourseSummary[]> {
+  const data = await serviceFetchOptional<CourseSummary[]>('admin', '/v1/analytics/courses', {
     auth: true,
     query: toQuery(filters),
   });
@@ -104,7 +102,7 @@ export async function getCourseSummaries(
 }
 
 export async function getEngagement(filters: DateRangeFilters = {}) {
-  return serviceFetchOptional<EngagementResponse>('admin', '/analytics/engagement', {
+  return serviceFetchOptional<EngagementResponse>('admin', '/v1/analytics/engagement', {
     auth: true,
     query: toQuery(filters),
   });
@@ -116,7 +114,7 @@ export async function getStudents(
   const query = toQuery(filters);
   if (filters.cohort) query.cohort = filters.cohort;
   if (filters.risk) query.risk = filters.risk;
-  const data = await serviceFetchOptional<StudentsResponse>('admin', '/analytics/students', {
+  const data = await serviceFetchOptional<StudentsResponse>('admin', '/v1/analytics/students', {
     auth: true,
     query,
   });

@@ -3,28 +3,15 @@
 import { useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
-import { serviceFetch } from '../../../lib/api-clients/service-fetch';
+import {
+  computeRoute as computeRouteApi,
+  type RoutingResponse,
+} from '../../../lib/services/chatbot';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
-
-type RouteStep = {
-  id: string;
-  title: string;
-  description?: string;
-  course?: string;
-  estimatedMinutes?: number;
-  ready: boolean;
-  resourceUrl?: string;
-};
-
-type SmartRoutingResponse = {
-  goal: string;
-  steps: RouteStep[];
-  summary?: string;
-};
 
 export default function SmartRoutingPage() {
   const [goal, setGoal] = useState('');
-  const [route, setRoute] = useState<SmartRoutingResponse | null>(null);
+  const [route, setRoute] = useState<RoutingResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,15 +21,7 @@ export default function SmartRoutingPage() {
     setBusy(true);
     setError(null);
     try {
-      const response = await serviceFetch<SmartRoutingResponse>(
-        'community',
-        '/chatbot/routing',
-        {
-          method: 'POST',
-          auth: true,
-          body: { goal: trimmed },
-        }
-      );
+      const response = await computeRouteApi(trimmed);
       setRoute(response);
     } catch (err) {
       setError(friendlyMessage(err));
@@ -62,7 +41,8 @@ export default function SmartRoutingPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>Smart Routing</h1>
         <p className={styles.subtitle}>
-          The tutor maps your goal to the right material, picking the shortest path through prerequisites.
+          Hassona maps your goal to the right material, picking the shortest path through
+          prerequisites.
         </p>
       </header>
 
@@ -92,7 +72,7 @@ export default function SmartRoutingPage() {
       ) : !route ? (
         <EmptyState
           title="No route computed"
-          description="Describe a goal above and the tutor will plan a path through topics and exercises."
+          description="Describe a goal above and Hassona will plan a path through topics and exercises."
         />
       ) : (
         <>
@@ -104,8 +84,10 @@ export default function SmartRoutingPage() {
                 <h2 className={styles.stepTitle}>{step.title}</h2>
                 {step.description && <p className={styles.stepDescription}>{step.description}</p>}
                 <div className={styles.stepMeta}>
-                  {step.course && <span>{step.course}</span>}
-                  {step.estimatedMinutes !== undefined && <span>· {step.estimatedMinutes} min</span>}
+                  {step.topics && step.topics.length > 0 && <span>{step.topics.join(', ')}</span>}
+                  {step.estimatedMinutes !== undefined && (
+                    <span>· {step.estimatedMinutes} min</span>
+                  )}
                   <span
                     className={`${styles.stepStatus} ${
                       step.ready ? styles.statusReady : styles.statusLocked

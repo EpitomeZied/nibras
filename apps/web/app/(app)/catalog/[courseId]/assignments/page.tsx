@@ -5,10 +5,7 @@ import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../../../_components/widgets/EmptyState';
-import {
-  listAssignments,
-  type BackendAssignment,
-} from '../../../../lib/services/backend-courses';
+import { listAssignments, type BackendAssignment } from '../../../../lib/services/backend-courses';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
 
 function dueBadgeClass(dueAt: string | undefined, status: BackendAssignment['status']) {
@@ -87,7 +84,14 @@ export default function CourseAssignmentsPage() {
       <h1 className={styles.title}>Assignments</h1>
 
       {loading ? (
-        <div style={{ height: 240, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 240,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error || sorted.length === 0 ? (
         <EmptyState
           title={error ? 'Could not load assignments' : 'No assignments'}
@@ -111,7 +115,9 @@ export default function CourseAssignmentsPage() {
                     ` · scored ${assignment.score}/${assignment.pointsPossible}`}
                 </p>
               </div>
-              <span className={`${styles.dueBadge} ${dueBadgeClass(assignment.dueAt, assignment.status)}`}>
+              <span
+                className={`${styles.dueBadge} ${dueBadgeClass(assignment.dueAt, assignment.status)}`}
+              >
                 {formatDue(assignment.dueAt)}
               </span>
               <span className={`${styles.statusBadge} ${statusBadgeClass(assignment.status)}`}>

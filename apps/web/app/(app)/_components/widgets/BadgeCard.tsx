@@ -56,12 +56,7 @@ export default function BadgeCard({
   return (
     <button type="button" className={classes} onClick={onClick} aria-pressed={earned}>
       <div className={styles.iconHolder}>
-        {iconUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={iconUrl} alt="" className={styles.icon} />
-        ) : (
-          FALLBACK_ICON
-        )}
+        {iconUrl ? <img src={iconUrl} alt="" className={styles.icon} /> : FALLBACK_ICON}
       </div>
       <strong className={styles.name}>{name}</strong>
       {description && <span className={styles.description}>{description}</span>}

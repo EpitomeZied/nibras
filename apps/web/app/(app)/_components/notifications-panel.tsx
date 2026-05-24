@@ -18,6 +18,10 @@ const TYPE_COLOR: Record<string, string> = {
   passed: 'var(--success)',
   failed: 'var(--danger)',
   review: 'var(--warning)',
+  community_answer: 'var(--primary)',
+  community_answer_accepted: 'var(--success)',
+  community_vote: 'var(--warning)',
+  community_reply: 'var(--primary)',
 };
 
 function colorForType(type: string): string {
@@ -99,13 +103,13 @@ function NotificationItem({ n, onClose }: { n: NotificationRecord; onClose: () =
   );
 
   if (n.link) {
+    const isInternal = n.link.startsWith('/');
     return (
       <a
         href={n.link}
         style={{ textDecoration: 'none', display: 'block' }}
         onClick={onClose}
-        target="_blank"
-        rel="noreferrer"
+        {...(isInternal ? {} : { target: '_blank', rel: 'noreferrer' })}
       >
         {inner}
       </a>

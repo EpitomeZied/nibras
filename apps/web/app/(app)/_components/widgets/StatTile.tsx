@@ -54,7 +54,11 @@ export default function StatTile({ label, value, delta, trend, icon, caption }: 
           {delta && (
             <span
               className={`${styles.delta} ${
-                trend === 'down' ? styles.deltaDown : trend === 'flat' ? styles.deltaFlat : styles.deltaUp
+                trend === 'down'
+                  ? styles.deltaDown
+                  : trend === 'flat'
+                    ? styles.deltaFlat
+                    : styles.deltaUp
               }`}
             >
               {trend && TREND_ICON[trend]}

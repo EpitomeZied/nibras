@@ -12,6 +12,7 @@ import {
   listCs106lProjectDefinitions,
   readCs106lTaskText,
 } from '../apps/api/src/lib/cs106l';
+import { BADGE_CATALOG } from '../apps/api/src/features/gamification/badges-catalog';
 
 const prisma = new PrismaClient();
 
@@ -298,6 +299,24 @@ Good luck! 🚀
 
     console.log(`✅ Project: ${definition.projectKey} — ${definition.title}`);
   }
+
+  // ── Badge catalog ─────────────────────────────────────────────────────────
+  for (const badge of BADGE_CATALOG) {
+    await prisma.badgeDefinition.upsert({
+      where: { code: badge.code },
+      create: badge,
+      update: {
+        name: badge.name,
+        description: badge.description,
+        rarity: badge.rarity,
+        category: badge.category,
+        threshold: badge.threshold,
+        points: badge.points,
+        sortOrder: badge.sortOrder,
+      },
+    });
+  }
+  console.log(`✅ Badge catalog: ${BADGE_CATALOG.length} definitions`);
 
   console.log('');
   console.log('🎉 Demo seed complete!');

@@ -1,10 +1,29 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { discoverApiBaseUrl } from './lib/session';
 import NibrasLogo from './_components/nibras-logo';
+import {
+  cliFeatures,
+  ctaFeatures,
+  featureGroups,
+  featureNavLinks,
+  heroBadge,
+  heroSub,
+  howItWorksSteps,
+  mockupSidebar,
+  mockupStatCards,
+  mockupTableRows,
+  mockupUrl,
+  statsBar,
+  testimonials,
+  transformGains,
+  transformPains,
+  transformSub,
+} from './_content/landing';
+import { LandingIcon } from './_content/landing-icons';
 import styles from './signin.module.css';
 
 function AuthBanner() {
@@ -27,6 +46,16 @@ function AuthBanner() {
         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
       Authentication required. Please sign in to access the dashboard.
+    </div>
+  );
+}
+
+function FeatureCard({ icon, title, desc }: { icon: ReactNode; title: string; desc: string }) {
+  return (
+    <div className={styles.featureCard6}>
+      <span className={styles.featureIcon}>{icon}</span>
+      <strong>{title}</strong>
+      <p>{desc}</p>
     </div>
   );
 }
@@ -61,20 +90,15 @@ export default function HomePage() {
 
   return (
     <main className={styles.page}>
-      {/* Auth required banner */}
       <Suspense>
         <AuthBanner />
       </Suspense>
 
-      {/* Animated orbs */}
       <div className={`${styles.orb} ${styles.orb1}`} />
       <div className={`${styles.orb} ${styles.orb2}`} />
       <div className={`${styles.orb} ${styles.orb3}`} />
-
-      {/* Dot grid */}
       <div className={styles.grid} />
 
-      {/* ── Top nav ─────────────────────────────────────────────────────────── */}
       <nav className={styles.nav}>
         <div className={styles.navLogo}>
           <NibrasLogo variant="inverse" width={110} priority />
@@ -84,6 +108,11 @@ export default function HomePage() {
           <a href="#features" className={styles.navLink}>
             Features
           </a>
+          {featureNavLinks.map((link) => (
+            <a key={link.href} href={link.href} className={styles.navLinkSub}>
+              {link.label}
+            </a>
+          ))}
           <a href="#how-it-works" className={styles.navLink}>
             How it works
           </a>
@@ -100,11 +129,10 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* ── Hero ────────────────────────────────────────────────────────────── */}
       <div className={styles.hero}>
         <div className={styles.heroBadge}>
           <span className={styles.badgeDot} />
-          Early Access · Built for Educators
+          {heroBadge}
         </div>
 
         <h1 className={styles.headline}>
@@ -113,11 +141,7 @@ export default function HomePage() {
           <span className={styles.headlineMuted}>Without the chaos.</span>
         </h1>
 
-        <p className={styles.sub}>
-          Nibras brings project templates, role applications, team formation, university-style
-          program planning, and GitHub-native submissions into one smooth workflow — with in-app
-          notifications and submission analytics built in.
-        </p>
+        <p className={styles.sub}>{heroSub}</p>
 
         <div className={styles.heroCtas}>
           <button
@@ -136,29 +160,18 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Product UI Mockup ────────────────────────────────────────────────── */}
       <div className={styles.productMockupWrap}>
         <div className={styles.productMockup}>
-          {/* Browser-like title bar */}
           <div className={styles.mockupBar}>
             <span className={styles.mockupDot} style={{ background: '#ff5f57' }} />
             <span className={styles.mockupDot} style={{ background: '#febc2e' }} />
             <span className={styles.mockupDot} style={{ background: '#28c840' }} />
-            <span className={styles.mockupUrl}>nibras.app/instructor/courses</span>
+            <span className={styles.mockupUrl}>{mockupUrl}</span>
           </div>
 
-          {/* App body */}
           <div className={styles.mockupBody}>
-            {/* Sidebar */}
             <div className={styles.mockupSidebar}>
-              {[
-                { label: 'Dashboard', active: false },
-                { label: 'My Courses', active: true },
-                { label: 'Templates', active: false },
-                { label: 'Team Formation', active: false },
-                { label: 'Planner', active: false },
-                { label: 'Settings', active: false },
-              ].map((item) => (
+              {mockupSidebar.map((item) => (
                 <div
                   key={item.label}
                   className={`${styles.mockupSidebarItem}${item.active ? ` ${styles.active}` : ''}`}
@@ -169,20 +182,14 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* Main content */}
             <div className={styles.mockupContent}>
               <div className={styles.mockupHeader}>
                 <h3 className={styles.mockupTitle}>Applied Systems — Workflow Overview</h3>
                 <span className={styles.mockupBadge}>Live</span>
               </div>
 
-              {/* Stats cards */}
               <div className={styles.mockupCards}>
-                {[
-                  { label: 'Templates', value: '6', sub: 'Reusable blueprints' },
-                  { label: 'Role Apps', value: '32', sub: 'Waiting for review' },
-                  { label: 'Program Sheets', value: '18', sub: 'Ready to print' },
-                ].map((card) => (
+                {mockupStatCards.map((card) => (
                   <div key={card.label} className={styles.mockupCard}>
                     <span className={styles.mockupCardLabel}>{card.label}</span>
                     <span className={styles.mockupCardValue}>{card.value}</span>
@@ -191,7 +198,6 @@ export default function HomePage() {
                 ))}
               </div>
 
-              {/* Submissions table */}
               <div className={styles.mockupTable}>
                 <div className={`${styles.mockupTableRow} ${styles.head}`}>
                   <span>Workflow</span>
@@ -199,32 +205,7 @@ export default function HomePage() {
                   <span>Status</span>
                   <span>State</span>
                 </div>
-                {[
-                  {
-                    student: 'Capstone Team Project',
-                    project: 'Template',
-                    status: 'passed',
-                    score: 'Active',
-                  },
-                  {
-                    student: 'Role Preferences',
-                    project: 'Team Formation',
-                    status: 'pending',
-                    score: '12 apps',
-                  },
-                  {
-                    student: 'Applied Systems Track',
-                    project: 'Planner',
-                    status: 'passed',
-                    score: 'Selected',
-                  },
-                  {
-                    student: 'Graduation Sheet',
-                    project: 'Program Sheet',
-                    status: 'failed',
-                    score: 'Advisor review',
-                  },
-                ].map((row) => (
+                {mockupTableRows.map((row) => (
                   <div key={row.student} className={styles.mockupTableRow}>
                     <span style={{ color: '#fafafa', fontWeight: 600 }}>{row.student}</span>
                     <span style={{ color: 'rgba(161,161,170,0.6)', fontSize: '12px' }}>
@@ -255,36 +236,23 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ── Trusted bar ──────────────────────────────────────────────────────── */}
       <p className={styles.trustedBar}>
-        Trusted by instructors and advisors running courses, teams, and academic planning in one
+        Trusted by instructors and students running courses, teams, planning, and practice in one
         system
       </p>
 
-      {/* ── Stats bar ────────────────────────────────────────────────────────── */}
       <div className={styles.statsBar}>
-        <div className={styles.statItem}>
-          <span className={styles.statNumber}>24/7</span>
-          <span className={styles.statLabel}>Course operations visibility</span>
-        </div>
-        <div className={styles.statDivider} />
-        <div className={styles.statItem}>
-          <span className={styles.statNumber}>1</span>
-          <span className={styles.statLabel}>Platform for courses and planning</span>
-        </div>
-        <div className={styles.statDivider} />
-        <div className={styles.statItem}>
-          <span className={styles.statNumber}>100%</span>
-          <span className={styles.statLabel}>GitHub-native submissions</span>
-        </div>
-        <div className={styles.statDivider} />
-        <div className={styles.statItem}>
-          <span className={styles.statNumber}>99.9%</span>
-          <span className={styles.statLabel}>Platform uptime</span>
-        </div>
+        {statsBar.map((stat, index) => (
+          <div key={stat.label} className={styles.statItemWrap}>
+            {index > 0 && <div className={styles.statDivider} />}
+            <div className={styles.statItem}>
+              <span className={styles.statNumber}>{stat.number}</span>
+              <span className={styles.statLabel}>{stat.label}</span>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* ── How it works ─────────────────────────────────────────────────────── */}
       <section id="how-it-works" className={styles.section}>
         <div className={styles.sectionHeader}>
           <span className={styles.sectionEyebrow}>How it works</span>
@@ -292,84 +260,17 @@ export default function HomePage() {
             From blueprint setup to active academic operations
           </h2>
           <p className={styles.sectionSub}>
-            Three simple steps from blank slate to templates, team projects, planning, and
+            Three simple steps from blank slate to templates, team projects, Hassona support, and
             GitHub-tracked delivery.
           </p>
         </div>
 
         <div className={styles.timeline}>
-          {[
-            {
-              step: '01',
-              icon: (
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
-                </svg>
-              ),
-              title: 'Define the system',
-              desc: 'Create courses, reusable templates, milestones, team roles, and academic program structure in one place.',
-              cta: 'Open dashboard →',
-              href: '/dashboard',
-            },
-            {
-              step: '02',
-              icon: (
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-                </svg>
-              ),
-              title: 'Coordinate people and plans',
-              desc: 'Collect role applications, generate teams, select tracks, and route petitions and approvals without losing the thread.',
-              cta: 'View CLI guide →',
-              href: '/instructor/onboarding',
-            },
-            {
-              step: '03',
-              icon: (
-                <svg
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" />
-                </svg>
-              ),
-              title: 'Run delivery and review',
-              desc: 'Students submit from the terminal, instructors review what matters, and planning state stays visible all semester.',
-              cta: null,
-              href: null,
-            },
-          ].map((step) => (
+          {howItWorksSteps.map((step) => (
             <div key={step.step} className={styles.timelineStep}>
               <div className={styles.timelineNumber}>{step.step}</div>
               <div className={styles.timelineContent}>
-                {step.icon}
+                <LandingIcon id={step.icon} size="timeline" />
                 <h3>{step.title}</h3>
                 <p>{step.desc}</p>
                 {step.cta && step.href && (
@@ -383,34 +284,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Before / After transformation ────────────────────────────────────── */}
       <section className={styles.transformSection}>
         <div className={styles.sectionHeader}>
           <span className={styles.sectionEyebrow}>The Nibras Difference</span>
           <h2 className={styles.sectionTitle}>
             From scattered academic operations to one clean system
           </h2>
-          <p className={styles.sectionSub}>
-            See what changes when templates, team formation, planning, and submissions finally live
-            together.
-          </p>
+          <p className={styles.sectionSub}>{transformSub}</p>
         </div>
 
         <div className={styles.transformGrid}>
-          {/* Before */}
           <div className={styles.transformPanel}>
             <div className={`${styles.transformPanelHeader} ${styles.before}`}>
               <span className={`${styles.transformPanelDot} ${styles.before}`} />
               Before Nibras
             </div>
             <div className={styles.transformPanelBody}>
-              {[
-                'Project setup recreated manually every time a course runs',
-                'Role preferences and team formation handled in forms and spreadsheets',
-                'Program requirements, tracks, and petitions managed outside the product',
-                'Students jumping between portals to understand what comes next',
-                'Submissions, planning, and review state living in disconnected tools',
-              ].map((pain) => (
+              {transformPains.map((pain) => (
                 <div key={pain} className={styles.transformPainPoint}>
                   <span className={styles.transformPainIcon}>✕</span>
                   <span className={styles.transformPainText}>{pain}</span>
@@ -419,23 +309,15 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Arrow */}
           <div className={styles.transformArrow}>→</div>
 
-          {/* After */}
           <div className={styles.transformPanel}>
             <div className={`${styles.transformPanelHeader} ${styles.after}`}>
               <span className={`${styles.transformPanelDot} ${styles.after}`} />
               After Nibras
             </div>
             <div className={styles.transformPanelBody}>
-              {[
-                'Reusable templates define roles, team size, milestones, and rubric structure',
-                'Students apply for roles, instructors generate teams, and final rosters get locked in one flow',
-                'Planner workspaces track requirements, tracks, petitions, approvals, and printable sheets',
-                'Students still submit with one command through a GitHub-native CLI workflow',
-                'Courses, projects, planning, and review stay visible in the same operating layer',
-              ].map((gain) => (
+              {transformGains.map((gain) => (
                 <div key={gain} className={styles.transformGainPoint}>
                   <span className={styles.transformGainIcon}>✓</span>
                   <span className={styles.transformGainText}>{gain}</span>
@@ -446,7 +328,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Features section ─────────────────────────────────────────────────── */}
       <section id="features" className={styles.section}>
         <div className={styles.sectionHeader}>
           <span className={styles.sectionEyebrow}>Features</span>
@@ -454,195 +335,31 @@ export default function HomePage() {
             Everything you need to run a modern academic system
           </h2>
           <p className={styles.sectionSub}>
-            From templates to team formation to program planning, Nibras turns scattered tools and
-            manual work into one clean operating layer.
+            From templates and team formation to program planning, tutoring, community,
+            competitions, and analytics — Nibras turns scattered tools and manual work into one
+            clean operating layer.
           </p>
         </div>
 
-        <div className={styles.featureGrid9}>
-          {[
-            {
-              icon: (
-                <svg
-                  width={20}
-                  height={20}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
-                </svg>
-              ),
-              title: 'Project Templates',
-              desc: 'Launch repeatable project blueprints with milestones, team size, roles, and rubric structure already defined.',
-            },
-            {
-              icon: (
-                <svg
-                  width={20}
-                  height={20}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z" />
-                </svg>
-              ),
-              title: 'Role Applications',
-              desc: 'Students rank the roles they want, explain fit, and enter team formation through a structured workflow.',
-            },
-            {
-              icon: (
-                <svg
-                  width={20}
-                  height={20}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.717 50.717 0 0 1 12 13.489a50.702 50.702 0 0 1 3.741-3.342M6.75 15a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm0 0v-3.675A55.378 55.378 0 0 1 12 8.443m-7.007 11.55A5.981 5.981 0 0 0 6.75 15.75v-1.5" />
-                </svg>
-              ),
-              title: 'Team Formation',
-              desc: 'Review applications, generate suggested teams, and lock final rosters without spreadsheet coordination.',
-            },
-            {
-              icon: (
-                <svg
-                  width={20}
-                  height={20}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm6 3a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Zm-13.5 0a2.25 2.25 0 1 1-4.5 0 2.25 2.25 0 0 1 4.5 0Z" />
-                </svg>
-              ),
-              title: 'Program Planner',
-              desc: 'Track requirements, choose tracks, manage petitions, approvals, and generate printable program sheets.',
-            },
-            {
-              icon: (
-                <svg
-                  width={20}
-                  height={20}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
-                </svg>
-              ),
-              title: 'Course Operations',
-              desc: 'Keep courses, projects, review queues, and instructor actions visible in one system with less switching and less admin drag.',
-            },
-            {
-              icon: (
-                <svg
-                  width={20}
-                  height={20}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />
-                </svg>
-              ),
-              title: 'GitHub + CLI',
-              desc: 'Students still submit through a clean developer workflow with GitHub history, CLI feedback, and verifiable delivery.',
-            },
-            {
-              icon: (
-                <svg
-                  width={20}
-                  height={20}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
-                </svg>
-              ),
-              title: 'In-app Notifications',
-              desc: 'Get notified when your submission is reviewed, graded, or needs changes — instantly in-app and by email.',
-            },
-            {
-              icon: (
-                <svg
-                  width={20}
-                  height={20}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
-                </svg>
-              ),
-              title: 'Submission Analytics',
-              desc: "Track your submission history with per-course and per-project analytics — see what's passed, pending, and needs attention.",
-            },
-            {
-              icon: (
-                <svg
-                  width={20}
-                  height={20}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <path d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456ZM16.894 20.567 16.5 21.75l-.394-1.183a2.25 2.25 0 0 0-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 0 0 1.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 0 0 1.423 1.423l1.183.394-1.183.394a2.25 2.25 0 0 0-1.423 1.423Z" />
-                </svg>
-              ),
-              title: 'Track Recommendations',
-              desc: 'The planner recommends the best program tracks based on your Year 1 course selections and academic goals.',
-            },
-          ].map((f) => (
-            <div key={f.title} className={styles.featureCard6}>
-              <span className={styles.featureIcon}>{f.icon}</span>
-              <strong>{f.title}</strong>
-              <p>{f.desc}</p>
+        <div className={styles.featureGroups}>
+          {featureGroups.map((group) => (
+            <div key={group.id} id={group.id} className={styles.featureGroup}>
+              <h3 className={styles.featureGroupLabel}>{group.label}</h3>
+              <div className={styles.featureGrid}>
+                {group.features.map((f) => (
+                  <FeatureCard
+                    key={f.title}
+                    icon={<LandingIcon id={f.icon} />}
+                    title={f.title}
+                    desc={f.desc}
+                  />
+                ))}
+              </div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── CLI Showcase ─────────────────────────────────────────────────────── */}
       <section id="cli" className={styles.section}>
         <div className={styles.sectionHeader}>
           <span className={styles.sectionEyebrow}>CLI</span>
@@ -707,28 +424,7 @@ export default function HomePage() {
           </div>
 
           <div className={styles.cliFeatures}>
-            {[
-              {
-                icon: '◉',
-                label: 'Live feedback on every step',
-                desc: 'Real-time status on every async operation — no silent waiting.',
-              },
-              {
-                icon: '█',
-                label: 'Progress you can actually see',
-                desc: 'Visual verification polling with clear progress indicators.',
-              },
-              {
-                icon: '╭',
-                label: 'Clear pass/fail summaries',
-                desc: 'Boxed result cards with scores and colour-coded borders.',
-              },
-              {
-                icon: '∿',
-                label: 'Built for real developer workflows',
-                desc: 'Feels native to the terminal — not bolted on as an afterthought.',
-              },
-            ].map((f) => (
+            {cliFeatures.map((f) => (
               <div key={f.label} className={styles.cliFeat}>
                 <span className={styles.cliFeatIcon}>{f.icon}</span>
                 <div>
@@ -741,7 +437,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Social proof ─────────────────────────────────────────────────────── */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <span className={styles.sectionEyebrow}>Instructor stories</span>
@@ -751,39 +446,13 @@ export default function HomePage() {
         </div>
 
         <div className={styles.testimonials}>
-          {[
-            {
-              quote:
-                'Nibras completely changed how I run our capstone sequence. Templates keep projects consistent, role applications are structured, and I no longer have to glue team formation together by hand.',
-              name: 'Sarah Chen',
-              role: 'CS Instructor, State University',
-              avatar: '/testimonials/sarah-chen.svg',
-            },
-            {
-              quote:
-                'We used to split planning, petitions, and delivery across too many tools. Now students can see their track, sheet, submissions, and project status in one place, which cuts confusion immediately.',
-              name: 'Marcus Wright',
-              role: 'Program Lead, TechPath',
-              avatar: '/testimonials/marcus-wright.svg',
-            },
-            {
-              quote:
-                'The GitHub-backed submissions are still excellent, but the bigger win is that courses, templates, teams, and program operations now feel like one connected product instead of separate processes.',
-              name: 'Priya Nair',
-              role: 'Data Science Professor',
-              avatar: '/testimonials/priya-nair.svg',
-            },
-          ].map((t) => (
+          {testimonials.map((t) => (
             <div key={t.name} className={styles.testimonialCard}>
               <p className={styles.testimonialQuote}>&ldquo;{t.quote}&rdquo;</p>
               <div className={styles.testimonialAuthor}>
-                <img
-                  src={t.avatar}
-                  alt={t.name}
-                  className={styles.testimonialAvatar}
-                  width={40}
-                  height={40}
-                />
+                <span className={styles.testimonialAvatarInitials} aria-hidden="true">
+                  {t.initials}
+                </span>
                 <div>
                   <strong>{t.name}</strong>
                   <span>{t.role}</span>
@@ -794,7 +463,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── CTA section ──────────────────────────────────────────────────────── */}
       <section className={styles.ctaSection}>
         <div className={styles.ctaCard}>
           <h2 className={styles.ctaTitle}>
@@ -802,15 +470,12 @@ export default function HomePage() {
           </h2>
           <p className={styles.ctaSub}>
             Sign in with GitHub, open the full Nibras system, and start using templates, team
-            formation, planner workflows, and GitHub-native submissions together.
+            formation, planner workflows, Hassona, community, competitions, achievements, and
+            GitHub-native submissions together.
           </p>
 
           <div className={styles.ctaFeatures}>
-            {[
-              'Free during early access',
-              'GitHub login — no passwords',
-              'No credit card required',
-            ].map((feat) => (
+            {ctaFeatures.map((feat) => (
               <span key={feat} className={styles.ctaFeatureItem}>
                 <span className={styles.ctaFeatureCheck}>✓</span>
                 {feat}
@@ -839,7 +504,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Footer ──────────────────────────────────────────────────────────── */}
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
@@ -855,6 +519,11 @@ export default function HomePage() {
             <div className={styles.footerCol}>
               <span className={styles.footerColTitle}>Product</span>
               <a href="#features">Features</a>
+              {featureNavLinks.map((link) => (
+                <a key={link.href} href={link.href}>
+                  {link.label}
+                </a>
+              ))}
               <a href="#how-it-works">How it works</a>
               <a href="#cli">CLI</a>
             </div>

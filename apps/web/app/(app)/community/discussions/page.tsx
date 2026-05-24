@@ -1,12 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
+import Avatar from '../../_components/widgets/Avatar';
 import EmptyState from '../../_components/widgets/EmptyState';
-import { listThreads, type CommunityThread } from '../../../lib/services/community';
+import Skeleton from '../../_components/widgets/Skeleton';
+import MarkdownToolbar from '../../_components/widgets/MarkdownToolbar';
+import { createThread, listThreads, type CommunityThread } from '../../../lib/services/community';
 import { useSession } from '../../_components/session-context';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
+import { listCourses, type BackendCourse } from '../../../lib/services/backend-courses';
+import { stripMarkdown } from '../../../lib/strip-markdown';
 
 function formatRelative(iso?: string): string {
   if (!iso) return '';
@@ -26,15 +32,58 @@ function formatRelative(iso?: string): string {
 }
 
 export default function DiscussionsPage() {
+  const router = useRouter();
   const { user } = useSession();
   const [threads, setThreads] = useState<CommunityThread[]>([]);
   const [courseId, setCourseId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [courseList, setCourseList] = useState<BackendCourse[]>([]);
+
+  const [threadOpen, setThreadOpen] = useState(false);
+  const [threadTitle, setThreadTitle] = useState('');
+  const [threadBody, setThreadBody] = useState('');
+  const [threadSubmitting, setThreadSubmitting] = useState(false);
+  const [threadError, setThreadError] = useState<string | null>(null);
+  const threadBodyRef = useRef<HTMLTextAreaElement>(null);
+
+  async function handleThreadSubmit(event: React.FormEvent) {
+    event.preventDefault();
+    const title = threadTitle.trim();
+    const body = threadBody.trim();
+    if (!title || !courseId) return;
+    setThreadSubmitting(true);
+    setThreadError(null);
+    try {
+      const created = await createThread(courseId, { title, body: body || undefined });
+      setThreadOpen(false);
+      setThreadTitle('');
+      setThreadBody('');
+      router.push(`/community/discussions/${created.id}`);
+    } catch (err) {
+      setThreadError(friendlyMessage(err));
+    } finally {
+      setThreadSubmitting(false);
+    }
+  }
 
   const courses = useMemo(() => {
     return (user?.memberships ?? []).map((m) => ({ id: m.courseId, role: m.role }));
   }, [user]);
+
+  const courseNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const c of courseList) {
+      map.set(c.id, c.title || c.code);
+    }
+    return map;
+  }, [courseList]);
+
+  useEffect(() => {
+    void listCourses()
+      .then(setCourseList)
+      .catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     if (!courseId) {
@@ -72,6 +121,18 @@ export default function DiscussionsPage() {
     });
   }, [threads]);
 
+  useEffect(() => {
+    if (!threadOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setThreadOpen(false);
+        setThreadError(null);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [threadOpen]);
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -81,10 +142,98 @@ export default function DiscussionsPage() {
             Long-form threads scoped to your courses — announcements, study groups, project chatter.
           </p>
         </div>
-        <button type="button" className={styles.startBtn} disabled>
-          Start a thread
-        </button>
+        {user ? (
+          <button
+            type="button"
+            className={styles.startBtn}
+            disabled={!courseId}
+            onClick={() => setThreadOpen(true)}
+          >
+            Start a thread
+          </button>
+        ) : (
+          <Link href="/connect" className={styles.startBtn}>
+            Sign in to post
+          </Link>
+        )}
       </header>
+
+      {threadOpen && (
+        <div
+          className={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Start a thread"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setThreadOpen(false);
+              setThreadError(null);
+            }
+          }}
+        >
+          <form className={styles.modal} onSubmit={handleThreadSubmit}>
+            <h2 className={styles.modalTitle}>Start a thread</h2>
+            <p className={styles.modalHint}>
+              Threads are scoped to the selected course. Keep the title focused.
+            </p>
+            <div className={styles.formRow}>
+              <label className={styles.formLabel} htmlFor="thread-title">
+                Title
+              </label>
+              <input
+                id="thread-title"
+                className={styles.formInput}
+                value={threadTitle}
+                onChange={(e) => setThreadTitle(e.target.value)}
+                placeholder="What do you want to discuss?"
+                maxLength={160}
+                autoFocus
+                required
+              />
+            </div>
+            <div className={styles.formRow}>
+              <label className={styles.formLabel} htmlFor="thread-body">
+                Details (optional)
+              </label>
+              <MarkdownToolbar textareaRef={threadBodyRef} onChange={setThreadBody} />
+              <textarea
+                ref={threadBodyRef}
+                id="thread-body"
+                className={styles.formTextarea}
+                value={threadBody}
+                onChange={(e) => setThreadBody(e.target.value)}
+                placeholder="Add context, links, or questions to kick off the discussion."
+                rows={6}
+              />
+            </div>
+            {threadError && (
+              <p style={{ color: 'var(--danger, #ef4444)', fontSize: 12, margin: 0 }}>
+                {threadError}
+              </p>
+            )}
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.cancelBtn}
+                onClick={() => {
+                  setThreadOpen(false);
+                  setThreadError(null);
+                }}
+                disabled={threadSubmitting}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className={styles.submitBtn}
+                disabled={threadSubmitting || !threadTitle.trim()}
+              >
+                {threadSubmitting ? 'Posting...' : 'Start thread'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       {courses.length > 0 && (
         <div className={styles.filters}>
@@ -98,7 +247,7 @@ export default function DiscussionsPage() {
                 className={`${styles.courseChip} ${courseId === c.id ? styles.courseChipActive : ''}`}
                 onClick={() => setCourseId(c.id)}
               >
-                {c.id}
+                {courseNameMap.get(c.id) || c.id}
               </button>
             ))}
           </div>
@@ -115,7 +264,9 @@ export default function DiscussionsPage() {
           }
         />
       ) : loading ? (
-        <div style={{ height: 280, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Skeleton variant="card" height={72} count={4} />
+        </div>
       ) : error ? (
         <EmptyState
           title="Discussions unavailable"
@@ -144,8 +295,9 @@ export default function DiscussionsPage() {
                   {thread.pinned && <span className={styles.pinnedTag}>Pinned</span>}
                   {thread.closed && <span className={styles.closedTag}>Closed</span>}
                 </div>
-                {thread.body && <p className={styles.snippet}>{thread.body}</p>}
+                {thread.body && <p className={styles.snippet}>{stripMarkdown(thread.body)}</p>}
                 <div className={styles.threadMeta}>
+                  <Avatar url={thread.author.avatarUrl} name={thread.author.username} size={18} />
                   <span>{thread.author.username}</span>
                   <span>·</span>
                   <span>{formatRelative(thread.lastActivityAt ?? thread.createdAt)}</span>

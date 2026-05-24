@@ -6,17 +6,19 @@ const apiBaseUrl = process.env.NEXT_PUBLIC_NIBRAS_API_BASE_URL ?? 'http://localh
 // Must differ from apiBaseUrl when apiBaseUrl is the web origin (to avoid circular rewrites).
 const apiInternalUrl = process.env.NIBRAS_API_INTERNAL_URL ?? apiBaseUrl;
 
-// External backends consumed by the ported student-dashboard pages. The browser
-// fetches these directly (no Next.js rewrite), so each origin must appear in
-// `connect-src` of the CSP header below.
+// External service origins that the browser fetches directly (not through the
+// Next.js /v1/* rewrite). Migrated services (admin, community, tracking,
+// competitions) now route through 'self' by default and only need a CSP entry
+// when explicitly overridden via env var.
 const externalServiceOrigins: string[] = [
-  process.env.NEXT_PUBLIC_NIBRAS_ADMIN_API_URL ?? 'https://nibras-backend.up.railway.app',
-  process.env.NEXT_PUBLIC_NIBRAS_COMMUNITY_API_URL ?? 'https://nibras-backend.up.railway.app',
-  process.env.NEXT_PUBLIC_NIBRAS_TRACKING_API_URL ?? 'https://nibras-api.fly.dev',
-  process.env.NEXT_PUBLIC_NIBRAS_COMPETITIONS_API_URL ?? 'https://nibras-backend.up.railway.app',
+  process.env.NEXT_PUBLIC_NIBRAS_ADMIN_API_URL,
+  process.env.NEXT_PUBLIC_NIBRAS_COMMUNITY_API_URL,
+  process.env.NEXT_PUBLIC_NIBRAS_TRACKING_API_URL,
+  process.env.NEXT_PUBLIC_NIBRAS_COMPETITIONS_API_URL,
   process.env.NEXT_PUBLIC_NIBRAS_RECOMMENDATION_API_URL ??
     'https://recommendationmodel-production-0f8e.up.railway.app',
 ]
+  .filter((v): v is string => !!v)
   .map((value) => {
     try {
       return new URL(value).origin;
@@ -66,7 +68,8 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https://avatars.githubusercontent.com https://i.ytimg.com",
       `connect-src ${connectSrc}`,
-      "font-src 'self'",
+      "font-src 'self' data:",
+      "worker-src 'self' blob:",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -81,6 +84,15 @@ const nextConfig: NextConfig = {
   // Required for monorepo standalone builds to correctly trace and bundle
   // workspace dependencies from the repo root. Moved out of experimental in Next.js 15.
   outputFileTracingRoot: path.join(__dirname, '../../'),
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.module.rules.push({
+        test: /\.ttf$/,
+        type: 'asset/resource',
+      });
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       {

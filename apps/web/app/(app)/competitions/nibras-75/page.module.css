@@ -1,0 +1,412 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 920px;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: linear-gradient(
+    135deg,
+    color-mix(in oklab, var(--primary, #22c55e) 8%, var(--surface)) 0%,
+    var(--surface) 60%
+  );
+}
+
+.badge {
+  display: inline-flex;
+  width: fit-content;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--primary, #22c55e) 20%, transparent);
+  color: var(--primary, #22c55e);
+}
+
+.title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.5;
+  max-width: 65ch;
+}
+
+.metaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.metaPill {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.progressBar {
+  height: 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--border) 60%, transparent);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary, #22c55e);
+  transition: width 0.3s ease;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 220px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: var(--text);
+  font-family: inherit;
+}
+
+.filterPicker {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.filterChip {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.filterChipActive {
+  background: color-mix(in oklab, var(--primary, #22c55e) 18%, var(--surface));
+  color: var(--primary, #22c55e);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card {
+  display: flex;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  transition: border-color 0.15s;
+}
+
+.card:hover {
+  border-color: var(--primary, #22c55e);
+}
+
+.cardSolved {
+  background: color-mix(in oklab, #8ad46b 35%, var(--surface));
+  border-color: color-mix(in oklab, #8ad46b 60%, var(--border));
+}
+
+.rank {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  min-width: 28px;
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.problemTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.problemTitle a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.problemTitle a:hover {
+  color: var(--primary, #22c55e);
+}
+
+.difficulty {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.difficultyEasy {
+  background: color-mix(in oklab, #22c55e 18%, transparent);
+  color: #166534;
+}
+
+.difficultyMedium {
+  background: color-mix(in oklab, #eab308 22%, transparent);
+  color: #854d0e;
+}
+
+.difficultyHard {
+  background: color-mix(in oklab, #ef4444 18%, transparent);
+  color: #991b1b;
+}
+
+.rankInline {
+  color: var(--text-muted);
+  font-weight: 600;
+  margin-right: 4px;
+}
+
+.solvedToggle {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: transparent;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.solvedToggle:hover {
+  border-color: var(--primary, #22c55e);
+}
+
+.solvedToggleOn {
+  background: var(--primary, #22c55e);
+  border-color: var(--primary, #22c55e);
+  color: #052e16;
+}
+
+.companyRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.askedByLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.companyIcons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.companyIconWrap {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.companyIcon {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  display: block;
+}
+
+.companyFallback {
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-muted);
+}
+
+.companyIconWrap[data-company='google'] {
+  background: #fff;
+}
+.companyIconWrap[data-company='meta'] {
+  background: #fff;
+}
+.companyIconWrap[data-company='amazon'] {
+  background: #fff;
+}
+.companyIconWrap[data-company='apple'] {
+  background: #f5f5f7;
+}
+.companyIconWrap[data-company='microsoft'] {
+  background: #f3f3f3;
+}
+.companyIconWrap[data-company='netflix'] {
+  background: #000;
+}
+.companyIconWrap[data-company='netflix'] .companyIcon {
+  filter: brightness(0) invert(1);
+}
+.companyIconWrap[data-company='uber'] {
+  background: #000;
+}
+.companyIconWrap[data-company='uber'] .companyIcon {
+  filter: brightness(0) invert(1);
+}
+.companyIconWrap[data-company='bloomberg'] {
+  background: #2800d7;
+  border-color: #2800d7;
+}
+.companyIconWrap[data-company='bloomberg'] .companyIcon {
+  filter: brightness(0) invert(1);
+}
+.companyIconWrap[data-company='linkedin'] {
+  background: #0a66c2;
+  border-color: #0a66c2;
+}
+.companyIconWrap[data-company='linkedin'] .companyIcon {
+  filter: brightness(0) invert(1);
+}
+.companyIconWrap[data-company='stripe'] {
+  background: #635bff;
+  border-color: #635bff;
+}
+.companyIconWrap[data-company='stripe'] .companyIcon {
+  filter: brightness(0) invert(1);
+}
+
+.description {
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--border) 45%, transparent);
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.linkRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.forkRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.cloneHint {
+  font-size: 11px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--text) 6%, transparent);
+  border: 1px solid var(--border);
+  word-break: break-all;
+}
+
+.linkBtn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.linkBtn:hover {
+  border-color: var(--primary, #22c55e);
+  color: var(--primary, #22c55e);
+}
+
+.linkInput {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  min-width: 160px;
+}

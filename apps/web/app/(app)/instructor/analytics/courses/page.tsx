@@ -31,13 +31,18 @@ export default function CoursesAnalyticsPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1 className={styles.title}>Course Analytics</h1>
-        <p className={styles.subtitle}>
-          Per-course completion, average grade, and pass rate.
-        </p>
+        <p className={styles.subtitle}>Per-course completion, average grade, and pass rate.</p>
       </header>
 
       {loading ? (
-        <div style={{ height: 300, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 300,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error || rows.length === 0 ? (
         <EmptyState
           title={error ? 'Could not load courses' : 'No courses'}

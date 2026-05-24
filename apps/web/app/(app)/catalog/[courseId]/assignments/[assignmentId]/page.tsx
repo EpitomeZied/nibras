@@ -65,7 +65,14 @@ export default function AssignmentDetailPage() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <div style={{ height: 320, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 320,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       </div>
     );
   }
@@ -130,9 +137,7 @@ export default function AssignmentDetailPage() {
                   <li key={idx} className={styles.rubricRow}>
                     <span className={styles.rubricCriterion}>{r.criterion}</span>
                     <span className={styles.rubricWeight}>{r.weight}%</span>
-                    {r.description && (
-                      <p className={styles.rubricDescription}>{r.description}</p>
-                    )}
+                    {r.description && <p className={styles.rubricDescription}>{r.description}</p>}
                   </li>
                 ))}
               </ul>
@@ -165,7 +170,12 @@ export default function AssignmentDetailPage() {
               <ul className={styles.resourceList}>
                 {assignment.resources.map((r) => (
                   <li key={r.url}>
-                    <a className={styles.resourceLink} href={r.url} target="_blank" rel="noopener noreferrer">
+                    <a
+                      className={styles.resourceLink}
+                      href={r.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
                       {r.title}
                     </a>
                   </li>

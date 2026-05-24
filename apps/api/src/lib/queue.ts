@@ -7,16 +7,22 @@
  */
 import { Queue } from 'bullmq';
 
-const VERIFICATION_QUEUE_NAME = 'nibras:verification';
+const VERIFICATION_QUEUE_NAME = 'nibras-verification';
 
-type RedisConnection = { host: string; port: number; password?: string };
+type RedisConnection = {
+  host: string;
+  port: number;
+  password?: string;
+  tls?: Record<string, never>;
+};
 
 function parseRedisUrl(url: string): RedisConnection {
   const parsed = new URL(url);
   return {
     host: parsed.hostname,
     port: Number(parsed.port) || 6379,
-    password: parsed.password || undefined,
+    password: parsed.password ? decodeURIComponent(parsed.password) : undefined,
+    tls: parsed.protocol === 'rediss:' ? ({} as Record<string, never>) : undefined,
   };
 }
 

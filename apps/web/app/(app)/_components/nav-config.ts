@@ -1,12 +1,42 @@
 export type NavVisibility = 'all' | 'instructor' | 'admin';
 
+/** Where the item appears in the top header. */
+export type NavPlacement = 'primary' | 'learn' | 'compete' | 'teach' | 'admin';
+
+export type NavGroupId = 'learn' | 'compete' | 'teach';
+
 export type AppNavItem = {
   href: string;
   label: string;
   description: string;
   visibility: NavVisibility;
+  placement: NavPlacement;
   matchPrefixes?: string[];
 };
+
+export type NavDropdownGroup = {
+  id: NavGroupId;
+  label: string;
+  description: string;
+};
+
+export const navDropdownGroups: NavDropdownGroup[] = [
+  {
+    id: 'learn',
+    label: 'Learn',
+    description: 'Discover projects, discuss with peers, and write code.',
+  },
+  {
+    id: 'compete',
+    label: 'Compete',
+    description: 'Contests, practice, badges, and progression.',
+  },
+  {
+    id: 'teach',
+    label: 'Teach',
+    description: 'Course management and cross-course analytics.',
+  },
+];
 
 export type ShellMembership = { courseId: string; role: string; level: number };
 
@@ -21,49 +51,65 @@ export const appNavItems: AppNavItem[] = [
     label: 'Dashboard',
     description: 'Track account, projects, and milestones.',
     visibility: 'all',
+    placement: 'primary',
   },
   {
     href: '/projects',
     label: 'Projects',
     description: 'Manage submissions, progress, and reviews.',
     visibility: 'all',
+    placement: 'primary',
     matchPrefixes: ['/submissions'],
-  },
-  {
-    href: '/catalog',
-    label: 'Catalog',
-    description: 'Browse project templates and apply across all courses.',
-    visibility: 'all',
   },
   {
     href: '/planner',
     label: 'Planner',
     description: 'Plan your academic path, track petitions, and generate a sheet.',
     visibility: 'all',
+    placement: 'primary',
   },
   {
     href: '/tutor',
-    label: 'Tutor',
+    label: 'Hassona',
     description: 'Chat, insights, smart routing, and recommendations.',
     visibility: 'all',
+    placement: 'primary',
+  },
+  {
+    href: '/catalog',
+    label: 'Catalog',
+    description: 'Browse project templates and apply across all courses.',
+    visibility: 'all',
+    placement: 'learn',
   },
   {
     href: '/community',
     label: 'Community',
     description: 'Ask questions, share answers, and join course discussions.',
     visibility: 'all',
+    placement: 'learn',
+    matchPrefixes: ['/community/discussions', '/community/q', '/community/tags'],
+  },
+  {
+    href: '/ide',
+    label: 'IDE',
+    description: 'Run code in a sandboxed playground.',
+    visibility: 'all',
+    placement: 'learn',
   },
   {
     href: '/competitions',
     label: 'Competitions',
     description: 'Contests, practice problems, ranking, and competitive history.',
     visibility: 'all',
+    placement: 'compete',
   },
   {
     href: '/achievements',
     label: 'Achievements',
     description: 'Badges, reputation, leaderboards, and level progression.',
     visibility: 'all',
+    placement: 'compete',
     matchPrefixes: ['/levels'],
   },
   {
@@ -71,6 +117,7 @@ export const appNavItems: AppNavItem[] = [
     label: 'Instructor',
     description: 'Manage courses, templates, team formation, and programs.',
     visibility: 'instructor',
+    placement: 'teach',
     matchPrefixes: ['/instructor/programs'],
   },
   {
@@ -78,6 +125,7 @@ export const appNavItems: AppNavItem[] = [
     label: 'Analytics',
     description: 'Aggregate signal across courses — submissions, pass rate, engagement.',
     visibility: 'instructor',
+    placement: 'teach',
     matchPrefixes: [
       '/instructor/analytics/courses',
       '/instructor/analytics/engagement',
@@ -89,6 +137,7 @@ export const appNavItems: AppNavItem[] = [
     label: 'Admin',
     description: 'System-wide submissions, projects, and oversight.',
     visibility: 'admin',
+    placement: 'admin',
   },
 ];
 
@@ -113,6 +162,40 @@ export function isNavItemActive(item: AppNavItem, pathname: string | null): bool
       (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
     ) ?? false
   );
+}
+
+export function getVisibleNavItems(user: ShellSessionUser | null): AppNavItem[] {
+  return appNavItems.filter((item) => canAccessNavItem(item, user));
+}
+
+export function getPrimaryNavItems(user: ShellSessionUser | null): AppNavItem[] {
+  return getVisibleNavItems(user).filter((item) => item.placement === 'primary');
+}
+
+export function getNavItemsForGroup(
+  groupId: NavGroupId,
+  user: ShellSessionUser | null
+): AppNavItem[] {
+  return getVisibleNavItems(user).filter((item) => item.placement === groupId);
+}
+
+export function getAdminNavItem(user: ShellSessionUser | null): AppNavItem | null {
+  return getVisibleNavItems(user).find((item) => item.placement === 'admin') ?? null;
+}
+
+export function isNavGroupActive(
+  groupId: NavGroupId,
+  items: AppNavItem[],
+  pathname: string | null
+): boolean {
+  return items.some((item) => isNavItemActive(item, pathname));
+}
+
+export function getActiveNavItemInGroup(
+  items: AppNavItem[],
+  pathname: string | null
+): AppNavItem | null {
+  return items.find((item) => isNavItemActive(item, pathname)) ?? null;
 }
 
 export const pageTitles: Record<string, { title: string; subtitle: string }> = {
@@ -193,12 +276,12 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: 'Tier progression based on reputation and contributions.',
   },
   '/tutor': {
-    title: 'AI Tutor',
-    subtitle: 'Chat with the tutor about any topic you’re working through.',
+    title: 'Hassona',
+    subtitle: "Chat with Hassona about any topic you're working through.",
   },
   '/tutor/insights': {
     title: 'Learning Insights',
-    subtitle: 'Where you’re strong, where you’re struggling, and what to study next.',
+    subtitle: "Where you're strong, where you're struggling, and what to study next.",
   },
   '/tutor/routing': {
     title: 'Smart Routing',
@@ -220,9 +303,17 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     title: 'Competitions',
     subtitle: 'Upcoming contests and linked accounts.',
   },
+  '/ide': {
+    title: 'IDE',
+    subtitle: 'Write, run, and debug code in a sandboxed playground.',
+  },
   '/competitions/practice': {
     title: 'Practice',
-    subtitle: 'Problems from Codeforces, LeetCode, and AtCoder.',
+    subtitle: 'Multi-platform problems and Codeforces analytics.',
+  },
+  '/competitions/nibras-75': {
+    title: 'Nibras 75',
+    subtitle: 'Curated LeetCode interview list — 75 essential DSA problems.',
   },
   '/competitions/ranking': {
     title: 'Ranking',
@@ -231,6 +322,10 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/competitions/history': {
     title: 'Contest History',
     subtitle: 'Your past contest performance and rating trend.',
+  },
+  '/competitions/platforms': {
+    title: 'Platform Integrations',
+    subtitle: 'Connect contests, CTF events, Kaggle, bug bounty, and more.',
   },
   '/instructor/analytics': {
     title: 'Analytics',

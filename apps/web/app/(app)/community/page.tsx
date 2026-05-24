@@ -2,18 +2,27 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
+import Avatar from '../_components/widgets/Avatar';
 import EmptyState from '../_components/widgets/EmptyState';
+import Skeleton from '../_components/widgets/Skeleton';
+import VoteButton from '../_components/widgets/VoteButton';
+import MarkdownToolbar from '../_components/widgets/MarkdownToolbar';
 import {
   createQuestion,
   listQuestions,
   listTags,
+  voteQuestion,
   type CommunityQuestion,
   type CommunityTag,
   type QuestionFilters,
 } from '../../lib/services/community';
 import { friendlyMessage } from '../../lib/api-clients/errors';
+import { useSession } from '../_components/session-context';
+import { useDebounce } from '../../lib/hooks/use-debounce';
+import { useBookmarks } from '../../lib/hooks/use-bookmarks';
+import { stripMarkdown } from '../../lib/strip-markdown';
 
 const SORTS: Array<{ value: NonNullable<QuestionFilters['sort']>; label: string }> = [
   { value: 'newest', label: 'Newest' },
@@ -40,13 +49,21 @@ function formatRelative(iso: string): string {
 
 export default function CommunityPage() {
   const router = useRouter();
+  const { user } = useSession();
+  const { toggle: toggleBookmark, isBookmarked } = useBookmarks();
   const [questions, setQuestions] = useState<CommunityQuestion[]>([]);
   const [tags, setTags] = useState<CommunityTag[]>([]);
   const [sort, setSort] = useState<NonNullable<QuestionFilters['sort']>>('newest');
-  const [tag, setTag] = useState<string | undefined>(undefined);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [mine, setMine] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const debouncedQ = useDebounce(q, 300);
 
   const [askOpen, setAskOpen] = useState(false);
   const [askTitle, setAskTitle] = useState('');
@@ -54,6 +71,24 @@ export default function CommunityPage() {
   const [askTags, setAskTags] = useState('');
   const [askSubmitting, setAskSubmitting] = useState(false);
   const [askError, setAskError] = useState<string | null>(null);
+
+  const debouncedAskTitle = useDebounce(askTitle, 400);
+  const [suggestions, setSuggestions] = useState<CommunityQuestion[]>([]);
+  const askBodyRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!askOpen || debouncedAskTitle.trim().length < 5) {
+      setSuggestions([]);
+      return;
+    }
+    let cancelled = false;
+    void listQuestions({ q: debouncedAskTitle.trim(), limit: 5 }).then((res) => {
+      if (!cancelled) setSuggestions(res.items);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedAskTitle, askOpen]);
 
   async function handleAskSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -84,7 +119,17 @@ export default function CommunityPage() {
     }
   }
 
-  const filters = useMemo<QuestionFilters>(() => ({ sort, tag, q, limit: 30 }), [sort, tag, q]);
+  const filters = useMemo<QuestionFilters>(
+    () => ({
+      sort,
+      tags: selectedTags.length > 0 ? selectedTags : undefined,
+      q: debouncedQ,
+      page,
+      limit: 30,
+      authorId: mine && user ? user.id : undefined,
+    }),
+    [sort, selectedTags, debouncedQ, page, mine, user]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,6 +138,9 @@ export default function CommunityPage() {
       const [qResult, tagResult] = await Promise.allSettled([listQuestions(filters), listTags()]);
       if (qResult.status === 'fulfilled') {
         setQuestions(qResult.value.items ?? []);
+        const total = qResult.value.total ?? 0;
+        const limit = qResult.value.limit ?? 30;
+        setTotalPages(Math.max(1, Math.ceil(total / limit)));
       } else {
         setQuestions([]);
         setError(friendlyMessage(qResult.reason));
@@ -107,6 +155,32 @@ export default function CommunityPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [sort, selectedTags, debouncedQ, mine]);
+
+  useEffect(() => {
+    if (!askOpen) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setAskOpen(false);
+        setAskError(null);
+      }
+    }
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [askOpen]);
+
+  function toggleTag(name: string) {
+    setSelectedTags((prev) =>
+      prev.includes(name) ? prev.filter((t) => t !== name) : [...prev, name]
+    );
+  }
+
+  const displayedQuestions = saved
+    ? questions.filter((qItem) => isBookmarked(qItem.id))
+    : questions;
+
   return (
     <div className={styles.page}>
       <header className={styles.header}>
@@ -114,20 +188,39 @@ export default function CommunityPage() {
           <h1 className={styles.title}>Community</h1>
           <p className={styles.subtitle}>Ask, answer, and learn from your classmates.</p>
         </div>
-        <button type="button" className={styles.askBtn} onClick={() => setAskOpen(true)}>
-          Ask a question
-        </button>
+        {user ? (
+          <button type="button" className={styles.askBtn} onClick={() => setAskOpen(true)}>
+            Ask a question
+          </button>
+        ) : (
+          <Link href="/connect" className={styles.askBtn}>
+            Sign in to ask
+          </Link>
+        )}
       </header>
 
       {askOpen && (
-        <div className={styles.modalBackdrop} role="dialog" aria-modal="true" aria-label="Ask a question">
+        <div
+          className={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Ask a question"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setAskOpen(false);
+              setAskError(null);
+            }
+          }}
+        >
           <form className={styles.modal} onSubmit={handleAskSubmit}>
             <h2 className={styles.modalTitle}>Ask a question</h2>
             <p className={styles.modalHint}>
               Keep the title focused and the body specific. Add up to 5 comma-separated tags.
             </p>
             <div className={styles.formRow}>
-              <label className={styles.formLabel} htmlFor="ask-title">Title</label>
+              <label className={styles.formLabel} htmlFor="ask-title">
+                Title
+              </label>
               <input
                 id="ask-title"
                 className={styles.formInput}
@@ -138,10 +231,33 @@ export default function CommunityPage() {
                 autoFocus
                 required
               />
+              {suggestions.length > 0 && (
+                <div className={styles.suggestions}>
+                  <span className={styles.suggestionsLabel}>Similar questions already asked:</span>
+                  {suggestions.map((s) => (
+                    <a
+                      key={s.id}
+                      href={`/community/q/${s.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.suggestionItem}
+                    >
+                      {s.title}
+                      <span className={styles.suggestionMeta}>
+                        {s.answerCount} answers · {s.score} votes
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
             <div className={styles.formRow}>
-              <label className={styles.formLabel} htmlFor="ask-body">Details</label>
+              <label className={styles.formLabel} htmlFor="ask-body">
+                Details
+              </label>
+              <MarkdownToolbar textareaRef={askBodyRef} onChange={setAskBody} />
               <textarea
+                ref={askBodyRef}
                 id="ask-body"
                 className={styles.formTextarea}
                 value={askBody}
@@ -152,7 +268,9 @@ export default function CommunityPage() {
               />
             </div>
             <div className={styles.formRow}>
-              <label className={styles.formLabel} htmlFor="ask-tags">Tags (optional)</label>
+              <label className={styles.formLabel} htmlFor="ask-tags">
+                Tags (optional)
+              </label>
               <input
                 id="ask-tags"
                 className={styles.formInput}
@@ -201,19 +319,45 @@ export default function CommunityPage() {
             onChange={(event) => setQ(event.target.value)}
           />
         </div>
-        <div role="tablist" aria-label="Sort" className={styles.tabs}>
-          {SORTS.map((s) => (
+        <div className={styles.toolbarRight}>
+          <div role="tablist" aria-label="Sort" className={styles.tabs}>
+            {SORTS.map((s) => (
+              <button
+                key={s.value}
+                type="button"
+                role="tab"
+                aria-selected={sort === s.value}
+                className={`${styles.tab} ${sort === s.value ? styles.tabActive : ''}`}
+                onClick={() => setSort(s.value)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+          {user && (
             <button
-              key={s.value}
               type="button"
-              role="tab"
-              aria-selected={sort === s.value}
-              className={`${styles.tab} ${sort === s.value ? styles.tabActive : ''}`}
-              onClick={() => setSort(s.value)}
+              className={`${styles.filterToggle} ${mine ? styles.filterToggleActive : ''}`}
+              onClick={() => setMine(!mine)}
             >
-              {s.label}
+              Mine
             </button>
-          ))}
+          )}
+          <button
+            type="button"
+            className={`${styles.filterToggle} ${saved ? styles.filterToggleActive : ''}`}
+            onClick={() => setSaved(!saved)}
+            title="Saved questions"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+              <path
+                d="M3 2h8v10l-4-2.5L3 12V2z"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                fill={saved ? 'currentColor' : 'none'}
+              />
+            </svg>
+          </button>
         </div>
       </div>
 
@@ -221,8 +365,8 @@ export default function CommunityPage() {
         <div className={styles.tagFilter}>
           <button
             type="button"
-            className={`${styles.tagChip} ${tag === undefined ? styles.tagChipActive : ''}`}
-            onClick={() => setTag(undefined)}
+            className={`${styles.tagChip} ${selectedTags.length === 0 ? styles.tagChipActive : ''}`}
+            onClick={() => setSelectedTags([])}
           >
             All
           </button>
@@ -230,8 +374,8 @@ export default function CommunityPage() {
             <button
               key={t.name}
               type="button"
-              className={`${styles.tagChip} ${tag === t.name ? styles.tagChipActive : ''}`}
-              onClick={() => setTag(tag === t.name ? undefined : t.name)}
+              className={`${styles.tagChip} ${selectedTags.includes(t.name) ? styles.tagChipActive : ''}`}
+              onClick={() => toggleTag(t.name)}
             >
               {t.name} <span style={{ opacity: 0.6 }}>· {t.count}</span>
             </button>
@@ -239,16 +383,24 @@ export default function CommunityPage() {
         </div>
       )}
 
-      {(tag || q.trim()) && (
+      {(selectedTags.length > 0 || q.trim() || mine) && (
         <div className={styles.activeFilters}>
-          {tag && (
-            <span className={styles.activeFilterPill}>
-              tag: <strong>{tag}</strong>
+          {selectedTags.map((tagName) => (
+            <span key={tagName} className={styles.activeFilterPill}>
+              tag: <strong>{tagName}</strong>
               <button
                 type="button"
-                aria-label={`Clear tag ${tag}`}
-                onClick={() => setTag(undefined)}
+                aria-label={`Clear tag ${tagName}`}
+                onClick={() => toggleTag(tagName)}
               >
+                ×
+              </button>
+            </span>
+          ))}
+          {mine && (
+            <span className={styles.activeFilterPill}>
+              <strong>My questions</strong>
+              <button type="button" aria-label="Clear mine filter" onClick={() => setMine(false)}>
                 ×
               </button>
             </span>
@@ -265,8 +417,9 @@ export default function CommunityPage() {
             type="button"
             className={styles.clearAllBtn}
             onClick={() => {
-              setTag(undefined);
+              setSelectedTags([]);
               setQ('');
+              setMine(false);
             }}
           >
             Clear all
@@ -275,7 +428,9 @@ export default function CommunityPage() {
       )}
 
       {loading ? (
-        <div style={{ height: 320, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div className={styles.list}>
+          <Skeleton variant="card" height={72} count={5} />
+        </div>
       ) : error && questions.length === 0 ? (
         <EmptyState
           title="Community feed unavailable"
@@ -283,45 +438,107 @@ export default function CommunityPage() {
           tone="error"
           action={{ label: 'Retry', onClick: () => void load() }}
         />
-      ) : questions.length === 0 ? (
+      ) : displayedQuestions.length === 0 ? (
         <EmptyState
-          title="No questions match"
-          description="Try a different tag or clear your search."
+          title={saved ? 'No saved questions' : 'No questions match'}
+          description={
+            saved
+              ? 'Bookmark questions to see them here.'
+              : 'Try a different tag or clear your search.'
+          }
         />
       ) : (
         <div className={styles.list}>
-          {questions.map((question) => (
-            <Link key={question.id} href={`/community/q/${question.id}`} className={styles.row}>
-              <div className={styles.stats}>
-                <span className={styles.stat}>
-                  <strong>{question.score}</strong> votes
-                </span>
-                <span className={`${styles.stat} ${question.acceptedAnswerId ? styles.statAccepted : ''}`}>
-                  <strong>{question.answerCount}</strong> answers
-                </span>
-                {typeof question.views === 'number' && (
-                  <span className={styles.stat}>
-                    <strong>{question.views}</strong> views
-                  </span>
-                )}
-              </div>
-              <div className={styles.body}>
-                <h2 className={styles.questionTitle}>{question.title}</h2>
-                <p className={styles.snippet}>{question.body}</p>
-                <div className={styles.metaRow}>
-                  {question.tags.slice(0, 4).map((tagName) => (
-                    <span key={tagName} className={styles.tag}>
-                      {tagName}
+          {displayedQuestions.map((question) => (
+            <div key={question.id} className={styles.row}>
+              <VoteButton
+                score={question.score}
+                myVote={question.myVote}
+                size="sm"
+                requireAuth={!user}
+                onAuthRequired={() => router.push('/connect')}
+                onVote={async (direction) => {
+                  const result = await voteQuestion(question.id, direction);
+                  setQuestions((prev) =>
+                    prev.map((qItem) =>
+                      qItem.id === question.id
+                        ? { ...qItem, score: result.score, myVote: result.myVote }
+                        : qItem
+                    )
+                  );
+                  return result;
+                }}
+                ariaLabel="Vote on question"
+              />
+              <Link href={`/community/q/${question.id}`} className={styles.rowLink}>
+                <div className={styles.body}>
+                  <h2 className={styles.questionTitle}>{question.title}</h2>
+                  <p className={styles.snippet}>{stripMarkdown(question.body)}</p>
+                  <div className={styles.metaRow}>
+                    <span
+                      className={`${styles.stat} ${question.acceptedAnswerId ? styles.statAccepted : ''}`}
+                    >
+                      <strong>{question.answerCount}</strong> answers
                     </span>
-                  ))}
+                    {typeof question.views === 'number' && (
+                      <span className={styles.stat}>
+                        <strong>{question.views}</strong> views
+                      </span>
+                    )}
+                    {question.tags.slice(0, 4).map((tagName) => (
+                      <span key={tagName} className={styles.tag}>
+                        {tagName}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              </Link>
               <div className={styles.right}>
+                <Avatar url={question.author.avatarUrl} name={question.author.username} size={24} />
                 <span className={styles.author}>{question.author.username}</span>
                 <span className={styles.timestamp}>{formatRelative(question.createdAt)}</span>
+                <button
+                  type="button"
+                  className={styles.bookmarkBtn}
+                  onClick={() => toggleBookmark(question.id)}
+                  aria-label={isBookmarked(question.id) ? 'Remove bookmark' : 'Bookmark'}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path
+                      d="M3 2h8v10l-4-2.5L3 12V2z"
+                      stroke="currentColor"
+                      strokeWidth="1.3"
+                      fill={isBookmarked(question.id) ? 'currentColor' : 'none'}
+                    />
+                  </svg>
+                </button>
               </div>
-            </Link>
+            </div>
           ))}
+        </div>
+      )}
+
+      {totalPages > 1 && !saved && (
+        <div className={styles.pagination}>
+          <button
+            type="button"
+            className={styles.cancelBtn}
+            disabled={page <= 1}
+            onClick={() => setPage(Math.max(1, page - 1))}
+          >
+            &larr; Previous
+          </button>
+          <span className={styles.paginationLabel}>
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className={styles.cancelBtn}
+            disabled={page >= totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next &rarr;
+          </button>
         </div>
       )}
     </div>

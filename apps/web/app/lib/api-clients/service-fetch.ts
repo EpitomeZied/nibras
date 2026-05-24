@@ -15,7 +15,15 @@ export type ServiceFetchInit = Omit<RequestInit, 'body'> & {
 function readSessionToken(): string | null {
   if (typeof window === 'undefined') return null;
   try {
-    return window.localStorage.getItem(WEB_SESSION_TOKEN_KEY);
+    // Try `nibras.webSession` first (set by /connect and CLI), fall back to
+    // the legacy dashboard's `token` key — users who logged in to the old
+    // vanilla-JS dashboard already have that set, and we want their tokens
+    // to keep working on the Next.js surface without a re-sign-in.
+    return (
+      window.localStorage.getItem(WEB_SESSION_TOKEN_KEY) ||
+      window.localStorage.getItem('token') ||
+      null
+    );
   } catch {
     return null;
   }
@@ -88,6 +96,7 @@ function prepareInit(init: ServiceFetchInit, token: string | null): RequestInit 
     ...rest,
     headers,
     body: body ?? undefined,
+    ...(init.auth !== false ? { credentials: 'include' as RequestCredentials } : {}),
   };
 }
 
@@ -100,9 +109,10 @@ async function tryRefreshToken(): Promise<string | null> {
       credentials: 'include',
     });
     if (!response.ok) return null;
-    const payload = (await response.json().catch(() => null)) as
-      | { accessToken?: string; data?: { accessToken?: string } }
-      | null;
+    const payload = (await response.json().catch(() => null)) as {
+      accessToken?: string;
+      data?: { accessToken?: string };
+    } | null;
     const next = payload?.accessToken || payload?.data?.accessToken || null;
     if (next) writeSessionToken(next);
     return next;
@@ -153,7 +163,8 @@ export async function serviceFetch<T = unknown>(
       status: response.status,
       code:
         typeof body === 'object' && body !== null
-          ? ((body as { code?: string }).code ?? (body as { error?: { code?: string } }).error?.code)
+          ? ((body as { code?: string }).code ??
+            (body as { error?: { code?: string } }).error?.code)
           : undefined,
       body,
     });

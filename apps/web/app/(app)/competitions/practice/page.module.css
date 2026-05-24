@@ -21,7 +21,31 @@
   margin: 0;
   font-size: 13px;
   color: var(--text-muted);
-  max-width: 64ch;
+  max-width: 72ch;
+}
+
+.tabPicker {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+  width: fit-content;
+}
+
+.tabChip {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tabChipActive {
+  background: color-mix(in oklab, var(--primary, #22c55e) 18%, var(--surface));
+  color: var(--primary, #22c55e);
 }
 
 .toolbar {

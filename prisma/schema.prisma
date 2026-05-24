@@ -206,6 +206,22 @@ model User {
   submittedPetitions Petition[]        @relation("ProgramPetitionSubmitter")
   reviewedPetitions Petition[]         @relation("ProgramPetitionReviewer")
   reviewedProgramApprovals ProgramApproval[]
+  communityQuestions       CommunityQuestion[] @relation("CommunityQuestionAuthor")
+  communityAnswers         CommunityAnswer[]   @relation("CommunityAnswerAuthor")
+  communityVotes           CommunityVote[]     @relation("CommunityVoteUser")
+  communityThreads         CommunityThread[]   @relation("CommunityThreadAuthor")
+  communityPosts           CommunityPost[]     @relation("CommunityPostAuthor")
+  contestBookmarks         ContestBookmark[]
+  contestReminders         ContestReminder[]
+  problemBookmarks         ProblemBookmark[]
+  problemProgress          UserProblemProgress[]
+  linkedAccounts           LinkedAccount[]
+  nibras75Workspace        Nibras75Workspace?
+  contestParticipations    UserContestParticipation[]
+  cachedRankings           CachedRanking[]
+  tutorConversations       TutorConversation[]
+  userBadges               UserBadge[]
+  reputationEvents         ReputationEvent[]
 
   @@index([systemRole])
   @@index([yearLevel])
@@ -226,6 +242,7 @@ model Course {
   projectTemplates ProjectTemplate[]
   invites     CourseInvite[]
   auditLogs   AuditLog[]
+  communityThreads CommunityThread[]
 }
 
 model CourseInvite {
@@ -956,4 +973,413 @@ model NotificationPreference {
 
   @@unique([userId, type])
   @@index([userId])
+}
+
+// ── Community Q&A ───────────────────────────────────────────────────────────
+
+enum CommunityVoteTargetType {
+  question
+  answer
+  post
+}
+
+model CommunityQuestion {
+  id               String            @id @default(cuid())
+  authorId         String
+  title            String
+  body             String
+  tags             String[]
+  votesCount       Int               @default(0)
+  answersCount     Int               @default(0)
+  acceptedAnswerId String?
+  viewCount        Int               @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  author           User              @relation("CommunityQuestionAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  answers          CommunityAnswer[]
+
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model CommunityAnswer {
+  id         String            @id @default(cuid())
+  questionId String
+  authorId   String
+  body       String
+  votesCount Int               @default(0)
+  accepted   Boolean           @default(false)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  question   CommunityQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  author     User              @relation("CommunityAnswerAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@index([authorId])
+}
+
+model CommunityVote {
+  id         String                    @id @default(cuid())
+  targetType CommunityVoteTargetType
+  targetId   String
+  value      Int
+  userId     String
+  createdAt  DateTime                  @default(now())
+  updatedAt  DateTime                  @updatedAt
+  user       User                      @relation("CommunityVoteUser", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+}
+
+model CommunityTag {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String   @default("")
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CommunityThread {
+  id         String          @id @default(cuid())
+  courseId    String
+  authorId   String
+  title      String
+  body       String          @default("")
+  tags       String[]
+  pinned     Boolean         @default(false)
+  closed     Boolean         @default(false)
+  postsCount Int             @default(0)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  course     Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  author     User            @relation("CommunityThreadAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  posts      CommunityPost[]
+
+  @@index([courseId, createdAt])
+  @@index([authorId])
+}
+
+model CommunityPost {
+  id         String          @id @default(cuid())
+  threadId   String
+  authorId   String
+  body       String
+  votesCount Int             @default(0)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  thread     CommunityThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author     User            @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([threadId, createdAt])
+  @@index([authorId])
+}
+
+// ── Competitions ────────────────────────────────────────────────────────────
+
+enum CompPlatform {
+  codeforces
+  leetcode
+  atcoder
+  codechef
+  vjudge
+  uhunt
+  ctftime
+  kaggle
+  hackthebox
+  tryhackme
+  picoctf
+  project_euler
+  hackerone
+  bugcrowd
+  defcon
+}
+
+enum AccountVerificationStatus {
+  pending
+  verified
+  failed
+}
+
+model Contest {
+  id                String       @id @default(cuid())
+  platform          CompPlatform
+  platformContestId String
+  name              String
+  url               String
+  startsAt          DateTime
+  endsAt            DateTime
+  durationMinutes   Int
+  phase             String       @default("BEFORE")
+  tags              String[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  bookmarks         ContestBookmark[]
+  reminders         ContestReminder[]
+  participations    UserContestParticipation[]
+
+  @@unique([platform, platformContestId])
+  @@index([startsAt])
+  @@index([platform, startsAt])
+}
+
+model ContestBookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  contestId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest   Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId])
+  @@index([userId])
+}
+
+model ContestReminder {
+  id            String   @id @default(cuid())
+  userId        String
+  contestId     String
+  minutesBefore Int      @default(30)
+  notified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest       Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId])
+  @@index([notified, contestId])
+}
+
+model Problem {
+  id                String       @id @default(cuid())
+  platform          CompPlatform
+  platformProblemId String
+  title             String
+  url               String
+  difficulty        Int          @default(0)
+  tags              String[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  userProgress      UserProblemProgress[]
+  bookmarks         ProblemBookmark[]
+
+  @@unique([platform, platformProblemId])
+  @@index([platform])
+  @@index([difficulty])
+}
+
+model ProblemBookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  problemId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem   Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+  @@index([userId])
+}
+
+model UserProblemProgress {
+  id        String    @id @default(cuid())
+  userId    String
+  problemId String
+  solved    Boolean   @default(false)
+  solvedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem   Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, problemId])
+  @@index([userId, solved])
+}
+
+model LinkedAccount {
+  id                 String                    @id @default(cuid())
+  userId             String
+  platform           CompPlatform
+  handle             String
+  verificationStatus AccountVerificationStatus @default(pending)
+  verificationProblem String?
+  verifiedAt         DateTime?
+  platformRating     Int?
+  platformMaxRating  Int?
+  lastSyncAt         DateTime?
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  user               User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@unique([platform, handle])
+  @@index([userId])
+}
+
+model Nibras75Workspace {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  owner     String
+  repoName  String
+  fullName  String
+  htmlUrl   String
+  cloneUrl  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model UserContestParticipation {
+  id           String       @id @default(cuid())
+  userId       String
+  contestId    String
+  platform     CompPlatform
+  rank         Int?
+  participants Int?
+  ratingBefore Int?
+  ratingAfter  Int?
+  delta        Int?
+  solvedCount  Int?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest      Contest      @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId])
+  @@index([userId, platform])
+  @@index([userId, createdAt])
+}
+
+model CachedRanking {
+  id              String   @id @default(cuid())
+  userId          String
+  scope           String
+  platform        String
+  rank            Int
+  rating          Int
+  delta           Int      @default(0)
+  contestsLast30d Int      @default(0)
+  calculatedAt    DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, scope, platform])
+  @@index([scope, platform, rank])
+}
+
+model CompSyncLog {
+  id           String   @id @default(cuid())
+  jobType      String
+  platform     String?
+  status       String
+  itemCount    Int      @default(0)
+  errorMessage String?
+  startedAt    DateTime
+  finishedAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
+
+  @@index([jobType, createdAt])
+}
+
+// ── Tutor Conversations ────────────────────────────────────────────────────
+
+model TutorConversation {
+  id        String         @id @default(cuid())
+  userId    String
+  title     String         @default("New conversation")
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  TutorMessage[]
+
+  @@index([userId, updatedAt])
+}
+
+model TutorMessage {
+  id                  String            @id @default(cuid())
+  conversationId      String
+  role                String
+  content             String
+  tags                String[]
+  xaiReasoning        String?
+  xaiConcepts         String[]
+  xaiUnclear          String[]
+  responseType        String?
+  communityQuestionId String?
+  matchScore          Float?
+  createdAt           DateTime          @default(now())
+  conversation        TutorConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+// ── Gamification & Reputation ───────────────────────────────────────────────
+
+enum BadgeRarity {
+  common
+  rare
+  epic
+  legendary
+}
+
+enum BadgeCategory {
+  onboarding
+  projects
+  community
+  practice
+  competitions
+  meta
+}
+
+enum ReputationCategory {
+  course
+  community
+  problem
+  contest
+  badge
+}
+
+model BadgeDefinition {
+  id          String        @id @default(cuid())
+  code        String        @unique
+  name        String
+  description String        @default("")
+  iconUrl     String?
+  rarity      BadgeRarity   @default(common)
+  category    BadgeCategory @default(onboarding)
+  threshold   Int           @default(1)
+  points      Int           @default(0)
+  sortOrder   Int           @default(0)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  userBadges  UserBadge[]
+
+  @@index([category, sortOrder])
+}
+
+model UserBadge {
+  id        String          @id @default(cuid())
+  userId    String
+  badgeId   String
+  earnedAt  DateTime        @default(now())
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     BadgeDefinition @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId, earnedAt])
+}
+
+model ReputationEvent {
+  id        String             @id @default(cuid())
+  userId    String
+  delta     Int
+  reason    String
+  source    String
+  category  ReputationCategory @default(course)
+  createdAt DateTime           @default(now())
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, source])
+  @@index([userId, createdAt])
+  @@index([userId, category])
 }

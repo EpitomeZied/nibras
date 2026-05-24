@@ -1,0 +1,163 @@
+apiVersion: '2023-05-01'
+location: francecentral
+name: nibras-judge0
+properties:
+  osType: Linux
+  restartPolicy: Always
+  ipAddress:
+    type: Public
+    ports:
+      - protocol: tcp
+        port: 2358
+  containers:
+    - name: redis
+      properties:
+        image: redis:7.2.4
+        command:
+          - bash
+          - -c
+          - docker-entrypoint.sh --appendonly no --requirepass "$REDIS_PASSWORD"
+        environmentVariables:
+          - name: REDIS_PASSWORD
+            secureValue: REPLACE_REDIS_PASSWORD
+        resources:
+          requests:
+            cpu: 0.25
+            memoryInGb: 0.5
+
+    - name: db
+      properties:
+        image: postgres:16.2
+        environmentVariables:
+          - name: POSTGRES_DB
+            value: judge0
+          - name: POSTGRES_USER
+            value: judge0
+          - name: POSTGRES_PASSWORD
+            secureValue: REPLACE_POSTGRES_PASSWORD
+        resources:
+          requests:
+            cpu: 0.25
+            memoryInGb: 1.0
+
+    - name: judge0-server
+      properties:
+        image: judge0/judge0:latest
+        command:
+          - ./scripts/server
+        ports:
+          - port: 2358
+        environmentVariables:
+          - name: REDIS_HOST
+            value: localhost
+          - name: REDIS_PASSWORD
+            secureValue: REPLACE_REDIS_PASSWORD
+          - name: POSTGRES_HOST
+            value: localhost
+          - name: POSTGRES_DB
+            value: judge0
+          - name: POSTGRES_USER
+            value: judge0
+          - name: POSTGRES_PASSWORD
+            secureValue: REPLACE_POSTGRES_PASSWORD
+          - name: AUTHN_TOKEN
+            secureValue: REPLACE_AUTHN_TOKEN
+          - name: SECRET_KEY_BASE
+            secureValue: REPLACE_SECRET_KEY_BASE
+          - name: CPU_TIME_LIMIT
+            value: '5'
+          - name: MEMORY_LIMIT
+            value: '128000'
+          - name: ENABLE_NETWORK
+            value: 'false'
+          - name: JUDGE0_TELEMETRY_ENABLE
+            value: 'false'
+          - name: ENABLE_WAIT_RESULT
+            value: 'true'
+        resources:
+          requests:
+            cpu: 0.5
+            memoryInGb: 1.0
+        securityContext:
+          privileged: true
+
+    - name: judge0-worker
+      properties:
+        image: judge0/judge0:latest
+        command:
+          - ./scripts/workers
+        environmentVariables:
+          - name: REDIS_HOST
+            value: localhost
+          - name: REDIS_PASSWORD
+            secureValue: REPLACE_REDIS_PASSWORD
+          - name: POSTGRES_HOST
+            value: localhost
+          - name: POSTGRES_DB
+            value: judge0
+          - name: POSTGRES_USER
+            value: judge0
+          - name: POSTGRES_PASSWORD
+            secureValue: REPLACE_POSTGRES_PASSWORD
+          - name: AUTHN_TOKEN
+            secureValue: REPLACE_AUTHN_TOKEN
+          - name: SECRET_KEY_BASE
+            secureValue: REPLACE_SECRET_KEY_BASE
+          - name: CPU_TIME_LIMIT
+            value: '5'
+          - name: MEMORY_LIMIT
+            value: '128000'
+          - name: ENABLE_NETWORK
+            value: 'false'
+          - name: COUNT
+            value: '2'
+          - name: INTERVAL
+            value: '0.05'
+        resources:
+          requests:
+            cpu: 1.5
+            memoryInGb: 3.0
+        securityContext:
+          privileged: true
+
+    - name: judge0-worker-2
+      properties:
+        image: judge0/judge0:latest
+        command:
+          - ./scripts/workers
+        environmentVariables:
+          - name: REDIS_HOST
+            value: localhost
+          - name: REDIS_PASSWORD
+            secureValue: REPLACE_REDIS_PASSWORD
+          - name: POSTGRES_HOST
+            value: localhost
+          - name: POSTGRES_DB
+            value: judge0
+          - name: POSTGRES_USER
+            value: judge0
+          - name: POSTGRES_PASSWORD
+            secureValue: REPLACE_POSTGRES_PASSWORD
+          - name: AUTHN_TOKEN
+            secureValue: REPLACE_AUTHN_TOKEN
+          - name: SECRET_KEY_BASE
+            secureValue: REPLACE_SECRET_KEY_BASE
+          - name: CPU_TIME_LIMIT
+            value: '5'
+          - name: MEMORY_LIMIT
+            value: '128000'
+          - name: ENABLE_NETWORK
+            value: 'false'
+          - name: COUNT
+            value: '2'
+          - name: INTERVAL
+            value: '0.05'
+        resources:
+          requests:
+            cpu: 1.5
+            memoryInGb: 3.0
+        securityContext:
+          privileged: true
+
+tags:
+  purpose: nibras-ide-judge0

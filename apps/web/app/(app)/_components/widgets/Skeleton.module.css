@@ -1,0 +1,32 @@
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface, #141414) 25%,
+    var(--surface-strong, #1a1a1a) 50%,
+    var(--surface, #141414) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.line {
+  border-radius: 6px;
+}
+
+.circle {
+  border-radius: 50%;
+}
+
+.card {
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}

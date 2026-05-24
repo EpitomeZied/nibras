@@ -115,7 +115,9 @@
   padding: 4px 10px;
   border-radius: 999px;
   cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .tagChip:hover {
@@ -187,21 +189,26 @@
 
 .row {
   display: grid;
-  grid-template-columns: 96px 1fr auto;
+  grid-template-columns: 56px 1fr auto;
   gap: 18px;
   align-items: center;
   border: 1px solid var(--border);
   background: var(--surface);
   border-radius: 12px;
   padding: 14px 18px;
-  text-decoration: none;
-  color: inherit;
-  transition: border-color 0.15s ease, transform 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
 }
 
 .row:hover {
   border-color: var(--primary, #22c55e);
   transform: translateY(-1px);
+}
+
+.rowLink {
+  text-decoration: none;
+  color: inherit;
 }
 
 .stats {
@@ -401,4 +408,109 @@
 .submitBtn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.filterToggle:hover {
+  border-color: var(--primary, #22c55e);
+  color: var(--text);
+}
+
+.filterToggleActive {
+  background: color-mix(in oklab, var(--primary, #22c55e) 18%, var(--surface));
+  border-color: var(--primary, #22c55e);
+  color: var(--primary, #22c55e);
+}
+
+.suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--surface) 95%, var(--border));
+}
+
+.suggestionsLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 2px;
+}
+
+.suggestionItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 12.5px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: background 0.1s ease;
+}
+
+.suggestionItem:hover {
+  background: color-mix(in oklab, var(--primary, #22c55e) 10%, transparent);
+}
+
+.suggestionMeta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.bookmarkBtn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+}
+
+.bookmarkBtn:hover {
+  color: var(--primary, #22c55e);
+}
+
+.pagination {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.paginationLabel {
+  font-size: 13px;
+  opacity: 0.7;
 }

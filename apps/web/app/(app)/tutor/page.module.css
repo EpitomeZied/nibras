@@ -1,110 +1,74 @@
 .page {
   display: flex;
-  flex-direction: column;
-  gap: 18px;
+  height: calc(100vh - 64px);
+  position: relative;
+  overflow: hidden;
 }
 
-.header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-
-.title {
-  font-size: 22px;
-  font-weight: 700;
-  margin: 0;
-  letter-spacing: -0.02em;
-}
-
-.subtitle {
-  margin: 4px 0 0;
-  font-size: 13px;
-  color: var(--text-muted);
-  max-width: 60ch;
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 16px;
-}
-
-@media (max-width: 900px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-}
+/* ── Sidebar ────────────────────────────────────────────────────────────── */
 
 .sidebar {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  border-radius: 14px;
-  border: 1px solid var(--border);
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  z-index: 100;
   background: var(--surface);
-  min-height: 480px;
-}
-
-.sectionLabel {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin: 0 0 4px;
-  color: var(--text-muted);
-}
-
-.conversationsList {
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  flex: 1;
+  padding: 14px;
+  gap: 10px;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
   overflow-y: auto;
 }
 
-.conversationItem {
-  padding: 8px 10px;
-  border-radius: 8px;
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  text-align: left;
-  cursor: pointer;
-  font-size: 13px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  transition: background 0.12s ease, color 0.12s ease;
+.sidebarOpen {
+  transform: translateX(0);
 }
 
-.conversationItem:hover {
-  background: var(--surface-strong, color-mix(in oklab, var(--border) 40%, transparent));
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sidebarTitle {
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.closeSidebarBtn {
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+
+.closeSidebarBtn:hover {
   color: var(--text);
 }
 
-.conversationActive {
-  background: color-mix(in oklab, var(--primary, #22c55e) 12%, transparent);
-  color: var(--primary, #22c55e);
-}
-
-.conversationTitle {
-  font-weight: 600;
-  font-size: 13px;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-  width: 100%;
-}
-
-.conversationMeta {
-  font-size: 11px;
+.sidebarMeta {
+  font-size: 12px;
   color: var(--text-muted);
+  padding: 8px 0;
 }
 
 .newChatBtn {
@@ -124,9 +88,158 @@
   color: var(--primary, #22c55e);
 }
 
-.main {
+.conversationsList {
   display: flex;
   flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.convGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.convGroupLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 6px 4px 2px;
+  font-weight: 700;
+}
+
+.conversationItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+  transition: background 0.12s ease;
+}
+
+.conversationItem:hover {
+  background: var(--surface-strong, color-mix(in oklab, var(--border) 40%, transparent));
+}
+
+.conversationActive {
+  background: color-mix(in oklab, var(--primary, #22c55e) 12%, transparent);
+}
+
+.convBtn {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 8px;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.conversationTitle {
+  font-weight: 600;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.conversationMeta {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.convActions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.conversationItem:hover .convActions {
+  opacity: 1;
+}
+
+.convActionBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.convActionBtn:hover {
+  color: var(--text);
+  background: var(--surface-strong, color-mix(in oklab, var(--border) 50%, transparent));
+}
+
+.convDeleteBtn:hover {
+  color: var(--danger, #ef4444);
+}
+
+.titleInput {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--primary, #22c55e);
+  background: var(--surface);
+  border-radius: 6px;
+  font-size: 12.5px;
+  color: var(--text);
+  font-family: inherit;
+  outline: none;
+}
+
+/* ── Chat area ──────────────────────────────────────────────────────────── */
+
+.chatArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.menuBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 6px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.menuBtn:hover {
+  border-color: var(--primary, #22c55e);
+  color: var(--text);
+}
+
+.topTitle {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .errorBanner {
@@ -134,13 +247,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 10px 20px;
   background: color-mix(in oklab, var(--danger, #ef4444) 12%, var(--surface));
-  border: 1px solid color-mix(in oklab, var(--danger, #ef4444) 30%, var(--border));
+  border-bottom: 1px solid color-mix(in oklab, var(--danger, #ef4444) 30%, var(--border));
   color: var(--danger, #ef4444);
   font-size: 12.5px;
-  margin-bottom: 10px;
 }
 
 .errorBanner button {
@@ -151,4 +262,20 @@
   border-radius: 8px;
   font-size: 12px;
   cursor: pointer;
+}
+
+.chatContainer {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 16px;
+}
+
+.chatContainer > * {
+  width: 100%;
+  max-width: 768px;
+  border: none;
+  border-radius: 0;
+  max-height: none;
 }

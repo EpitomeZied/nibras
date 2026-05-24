@@ -1,0 +1,454 @@
+/* ── Page shell ───────────────────────────────────────────────────────────── */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 1100px;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.backLink {
+  display: inline-block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.backLink:hover {
+  color: var(--primary);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  max-width: 640px;
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* ── Connected chips (header) ─────────────────────────────────────────────── */
+.connectedRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.connectedChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.connectedDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.connectedHandle {
+  font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular);
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.connectedRating {
+  background: color-mix(in oklab, var(--primary) 15%, transparent);
+  color: var(--primary);
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* ── Search ───────────────────────────────────────────────────────────────── */
+.searchWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 14px;
+  font-size: 18px;
+  color: var(--text-muted);
+  pointer-events: none;
+  line-height: 1;
+}
+
+.searchInput {
+  width: 100%;
+  max-width: 420px;
+  padding: 10px 40px 10px 40px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--primary) 18%, transparent);
+}
+
+.searchInput::placeholder {
+  color: var(--text-muted);
+}
+
+/* Remove default search ×  */
+.searchInput::-webkit-search-cancel-button {
+  display: none;
+}
+
+.searchClear {
+  position: absolute;
+  right: calc(100% - 420px + 12px);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.searchClear:hover {
+  color: var(--text);
+}
+
+/* ── Skeleton loading ─────────────────────────────────────────────────────── */
+.skeletonWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.skeletonSection {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.skeletonSectionHead {
+  height: 22px;
+  width: 160px;
+  border-radius: 8px;
+  background: var(--surface);
+  animation: shimmer 1.4s infinite;
+}
+
+.skeletonCard {
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  animation: shimmer 1.4s infinite;
+}
+
+.skeletonAvatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--text) 8%, var(--surface));
+  flex-shrink: 0;
+}
+
+.skeletonLines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex: 1;
+  justify-content: center;
+}
+
+.skeletonLine {
+  height: 12px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--text) 8%, var(--surface));
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+/* ── Sections ─────────────────────────────────────────────────────────────── */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 44px;
+}
+
+.section {
+  scroll-margin-top: 80px;
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.categoryIcon {
+  font-size: 22px;
+  line-height: 1;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.sectionTitle {
+  margin: 0 0 3px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.sectionSub {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ── Grid ─────────────────────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 14px;
+}
+
+/* ── Card ─────────────────────────────────────────────────────────────────── */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+}
+
+.card:hover {
+  border-color: color-mix(in oklab, var(--primary) 50%, var(--border));
+  box-shadow: 0 4px 20px color-mix(in oklab, var(--primary) 8%, transparent);
+  transform: translateY(-2px);
+}
+
+/* ── Card head ───────────────────────────────────────────────────────────── */
+.cardHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cardHeadLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* ── Platform avatar ─────────────────────────────────────────────────────── */
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  flex-shrink: 0;
+  font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.handleTag {
+  font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular);
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+/* ── Badge group ─────────────────────────────────────────────────────────── */
+.badgeGroup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.connectedBadge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--primary) 15%, transparent);
+  color: var(--primary);
+  border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
+}
+
+/* ── Status badge ────────────────────────────────────────────────────────── */
+.status {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.status_live {
+  background: color-mix(in oklab, var(--primary) 15%, transparent);
+  color: var(--primary);
+}
+
+.status_beta {
+  background: color-mix(in oklab, #f59e0b 15%, transparent);
+  color: #f59e0b;
+}
+
+.status_coming_soon {
+  background: color-mix(in oklab, var(--text-muted) 12%, transparent);
+  color: var(--text-muted);
+}
+
+/* ── Card description ────────────────────────────────────────────────────── */
+.cardDesc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  flex: 1;
+}
+
+/* ── Rating row ──────────────────────────────────────────────────────────── */
+.ratingRow {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--primary) 6%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--primary) 15%, transparent);
+}
+
+.ratingLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.ratingValue {
+  font-size: 20px;
+  font-weight: 800;
+  font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular);
+  letter-spacing: -0.02em;
+}
+
+.ratingMax {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── Card actions ────────────────────────────────────────────────────────── */
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.primaryBtn,
+.secondaryBtn,
+.connectBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 13px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.primaryBtn {
+  background: color-mix(in oklab, var(--primary) 14%, transparent);
+  color: var(--primary);
+  border: 1px solid color-mix(in oklab, var(--primary) 30%, transparent);
+}
+
+.primaryBtn:hover {
+  background: color-mix(in oklab, var(--primary) 22%, transparent);
+}
+
+.connectBtn {
+  background: var(--primary);
+  color: #052e16;
+  border: none;
+  font-weight: 700;
+}
+
+.connectBtn:hover {
+  opacity: 0.88;
+}
+
+.secondaryBtn {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.secondaryBtn:hover {
+  color: var(--text);
+  border-color: color-mix(in oklab, var(--text) 40%, transparent);
+}

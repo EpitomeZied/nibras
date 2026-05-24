@@ -3,7 +3,7 @@
  * Used by both the BullMQ producer (API) and the BullMQ consumer (worker).
  */
 
-export const VERIFICATION_QUEUE_NAME = 'nibras:verification';
+export const VERIFICATION_QUEUE_NAME = 'nibras-verification';
 
 export type VerificationJobPayload = {
   jobId: string;
@@ -23,7 +23,7 @@ export function parseRedisUrl(url: string): {
   return {
     host: parsed.hostname,
     port: Number(parsed.port) || 6379,
-    password: parsed.password || undefined,
+    password: parsed.password ? decodeURIComponent(parsed.password) : undefined,
     tls: parsed.protocol === 'rediss:' ? ({} as Record<string, never>) : undefined,
   };
 }

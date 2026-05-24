@@ -2,13 +2,23 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { usePathname } from 'next/navigation';
 import { getInitials } from '../../lib/utils';
 import NibrasLogo from '@/app/_components/nibras-logo';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import NotificationsPanel from './notifications-panel';
-import { appNavItems, canAccessNavItem, isNavItemActive } from './nav-config';
+import {
+  getActiveNavItemInGroup,
+  getAdminNavItem,
+  getNavItemsForGroup,
+  getPrimaryNavItems,
+  isNavGroupActive,
+  isNavItemActive,
+  navDropdownGroups,
+  type AppNavItem,
+  type NavDropdownGroup,
+} from './nav-config';
 
 type ShellSessionUser = {
   username: string;
@@ -404,6 +414,215 @@ function UserDropdown({
   );
 }
 
+/* ── Nav link + grouped dropdown ─────────────────────────────────────────── */
+
+function navLinkStyle(isActive: boolean, compact: boolean): CSSProperties {
+  return {
+    padding: compact ? '4px 9px' : '5px 11px',
+    borderRadius: 7,
+    fontSize: compact ? 12 : 13,
+    fontWeight: isActive ? 600 : 500,
+    color: isActive ? '#fafafa' : 'rgba(161,161,170,0.7)',
+    textDecoration: 'none',
+    background: isActive ? 'rgba(255,255,255,0.07)' : 'transparent',
+    transition: 'background 0.15s, color 0.15s',
+    whiteSpace: 'nowrap',
+  };
+}
+
+function NavLink({
+  item,
+  compact,
+  pathname,
+}: {
+  item: AppNavItem;
+  compact: boolean;
+  pathname: string | null;
+}) {
+  const isActive = isNavItemActive(item, pathname);
+  return (
+    <Link href={item.href} title={item.description} style={navLinkStyle(isActive, compact)}>
+      {item.label}
+    </Link>
+  );
+}
+
+function NavDropdown({
+  group,
+  items,
+  compact,
+  pathname,
+}: {
+  group: NavDropdownGroup;
+  items: AppNavItem[];
+  compact: boolean;
+  pathname: string | null;
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const isActive = isNavGroupActive(group.id, items, pathname);
+  const activeItem = getActiveNavItemInGroup(items, pathname);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: KeyboardEvent) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open]);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div ref={wrapRef} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="true"
+        title={group.description}
+        onClick={() => setOpen((value) => !value)}
+        style={{
+          ...navLinkStyle(isActive, compact),
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 4,
+          border: 'none',
+          cursor: 'pointer',
+          font: 'inherit',
+        }}
+      >
+        {isActive && activeItem ? activeItem.label : group.label}
+        <svg
+          width="11"
+          height="11"
+          viewBox="0 0 12 12"
+          fill="none"
+          aria-hidden="true"
+          style={{
+            color: 'rgba(161,161,170,0.5)',
+            flexShrink: 0,
+            transition: 'transform 0.18s',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+          }}
+        >
+          <path
+            d="M2 4l4 4 4-4"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 8px)',
+            left: 0,
+            minWidth: 240,
+            background: '#111111',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 12,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4)',
+            overflow: 'hidden',
+            zIndex: 200,
+            animation: 'navDropIn 0.14s ease',
+          }}
+        >
+          <style>{`
+            @keyframes navDropIn {
+              from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+              to   { opacity: 1; transform: translateY(0)    scale(1); }
+            }
+          `}</style>
+
+          <div
+            style={{
+              padding: '12px 14px 10px',
+              borderBottom: '1px solid rgba(255,255,255,0.07)',
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: 'rgba(161,161,170,0.55)',
+                marginBottom: 4,
+              }}
+            >
+              {group.label}
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(161,161,170,0.65)', lineHeight: 1.4 }}>
+              {group.description}
+            </div>
+          </div>
+
+          <div style={{ padding: '6px 0' }}>
+            {items.map((item) => {
+              const itemActive = isNavItemActive(item, pathname);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  role="menuitem"
+                  title={item.description}
+                  onClick={() => setOpen(false)}
+                  style={{
+                    display: 'block',
+                    padding: '9px 14px',
+                    textDecoration: 'none',
+                    transition: 'background 0.12s',
+                    background: itemActive ? 'rgba(255,255,255,0.05)' : 'transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = itemActive
+                      ? 'rgba(255,255,255,0.05)'
+                      : 'transparent';
+                  }}
+                >
+                  <div
+                    style={{
+                      fontSize: 13.5,
+                      fontWeight: itemActive ? 600 : 500,
+                      color: itemActive ? '#fafafa' : 'rgba(250,250,250,0.85)',
+                      marginBottom: 2,
+                    }}
+                  >
+                    {item.label}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'rgba(161,161,170,0.6)', lineHeight: 1.35 }}>
+                    {item.description}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Top Header ──────────────────────────────────────────────────────────── */
 
 export default function TopHeader({
@@ -464,7 +683,15 @@ export default function TopHeader({
           style={{ display: 'flex', alignItems: 'center', gap: compact ? 14 : 20, flexShrink: 0 }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 6 : 8 }}>
-            <NibrasLogo variant="inverse" width={compact ? 82 : 90} priority />
+            <a
+              href="https://nibrasplatform.me"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Visit NibrasPlaftorm.me"
+              style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
+            >
+              <NibrasLogo variant="inverse" width={compact ? 82 : 90} priority />
+            </a>
             <span
               style={{
                 fontSize: 10,
@@ -483,52 +710,93 @@ export default function TopHeader({
           </div>
 
           <nav style={{ display: 'flex', alignItems: 'center', gap: compact ? 0 : 2 }}>
-            {appNavItems
-              .filter((item) => canAccessNavItem(item, user))
-              .map((item) => {
-                const isActive = isNavItemActive(item, pathname);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    title={item.description}
-                    style={{
-                      padding: compact ? '4px 9px' : '5px 11px',
-                      borderRadius: 7,
-                      fontSize: compact ? 12 : 13,
-                      fontWeight: isActive ? 600 : 500,
-                      color: isActive ? '#fafafa' : 'rgba(161,161,170,0.7)',
-                      textDecoration: 'none',
-                      background: isActive ? 'rgba(255,255,255,0.07)' : 'transparent',
-                      transition: 'background 0.15s, color 0.15s',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            <Link
-              href="/settings"
-              style={{
-                padding: compact ? '4px 9px' : '5px 11px',
-                borderRadius: 7,
-                fontSize: compact ? 12 : 13,
-                fontWeight: pathname === '/settings' ? 600 : 500,
-                color: pathname === '/settings' ? '#fafafa' : 'rgba(161,161,170,0.7)',
-                textDecoration: 'none',
-                background: pathname === '/settings' ? 'rgba(255,255,255,0.07)' : 'transparent',
-                transition: 'background 0.15s, color 0.15s',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              Settings
-            </Link>
+            {getPrimaryNavItems(user).map((item) => (
+              <NavLink key={item.href} item={item} compact={compact} pathname={pathname} />
+            ))}
+            {navDropdownGroups.map((group) => (
+              <NavDropdown
+                key={group.id}
+                group={group}
+                items={getNavItemsForGroup(group.id, user)}
+                compact={compact}
+                pathname={pathname}
+              />
+            ))}
+            {(() => {
+              const adminItem = getAdminNavItem(user);
+              return adminItem ? (
+                <NavLink item={adminItem} compact={compact} pathname={pathname} />
+              ) : null;
+            })()}
           </nav>
         </div>
 
-        {/* Right: Notifications + User dropdown */}
+        {/* Right: GitHub Star + Notifications + User dropdown */}
         <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 2 : 4, flexShrink: 0 }}>
+          {/* GitHub Star button — only on the dashboard/landing page */}
+          {pathname === '/dashboard' && (
+            <a
+              href="https://github.com/NibrasPlatform"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Star NibrasPlaftorm on GitHub"
+              title="Star on GitHub"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 10px',
+                borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.04)',
+                color: 'rgba(250,250,250,0.75)',
+                textDecoration: 'none',
+                fontSize: 12,
+                fontWeight: 600,
+                transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.09)';
+                e.currentTarget.style.color = '#fafafa';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                e.currentTarget.style.color = 'rgba(250,250,250,0.75)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0110 4.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C17.138 18.163 20 14.418 20 10c0-5.523-4.477-10-10-10z" />
+              </svg>
+              {!compact && 'Star'}
+              <svg
+                width="11"
+                height="11"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                style={{ opacity: 0.5 }}
+              >
+                <polygon
+                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
+                  fill="currentColor"
+                  stroke="none"
+                />
+              </svg>
+            </a>
+          )}
           <NotificationsPanel />
           <UserDropdown
             user={user}

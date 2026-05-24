@@ -24,6 +24,12 @@ import { registerTrackingRoutes } from './features/tracking/routes';
 import { registerAdminRoutes } from './features/admin/routes';
 import { registerNotificationRoutes } from './features/notifications/routes';
 import { registerProgramRoutes } from './features/programs/routes';
+import { registerCommunityRoutes } from './features/community/routes';
+import { registerGamificationRoutes } from './features/gamification/routes';
+import { registerCompetitionsRoutes } from './features/competitions/routes';
+import { registerReputationRoutes } from './features/reputation/routes';
+import { registerAnalyticsRoutes } from './features/analytics/routes';
+import { registerIdeRoutes } from './features/ide/routes';
 
 function normalizeOrigin(value: string | undefined): string | null {
   if (!value) {
@@ -130,6 +136,11 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
           { name: 'tracking', description: 'Courses, milestones, and student progress' },
           { name: 'programs', description: 'Academic programs, tracks, and program sheets' },
           { name: 'admin', description: 'Admin-only operations' },
+          { name: 'community', description: 'Community Q&A, discussions, tags, and chatbot' },
+          { name: 'gamification', description: 'Badges, leaderboards, and rewards' },
+          { name: 'competitions', description: 'Contests, practice problems, and rankings' },
+          { name: 'reputation', description: 'User reputation scores' },
+          { name: 'analytics', description: 'Instructor analytics and dashboards' },
           { name: 'system', description: 'Health, readiness, and metrics' },
         ],
       },
@@ -314,6 +325,8 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
     }
     const { closeQueue } = await import('./lib/queue');
     await closeQueue();
+    const { closeCompetitionsQueue } = await import('./lib/competitions-queue');
+    await closeCompetitionsQueue();
     if (_sharedPrisma) {
       await _sharedPrisma.$disconnect();
       _sharedPrisma = null;
@@ -326,6 +339,12 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
   registerProgramRoutes(app, store);
   registerAdminRoutes(app, store);
   registerNotificationRoutes(app, store);
+  registerCommunityRoutes(app, store, getSharedPrisma());
+  registerGamificationRoutes(app, store, getSharedPrisma());
+  registerCompetitionsRoutes(app, store, getSharedPrisma(), githubConfig);
+  registerReputationRoutes(app, store, getSharedPrisma());
+  registerAnalyticsRoutes(app, store, getSharedPrisma());
+  registerIdeRoutes(app, store);
 
   return app;
 }

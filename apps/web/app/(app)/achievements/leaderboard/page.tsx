@@ -3,11 +3,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
-import LeaderboardTable, {
-  type LeaderboardRow,
-} from '../../_components/widgets/LeaderboardTable';
+import LeaderboardTable, { type LeaderboardRow } from '../../_components/widgets/LeaderboardTable';
 import {
   getLeaderboard,
+  getLeaderboardConfig,
   getMyLeaderboardRank,
   type LeaderboardFilters,
   type MyRank,
@@ -26,6 +25,21 @@ export default function LeaderboardPage() {
   const [myRank, setMyRank] = useState<MyRank | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [scopeOptions, setScopeOptions] = useState<Array<{ value: string; label: string }>>([
+    { value: 'global', label: 'Global' },
+    { value: 'course', label: 'Course' },
+    { value: 'cohort', label: 'Cohort' },
+  ]);
+
+  useEffect(() => {
+    void getLeaderboardConfig()
+      .then((config) => {
+        if (config.scopes?.length) setScopeOptions(config.scopes);
+      })
+      .catch(() => {
+        /* keep defaults */
+      });
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -63,7 +77,7 @@ export default function LeaderboardPage() {
     void load();
   }, [load]);
 
-  const myUserId = user?.username ?? null;
+  const myUserId = user?.id ?? null;
 
   return (
     <div className={styles.page}>
@@ -94,9 +108,11 @@ export default function LeaderboardPage() {
               className={styles.select}
               aria-label="Scope"
             >
-              <option value="global">Global</option>
-              <option value="course">My course</option>
-              <option value="cohort">My cohort</option>
+              {scopeOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -119,7 +135,9 @@ export default function LeaderboardPage() {
             {myRank.delta !== undefined && myRank.delta !== 0 && (
               <div
                 className={styles.myDelta}
-                style={{ color: myRank.delta > 0 ? 'var(--primary, #22c55e)' : 'var(--danger, #ef4444)' }}
+                style={{
+                  color: myRank.delta > 0 ? 'var(--primary, #22c55e)' : 'var(--danger, #ef4444)',
+                }}
               >
                 {myRank.delta > 0 ? '▲' : '▼'} {Math.abs(myRank.delta)}
               </div>

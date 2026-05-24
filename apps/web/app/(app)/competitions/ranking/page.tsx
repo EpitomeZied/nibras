@@ -3,18 +3,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
-import LeaderboardTable, {
-  type LeaderboardRow,
-} from '../../_components/widgets/LeaderboardTable';
+import LeaderboardTable, { type LeaderboardRow } from '../../_components/widgets/LeaderboardTable';
+import PlatformFilter from '../_components/PlatformFilter';
 import { getRanking, type RankingEntry } from '../../../lib/services/competitions';
 import { useSession } from '../../_components/session-context';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 
-type Host = 'all' | 'codeforces' | 'leetcode' | 'atcoder';
+type Scope = 'global' | string;
 
 export default function RankingPage() {
   const { user } = useSession();
-  const [host, setHost] = useState<Host>('all');
+  const [host, setHost] = useState('all');
+  const [scope, setScope] = useState<Scope>('global');
   const [entries, setEntries] = useState<RankingEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,13 +23,15 @@ export default function RankingPage() {
     setLoading(true);
     setError(null);
     try {
-      setEntries(await getRanking(host === 'all' ? undefined : host));
+      setEntries(
+        await getRanking(host === 'all' ? undefined : host, scope === 'global' ? undefined : scope)
+      );
     } catch (err) {
       setError(friendlyMessage(err));
     } finally {
       setLoading(false);
     }
-  }, [host]);
+  }, [host, scope]);
 
   useEffect(() => {
     void load();
@@ -43,9 +45,7 @@ export default function RankingPage() {
     delta: entry.delta,
     badges: entry.badges,
     meta:
-      entry.contestsLast30d !== undefined
-        ? `${entry.contestsLast30d} contests · 30d`
-        : undefined,
+      entry.contestsLast30d !== undefined ? `${entry.contestsLast30d} contests · 30d` : undefined,
   }));
 
   return (
@@ -57,24 +57,30 @@ export default function RankingPage() {
             How you rank against the cohort across linked competitive platforms.
           </p>
         </div>
-        <div className={styles.hostPicker} role="tablist" aria-label="Host">
-          {(['all', 'codeforces', 'leetcode', 'atcoder'] as const).map((h) => (
-            <button
-              key={h}
-              type="button"
-              role="tab"
-              aria-selected={host === h}
-              className={`${styles.hostChip} ${host === h ? styles.hostChipActive : ''}`}
-              onClick={() => setHost(h)}
-            >
-              {h === 'all' ? 'All' : h[0].toUpperCase() + h.slice(1)}
-            </button>
-          ))}
+        <div className={styles.hostPicker} role="tablist" aria-label="Scope">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={scope === 'global'}
+            className={`${styles.hostChip} ${scope === 'global' ? styles.hostChipActive : ''}`}
+            onClick={() => setScope('global')}
+          >
+            Global
+          </button>
         </div>
       </header>
 
+      <PlatformFilter selected={host} onChange={setHost} />
+
       {loading ? (
-        <div style={{ height: 320, borderRadius: 14, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 320,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error || rows.length === 0 ? (
         <EmptyState
           title={error ? 'Could not load ranking' : 'No ranking data'}
