@@ -26,6 +26,9 @@ npm run lint:fix
 # Full local dev stack (watch + API + web + worker)
 npm run dev
 
+# AI tutor (optional; requires OPENAI_API_KEY or NIBRAS_AI_API_KEY in .env)
+npm run tutor:dev
+
 # Database
 npm run db:generate      # Regenerate Prisma client after schema changes
 npm run db:push          # Push schema without migration (dev only)
@@ -56,6 +59,7 @@ Nibras is an npm **monorepo** (`apps/*`, `packages/*`) with a legacy CommonJS CL
 | `apps/web`    | Next.js 15 / React 19 instructor dashboard                                   |
 | `apps/worker` | Async processor for verification and grading jobs                            |
 | `apps/proxy`  | Local HTTP proxy for ngrok: `/v1/*` → API, else → web                        |
+| `apps/tutor`  | Flask AI tutor (Hassona); proxied via API when `CHATBOT_V1_URL` is set       |
 
 ### Key data flows
 

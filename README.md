@@ -264,6 +264,14 @@ nano .env
 npm run dev
 ```
 
+**Optional — AI tutor (Hassona):** in another terminal, after `pip install -r apps/tutor/requirements.txt` and setting `CHATBOT_V1_URL` / `OPENAI_API_KEY` in `.env`:
+
+```bash
+npm run tutor:dev
+```
+
+See [docs/monorepo-consolidation.md](docs/monorepo-consolidation.md) for how former side repos map into this tree.
+
 **Expected output:**
 
 ```
@@ -1285,7 +1293,8 @@ nibras/
 │   │   │   ├── email.ts        # Email dispatcher
 │   │   │   └── health.ts       # Health endpoint
 │   │   └── package.json
-│   └── proxy/            # Local development proxy
+│   ├── proxy/            # Local development proxy
+│   └── tutor/            # Flask AI tutor (Hassona / chatbot backend)
 │
 ├── packages/
 │   ├── contracts/        # Zod schemas & types

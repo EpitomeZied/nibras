@@ -11,5 +11,18 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  tutor:
+    build: ./apps/tutor
+    restart: unless-stopped
+    ports:
+      - '5000:5000'
+    env_file:
+      - .env
+    environment:
+      PORT: '5000'
+      NIBRAS_API_URL: http://host.docker.internal:4848/v1/community
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+
 volumes:
   postgres_data:

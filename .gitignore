@@ -13,6 +13,10 @@ apps/cli/bundle/
 *.log
 tmp/
 .idea/
+apps/tutor/venv/
+apps/tutor/__pycache__/
+apps/tutor/*.pyc
+apps/tutor/embeddings_cache.db
 xx/
 Frontend-examples/
 exam1.zip
