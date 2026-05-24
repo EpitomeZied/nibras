@@ -303,6 +303,4 @@ export const ctaFeatures = [
 export const featureNavLinks = featureGroups.map((g) => ({
   href: `#${g.id}`,
   label: g.navLabel,
-  /** Pulsing “New” pill in top nav — all audience shortcuts */
-  isNew: true,
 }));

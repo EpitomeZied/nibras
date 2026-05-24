@@ -110,15 +110,7 @@ export default function HomePage() {
           </a>
           {featureNavLinks.map((link) => (
             <a key={link.href} href={link.href} className={styles.navLinkSub}>
-              <span className={styles.navLinkSubInner}>
-                {link.label}
-                {link.isNew ? (
-                  <span className={styles.navNewPill}>
-                    <span className={styles.navNewDot} aria-hidden="true" />
-                    New
-                  </span>
-                ) : null}
-              </span>
+              {link.label}
             </a>
           ))}
           <a href="#how-it-works" className={styles.navLink}>
