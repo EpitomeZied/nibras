@@ -2,13 +2,64 @@ import { PrismaClient } from '@prisma/client';
 import {
   forkRepository,
   generateRepositoryFromTemplate,
+  getGitHubRepository,
+  GitHubRequestError,
   type GitHubAppConfig,
 } from '@nibras/github';
 import type { AppStore } from '../../../../store';
 
+type RepoSnapshot = {
+  cloneUrl: string | null;
+  htmlUrl: string | null;
+  fullName: string;
+};
+
 function sanitizeRepoName(login: string): string {
   const base = `nibras-75-${login}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');
   return base.slice(0, 100) || 'nibras-75-workspace';
+}
+
+function githubErrorMessage(err: unknown, step: string): string {
+  if (err instanceof GitHubRequestError) {
+    try {
+      const parsed = JSON.parse(err.bodyText) as { message?: string };
+      if (parsed.message) {
+        return `${step}: ${parsed.message}`;
+      }
+    } catch {
+      // fall through
+    }
+    return `${step}: ${err.message}`;
+  }
+  if (err instanceof Error) {
+    return `${step}: ${err.message}`;
+  }
+  return `${step}: ${String(err)}`;
+}
+
+function repoAlreadyExists(err: unknown): boolean {
+  if (!(err instanceof GitHubRequestError)) return false;
+  if (err.statusCode !== 422) return false;
+  const text = err.bodyText.toLowerCase();
+  return text.includes('already exists') || text.includes('name already exists');
+}
+
+async function loadExistingUserRepo(
+  githubConfig: GitHubAppConfig,
+  userToken: string,
+  owner: string,
+  repoName: string
+): Promise<RepoSnapshot | null> {
+  try {
+    const repo = await getGitHubRepository(githubConfig, userToken, owner, repoName);
+    return {
+      cloneUrl: `https://github.com/${repo.fullName}.git`,
+      htmlUrl: repo.repoUrl,
+      fullName: repo.fullName,
+    };
+  } catch {
+    return null;
+  }
 }
 
 export async function getNibras75Workspace(prisma: PrismaClient, userId: string) {
@@ -36,22 +87,74 @@ export async function forkNibras75Workspace(
   const templateOwner = process.env.NIBRAS_75_TEMPLATE_OWNER?.trim() || 'EpitomeZied';
   const templateRepo = process.env.NIBRAS_75_TEMPLATE_REPO?.trim() || 'nibras-75';
   const repoName = sanitizeRepoName(account.login);
+  const templateConfig: GitHubAppConfig = {
+    ...githubConfig,
+    templateOwner,
+    templateRepo,
+  };
 
-  let generated: { cloneUrl: string | null; htmlUrl: string | null; fullName: string };
+  const failures: string[] = [];
+  let generated: RepoSnapshot | null = null;
+
+  // Template repos must be created via /generate (fork API fails on template sources).
   try {
-    generated = await forkRepository(
-      githubConfig,
-      account.userAccessToken,
-      templateOwner,
-      templateRepo,
-      repoName
-    );
-  } catch {
     generated = await generateRepositoryFromTemplate(
-      { ...githubConfig, templateOwner, templateRepo },
+      templateConfig,
       account.userAccessToken,
       account.login,
       repoName
+    );
+  } catch (err) {
+    failures.push(githubErrorMessage(err, 'Template'));
+    if (repoAlreadyExists(err)) {
+      generated = await loadExistingUserRepo(
+        githubConfig,
+        account.userAccessToken,
+        account.login,
+        repoName
+      );
+    }
+  }
+
+  if (!generated) {
+    try {
+      generated = await forkRepository(
+        githubConfig,
+        account.userAccessToken,
+        templateOwner,
+        templateRepo,
+        repoName
+      );
+    } catch (err) {
+      failures.push(githubErrorMessage(err, 'Fork'));
+      if (repoAlreadyExists(err)) {
+        generated = await loadExistingUserRepo(
+          githubConfig,
+          account.userAccessToken,
+          account.login,
+          repoName
+        );
+      }
+    }
+  }
+
+  if (!generated) {
+    const reused = await loadExistingUserRepo(
+      githubConfig,
+      account.userAccessToken,
+      account.login,
+      repoName
+    );
+    if (reused) {
+      generated = reused;
+    }
+  }
+
+  if (!generated) {
+    throw new Error(
+      failures.length > 0
+        ? `Could not create your Nibras 75 repo. ${failures.join(' ')}`
+        : 'Could not create your Nibras 75 repo. Check NIBRAS_75_TEMPLATE_OWNER and NIBRAS_75_TEMPLATE_REPO.'
     );
   }
 

@@ -15,6 +15,7 @@ import {
 } from '../../../lib/services/competitions';
 import CompanyIcons from './_components/CompanyIcons';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
+import { discoverApiBaseUrl } from '../../../lib/session';
 import { useSession } from '../../_components/session-context';
 
 function difficultyClass(d: string): string {
@@ -25,6 +26,7 @@ function difficultyClass(d: string): string {
 
 export default function Nibras75Page() {
   const { user } = useSession();
+  const githubLinked = Boolean(user?.githubLinked);
   const [items, setItems] = useState<Nibras75Problem[]>([]);
   const [total, setTotal] = useState(75);
   const [completedInSet, setCompletedInSet] = useState(0);
@@ -48,6 +50,22 @@ export default function Nibras75Page() {
     const t = setTimeout(() => setDebouncedQ(q.trim()), 300);
     return () => clearTimeout(t);
   }, [q]);
+
+  // After GitHub OAuth, API redirects here with ?st= — persist for apiFetch (see /auth/complete).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const st = params.get('st');
+    if (!st) return;
+    try {
+      window.localStorage.setItem('nibras.webSession', st);
+    } catch {
+      /* ignore */
+    }
+    params.delete('st');
+    const next = `${window.location.pathname}${params.toString() ? `?${params}` : ''}`;
+    window.history.replaceState(null, '', next);
+    window.location.reload();
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,7 +109,22 @@ export default function Nibras75Page() {
       .catch(() => setWorkspace(null));
   }, [user]);
 
+  async function handleConnectGitHub() {
+    setForkError(null);
+    try {
+      const apiBaseUrl = await discoverApiBaseUrl();
+      const returnTo = `${window.location.origin}/competitions/nibras-75`;
+      window.location.href = `${apiBaseUrl}/v1/github/oauth/start?return_to=${encodeURIComponent(returnTo)}`;
+    } catch (err) {
+      setForkError(friendlyMessage(err));
+    }
+  }
+
   async function handleFork() {
+    if (!githubLinked) {
+      await handleConnectGitHub();
+      return;
+    }
     setForking(true);
     setForkError(null);
     try {
@@ -192,6 +225,24 @@ export default function Nibras75Page() {
                   <code className={styles.cloneHint}>git clone {workspace.cloneUrl}</code>
                 ) : null}
               </>
+            ) : !githubLinked ? (
+              <>
+                <button
+                  type="button"
+                  className={styles.linkBtn}
+                  onClick={() => void handleConnectGitHub()}
+                >
+                  Connect GitHub
+                </button>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  Sign in with GitHub to fork your private solutions workspace.
+                </span>
+                {forkError ? (
+                  <span style={{ color: 'var(--status-error-text, #dc2626)', fontSize: 12 }}>
+                    {forkError}
+                  </span>
+                ) : null}
+              </>
             ) : (
               <>
                 <button
@@ -200,10 +251,10 @@ export default function Nibras75Page() {
                   disabled={forking}
                   onClick={() => void handleFork()}
                 >
-                  {forking ? 'Forking…' : 'Fork on GitHub'}
+                  {forking ? 'Creating repo…' : 'Fork on GitHub'}
                 </button>
                 <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  Create your own repo to commit solutions for all 75 problems.
+                  Creates a private repo from the Nibras 75 template for your solutions.
                 </span>
                 {forkError ? (
                   <span style={{ color: 'var(--status-error-text, #dc2626)', fontSize: 12 }}>
