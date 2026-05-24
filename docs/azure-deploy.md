@@ -177,7 +177,29 @@ az containerapp update \
     NIBRAS_API_INTERNAL_URL="https://nibras-api.$ENV_DOMAIN"
 ```
 
-### 5. Create a service principal so GitHub Actions can update Container Apps
+### 5. Connect GitHub Actions to Azure (OIDC — recommended)
+
+Run this once from [Azure Cloud Shell](https://shell.azure.com) (or any machine
+where `az login` works **and** your tenant allows app registrations):
+
+```bash
+git clone https://github.com/NibrasPlatform/nibras-cli.git
+cd nibras-cli
+chmod +x scripts/setup-azure-gha-credentials.sh
+./scripts/setup-azure-gha-credentials.sh
+```
+
+The script creates a service principal with **Contributor** on `nibras-rg`,
+adds a **GitHub Actions federated credential** (no rotating client secret),
+and prints `gh secret set` commands for the repo.
+
+**University / student tenants:** if you see
+`Insufficient privileges to complete the operation`, your Entra ID admin must
+either enable *Users can register applications* (Entra ID → User settings) or
+create the app registration manually and assign Contributor on `nibras-rg`.
+Re-run the script afterward, or set the secrets from step 6 manually.
+
+Legacy alternative (client secret instead of OIDC):
 
 ```bash
 SUB_ID=$(az account show --query id -o tsv)
@@ -188,8 +210,7 @@ az ad sp create-for-rbac \
   --sdk-auth
 ```
 
-The output is a JSON blob. **Copy the whole block** — you'll paste it as a
-GitHub Secret in step 6.
+Paste the JSON output as the `AZURE_CREDENTIALS` secret (step 6).
 
 ### 6. Add GitHub Secrets + Variables
 
@@ -197,9 +218,12 @@ Go to https://github.com/NibrasPlatform/nibras-cli/settings/secrets/actions
 
 **Secrets** (Actions → New repository secret):
 
-| Name                | Value                     |
-| ------------------- | ------------------------- |
-| `AZURE_CREDENTIALS` | the JSON blob from step 5 |
+| Name                     | Value                                      |
+| ------------------------ | ------------------------------------------ |
+| `AZURE_CLIENT_ID`        | App (client) ID from step 5 (OIDC)         |
+| `AZURE_TENANT_ID`        | Azure AD tenant ID                         |
+| `AZURE_SUBSCRIPTION_ID`  | Azure subscription ID                      |
+| `AZURE_CREDENTIALS`      | *(legacy only)* JSON blob from `--sdk-auth` |
 
 **Variables** (Actions → Variables tab → New repository variable):
 
