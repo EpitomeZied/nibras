@@ -21,6 +21,7 @@ import {
   type VerificationProblem,
 } from '../../lib/services/competitions';
 import { friendlyMessage } from '../../lib/api-clients/errors';
+import { googleCalendarUrl } from '../../lib/google-calendar';
 
 function formatRange(start: string, end: string): string {
   try {
@@ -377,6 +378,9 @@ export default function CompetitionsPage() {
         {displayMode === 'calendar' && <CalendarViewToggle view={calView} onChange={setCalView} />}
         <Link href="/competitions/nibras-75" className={styles.linkBtn}>
           Nibras 75
+        </Link>
+        <Link href="/competitions/platforms" className={styles.linkBtn}>
+          Integrations
         </Link>
         <Link
           href="/competitions/practice?tab=codeforces"
@@ -747,6 +751,20 @@ export default function CompetitionsPage() {
                     Open
                   </a>
                 )}
+                <a
+                  className={styles.iconBtn}
+                  href={googleCalendarUrl({
+                    name: contest.name,
+                    startsAt: contest.startsAt,
+                    endsAt: contest.endsAt,
+                    url: contest.url,
+                    host: contest.host,
+                  })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Add to calendar
+                </a>
               </div>
             </article>
           ))}
