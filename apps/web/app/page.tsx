@@ -110,7 +110,15 @@ export default function HomePage() {
           </a>
           {featureNavLinks.map((link) => (
             <a key={link.href} href={link.href} className={styles.navLinkSub}>
-              {link.label}
+              <span className={styles.navLinkSubInner}>
+                {link.label}
+                {link.isNew ? (
+                  <span className={styles.navNewPill}>
+                    <span className={styles.navNewDot} aria-hidden="true" />
+                    New
+                  </span>
+                ) : null}
+              </span>
             </a>
           ))}
           <a href="#how-it-works" className={styles.navLink}>
@@ -359,8 +367,8 @@ export default function HomePage() {
           </h2>
           <p className={styles.sectionSub}>
             From templates and team formation to program planning, tutoring, community,
-            competitions, and analytics — Nibras turns scattered tools and manual work into one
-            clean operating layer.
+            competitions, IDE practice, achievements, and analytics — Nibras turns scattered
+            tools and manual work into one clean operating layer.
           </p>
         </div>
 
@@ -391,7 +399,8 @@ export default function HomePage() {
           </h2>
           <p className={styles.sectionSub}>
             Nibras still gives students a clean submission CLI, but now it plugs into templates,
-            team projects, review queues, and academic planning instead of standing alone.
+            team projects, the IDE, achievements, review queues, and academic planning instead of
+            standing alone.
           </p>
         </div>
 
@@ -493,8 +502,8 @@ export default function HomePage() {
           </h2>
           <p className={styles.ctaSub}>
             Sign in with GitHub, open the full Nibras system, and start using templates, team
-            formation, planner workflows, Hassona, community, competitions, achievements, and
-            GitHub-native submissions together.
+            formation, planner workflows, Hassona, community, competitions, IDE, achievements,
+            reputation, and GitHub-native submissions together.
           </p>
 
           <div className={styles.ctaFeatures}>
