@@ -2,11 +2,12 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
 import Avatar from '../../_components/widgets/Avatar';
 import EmptyState from '../../_components/widgets/EmptyState';
 import Skeleton from '../../_components/widgets/Skeleton';
+import MarkdownToolbar from '../../_components/widgets/MarkdownToolbar';
 import { createThread, listThreads, type CommunityThread } from '../../../lib/services/community';
 import { useSession } from '../../_components/session-context';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
@@ -44,6 +45,7 @@ export default function DiscussionsPage() {
   const [threadBody, setThreadBody] = useState('');
   const [threadSubmitting, setThreadSubmitting] = useState(false);
   const [threadError, setThreadError] = useState<string | null>(null);
+  const threadBodyRef = useRef<HTMLTextAreaElement>(null);
 
   async function handleThreadSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -193,7 +195,9 @@ export default function DiscussionsPage() {
               <label className={styles.formLabel} htmlFor="thread-body">
                 Details (optional)
               </label>
+              <MarkdownToolbar textareaRef={threadBodyRef} onChange={setThreadBody} />
               <textarea
+                ref={threadBodyRef}
                 id="thread-body"
                 className={styles.formTextarea}
                 value={threadBody}

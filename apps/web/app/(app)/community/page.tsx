@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
 import Avatar from '../_components/widgets/Avatar';
 import EmptyState from '../_components/widgets/EmptyState';
 import Skeleton from '../_components/widgets/Skeleton';
 import VoteButton from '../_components/widgets/VoteButton';
+import MarkdownToolbar from '../_components/widgets/MarkdownToolbar';
 import {
   createQuestion,
   listQuestions,
@@ -73,6 +74,7 @@ export default function CommunityPage() {
 
   const debouncedAskTitle = useDebounce(askTitle, 400);
   const [suggestions, setSuggestions] = useState<CommunityQuestion[]>([]);
+  const askBodyRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (!askOpen || debouncedAskTitle.trim().length < 5) {
@@ -253,7 +255,9 @@ export default function CommunityPage() {
               <label className={styles.formLabel} htmlFor="ask-body">
                 Details
               </label>
+              <MarkdownToolbar textareaRef={askBodyRef} onChange={setAskBody} />
               <textarea
+                ref={askBodyRef}
                 id="ask-body"
                 className={styles.formTextarea}
                 value={askBody}

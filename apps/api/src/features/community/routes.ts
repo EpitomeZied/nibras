@@ -514,9 +514,19 @@ export function registerCommunityRoutes(
         reply.code(404).send(Errors.notFound('Tag'));
         return;
       }
-      await prisma.$transaction([
-        prisma.communityTag.delete({ where: { id: tagId } }),
-      ]);
+      await prisma.$transaction(async (tx) => {
+        const questions = await tx.communityQuestion.findMany({
+          where: { tags: { has: tag.name } },
+          select: { id: true, tags: true },
+        });
+        for (const question of questions) {
+          await tx.communityQuestion.update({
+            where: { id: question.id },
+            data: { tags: question.tags.filter((t) => t !== tag.name) },
+          });
+        }
+        await tx.communityTag.delete({ where: { id: tagId } });
+      });
       return { deleted: true };
     }
   );

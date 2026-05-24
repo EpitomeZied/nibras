@@ -40,6 +40,7 @@ export default function QuestionPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [acceptError, setAcceptError] = useState<string | null>(null);
+  const [acceptErrorAnswerId, setAcceptErrorAnswerId] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -76,11 +77,13 @@ export default function QuestionPage() {
 
   async function handleAccept(answerId: string) {
     setAcceptError(null);
+    setAcceptErrorAnswerId(null);
     try {
       await acceptAnswer(answerId);
       setAnswers((prev) => prev.map((a) => ({ ...a, accepted: a.id === answerId })));
       setQuestion((q) => (q ? { ...q, acceptedAnswerId: answerId } : q));
     } catch (err) {
+      setAcceptErrorAnswerId(answerId);
       setAcceptError(friendlyMessage(err));
     }
   }
@@ -269,10 +272,8 @@ export default function QuestionPage() {
                     >
                       Mark as accepted
                     </button>
-                    {acceptError && (
-                      <p style={{ color: 'var(--danger, #ef4444)', fontSize: 12, margin: 0 }}>
-                        {acceptError}
-                      </p>
+                    {acceptErrorAnswerId === answer.id && acceptError && (
+                      <p className={styles.inlineError}>{acceptError}</p>
                     )}
                   </>
                 )}
@@ -298,11 +299,7 @@ export default function QuestionPage() {
             onChange={(event) => setDraft(event.target.value)}
             placeholder="Explain the approach, share code, and link references…"
           />
-          {submitError && (
-            <p style={{ color: 'var(--danger, #ef4444)', fontSize: 12, margin: 0 }}>
-              {submitError}
-            </p>
-          )}
+          {submitError && <p className={styles.inlineError}>{submitError}</p>}
           <div className={styles.composerActions}>
             <button
               type="submit"
