@@ -1284,7 +1284,7 @@ export default function OnboardingPage() {
               windows={NPM_INSTALL_COMMAND}
             />
             <p className={styles.hint}>
-              This installs directly from the tagged GitHub release — no npm registry required.
+              This installs the pinned @nibras/cli release from npm.
             </p>
             <p className={styles.hint}>
               Verify: <code className={styles.inlineCode}>nibras --version</code> should start with{' '}

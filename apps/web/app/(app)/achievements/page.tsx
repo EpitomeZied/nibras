@@ -40,6 +40,8 @@ const SparkleIcon = (
 export default function AchievementsPage() {
   const [badges, setBadges] = useState<Badge[]>([]);
   const [reputation, setReputation] = useState<MyReputation | null>(null);
+  const [newlyAwarded, setNewlyAwarded] = useState<Badge[]>([]);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -54,15 +56,18 @@ export default function AchievementsPage() {
       ]);
 
       const list = allBadges.status === 'fulfilled' ? allBadges.value : [];
+      const freshAwards = newlyAwarded.status === 'fulfilled' ? newlyAwarded.value : [];
       const awardedById = new Map<string, Badge>();
-      if (newlyAwarded.status === 'fulfilled') {
-        for (const b of newlyAwarded.value) awardedById.set(b.id, b);
-      }
+      for (const b of freshAwards) awardedById.set(b.id, b);
       const merged = list.map((b) =>
         awardedById.has(b.id) ? { ...b, ...awardedById.get(b.id)! } : b
       );
 
       setBadges(merged);
+      if (freshAwards.length > 0) {
+        setNewlyAwarded(freshAwards);
+        setBannerDismissed(false);
+      }
       setReputation(myRep.status === 'fulfilled' ? myRep.value : null);
 
       if (allBadges.status === 'rejected' && myRep.status === 'rejected') {
@@ -120,6 +125,26 @@ export default function AchievementsPage() {
           </p>
         </div>
       </header>
+
+      {newlyAwarded.length > 0 && !bannerDismissed && (
+        <div className={styles.newBadgeBanner} role="status">
+          <div>
+            <strong>
+              {newlyAwarded.length === 1
+                ? 'New badge unlocked!'
+                : `${newlyAwarded.length} new badges unlocked!`}
+            </strong>
+            <p>{newlyAwarded.map((b) => b.name).join(', ')}</p>
+          </div>
+          <button
+            type="button"
+            className={styles.dismissBtn}
+            onClick={() => setBannerDismissed(true)}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       <div className={styles.summary}>
         <StatTile

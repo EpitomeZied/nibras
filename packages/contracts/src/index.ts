@@ -2,6 +2,7 @@ import { z } from 'zod';
 export * from './tracking';
 export * from './programs';
 export * from './ide';
+export * from './gamification';
 
 export const BuildpackSchema = z.object({
   node: z.string().min(1),

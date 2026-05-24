@@ -63,22 +63,24 @@ export default function ReputationPage() {
     );
   }
 
-  if (error || !reputation) {
+  if (error) {
     return (
       <div className={styles.page}>
         <header className={styles.header}>
           <h1 className={styles.title}>Reputation</h1>
         </header>
         <EmptyState
-          title="No reputation data yet"
-          description={
-            error ?? "Once your account starts accruing points, you'll see the breakdown here."
-          }
-          tone={error ? 'error' : 'default'}
-          action={error ? { label: 'Retry', onClick: () => void load() } : undefined}
+          title="Couldn't load reputation"
+          description={error}
+          tone="error"
+          action={{ label: 'Retry', onClick: () => void load() }}
         />
       </div>
     );
+  }
+
+  if (!reputation) {
+    return null;
   }
 
   const history = reputation.history ?? [];

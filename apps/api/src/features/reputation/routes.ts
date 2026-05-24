@@ -1,21 +1,23 @@
 import { FastifyInstance } from 'fastify';
+import { PrismaClient } from '@prisma/client';
 import { requireUser } from '../../lib/auth';
 import { AppStore } from '../../store';
+import { ReputationService } from './service';
 
-export function registerReputationRoutes(app: FastifyInstance, store: AppStore): void {
+export function registerReputationRoutes(
+  app: FastifyInstance,
+  store: AppStore,
+  prisma: PrismaClient
+): void {
+  const reputation = new ReputationService(prisma);
+
   app.get(
     '/v1/reputation/me',
     { schema: { tags: ['reputation'], summary: 'Get my reputation' } },
     async (request, reply) => {
-      await requireUser(request, reply, store);
-      return {
-        total: 0,
-        weeklyDelta: 0,
-        monthlyDelta: 0,
-        rank: null,
-        percentile: null,
-        history: [],
-      };
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      return reputation.getMyReputation(auth.user.id);
     }
   );
 }

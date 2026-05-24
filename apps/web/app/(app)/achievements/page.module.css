@@ -25,6 +25,43 @@
   color: var(--text-muted);
 }
 
+.newBadgeBanner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in oklab, var(--primary, #22c55e) 40%, var(--border));
+  background: color-mix(in oklab, var(--primary, #22c55e) 10%, var(--surface));
+}
+
+.newBadgeBanner strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.newBadgeBanner p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dismissBtn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.dismissBtn:hover {
+  color: var(--text);
+}
+
 .summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));

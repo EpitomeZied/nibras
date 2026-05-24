@@ -340,9 +340,9 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
   registerAdminRoutes(app, store);
   registerNotificationRoutes(app, store);
   registerCommunityRoutes(app, store, getSharedPrisma());
-  registerGamificationRoutes(app, store);
+  registerGamificationRoutes(app, store, getSharedPrisma());
   registerCompetitionsRoutes(app, store, getSharedPrisma(), githubConfig);
-  registerReputationRoutes(app, store);
+  registerReputationRoutes(app, store, getSharedPrisma());
   registerAnalyticsRoutes(app, store, getSharedPrisma());
   registerIdeRoutes(app, store);
 
