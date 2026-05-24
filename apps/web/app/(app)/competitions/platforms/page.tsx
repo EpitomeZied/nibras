@@ -19,7 +19,16 @@ const STATUS_LABEL: Record<PlatformIntegration['status'], string> = {
   coming_soon: 'Coming soon',
 };
 
-/* ── Platform visual identifiers ──────────────────────────────────────────── */
+/* ── Platform icons (public/platforms/*.svg) + badge fallback ─────────────── */
+const PLATFORM_ICON_SLUG: Record<string, string> = {
+  project_euler: 'projecteuler',
+};
+
+function platformIconSrc(id: string): string {
+  const slug = PLATFORM_ICON_SLUG[id] ?? id;
+  return `/platforms/${slug}.svg`;
+}
+
 const PLATFORM_META: Record<string, { abbr: string; bg: string; fg: string }> = {
   codeforces: { abbr: 'CF', bg: '#1a90d9', fg: '#fff' },
   leetcode: { abbr: 'LC', bg: '#ffa116', fg: '#fff' },
@@ -27,9 +36,9 @@ const PLATFORM_META: Record<string, { abbr: string; bg: string; fg: string }> = 
   kaggle: { abbr: 'Kg', bg: '#20beff', fg: '#fff' },
   hackerone: { abbr: 'H1', bg: '#25262b', fg: '#fff' },
   bugcrowd: { abbr: 'BC', bg: '#f26722', fg: '#fff' },
-  github: { abbr: 'GH', bg: '#24292e', fg: '#fff' },
+  github_achievements: { abbr: 'GH', bg: '#24292e', fg: '#fff' },
   project_euler: { abbr: 'PE', bg: '#5b5ea6', fg: '#fff' },
-  art_of_problem_solving: { abbr: 'AoPS', bg: '#204888', fg: '#fff' },
+  aops: { abbr: 'AoPS', bg: '#204888', fg: '#fff' },
   brilliant: { abbr: 'Br', bg: '#ff6b35', fg: '#fff' },
   ctftime: { abbr: 'CTF', bg: '#3498db', fg: '#fff' },
   hackthebox: { abbr: 'HTB', bg: '#1a2332', fg: '#9fef00' },
@@ -49,10 +58,28 @@ const CATEGORY_META: Record<PlatformIntegrationCategory, { icon: string; accent:
 };
 
 function PlatformAvatar({ id, name }: { id: string; name: string }) {
+  const [iconFailed, setIconFailed] = useState(false);
   const meta = PLATFORM_META[id];
   const abbr = meta?.abbr ?? name.slice(0, 2).toUpperCase();
   const bg = meta?.bg ?? 'var(--border)';
   const fg = meta?.fg ?? 'var(--text)';
+
+  if (!iconFailed) {
+    return (
+      <span className={styles.avatarIconWrap} aria-hidden="true">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={platformIconSrc(id)}
+          alt=""
+          className={styles.avatarImg}
+          width={40}
+          height={40}
+          onError={() => setIconFailed(true)}
+        />
+      </span>
+    );
+  }
+
   return (
     <span className={styles.avatar} style={{ background: bg, color: fg }} aria-hidden="true">
       {abbr}
