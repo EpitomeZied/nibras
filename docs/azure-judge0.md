@@ -1,42 +1,47 @@
 # Judge0 IDE Sandbox on Azure
 
-The `/ide` playground needs [Judge0 CE](https://github.com/judge0/judge0) to compile and run code. Judge0 requires **privileged Linux containers** (cgroup/isolate sandboxing), which **Azure Container Apps does not support**.
-
-The supported Azure pattern is:
+The `/ide` playground needs [Judge0 CE](https://github.com/judge0/judge0) to compile and run code. Judge0 requires **privileged Linux containers**, which **Azure Container Apps does not support**.
 
 | Component | Where it runs |
 |-----------|---------------|
 | nibras-api, nibras-web, nibras-worker | Azure Container Apps (existing) |
-| Judge0 (server + worker + Postgres + Redis) | Small **Azure VM** with Docker Compose |
+| Judge0 (server + worker + Postgres + Redis) | **Azure Container Instances** or a Linux VM |
 
-## One-command setup
+## Recommended: Azure Container Instances (student subscriptions)
 
-After completing [azure-deploy.md](./azure-deploy.md) steps 1–4 (resource group + Container Apps exist):
+Works on **Azure for Students** without VM core quota. Privileged containers are supported.
 
 ```bash
 # From Azure Cloud Shell or any machine with `az login`
 git clone https://github.com/NibrasPlatform/nibras-cli.git
 cd nibras-cli
-chmod +x scripts/provision-azure-judge0.sh
-./scripts/provision-azure-judge0.sh
+chmod +x scripts/provision-azure-judge0-aci.sh
+
+# Match your Container Apps region (France Central for nibras-rg)
+RG=nibras-rg LOCATION=francecentral ./scripts/provision-azure-judge0-aci.sh
 ```
 
-The script:
+First run registers `Microsoft.ContainerInstance` if needed (~2 min), then deploys
+4 containers (~3 GB RAM) and wires `JUDGE0_*` on **nibras-api**.
 
-1. Creates an Ubuntu 22.04 VM (`Standard_B2s` by default) in `nibras-rg`
-2. Installs Docker via cloud-init and starts Judge0 on port **2358**
-3. Generates secure `AUTHN_TOKEN`, Redis, and Postgres passwords
-4. Opens NSG port 2358
-5. Sets `JUDGE0_API_URL` + `JUDGE0_AUTH_TOKEN` on the **nibras-api** Container App
-
-### Custom settings
+**Restart the API** after provisioning (required for new secrets):
 
 ```bash
-RG=nibras-rg \
-LOCATION=westeurope \
-VM_SIZE=Standard_B2s \
-./scripts/provision-azure-judge0.sh
+REV=$(az containerapp revision list -n nibras-api -g nibras-rg --query '[0].name' -o tsv)
+az containerapp revision restart -n nibras-api -g nibras-rg --revision "$REV"
 ```
+
+## Alternative: Linux VM
+
+If you have VM core quota in your region:
+
+```bash
+chmod +x scripts/provision-azure-judge0.sh
+RG=nibras-rg LOCATION=francecentral VM_SIZE=Standard_B2s ./scripts/provision-azure-judge0.sh
+```
+
+On Azure for Students, VM quota is often **0** in allowed regions — use ACI instead,
+or [request a quota increase](https://aka.ms/ProdportalCRP) for `standardBSFamily` cores.
 
 ## Verify
 

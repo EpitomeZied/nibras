@@ -23,6 +23,9 @@ if ! az group show --name "$RG" >/dev/null 2>&1; then
   exit 1
 fi
 
+echo "==> Ensuring Microsoft.ContainerInstance provider is registered"
+az provider register --namespace Microsoft.ContainerInstance --wait --output none 2>/dev/null || true
+
 if az container show --resource-group "$RG" --name "$ACI_NAME" >/dev/null 2>&1; then
   IP=$(az container show --resource-group "$RG" --name "$ACI_NAME" --query ipAddress.ip -o tsv)
   echo "Container group '$ACI_NAME' already exists. IP: $IP"
@@ -84,6 +87,10 @@ if az containerapp show --name "$API_APP_NAME" --resource-group "$RG" >/dev/null
       "JUDGE0_CPU_TIME_LIMIT=5" \
       "JUDGE0_MEMORY_LIMIT=128000" \
     --output none
+
+  echo "Restart nibras-api so secret changes take effect:"
+  echo "  REV=\$(az containerapp revision list -n $API_APP_NAME -g $RG --query '[0].name' -o tsv)"
+  echo "  az containerapp revision restart -n $API_APP_NAME -g $RG --revision \"\$REV\""
 fi
 
 cat <<EOF

@@ -280,23 +280,23 @@ Change visibility → Public**.
 
 Public packages need no auth and Container Apps pulls them by default.
 
-### 10. (Optional) IDE code sandbox — Judge0 on Azure VM
+### 10. (Optional) IDE code sandbox — Judge0 on Azure
 
 The `/ide` playground needs Judge0 CE. Container Apps cannot run Judge0 (privileged
-containers required), so provision a small Linux VM instead:
+containers required). Use **Azure Container Instances** (recommended for student subs):
 
 ```bash
-chmod +x scripts/provision-azure-judge0.sh
-./scripts/provision-azure-judge0.sh
+chmod +x scripts/provision-azure-judge0-aci.sh
+RG=nibras-rg LOCATION=francecentral ./scripts/provision-azure-judge0-aci.sh
+
+# Restart API so new secrets load
+REV=$(az containerapp revision list -n nibras-api -g nibras-rg --query '[0].name' -o tsv)
+az containerapp revision restart -n nibras-api -g nibras-rg --revision "$REV"
 ```
 
-This creates `nibras-judge0` VM, starts Judge0 on port 2358, and wires
-`JUDGE0_API_URL` + `JUDGE0_AUTH_TOKEN` on `nibras-api` automatically.
+VM fallback: `./scripts/provision-azure-judge0.sh` (needs VM core quota).
 
 Full details: [docs/azure-judge0.md](./azure-judge0.md)
-
-Verify: `curl https://nibras-api.<env-domain>/v1/ide/status` →
-`{"configured":true,"reachable":true}`
 
 ## Cost expectation
 
