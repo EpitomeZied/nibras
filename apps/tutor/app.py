@@ -74,10 +74,10 @@ CS_KEYWORDS = {
     "github", "gitlab", "bitbucket", "aws", "azure", "gcp", "linux", "unix",
     "windows server", "nginx", "apache", "mysql", "postgresql", "mongodb",
     "redis", "elasticsearch", "kafka", "rabbitmq", "load balancer",
-    "algorithm", "data structure", "big o", "time complexity", "space complexity",
+    "algorithm", "data structure", "big o", "big-o", "time complexity", "space complexity",
     "recursion", "dynamic programming", "greedy", "backtracking", "divide conquer",
     "graph", "tree", "binary tree", "bst", "avl", "red black", "heap", "trie",
-    "hash table", "linked list", "stack", "queue", "array", "matrix", "vector",
+    "hash table", "linked list", "stack", "queue", "array", "matrix", "vector", "garbage collection",
     "sorting", "searching", "bfs", "dfs", "dijkstra", "bellman", "floyd", "a*",
     "machine learning", "deep learning", "neural network", "cnn", "rnn", "lstm",
     "transformer", "bert", "gpt", "llm", "nlp", "cv", "reinforcement learning",
@@ -121,6 +121,19 @@ CS_KEYWORDS = {
 
 def is_cs_related(question: str) -> bool:
     q_lower = question.lower()
+
+    # Fast-path for exact or similar suggested prompts in the UI
+    q_clean = re.sub(r"[^\w\s]", "", q_lower).strip()
+    suggested_prompts_clean = {
+        "explain bigo notation with examples",
+        "what is a binary search tree",
+        "how does tcpip work",
+        "explain recursion vs iteration",
+        "what are design patterns in oop",
+        "how does garbage collection work",
+    }
+    if q_clean in suggested_prompts_clean:
+        return True
 
     for kw in CS_KEYWORDS:
         if kw in q_lower:
