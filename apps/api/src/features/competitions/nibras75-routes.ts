@@ -77,7 +77,12 @@ export function registerNibras75Routes(
 
   app.get(
     '/v1/practice/nibras-75/analytics',
-    { schema: { tags: ['competitions'], summary: 'LeetCode analytics for Nibras 75 (linked handle)' } },
+    {
+      schema: {
+        tags: ['competitions'],
+        summary: 'LeetCode analytics for Nibras 75 (linked handle)',
+      },
+    },
     async (request, reply) => {
       const user = await optionalUser(request, reply, store);
       const query = request.query as { handle?: string };
@@ -112,12 +117,7 @@ export function registerNibras75Routes(
       }
 
       try {
-        const result = await setNibras75ProblemSolved(
-          prisma,
-          auth.user.id,
-          slug,
-          body.solved
-        );
+        const result = await setNibras75ProblemSolved(prisma, auth.user.id, slug, body.solved);
         return result;
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -147,12 +147,7 @@ export function registerNibras75Routes(
       if (!auth) return;
 
       try {
-        const workspace = await forkNibras75Workspace(
-          prisma,
-          store,
-          githubConfig,
-          auth.user.id
-        );
+        const workspace = await forkNibras75Workspace(prisma, store, githubConfig, auth.user.id);
         return { workspace };
       } catch (err) {
         let message = err instanceof Error ? err.message : String(err);

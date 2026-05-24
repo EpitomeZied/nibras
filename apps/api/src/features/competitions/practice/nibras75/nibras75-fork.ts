@@ -1,5 +1,9 @@
 import { PrismaClient } from '@prisma/client';
-import { forkRepository, generateRepositoryFromTemplate, type GitHubAppConfig } from '@nibras/github';
+import {
+  forkRepository,
+  generateRepositoryFromTemplate,
+  type GitHubAppConfig,
+} from '@nibras/github';
 import type { AppStore } from '../../../../store';
 
 function sanitizeRepoName(login: string): string {
