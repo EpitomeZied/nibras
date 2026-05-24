@@ -51,8 +51,7 @@ export default function CommunityPage() {
   const [questions, setQuestions] = useState<CommunityQuestion[]>([]);
   const [tags, setTags] = useState<CommunityTag[]>([]);
   const [sort, setSort] = useState<NonNullable<QuestionFilters['sort']>>('newest');
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [mine, setMine] = useState(false);
+  const [tag, setTag] = useState<string | undefined>();
   const [q, setQ] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
