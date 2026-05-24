@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { CompPlatform, PrismaClient } from '@prisma/client';
-import type { GitHubAppConfig } from '@nibras/github';
+import { GitHubRequestError, type GitHubAppConfig } from '@nibras/github';
 import { optionalUser, requireUser } from '../../lib/auth';
 import { AppStore } from '../../store';
 import { fetchPracticeLcAnalytics } from './practice/leetcode/leetcode-client';
@@ -155,8 +155,22 @@ export function registerNibras75Routes(
         );
         return { workspace };
       } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        const status = message.includes('Link your GitHub') ? 400 : 502;
+        let message = err instanceof Error ? err.message : String(err);
+        let status = 502;
+
+        if (message.includes('Link your GitHub')) {
+          status = 400;
+        } else if (err instanceof GitHubRequestError) {
+          status = err.statusCode >= 500 ? 502 : 400;
+          try {
+            const parsed = JSON.parse(err.bodyText);
+            if (parsed.message) {
+              message = parsed.message;
+            }
+          } catch {
+            // Keep original message if parsing fails
+          }
+        }
         return reply.status(status).send({ error: message });
       }
     }

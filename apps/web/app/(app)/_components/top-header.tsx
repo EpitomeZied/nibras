@@ -537,8 +537,8 @@ export default function TopHeader({
 
         {/* Right: GitHub Star + Notifications + User dropdown */}
         <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 2 : 4, flexShrink: 0 }}>
-          {/* GitHub Star button */}
-          <a
+          {/* GitHub Star button — only on the dashboard/landing page */}
+          {pathname === '/dashboard' && <a
             href="https://github.com/NibrasPlatform"
             target="_blank"
             rel="noopener noreferrer"
@@ -592,7 +592,7 @@ export default function TopHeader({
                 stroke="none"
               />
             </svg>
-          </a>
+          </a>}
           <NotificationsPanel />
           <UserDropdown
             user={user}

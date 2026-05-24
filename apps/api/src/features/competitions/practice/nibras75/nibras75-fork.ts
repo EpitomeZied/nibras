@@ -44,7 +44,7 @@ export async function forkNibras75Workspace(
     );
   } catch {
     generated = await generateRepositoryFromTemplate(
-      githubConfig,
+      { ...githubConfig, templateOwner, templateRepo },
       account.userAccessToken,
       account.login,
       repoName
