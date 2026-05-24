@@ -15,11 +15,7 @@ import {
   normalizeJudge0Result,
   runJudge0Submission,
 } from './judge0-client';
-import {
-  filterCuratedLanguages,
-  getCachedLanguages,
-  setCachedLanguages,
-} from './languages';
+import { filterCuratedLanguages, getCachedLanguages, setCachedLanguages } from './languages';
 
 export function registerIdeRoutes(app: FastifyInstance, store: AppStore): void {
   app.get(

@@ -39,6 +39,7 @@ services:
     env_file: .env.prod
     environment:
       NODE_ENV: production
+      JUDGE0_API_URL: http://judge0-server:2358
     depends_on:
       postgres:
         condition: service_healthy
