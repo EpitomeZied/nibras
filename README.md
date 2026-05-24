@@ -850,6 +850,28 @@ NIBRAS_AI_BASE_URL=https://api.openai.com/v1
 NIBRAS_AI_MIN_CONFIDENCE=0.85
 ```
 
+##### Judge0 IDE Sandbox
+
+The `/ide` playground runs student code through [Judge0 CE](https://github.com/judge0/judge0). Judge0 is optional — the rest of Nibras works without it.
+
+**Local development:**
+
+```bash
+# Start Judge0 (requires Linux host with cgroups — native Linux, WSL2, or Docker Desktop)
+docker compose -f docker-compose.judge0.yml up -d
+
+# Add to .env (token must match judge0/judge0.conf AUTHN_TOKEN)
+JUDGE0_API_URL=http://127.0.0.1:2358
+JUDGE0_AUTH_TOKEN=nibras-judge0-dev-token
+
+# Restart the API, then open /ide in the web app
+npm run dev
+```
+
+**Production:** Judge0 services are included in `docker-compose.prod.yml`. Set `JUDGE0_AUTH_TOKEN` in `.env.prod` to match `judge0/judge0.conf`, and ensure the API can reach `http://judge0-server:2358` on the internal Docker network.
+
+Judge0 workers run untrusted code in isolated containers (`privileged: true`). Deploy on a dedicated Linux host with adequate CPU and memory; do not co-locate with sensitive data stores without network isolation.
+
 ### Environment Validation
 
 Validate your configuration before deploying:

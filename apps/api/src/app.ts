@@ -29,6 +29,7 @@ import { registerGamificationRoutes } from './features/gamification/routes';
 import { registerCompetitionsRoutes } from './features/competitions/routes';
 import { registerReputationRoutes } from './features/reputation/routes';
 import { registerAnalyticsRoutes } from './features/analytics/routes';
+import { registerIdeRoutes } from './features/ide/routes';
 
 function normalizeOrigin(value: string | undefined): string | null {
   if (!value) {
@@ -343,6 +344,7 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
   registerCompetitionsRoutes(app, store, getSharedPrisma());
   registerReputationRoutes(app, store);
   registerAnalyticsRoutes(app, store, getSharedPrisma());
+  registerIdeRoutes(app, store);
 
   return app;
 }

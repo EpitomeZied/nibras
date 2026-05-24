@@ -55,6 +55,12 @@ export const appNavItems: AppNavItem[] = [
     matchPrefixes: ['/community/discussions', '/community/q', '/community/tags'],
   },
   {
+    href: '/ide',
+    label: 'IDE',
+    description: 'Run code in a sandboxed playground.',
+    visibility: 'all',
+  },
+  {
     href: '/competitions',
     label: 'Competitions',
     description: 'Contests, practice problems, ranking, and competitive history.',
@@ -220,6 +226,10 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/competitions': {
     title: 'Competitions',
     subtitle: 'Upcoming contests and linked accounts.',
+  },
+  '/ide': {
+    title: 'IDE',
+    subtitle: 'Write, run, and debug code in a sandboxed playground.',
   },
   '/competitions/practice': {
     title: 'Practice',
