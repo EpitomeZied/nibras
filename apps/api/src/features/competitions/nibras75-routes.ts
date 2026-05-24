@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { CompPlatform, PrismaClient } from '@prisma/client';
+import type { GitHubAppConfig } from '@nibras/github';
 import { optionalUser, requireUser } from '../../lib/auth';
 import { AppStore } from '../../store';
 import { fetchPracticeLcAnalytics } from './practice/leetcode/leetcode-client';
@@ -8,6 +9,7 @@ import {
   getNibras75Meta,
   setNibras75ProblemSolved,
 } from './practice/nibras75/nibras75-client';
+import { forkNibras75Workspace, getNibras75Workspace } from './practice/nibras75/nibras75-fork';
 
 async function resolveLeetcodeHandle(
   prisma: PrismaClient,
@@ -26,7 +28,8 @@ async function resolveLeetcodeHandle(
 export function registerNibras75Routes(
   app: FastifyInstance,
   store: AppStore,
-  prisma: PrismaClient
+  prisma: PrismaClient,
+  githubConfig: GitHubAppConfig | null
 ): void {
   app.get(
     '/v1/practice/nibras-75/problems',
@@ -119,6 +122,41 @@ export function registerNibras75Routes(
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         const status = message.includes('not part') ? 404 : 502;
+        return reply.status(status).send({ error: message });
+      }
+    }
+  );
+
+  app.get(
+    '/v1/practice/nibras-75/workspace',
+    { schema: { tags: ['competitions'], summary: 'Get Nibras 75 GitHub workspace fork' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+
+      const workspace = await getNibras75Workspace(prisma, auth.user.id);
+      return { workspace };
+    }
+  );
+
+  app.post(
+    '/v1/practice/nibras-75/workspace/fork',
+    { schema: { tags: ['competitions'], summary: 'Fork Nibras 75 template repo on GitHub' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+
+      try {
+        const workspace = await forkNibras75Workspace(
+          prisma,
+          store,
+          githubConfig,
+          auth.user.id
+        );
+        return { workspace };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        const status = message.includes('Link your GitHub') ? 400 : 502;
         return reply.status(status).send({ error: message });
       }
     }

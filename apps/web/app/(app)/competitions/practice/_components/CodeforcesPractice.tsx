@@ -8,7 +8,6 @@ import dynamic from 'next/dynamic';
 
 const CfAnalyticsDashboard = dynamic(() => import('./CfAnalyticsDashboard'), { ssr: false });
 import {
-  getLinkedAccounts,
   getPracticeCfAnalytics,
   getPracticeCfProblems,
   linkAccount,
@@ -30,6 +29,10 @@ export default function CodeforcesPractice() {
   const [q, setQ] = useState('');
   const [debouncedQ, setDebouncedQ] = useState('');
   const [tag, setTag] = useState('');
+  const [ratingMin, setRatingMin] = useState('');
+  const [ratingMax, setRatingMax] = useState('');
+  const [contestIdMin, setContestIdMin] = useState('');
+  const [contestIdMax, setContestIdMax] = useState('');
   const [solvedFilter, setSolvedFilter] = useState<'all' | 'solved' | 'unsolved'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,19 +50,27 @@ export default function CodeforcesPractice() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedQ, tag, solvedFilter]);
+  }, [debouncedQ, tag, ratingMin, ratingMax, contestIdMin, contestIdMax, solvedFilter]);
 
   const loadProblems = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const solved =
-        solvedFilter === 'all' ? undefined : solvedFilter === 'solved' ? ('true' as const) : ('false' as const);
+        solvedFilter === 'all'
+          ? undefined
+          : solvedFilter === 'solved'
+            ? ('true' as const)
+            : ('false' as const);
       const data = await getPracticeCfProblems({
         page,
         limit: PAGE_SIZE,
         q: debouncedQ || undefined,
         tag: tag.trim() || undefined,
+        ratingMin: ratingMin.trim() ? parseInt(ratingMin, 10) : undefined,
+        ratingMax: ratingMax.trim() ? parseInt(ratingMax, 10) : undefined,
+        contestIdMin: contestIdMin.trim() ? parseInt(contestIdMin, 10) : undefined,
+        contestIdMax: contestIdMax.trim() ? parseInt(contestIdMax, 10) : undefined,
         solved,
       });
       setItems(data.items ?? []);
@@ -73,7 +84,7 @@ export default function CodeforcesPractice() {
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedQ, tag, solvedFilter]);
+  }, [page, debouncedQ, tag, ratingMin, ratingMax, contestIdMin, contestIdMax, solvedFilter]);
 
   const loadAnalytics = useCallback(async () => {
     if (!activeHandle && !user) {
@@ -135,9 +146,7 @@ export default function CodeforcesPractice() {
     <div className={cfStyles.section}>
       {user && (
         <div className={cfStyles.accounts}>
-          <span className={cfStyles.accountChip}>
-            Codeforces: {linkedCf ?? 'not linked'}
-          </span>
+          <span className={cfStyles.accountChip}>Codeforces: {linkedCf ?? 'not linked'}</span>
           <Link href="/competitions" className={cfStyles.linkBtn}>
             Manage on Competitions
           </Link>
@@ -164,7 +173,9 @@ export default function CodeforcesPractice() {
             {linking ? 'Linking…' : 'Link'}
           </button>
           {linkError && (
-            <span style={{ fontSize: 12, color: 'var(--status-error-text, #dc2626)' }}>{linkError}</span>
+            <span style={{ fontSize: 12, color: 'var(--status-error-text, #dc2626)' }}>
+              {linkError}
+            </span>
           )}
         </div>
       )}
@@ -215,6 +226,38 @@ export default function CodeforcesPractice() {
           placeholder="Tag filter"
           value={tag}
           onChange={(e) => setTag(e.target.value)}
+        />
+        <input
+          className={cfStyles.searchInput}
+          style={{ maxWidth: 100 }}
+          placeholder="Min rating"
+          inputMode="numeric"
+          value={ratingMin}
+          onChange={(e) => setRatingMin(e.target.value)}
+        />
+        <input
+          className={cfStyles.searchInput}
+          style={{ maxWidth: 100 }}
+          placeholder="Max rating"
+          inputMode="numeric"
+          value={ratingMax}
+          onChange={(e) => setRatingMax(e.target.value)}
+        />
+        <input
+          className={cfStyles.searchInput}
+          style={{ maxWidth: 110 }}
+          placeholder="Min contest id"
+          inputMode="numeric"
+          value={contestIdMin}
+          onChange={(e) => setContestIdMin(e.target.value)}
+        />
+        <input
+          className={cfStyles.searchInput}
+          style={{ maxWidth: 110 }}
+          placeholder="Max contest id"
+          inputMode="numeric"
+          value={contestIdMax}
+          onChange={(e) => setContestIdMax(e.target.value)}
         />
         <div className={cfStyles.filterPicker} role="tablist" aria-label="Solved filter">
           {(['all', 'solved', 'unsolved'] as const).map((s) => (

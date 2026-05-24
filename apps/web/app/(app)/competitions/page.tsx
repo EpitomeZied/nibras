@@ -48,6 +48,15 @@ const PLATFORM_LABELS: Record<string, string> = {
   atcoder: 'AtCoder',
   codechef: 'CodeChef',
   vjudge: 'VJudge',
+  ctftime: 'CTFtime',
+  kaggle: 'Kaggle',
+  hackthebox: 'Hack The Box',
+  tryhackme: 'TryHackMe',
+  picoctf: 'picoCTF',
+  project_euler: 'Project Euler',
+  hackerone: 'HackerOne',
+  bugcrowd: 'Bugcrowd',
+  defcon: 'DEF CON CTF',
 };
 
 type LinkStep = 'select' | 'cf-verify' | 'simple-verify' | 'success' | 'failed';
@@ -472,6 +481,15 @@ export default function CompetitionsPage() {
                     <option value="atcoder">AtCoder</option>
                     <option value="codechef">CodeChef</option>
                     <option value="vjudge">VJudge</option>
+                    <option value="ctftime">CTFtime</option>
+                    <option value="kaggle">Kaggle</option>
+                    <option value="hackthebox">Hack The Box</option>
+                    <option value="tryhackme">TryHackMe</option>
+                    <option value="picoctf">picoCTF</option>
+                    <option value="project_euler">Project Euler</option>
+                    <option value="hackerone">HackerOne</option>
+                    <option value="bugcrowd">Bugcrowd</option>
+                    <option value="defcon">DEF CON CTF</option>
                   </select>
                 </div>
 

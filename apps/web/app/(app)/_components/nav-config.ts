@@ -247,6 +247,10 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     title: 'Contest History',
     subtitle: 'Your past contest performance and rating trend.',
   },
+  '/competitions/platforms': {
+    title: 'Platform Integrations',
+    subtitle: 'Connect contests, CTF events, Kaggle, bug bounty, and more.',
+  },
   '/instructor/analytics': {
     title: 'Analytics',
     subtitle: 'Aggregate cross-course signal and risk callouts.',

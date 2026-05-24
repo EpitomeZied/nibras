@@ -10,7 +10,7 @@ import { useSession } from '../_components/session-context';
 import { getLevelLabel, MAX_LEVEL } from '../../lib/levels';
 import styles from './page.module.css';
 
-type Tab = 'profile' | 'github' | 'preferences' | 'danger' | 'admin';
+type Tab = 'profile' | 'github' | 'notifications' | 'preferences' | 'danger' | 'admin';
 
 type StudentRow = {
   userId: string;
@@ -154,6 +154,25 @@ function IconGoogle() {
   );
 }
 
+function IconBell() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
 /* ── Nav item list ───────────────────────────────────────────────────────── */
 
 type NavItem = { id: Tab; label: string; icon: React.ReactNode; danger?: boolean };
@@ -161,6 +180,7 @@ type NavItem = { id: Tab; label: string; icon: React.ReactNode; danger?: boolean
 const BASE_NAV_ITEMS: NavItem[] = [
   { id: 'profile', label: 'Profile', icon: <IconUser /> },
   { id: 'github', label: 'GitHub App', icon: <IconGitHub /> },
+  { id: 'notifications', label: 'Notifications', icon: <IconBell /> },
   { id: 'preferences', label: 'Preferences', icon: <IconSliders /> },
   { id: 'danger', label: 'Danger Zone', icon: <IconShield />, danger: true },
 ];
@@ -290,6 +310,315 @@ function AdminYearTab() {
             })}
           </tbody>
         </table>
+      )}
+    </section>
+  );
+}
+
+/* ── Notification Preferences Tab ───────────────────────────────────────── */
+
+type NotifType = 'assignment_deadline' | 'grade_posted' | 'course_announcement' | 'email_digest';
+type DigestFrequency = 'daily' | 'weekly' | 'off';
+
+const EMAIL_NOTIF_ITEMS: Array<{ type: NotifType; label: string; desc: string }> = [
+  {
+    type: 'assignment_deadline',
+    label: 'Deadline reminders',
+    desc: 'Get emailed before assignments are due.',
+  },
+  {
+    type: 'grade_posted',
+    label: 'Grade updates',
+    desc: 'Receive an email when new grades are posted.',
+  },
+  {
+    type: 'course_announcement',
+    label: 'Course announcements',
+    desc: 'Stay updated with instructor announcements.',
+  },
+  {
+    type: 'email_digest',
+    label: 'Activity digest',
+    desc: 'A periodic summary of your Nibras activity.',
+  },
+];
+
+function NotificationsTab() {
+  const [prefs, setPrefs] = useState<Record<NotifType, boolean>>({
+    assignment_deadline: true,
+    grade_posted: true,
+    course_announcement: true,
+    email_digest: false,
+  });
+  const [digest, setDigest] = useState<DigestFrequency>('weekly');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    void loadPrefs();
+  }, []);
+
+  async function loadPrefs() {
+    setLoading(true);
+    try {
+      const res = await apiFetch('/v1/notifications/preferences', { auth: true });
+      if (res.ok) {
+        const data = (await res.json()) as {
+          preferences: Array<{ type: string; enabled: boolean }>;
+        };
+        const map: Partial<Record<NotifType, boolean>> = {};
+        for (const p of data.preferences) {
+          if (p.type in prefs || p.type === 'email_digest') {
+            map[p.type as NotifType] = p.enabled;
+          }
+          // Extract digest frequency from a dedicated pref type if stored
+          if (p.type === 'digest_frequency_daily') setDigest('daily');
+          if (p.type === 'digest_frequency_weekly') setDigest('weekly');
+        }
+        setPrefs((prev) => ({ ...prev, ...map }));
+      }
+    } catch {
+      // Use defaults on error — not critical
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function togglePref(type: NotifType, value: boolean) {
+    setSaving((s) => ({ ...s, [type]: true }));
+    setSaved((s) => ({ ...s, [type]: false }));
+    setError('');
+    // Optimistic update
+    setPrefs((prev) => ({ ...prev, [type]: value }));
+    try {
+      const res = await apiFetch(`/v1/notifications/preferences/${type}`, {
+        method: 'PATCH',
+        auth: true,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ enabled: value }),
+      });
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+      setSaved((s) => ({ ...s, [type]: true }));
+      setTimeout(() => setSaved((s) => ({ ...s, [type]: false })), 2000);
+    } catch (err) {
+      // Revert on failure
+      setPrefs((prev) => ({ ...prev, [type]: !value }));
+      setError(err instanceof Error ? err.message : 'Failed to save preference.');
+    } finally {
+      setSaving((s) => ({ ...s, [type]: false }));
+    }
+  }
+
+  async function saveDigestFrequency(freq: DigestFrequency) {
+    setDigest(freq);
+    setSaving((s) => ({ ...s, digest: true }));
+    setSaved((s) => ({ ...s, digest: false }));
+    setError('');
+    try {
+      // Store digest frequency as separate preference flags for easy retrieval
+      await Promise.all([
+        apiFetch('/v1/notifications/preferences/digest_frequency_daily', {
+          method: 'PATCH',
+          auth: true,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ enabled: freq === 'daily' }),
+        }),
+        apiFetch('/v1/notifications/preferences/digest_frequency_weekly', {
+          method: 'PATCH',
+          auth: true,
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ enabled: freq === 'weekly' }),
+        }),
+      ]);
+      setSaved((s) => ({ ...s, digest: true }));
+      setTimeout(() => setSaved((s) => ({ ...s, digest: false })), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save digest frequency.');
+    } finally {
+      setSaving((s) => ({ ...s, digest: false }));
+    }
+  }
+
+  const rowStyle: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '14px 0',
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
+  };
+
+  return (
+    <section
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0,
+      }}
+    >
+      <h2
+        style={{
+          fontSize: 15,
+          fontWeight: 700,
+          color: 'var(--text)',
+          marginBottom: 4,
+        }}
+      >
+        Email Notifications
+      </h2>
+      <p
+        style={{
+          fontSize: 13,
+          color: 'var(--text-soft)',
+          marginBottom: 24,
+          lineHeight: 1.5,
+        }}
+      >
+        Choose which events send you an email. Your address is{' '}
+        <strong style={{ color: 'var(--text-muted)' }}>the one linked to your account</strong>.
+      </p>
+
+      {loading ? (
+        <p style={{ fontSize: 13, color: 'var(--text-soft)' }}>Loading preferences…</p>
+      ) : (
+        <>
+          {EMAIL_NOTIF_ITEMS.map((item) => (
+            <div key={item.type} style={rowStyle}>
+              <div>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+                  {item.label}
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>{item.desc}</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                {saved[item.type] && (
+                  <span style={{ fontSize: 11, color: '#4ade80' }}>✓ Saved</span>
+                )}
+                <button
+                  role="switch"
+                  aria-checked={prefs[item.type]}
+                  aria-label={item.label}
+                  onClick={() => void togglePref(item.type, !prefs[item.type])}
+                  disabled={saving[item.type]}
+                  style={{
+                    position: 'relative',
+                    width: 44,
+                    height: 24,
+                    borderRadius: 12,
+                    border: 'none',
+                    cursor: saving[item.type] ? 'default' : 'pointer',
+                    background: prefs[item.type]
+                      ? 'rgba(99,102,241,0.9)'
+                      : 'rgba(255,255,255,0.1)',
+                    transition: 'background 0.2s',
+                    outline: 'none',
+                    flexShrink: 0,
+                    opacity: saving[item.type] ? 0.6 : 1,
+                  }}
+                >
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      left: prefs[item.type] ? 22 : 2,
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: '#ffffff',
+                      transition: 'left 0.2s',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                    }}
+                  />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {/* Digest frequency */}
+          <div
+            style={{
+              marginTop: 28,
+              paddingTop: 24,
+              borderTop: '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 12,
+              }}
+            >
+              <div>
+                <div
+                  style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}
+                >
+                  Digest frequency
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>
+                  How often to receive a summary email of your activity.
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {saved.digest && (
+                  <span style={{ fontSize: 11, color: '#4ade80' }}>✓ Saved</span>
+                )}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 4,
+                    background: 'rgba(255,255,255,0.05)',
+                    borderRadius: 8,
+                    padding: 3,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  {(['daily', 'weekly', 'off'] as DigestFrequency[]).map((freq) => (
+                    <button
+                      key={freq}
+                      onClick={() => void saveDigestFrequency(freq)}
+                      disabled={saving.digest}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: 6,
+                        border: 'none',
+                        cursor: saving.digest ? 'default' : 'pointer',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        background:
+                          digest === freq ? 'rgba(99,102,241,0.85)' : 'transparent',
+                        color: digest === freq ? '#fff' : 'rgba(161,161,170,0.7)',
+                        transition: 'background 0.15s, color 0.15s',
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      {freq}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <p
+              style={{
+                marginTop: 16,
+                fontSize: 12.5,
+                color: '#f87171',
+                background: 'rgba(239,68,68,0.07)',
+                border: '1px solid rgba(239,68,68,0.2)',
+                borderRadius: 8,
+                padding: '8px 12px',
+              }}
+            >
+              {error}
+            </p>
+          )}
+        </>
       )}
     </section>
   );
@@ -659,6 +988,20 @@ export default function SettingsPage() {
                   </p>
                 </div>
               )}
+            </section>
+          )}
+
+          {/* ── Notifications tab ── */}
+          {activeTab === 'notifications' && (
+            <section
+              style={{
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: 12,
+                padding: '24px 28px',
+              }}
+            >
+              <NotificationsTab />
             </section>
           )}
 

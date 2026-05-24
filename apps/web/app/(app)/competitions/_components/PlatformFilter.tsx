@@ -2,7 +2,25 @@
 
 import styles from './PlatformFilter.module.css';
 
-const PLATFORMS = ['all', 'codeforces', 'leetcode', 'atcoder', 'codechef', 'vjudge'] as const;
+const PLATFORMS = [
+  'all',
+  'codeforces',
+  'leetcode',
+  'atcoder',
+  'codechef',
+  'vjudge',
+  'ctftime',
+] as const;
+
+const LABELS: Record<string, string> = {
+  all: 'All',
+  codeforces: 'Codeforces',
+  leetcode: 'LeetCode',
+  atcoder: 'AtCoder',
+  codechef: 'CodeChef',
+  vjudge: 'VJudge',
+  ctftime: 'CTFtime',
+};
 
 type Props = {
   selected: string;
@@ -21,7 +39,7 @@ export default function PlatformFilter({ selected, onChange }: Props) {
           className={`${styles.chip} ${selected === p ? styles.chipActive : ''}`}
           onClick={() => onChange(p)}
         >
-          {p === 'all' ? 'All' : p[0].toUpperCase() + p.slice(1)}
+          {p === 'all' ? 'All' : (LABELS[p] ?? p)}
         </button>
       ))}
     </div>

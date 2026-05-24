@@ -4,7 +4,7 @@ import { processCfSubmissions } from './cf-analytics';
 import type { CfAnalyticsPayload } from './types';
 
 function matchesQuery(
-  p: { name: string; tags: string[]; rating?: number },
+  p: { name: string; tags: string[]; rating?: number; contestId?: number },
   query: PracticeCfProblemsQuery
 ): boolean {
   if (query.q?.trim()) {
@@ -17,6 +17,14 @@ function matchesQuery(
   }
   if (query.ratingMin !== undefined && (p.rating ?? 0) < query.ratingMin) return false;
   if (query.ratingMax !== undefined && (p.rating ?? 0) > query.ratingMax) return false;
+  if (query.contestIdMin !== undefined) {
+    const cid = p.contestId ?? 0;
+    if (cid < query.contestIdMin) return false;
+  }
+  if (query.contestIdMax !== undefined) {
+    const cid = p.contestId ?? 0;
+    if (cid > query.contestIdMax) return false;
+  }
   return true;
 }
 
@@ -52,7 +60,7 @@ export async function fetchPracticeCfProblems(
 
     if (query.solved === 'true' && !solved) continue;
     if (query.solved === 'false' && solved) continue;
-    if (!matchesQuery(p, query)) continue;
+    if (!matchesQuery({ ...p, contestId: p.contestId }, query)) continue;
 
     rows.push({
       problemId: key,

@@ -51,12 +51,7 @@ export default function CompanyIcons({ companies }: CompanyIconsProps) {
       <span className={styles.askedByLabel}>Asked by</span>
       <div className={styles.companyIcons}>
         {visible.map((c) => (
-          <span
-            key={c.id}
-            className={styles.companyIconWrap}
-            data-company={c.id}
-            title={c.name}
-          >
+          <span key={c.id} className={styles.companyIconWrap} data-company={c.id} title={c.name}>
             <CompanyLogo company={c} />
           </span>
         ))}

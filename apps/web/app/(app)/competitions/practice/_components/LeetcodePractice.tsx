@@ -54,7 +54,11 @@ export default function LeetcodePractice() {
     setError(null);
     try {
       const solved =
-        solvedFilter === 'all' ? undefined : solvedFilter === 'solved' ? ('true' as const) : ('false' as const);
+        solvedFilter === 'all'
+          ? undefined
+          : solvedFilter === 'solved'
+            ? ('true' as const)
+            : ('false' as const);
       const data = await getPracticeLcProblems({
         page,
         limit: PAGE_SIZE,
@@ -135,9 +139,7 @@ export default function LeetcodePractice() {
     <div className={cfStyles.section}>
       {user && (
         <div className={cfStyles.accounts}>
-          <span className={cfStyles.accountChip}>
-            LeetCode: {activeHandle ?? 'not linked'}
-          </span>
+          <span className={cfStyles.accountChip}>LeetCode: {activeHandle ?? 'not linked'}</span>
           <Link href="/competitions" className={cfStyles.linkBtn}>
             Manage on Competitions
           </Link>
@@ -164,7 +166,9 @@ export default function LeetcodePractice() {
             {linking ? 'Linking…' : 'Link'}
           </button>
           {linkError && (
-            <span style={{ fontSize: 12, color: 'var(--status-error-text, #dc2626)' }}>{linkError}</span>
+            <span style={{ fontSize: 12, color: 'var(--status-error-text, #dc2626)' }}>
+              {linkError}
+            </span>
           )}
         </div>
       )}
@@ -176,8 +180,9 @@ export default function LeetcodePractice() {
       )}
 
       <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>
-        Solved rows use your linked account, database sync, and LeetCode&apos;s public recent-submission
-        data. Full per-problem history is not exposed by LeetCode&apos;s public API.
+        Solved rows use your linked account, database sync, and LeetCode&apos;s public
+        recent-submission data. Full per-problem history is not exposed by LeetCode&apos;s public
+        API.
       </p>
 
       <section className={cfStyles.analyticsSection} aria-label="LeetCode analytics">

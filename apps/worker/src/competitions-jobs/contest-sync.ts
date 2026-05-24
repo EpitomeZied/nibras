@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 
-const PLATFORMS = ['codeforces', 'leetcode', 'atcoder', 'codechef', 'vjudge'] as const;
+const PLATFORMS = ['codeforces', 'leetcode', 'atcoder', 'codechef', 'vjudge', 'ctftime'] as const;
 
 type FetcherModule = {
   fetchers: Record<

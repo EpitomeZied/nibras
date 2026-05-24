@@ -369,6 +369,22 @@
   font-size: 12px;
 }
 
+.forkRow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.cloneHint {
+  font-size: 11px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--text) 6%, transparent);
+  border: 1px solid var(--border);
+  word-break: break-all;
+}
+
 .linkBtn {
   border: 1px solid var(--border);
   background: var(--surface);

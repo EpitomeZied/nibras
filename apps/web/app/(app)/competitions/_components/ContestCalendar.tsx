@@ -4,6 +4,7 @@ import { Fragment, useMemo } from 'react';
 import styles from './ContestCalendar.module.css';
 import type { CalendarView } from './CalendarViewToggle';
 import type { Contest } from '../../../lib/services/competitions';
+import { googleCalendarUrl } from '../../../lib/google-calendar';
 
 type Props = {
   view: CalendarView;
@@ -43,6 +44,8 @@ function chipClass(host: string): string {
       return styles.chipCc;
     case 'vjudge':
       return styles.chipVj;
+    case 'ctftime':
+      return styles.chipCtf;
     default:
       return styles.chipDefault;
   }
@@ -133,16 +136,33 @@ function MonthView({
                 {cell.date.getDate()}
               </span>
               {dayContests.slice(0, 3).map((c) => (
-                <a
-                  key={c.id}
-                  href={c.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`${styles.contestChip} ${chipClass(c.host)}`}
-                  title={`${c.name} — ${formatTime(c.startsAt)}`}
-                >
-                  {c.name}
-                </a>
+                <div key={c.id} className={styles.chipRow}>
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`${styles.contestChip} ${chipClass(c.host)}`}
+                    title={`${c.name} — ${formatTime(c.startsAt)}`}
+                  >
+                    {c.name}
+                  </a>
+                  <a
+                    href={googleCalendarUrl({
+                      name: c.name,
+                      startsAt: c.startsAt,
+                      endsAt: c.endsAt,
+                      url: c.url,
+                      host: c.host,
+                    })}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={styles.calLink}
+                    title="Add to Google Calendar"
+                    aria-label={`Add ${c.name} to Google Calendar`}
+                  >
+                    +
+                  </a>
+                </div>
               ))}
               {dayContests.length > 3 && (
                 <span className={styles.moreLink}>+{dayContests.length - 3} more</span>

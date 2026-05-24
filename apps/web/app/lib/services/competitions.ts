@@ -297,6 +297,8 @@ export type PracticeCfProblemsParams = {
   tag?: string;
   ratingMin?: number;
   ratingMax?: number;
+  contestIdMin?: number;
+  contestIdMax?: number;
   solved?: 'true' | 'false';
 };
 
@@ -311,6 +313,8 @@ export async function getPracticeCfProblems(
   if (params?.tag) query.tag = params.tag;
   if (params?.ratingMin !== undefined) query.ratingMin = String(params.ratingMin);
   if (params?.ratingMax !== undefined) query.ratingMax = String(params.ratingMax);
+  if (params?.contestIdMin !== undefined) query.contestIdMin = String(params.contestIdMin);
+  if (params?.contestIdMax !== undefined) query.contestIdMax = String(params.contestIdMax);
   if (params?.solved) query.solved = params.solved;
 
   return serviceFetch<PracticeCfProblemsResponse>(
@@ -457,4 +461,55 @@ export async function setNibras75ProblemSolved(
     `/v1/practice/nibras-75/problems/${encodeURIComponent(slug)}/solved`,
     { method: 'POST', auth: true, body: { solved } }
   );
+}
+
+export type Nibras75Workspace = {
+  id: string;
+  owner: string;
+  repoName: string;
+  fullName: string;
+  htmlUrl: string;
+  cloneUrl: string | null;
+};
+
+export async function getNibras75Workspace(): Promise<{ workspace: Nibras75Workspace | null }> {
+  return serviceFetch<{ workspace: Nibras75Workspace | null }>(
+    'competitions',
+    '/v1/practice/nibras-75/workspace',
+    { auth: true }
+  );
+}
+
+export async function forkNibras75Workspace(): Promise<{ workspace: Nibras75Workspace }> {
+  return serviceFetch<{ workspace: Nibras75Workspace }>(
+    'competitions',
+    '/v1/practice/nibras-75/workspace/fork',
+    { method: 'POST', auth: true, body: {} }
+  );
+}
+
+export type PlatformIntegrationCategory =
+  | 'competitive_programming'
+  | 'ai_ml'
+  | 'bug_bounty'
+  | 'open_source'
+  | 'math_olympiad'
+  | 'ctf';
+
+export type PlatformIntegration = {
+  id: string;
+  name: string;
+  category: PlatformIntegrationCategory;
+  status: 'live' | 'beta' | 'coming_soon';
+  description: string;
+  externalUrl: string;
+  linkHost?: string;
+  href?: string;
+};
+
+export async function getPlatformIntegrations(): Promise<{
+  categories: Record<PlatformIntegrationCategory, { label: string; description: string }>;
+  integrations: PlatformIntegration[];
+}> {
+  return serviceFetch('competitions', '/v1/competitions/integrations', { auth: false });
 }

@@ -450,6 +450,32 @@ export async function generateRepositoryFromTemplate(
   };
 }
 
+export async function forkRepository(
+  config: GitHubAppConfig,
+  userToken: string,
+  owner: string,
+  repo: string,
+  repoName?: string
+): Promise<{ cloneUrl: string | null; htmlUrl: string | null; fullName: string }> {
+  const body: Record<string, unknown> = { default_branch_only: false };
+  if (repoName?.trim()) body.name = repoName.trim();
+
+  const payload = await githubRequest<Record<string, unknown>>(
+    `https://api.github.com/repos/${owner}/${repo}/forks`,
+    {
+      method: 'POST',
+      body: JSON.stringify(body),
+    },
+    userToken,
+    config.apiVersion
+  );
+  return {
+    cloneUrl: payload.clone_url ? String(payload.clone_url) : null,
+    htmlUrl: payload.html_url ? String(payload.html_url) : null,
+    fullName: payload.full_name ? String(payload.full_name) : `${owner}/${repoName ?? repo}`,
+  };
+}
+
 export async function createPrivateRepository(
   config: GitHubAppConfig,
   userToken: string,

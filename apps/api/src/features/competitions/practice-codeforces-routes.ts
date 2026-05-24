@@ -40,6 +40,8 @@ export function registerPracticeCodeforcesRoutes(
         tag?: string;
         ratingMin?: string;
         ratingMax?: string;
+        contestIdMin?: string;
+        contestIdMax?: string;
         solved?: string;
       };
 
@@ -49,6 +51,8 @@ export function registerPracticeCodeforcesRoutes(
         const limit = q.limit ? parseInt(q.limit, 10) : 100;
         const ratingMin = q.ratingMin ? parseInt(q.ratingMin, 10) : undefined;
         const ratingMax = q.ratingMax ? parseInt(q.ratingMax, 10) : undefined;
+        const contestIdMin = q.contestIdMin ? parseInt(q.contestIdMin, 10) : undefined;
+        const contestIdMax = q.contestIdMax ? parseInt(q.contestIdMax, 10) : undefined;
         const solved =
           q.solved === 'true' || q.solved === 'false' ? (q.solved as 'true' | 'false') : undefined;
 
@@ -59,6 +63,8 @@ export function registerPracticeCodeforcesRoutes(
           tag: q.tag,
           ratingMin: Number.isFinite(ratingMin) ? ratingMin : undefined,
           ratingMax: Number.isFinite(ratingMax) ? ratingMax : undefined,
+          contestIdMin: Number.isFinite(contestIdMin) ? contestIdMin : undefined,
+          contestIdMax: Number.isFinite(contestIdMax) ? contestIdMax : undefined,
           solved,
         });
 

@@ -7,11 +7,17 @@ import { fetchers } from './fetchers/index';
 import { pickVerificationProblem } from './fetchers/codeforces';
 import { registerPracticeCodeforcesRoutes } from './practice-codeforces-routes';
 import { registerNibras75Routes } from './nibras75-routes';
+import {
+  PLATFORM_CATEGORIES,
+  PLATFORM_INTEGRATIONS,
+} from './platform-integrations';
+import type { GitHubAppConfig } from '@nibras/github';
 
 export function registerCompetitionsRoutes(
   app: FastifyInstance,
   store: AppStore,
-  prisma: PrismaClient
+  prisma: PrismaClient,
+  githubConfig: GitHubAppConfig | null = null
 ): void {
   // ── Contests ────────────────────────────────────────────────────────────
 
@@ -605,5 +611,14 @@ export function registerCompetitionsRoutes(
   );
 
   registerPracticeCodeforcesRoutes(app, store, prisma);
-  registerNibras75Routes(app, store, prisma);
+  registerNibras75Routes(app, store, prisma, githubConfig);
+
+  app.get(
+    '/v1/competitions/integrations',
+    { schema: { tags: ['competitions'], summary: 'Platform integration catalog' } },
+    async () => ({
+      categories: PLATFORM_CATEGORIES,
+      integrations: PLATFORM_INTEGRATIONS,
+    })
+  );
 }

@@ -5,10 +5,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
 import {
+  forkNibras75Workspace,
   getNibras75Problems,
+  getNibras75Workspace,
   linkAccount,
   setNibras75ProblemSolved,
   type Nibras75Problem,
+  type Nibras75Workspace,
 } from '../../../lib/services/competitions';
 import CompanyIcons from './_components/CompanyIcons';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
@@ -37,6 +40,9 @@ export default function Nibras75Page() {
   const [linking, setLinking] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
+  const [workspace, setWorkspace] = useState<Nibras75Workspace | null>(null);
+  const [forking, setForking] = useState(false);
+  const [forkError, setForkError] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q.trim()), 300);
@@ -48,7 +54,11 @@ export default function Nibras75Page() {
     setError(null);
     try {
       const solved =
-        solvedFilter === 'all' ? undefined : solvedFilter === 'solved' ? ('true' as const) : ('false' as const);
+        solvedFilter === 'all'
+          ? undefined
+          : solvedFilter === 'solved'
+            ? ('true' as const)
+            : ('false' as const);
       const data = await getNibras75Problems({
         q: debouncedQ || undefined,
         difficulty: difficulty === 'all' ? undefined : difficulty,
@@ -70,6 +80,29 @@ export default function Nibras75Page() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!user) {
+      setWorkspace(null);
+      return;
+    }
+    void getNibras75Workspace()
+      .then((data) => setWorkspace(data.workspace))
+      .catch(() => setWorkspace(null));
+  }, [user]);
+
+  async function handleFork() {
+    setForking(true);
+    setForkError(null);
+    try {
+      const data = await forkNibras75Workspace();
+      setWorkspace(data.workspace);
+    } catch (err) {
+      setForkError(friendlyMessage(err));
+    } finally {
+      setForking(false);
+    }
+  }
 
   const progressPct = useMemo(() => {
     if (curriculumTotal <= 0) return 0;
@@ -128,7 +161,14 @@ export default function Nibras75Page() {
           <span className={styles.metaPill}>FAANG-style DSA</span>
         </div>
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6 }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              fontSize: 12,
+              marginBottom: 6,
+            }}
+          >
             <span style={{ color: 'var(--text-muted)' }}>Questions completed</span>
             <strong>
               {completedInSet} / {curriculumTotal}
@@ -138,6 +178,42 @@ export default function Nibras75Page() {
             <div className={styles.progressFill} style={{ width: `${progressPct}%` }} />
           </div>
         </div>
+        {user && (
+          <div className={styles.forkRow}>
+            {workspace ? (
+              <>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  Solutions repo:{' '}
+                  <a href={workspace.htmlUrl} target="_blank" rel="noopener noreferrer">
+                    {workspace.fullName}
+                  </a>
+                </span>
+                {workspace.cloneUrl ? (
+                  <code className={styles.cloneHint}>git clone {workspace.cloneUrl}</code>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={styles.linkBtn}
+                  disabled={forking}
+                  onClick={() => void handleFork()}
+                >
+                  {forking ? 'Forking…' : 'Fork on GitHub'}
+                </button>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                  Create your own repo to commit solutions for all 75 problems.
+                </span>
+                {forkError ? (
+                  <span style={{ color: 'var(--status-error-text, #dc2626)', fontSize: 12 }}>
+                    {forkError}
+                  </span>
+                ) : null}
+              </>
+            )}
+          </div>
+        )}
       </section>
 
       {user && !activeHandle && (
@@ -159,7 +235,9 @@ export default function Nibras75Page() {
           >
             {linking ? 'Linking…' : 'Link'}
           </button>
-          {linkError && <span style={{ color: 'var(--status-error-text, #dc2626)' }}>{linkError}</span>}
+          {linkError && (
+            <span style={{ color: 'var(--status-error-text, #dc2626)' }}>{linkError}</span>
+          )}
         </div>
       )}
 
@@ -217,7 +295,14 @@ export default function Nibras75Page() {
       </div>
 
       {loading ? (
-        <div style={{ height: 320, borderRadius: 12, background: 'var(--surface)', border: '1px solid var(--border)' }} />
+        <div
+          style={{
+            height: 320,
+            borderRadius: 12,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
       ) : error ? (
         <EmptyState
           title="Could not load Nibras 75"

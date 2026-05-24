@@ -51,5 +51,7 @@ export type PracticeCfProblemsQuery = {
   tag?: string;
   ratingMin?: number;
   ratingMax?: number;
+  contestIdMin?: number;
+  contestIdMax?: number;
   solved?: 'true' | 'false';
 };
