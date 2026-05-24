@@ -1283,9 +1283,7 @@ export default function OnboardingPage() {
               linux={NPM_INSTALL_COMMAND}
               windows={NPM_INSTALL_COMMAND}
             />
-            <p className={styles.hint}>
-              This installs the pinned @nibras/cli release from npm.
-            </p>
+            <p className={styles.hint}>This installs the pinned @nibras/cli release from npm.</p>
             <p className={styles.hint}>
               Verify: <code className={styles.inlineCode}>nibras --version</code> should start with{' '}
               <code className={styles.inlineCode}>{PINNED_RELEASE_TAG}</code>, for example{' '}
