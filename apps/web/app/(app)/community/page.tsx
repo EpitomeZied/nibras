@@ -437,7 +437,11 @@ export default function CommunityPage() {
       ) : displayedQuestions.length === 0 ? (
         <EmptyState
           title={saved ? 'No saved questions' : 'No questions match'}
-          description={saved ? 'Bookmark questions to see them here.' : 'Try a different tag or clear your search.'}
+          description={
+            saved
+              ? 'Bookmark questions to see them here.'
+              : 'Try a different tag or clear your search.'
+          }
         />
       ) : (
         <div className={styles.list}>

@@ -208,11 +208,7 @@ export default function TagsAdminPage() {
                   <span className={styles.tagDesc}>{tag.description || '—'}</span>
                   <span className={styles.usage}>{tag.usageCount}</span>
                   <div className={styles.actions}>
-                    <button
-                      type="button"
-                      className={styles.editBtn}
-                      onClick={() => startEdit(tag)}
-                    >
+                    <button type="button" className={styles.editBtn} onClick={() => startEdit(tag)}>
                       Edit
                     </button>
                     <button

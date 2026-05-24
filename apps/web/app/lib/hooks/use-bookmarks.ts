@@ -33,10 +33,7 @@ export function useBookmarks() {
     });
   }, []);
 
-  const isBookmarked = useCallback(
-    (id: string) => bookmarks.includes(id),
-    [bookmarks]
-  );
+  const isBookmarked = useCallback((id: string) => bookmarks.includes(id), [bookmarks]);
 
   return { bookmarks, toggle, isBookmarked };
 }

@@ -450,7 +450,7 @@ export function registerCommunityRoutes(
       const tag = await prisma.communityTag.create({
         data: {
           name: body.name.trim(),
-          description: body.description?.trim() ?? null,
+          description: body.description?.trim() || undefined,
         },
       });
       reply.code(201);

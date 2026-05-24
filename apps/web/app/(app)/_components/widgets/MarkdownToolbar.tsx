@@ -31,7 +31,13 @@ const ACTIONS: Action[] = [
     icon: (
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
         <rect x="1" y="2" width="12" height="10" rx="2" stroke="currentColor" strokeWidth="1.2" />
-        <path d="M4 6l2 1.5L4 9" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M4 6l2 1.5L4 9"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
         <path d="M8 9h2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
       </svg>
     ),
@@ -42,8 +48,18 @@ const ACTIONS: Action[] = [
     icon: (
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
         <path d="M6 8l2-2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-        <path d="M8.5 5.5l1-1a2 2 0 012.83 2.83l-1 1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-        <path d="M5.5 8.5l-1 1a2 2 0 01-2.83-2.83l1-1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        <path
+          d="M8.5 5.5l1-1a2 2 0 012.83 2.83l-1 1"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+        />
+        <path
+          d="M5.5 8.5l-1 1a2 2 0 01-2.83-2.83l1-1"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+        />
       </svg>
     ),
     wrap: ['[', '](url)'],
