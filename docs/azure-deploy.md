@@ -298,6 +298,80 @@ VM fallback: `./scripts/provision-azure-judge0.sh` (needs VM core quota).
 
 Full details: [docs/azure-judge0.md](./azure-judge0.md)
 
+### 11. Custom domain (e.g. `nibrasplatform.me`)
+
+Azure Container Apps always keeps its default FQDN
+(`nibras-web.<env>.francecentral.azurecontainerapps.io`). That URL keeps working
+even after you add a custom domain — which is why you may still see it in the
+browser if you bookmarked it, opened a deploy log link, or env vars still point
+at the Azure hostname.
+
+To serve the app at `https://nibrasplatform.me` everywhere:
+
+**1. Bind the domain on the web Container App**
+
+```bash
+RG=nibras-rg
+
+# Add hostname (Azure prints DNS validation records)
+az containerapp hostname add \
+  --name nibras-web \
+  --resource-group $RG \
+  --hostname nibrasplatform.me
+
+# Managed certificate (after DNS validates)
+az containerapp hostname bind \
+  --name nibras-web \
+  --resource-group $RG \
+  --hostname nibrasplatform.me \
+  --environment <your-container-apps-environment-name> \
+  --validation-method CNAME
+```
+
+At your DNS provider, point `nibrasplatform.me` (and optionally `www`) to the
+target Azure gives you — usually a CNAME to the Container Apps environment
+domain.
+
+Repeat for `nibras-api` if you want `api.nibrasplatform.me` (recommended for
+OAuth callbacks).
+
+**2. Update GitHub Actions variables** (repo → Settings → Variables):
+
+| Name | Value |
+| ---- | ----- |
+| `NIBRAS_WEB_BASE_URL` | `https://nibrasplatform.me` |
+| `NIBRAS_API_BASE_URL` | `https://api.nibrasplatform.me` *(or keep Azure API FQDN)* |
+| `NIBRAS_API_INTERNAL_URL` | same as `NIBRAS_API_BASE_URL` |
+
+Push to `main` so the web image rebuilds with
+`NEXT_PUBLIC_NIBRAS_WEB_BASE_URL=https://nibrasplatform.me` baked in.
+
+**3. Update live Container App env vars**
+
+```bash
+az containerapp update \
+  --name nibras-api --resource-group $RG \
+  --set-env-vars \
+    NIBRAS_WEB_BASE_URL=https://nibrasplatform.me \
+    NIBRAS_WEB_CORS_ORIGINS=https://nibrasplatform.me
+
+az containerapp update \
+  --name nibras-worker --resource-group $RG \
+  --set-env-vars NIBRAS_WEB_BASE_URL=https://nibrasplatform.me
+```
+
+**4. Update the GitHub App** (Settings → Developer settings → GitHub Apps):
+
+| Field | URL |
+| ----- | --- |
+| Homepage URL | `https://nibrasplatform.me` |
+| Callback URL | `https://<api-host>/v1/github/oauth/callback` |
+| Setup URL | `https://nibrasplatform.me/install/complete` |
+| Webhook URL | `https://<api-host>/v1/github/webhooks` |
+
+After this, sign-in and email links use the custom domain. Always open
+`https://nibrasplatform.me/dashboard` — the Azure FQDN is only a fallback.
+
 ## Cost expectation
 
 Container Apps consumption pricing for the smallest replica size (0.25 vCPU,

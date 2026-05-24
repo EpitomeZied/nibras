@@ -24,7 +24,7 @@ export const statsBar = [
   { number: '24/7', label: 'Course operations visibility' },
 ] as const;
 
-export const mockupUrl = 'nibras.app/dashboard';
+export const mockupUrl = 'nibrasplatform.me/dashboard';
 
 export const mockupSidebar = [
   { label: 'Dashboard', active: true },
