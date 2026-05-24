@@ -20,7 +20,9 @@ import {
 import { runSandboxed } from './sandbox';
 import { VERIFICATION_QUEUE_NAME, parseRedisUrl, type VerificationJobPayload } from './queue';
 import { COMPETITIONS_QUEUE_NAME, type CompetitionsJobPayload } from './competitions-queue';
+import { NOTIFICATION_EMAIL_PREF } from '@nibras/contracts';
 import { sendSubmissionStatusEmail, sendReviewReadyEmail } from './email';
+import { isEmailPreferenceEnabled } from './notification-prefs';
 import {
   MAX_CLAIM_AGE_MS,
   DEFAULT_POLL_INTERVAL_MS,
@@ -586,13 +588,20 @@ async function finalizeJob(
         ? 'needs_review'
         : 'failed';
   try {
-    await sendSubmissionStatusEmail({
-      studentEmail: submission.user.email,
-      studentName: submission.user.username,
-      projectName: submission.project.name,
-      status: studentEmailStatus,
-      submissionUrl,
-    });
+    const sendStatusEmail = await isEmailPreferenceEnabled(
+      prisma,
+      submission.user.id,
+      NOTIFICATION_EMAIL_PREF.SUBMISSION_RESULTS
+    );
+    if (sendStatusEmail) {
+      await sendSubmissionStatusEmail({
+        studentEmail: submission.user.email,
+        studentName: submission.user.username,
+        projectName: submission.project.name,
+        status: studentEmailStatus,
+        submissionUrl,
+      });
+    }
   } catch (err) {
     log('warn', 'Failed to send student status email (non-fatal)', {
       submissionAttemptId,
@@ -637,13 +646,20 @@ async function finalizeJob(
           }
           // Email notification
           try {
-            await sendReviewReadyEmail({
-              instructorEmail: instructor.email,
-              instructorName: instructor.username,
-              studentName: submission.user.username,
-              projectName: submission.project.name,
-              reviewQueueUrl,
-            });
+            const sendReviewEmail = await isEmailPreferenceEnabled(
+              prisma,
+              instructor.id,
+              NOTIFICATION_EMAIL_PREF.REVIEW_QUEUE
+            );
+            if (sendReviewEmail) {
+              await sendReviewReadyEmail({
+                instructorEmail: instructor.email,
+                instructorName: instructor.username,
+                studentName: submission.user.username,
+                projectName: submission.project.name,
+                reviewQueueUrl,
+              });
+            }
           } catch (err) {
             log('warn', 'Failed to send review-ready email to instructor (non-fatal)', {
               instructorId: instructor.id,

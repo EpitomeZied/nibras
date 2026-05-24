@@ -32,6 +32,7 @@ import {
   UpdateStudentLevelRequestSchema,
   UpdateTrackingProjectRequestSchema,
   UpdateTrackingSubmissionRequestSchema,
+  NOTIFICATION_EMAIL_PREF,
 } from '@nibras/contracts';
 import { requireUser, type AuthenticatedRequest } from '../../lib/auth';
 import { sendReviewSubmittedEmail } from '../../lib/email';
@@ -1328,15 +1329,22 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
             link: submissionUrl,
           });
 
-          // Email
-          return sendReviewSubmittedEmail({
-            studentEmail: student.email,
-            studentName: student.username,
-            projectName: project?.title ?? submission.projectId,
-            reviewStatus: payload.status as 'approved' | 'graded' | 'changes_requested' | 'pending',
-            feedback: payload.feedback,
-            submissionUrl,
-          });
+          // Email (respects Settings → Notifications → Grade updates)
+          const emailEnabled = await store.isNotificationEnabled(
+            requestBaseUrl(request),
+            student.userId,
+            NOTIFICATION_EMAIL_PREF.GRADE_POSTED
+          );
+          if (emailEnabled) {
+            return sendReviewSubmittedEmail({
+              studentEmail: student.email,
+              studentName: student.username,
+              projectName: project?.title ?? submission.projectId,
+              reviewStatus: payload.status as 'approved' | 'graded' | 'changes_requested' | 'pending',
+              feedback: payload.feedback,
+              submissionUrl,
+            });
+          }
         })
         .catch(() => {
           /* notification/email errors are non-fatal */

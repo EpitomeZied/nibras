@@ -317,39 +317,67 @@ function AdminYearTab() {
 
 /* ── Notification Preferences Tab ───────────────────────────────────────── */
 
-type NotifType = 'assignment_deadline' | 'grade_posted' | 'course_announcement' | 'email_digest';
+type NotifType =
+  | 'submission_results'
+  | 'grade_posted'
+  | 'review_queue'
+  | 'assignment_deadline'
+  | 'course_announcement'
+  | 'email_digest';
 type DigestFrequency = 'daily' | 'weekly' | 'off';
 
-const EMAIL_NOTIF_ITEMS: Array<{ type: NotifType; label: string; desc: string }> = [
+const EMAIL_NOTIF_ITEMS: Array<{
+  type: NotifType;
+  label: string;
+  desc: string;
+  comingSoon?: boolean;
+}> = [
   {
-    type: 'assignment_deadline',
-    label: 'Deadline reminders',
-    desc: 'Get emailed before assignments are due.',
+    type: 'submission_results',
+    label: 'Submission results',
+    desc: 'Email when your project passes, fails, or is sent for instructor review.',
   },
   {
     type: 'grade_posted',
-    label: 'Grade updates',
-    desc: 'Receive an email when new grades are posted.',
+    label: 'Grades & review feedback',
+    desc: 'Email when an instructor approves, grades, or requests changes on your work.',
+  },
+  {
+    type: 'review_queue',
+    label: 'Review queue (instructors)',
+    desc: 'Email when a student submission needs your review (instructors and TAs).',
+  },
+  {
+    type: 'assignment_deadline',
+    label: 'Deadline reminders',
+    desc: 'Reminder emails before milestones are due.',
+    comingSoon: true,
   },
   {
     type: 'course_announcement',
     label: 'Course announcements',
-    desc: 'Stay updated with instructor announcements.',
+    desc: 'Email when instructors post course announcements.',
+    comingSoon: true,
   },
   {
     type: 'email_digest',
     label: 'Activity digest',
     desc: 'A periodic summary of your Nibras activity.',
+    comingSoon: true,
   },
 ];
 
+const DEFAULT_EMAIL_PREFS: Record<NotifType, boolean> = {
+  submission_results: true,
+  grade_posted: true,
+  review_queue: true,
+  assignment_deadline: true,
+  course_announcement: true,
+  email_digest: false,
+};
+
 function NotificationsTab() {
-  const [prefs, setPrefs] = useState<Record<NotifType, boolean>>({
-    assignment_deadline: true,
-    grade_posted: true,
-    course_announcement: true,
-    email_digest: false,
-  });
+  const [prefs, setPrefs] = useState<Record<NotifType, boolean>>(DEFAULT_EMAIL_PREFS);
   const [digest, setDigest] = useState<DigestFrequency>('weekly');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
@@ -370,7 +398,7 @@ function NotificationsTab() {
         };
         const map: Partial<Record<NotifType, boolean>> = {};
         for (const p of data.preferences) {
-          if (p.type in prefs || p.type === 'email_digest') {
+          if (p.type in DEFAULT_EMAIL_PREFS) {
             map[p.type as NotifType] = p.enabled;
           }
           // Extract digest frequency from a dedicated pref type if stored
@@ -491,7 +519,14 @@ function NotificationsTab() {
                 >
                   {item.label}
                 </div>
-                <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>{item.desc}</div>
+                <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>
+                  {item.desc}
+                  {item.comingSoon ? (
+                    <span style={{ marginLeft: 6, fontSize: 11, color: 'var(--text-muted)' }}>
+                      (coming soon)
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                 {saved[item.type] && (
