@@ -183,7 +183,7 @@ Run this once from [Azure Cloud Shell](https://shell.azure.com) (or any machine
 where `az login` works **and** your tenant allows app registrations):
 
 ```bash
-git clone https://github.com/NibrasPlatform/nibras-cli.git
+git clone https://github.com/EpitomeZied/nibras-cli.git
 cd nibras-cli
 chmod +x scripts/setup-azure-gha-credentials.sh
 ./scripts/setup-azure-gha-credentials.sh
@@ -214,7 +214,7 @@ Paste the JSON output as the `AZURE_CREDENTIALS` secret (step 6).
 
 ### 6. Add GitHub Secrets + Variables
 
-Go to https://github.com/NibrasPlatform/nibras-cli/settings/secrets/actions
+Go to https://github.com/EpitomeZied/nibras-cli/settings/secrets/actions
 
 **Secrets** (Actions → New repository secret):
 
@@ -249,11 +249,11 @@ git push origin main
 The `Deploy to Azure Container Apps` workflow will:
 
 1. Build the three Docker images (~3-5 min)
-2. Push them to `ghcr.io/nibrasplatform/nibras-cli/{api,worker,web}:<sha>`
+2. Push them to `ghcr.io/epitomezied/nibras-cli/{api,worker,web}:<sha>`
 3. Update the three Container Apps to that SHA
 4. Print the live URLs in the workflow logs
 
-Watch progress at https://github.com/NibrasPlatform/nibras-cli/actions
+Watch progress at https://github.com/EpitomeZied/nibras-cli/actions
 
 ### 8. Update GitHub App callback + webhook URLs
 
@@ -274,7 +274,7 @@ images default to private — Container Apps can still pull them once you've
 attached registry credentials, OR you can flip the package visibility to
 public:
 
-https://github.com/orgs/NibrasPlatform/packages → for each package
+https://github.com/users/EpitomeZied/packages → for each package
 (`nibras-cli/api`, `/worker`, `/web`) → **Package settings → Danger Zone →
 Change visibility → Public**.
 
@@ -327,7 +327,7 @@ To roll back to a previous SHA:
 az containerapp update \
   --name nibras-<api|worker|web> \
   --resource-group nibras-rg \
-  --image ghcr.io/nibrasplatform/nibras-cli/<api|worker|web>:<old-sha>
+  --image ghcr.io/epitomezied/nibras-cli/<api|worker|web>:<old-sha>
 ```
 
 ## Tearing down Fly

@@ -6,13 +6,13 @@
 #
 # Optional env overrides:
 #   RG=nibras-rg
-#   GITHUB_REPO=NibrasPlatform/nibras-cli
+#   GITHUB_REPO=EpitomeZied/nibras-cli
 #   APP_NAME=nibras-gha
 
 set -euo pipefail
 
 RG="${RG:-nibras-rg}"
-GITHUB_REPO="${GITHUB_REPO:-NibrasPlatform/nibras-cli}"
+GITHUB_REPO="${GITHUB_REPO:-EpitomeZied/nibras-cli}"
 APP_NAME="${APP_NAME:-nibras-gha}"
 BRANCH="${BRANCH:-main}"
 
@@ -57,7 +57,7 @@ if ! SP_JSON="$(create_sp 2>&1)"; then
   echo "Manual portal steps (admin):"
   echo "  • Entra ID → App registrations → New registration → name: $APP_NAME"
   echo "  • Certificates & secrets → Federated credentials → GitHub Actions"
-  echo "      Organization: NibrasPlatform"
+  echo "      Account: EpitomeZied"
   echo "      Repository:   nibras-cli"
   echo "      Entity:       Branch"
   echo "      Branch:       $BRANCH"

@@ -283,7 +283,7 @@ export default function Sidebar({
 
         {/* GitHub Star */}
         <a
-          href="https://github.com/NibrasPlatform"
+          href="https://github.com/EpitomeZied"
           target="_blank"
           rel="noopener noreferrer"
           className="navLink"

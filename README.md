@@ -229,7 +229,7 @@ docker-compose --version
 
 ```bash
 # Clone the repository
-git clone https://github.com/NibrasPlatform/nibras-cli.git
+git clone https://github.com/EpitomeZied/nibras-cli.git
 cd nibras-cli
 
 # Install all dependencies
@@ -1540,7 +1540,7 @@ We welcome contributions to Nibras! Here's how to get involved:
 
 ### Before You Start
 
-1. **Check existing issues:** https://github.com/NibrasPlatform/nibras-cli/issues
+1. **Check existing issues:** https://github.com/EpitomeZied/nibras-cli/issues
 2. **Review the architecture** in this README
 3. **Understand the codebase** structure in [CLAUDE.md](CLAUDE.md)
 4. **Set up local dev** using the [Local Development](#local-development) guide
@@ -1613,8 +1613,8 @@ Nibras is licensed under the MIT License. See [LICENSE](LICENSE) file for detail
 Need help? Here are your options:
 
 - 📖 **Documentation:** Start with [docs/](docs/)
-- 🐛 **Report Issues:** https://github.com/NibrasPlatform/nibras-cli/issues
-- 💬 **Discussions:** https://github.com/NibrasPlatform/nibras-cli/discussions
+- 🐛 **Report Issues:** https://github.com/EpitomeZied/nibras-cli/issues
+- 💬 **Discussions:** https://github.com/EpitomeZied/nibras-cli/discussions
 - 📧 **Email:** epitomezied@gmail.com (if applicable)
 
 ---

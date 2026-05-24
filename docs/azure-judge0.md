@@ -13,7 +13,7 @@ Works on **Azure for Students** without VM core quota. Privileged containers are
 
 ```bash
 # From Azure Cloud Shell or any machine with `az login`
-git clone https://github.com/NibrasPlatform/nibras-cli.git
+git clone https://github.com/EpitomeZied/nibras-cli.git
 cd nibras-cli
 chmod +x scripts/provision-azure-judge0-aci.sh
 

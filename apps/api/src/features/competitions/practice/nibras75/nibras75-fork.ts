@@ -33,7 +33,7 @@ export async function forkNibras75Workspace(
     throw new Error('Link your GitHub account before forking the Nibras 75 workspace.');
   }
 
-  const templateOwner = process.env.NIBRAS_75_TEMPLATE_OWNER?.trim() || 'NibrasPlatform';
+  const templateOwner = process.env.NIBRAS_75_TEMPLATE_OWNER?.trim() || 'EpitomeZied';
   const templateRepo = process.env.NIBRAS_75_TEMPLATE_REPO?.trim() || 'nibras-75';
   const repoName = sanitizeRepoName(account.login);
 

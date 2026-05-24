@@ -4,7 +4,7 @@ import { runGlobalNpm, uninstallGlobalCli } from './global-install';
 import { parseOption, hasFlag } from '../util/args';
 
 const DEFAULT_RELEASE_API_URL =
-  'https://api.github.com/repos/NibrasPlatform/nibras-cli/releases/latest';
+  'https://api.github.com/repos/EpitomeZied/nibras-cli/releases/latest';
 const DEFAULT_PACKAGE_NAME = '@nibras/cli';
 
 function normalizeTag(value: string): string {

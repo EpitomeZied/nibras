@@ -736,7 +736,7 @@ export default function TopHeader({
           {/* GitHub Star button — only on the dashboard/landing page */}
           {pathname === '/dashboard' && (
             <a
-              href="https://github.com/NibrasPlatform"
+              href="https://github.com/EpitomeZied"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Star NibrasPlaftorm on GitHub"

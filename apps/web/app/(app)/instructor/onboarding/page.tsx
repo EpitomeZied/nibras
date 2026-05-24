@@ -821,7 +821,7 @@ function EmailTemplate({
     "To submit your assignments, you'll use the Nibras CLI tool. Here's how to get started:",
     '',
     '1. Install the CLI:',
-    '   npm install -g https://github.com/NibrasPlatform/nibras-cli/releases/download/v1.0.2/nibras-cli-1.0.2.tgz',
+    '   npm install -g @nibras/cli@1.0.2',
     '',
     '2. Log in with your GitHub account:',
     `   nibras login --api-base-url ${apiBaseUrl ?? '<api-url>'}`,

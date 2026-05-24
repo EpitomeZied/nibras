@@ -670,5 +670,5 @@ Delete the file to wipe all saved sessions (equivalent to `nibras logout`).
 ## Getting Help
 
 1. Run `nibras ping` and share the output with your instructor — it captures most diagnostic information in one command.
-2. Check [github.com/NibrasPlatform/nibras-cli/issues](https://github.com/NibrasPlatform/nibras-cli/issues) for known bugs.
+2. Check [github.com/EpitomeZied/nibras-cli/issues](https://github.com/EpitomeZied/nibras-cli/issues) for known bugs.
 3. For course-specific questions (project key, due dates, API URL), contact your instructor directly.
