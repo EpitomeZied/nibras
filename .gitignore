@@ -6,6 +6,7 @@ dist/
 apps/*/dist/
 packages/*/dist/
 apps/web/.next/
+apps/web/public/monaco/
 apps/cli/bundle/
 .env
 .DS_Store
