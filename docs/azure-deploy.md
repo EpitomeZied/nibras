@@ -225,10 +225,14 @@ Go to https://github.com/NibrasPlatform/nibras-cli/settings/secrets/actions
 | `AZURE_SUBSCRIPTION_ID`  | Azure subscription ID                      |
 | `AZURE_CREDENTIALS`      | *(legacy only)* JSON blob from `--sdk-auth` |
 
+Set the repository variable **`AZURE_DEPLOY_AUTH`** to `oidc` (recommended) or
+`creds` (legacy). The setup script sets this automatically when it succeeds.
+
 **Variables** (Actions → Variables tab → New repository variable):
 
 | Name                      | Value                                  |
 | ------------------------- | -------------------------------------- |
+| `AZURE_DEPLOY_AUTH`       | `oidc` (or `creds` for legacy JSON)    |
 | `AZURE_RESOURCE_GROUP`    | `nibras-rg`                            |
 | `NIBRAS_API_BASE_URL`     | `https://nibras-api.<your-env-domain>` |
 | `NIBRAS_WEB_BASE_URL`     | `https://nibras-web.<your-env-domain>` |

@@ -98,7 +98,8 @@ if command -v gh >/dev/null 2>&1; then
     gh secret set AZURE_CLIENT_ID --body "$CLIENT_ID" --repo "$GITHUB_REPO"
     gh secret set AZURE_TENANT_ID --body "$TENANT_ID" --repo "$GITHUB_REPO"
     gh secret set AZURE_SUBSCRIPTION_ID --body "$SUB_ID" --repo "$GITHUB_REPO"
-    echo "Secrets updated."
+    gh variable set AZURE_DEPLOY_AUTH --body "oidc" --repo "$GITHUB_REPO"
+    echo "Secrets and AZURE_DEPLOY_AUTH=oidc updated."
   fi
 fi
 

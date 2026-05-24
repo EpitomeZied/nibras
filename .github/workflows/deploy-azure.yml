@@ -120,15 +120,16 @@ jobs:
       - name: Lowercase IMAGE_REPO
         run: echo "IMAGE_REPO=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
 
-      - name: Check Azure auth secrets
+      - name: Check deploy auth mode
         run: |
-          if [ -z "${{ secrets.AZURE_CLIENT_ID }}" ] && [ -z "${{ secrets.AZURE_CREDENTIALS }}" ]; then
-            echo "::error::Missing Azure deploy credentials. Run scripts/setup-azure-gha-credentials.sh (or set AZURE_CREDENTIALS). See docs/azure-deploy.md §5–6."
+          MODE="${{ vars.AZURE_DEPLOY_AUTH }}"
+          if [ "$MODE" != "oidc" ] && [ "$MODE" != "creds" ]; then
+            echo "::error::Set repository variable AZURE_DEPLOY_AUTH to 'oidc' or 'creds' after running scripts/setup-azure-gha-credentials.sh. See docs/azure-deploy.md §5–6."
             exit 1
           fi
 
       - name: Azure login (OIDC)
-        if: ${{ secrets.AZURE_CLIENT_ID != '' }}
+        if: ${{ vars.AZURE_DEPLOY_AUTH == 'oidc' }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -136,7 +137,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Azure login (service principal secret)
-        if: ${{ secrets.AZURE_CLIENT_ID == '' && secrets.AZURE_CREDENTIALS != '' }}
+        if: ${{ vars.AZURE_DEPLOY_AUTH == 'creds' }}
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
