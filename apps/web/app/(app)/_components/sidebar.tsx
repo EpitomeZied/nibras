@@ -303,7 +303,14 @@ export default function Sidebar({
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <strong>Star on GitHub</strong>
               <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor" opacity="0.5">
-                <path d="M5 1H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V7M7 1h4m0 0v4m0-4L5 7" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                <path
+                  d="M5 1H2a1 1 0 00-1 1v8a1 1 0 001 1h8a1 1 0 001-1V7M7 1h4m0 0v4m0-4L5 7"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </span>
           )}

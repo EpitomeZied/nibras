@@ -9,12 +9,7 @@ export type SkeletonProps = {
   count?: number;
 };
 
-export default function Skeleton({
-  width,
-  height,
-  variant = 'line',
-  count = 1,
-}: SkeletonProps) {
+export default function Skeleton({ width, height, variant = 'line', count = 1 }: SkeletonProps) {
   const items = Array.from({ length: count }, (_, i) => i);
   return (
     <>

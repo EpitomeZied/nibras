@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import { forkRepository, generateRepositoryFromTemplate, type GitHubAppConfig } from '@nibras/github';
-import type { AppStore } from '../../store';
+import type { AppStore } from '../../../store';
 
 function sanitizeRepoName(login: string): string {
   const base = `nibras-75-${login}`.toLowerCase().replace(/[^a-z0-9-]/g, '-');

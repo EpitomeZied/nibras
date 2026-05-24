@@ -395,11 +395,7 @@ export default function CommunityPage() {
                 </div>
               </Link>
               <div className={styles.right}>
-                <Avatar
-                  url={question.author.avatarUrl}
-                  name={question.author.username}
-                  size={24}
-                />
+                <Avatar url={question.author.avatarUrl} name={question.author.username} size={24} />
                 <span className={styles.author}>{question.author.username}</span>
                 <span className={styles.timestamp}>{formatRelative(question.createdAt)}</span>
               </div>

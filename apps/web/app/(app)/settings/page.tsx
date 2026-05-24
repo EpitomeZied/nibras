@@ -486,7 +486,9 @@ function NotificationsTab() {
           {EMAIL_NOTIF_ITEMS.map((item) => (
             <div key={item.type} style={rowStyle}>
               <div>
-                <div style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>
+                <div
+                  style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}
+                >
                   {item.label}
                 </div>
                 <div style={{ fontSize: 12.5, color: 'var(--text-soft)' }}>{item.desc}</div>
@@ -508,9 +510,7 @@ function NotificationsTab() {
                     borderRadius: 12,
                     border: 'none',
                     cursor: saving[item.type] ? 'default' : 'pointer',
-                    background: prefs[item.type]
-                      ? 'rgba(99,102,241,0.9)'
-                      : 'rgba(255,255,255,0.1)',
+                    background: prefs[item.type] ? 'rgba(99,102,241,0.9)' : 'rgba(255,255,255,0.1)',
                     transition: 'background 0.2s',
                     outline: 'none',
                     flexShrink: 0,
@@ -563,9 +563,7 @@ function NotificationsTab() {
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {saved.digest && (
-                  <span style={{ fontSize: 11, color: '#4ade80' }}>✓ Saved</span>
-                )}
+                {saved.digest && <span style={{ fontSize: 11, color: '#4ade80' }}>✓ Saved</span>}
                 <div
                   style={{
                     display: 'flex',
@@ -588,8 +586,7 @@ function NotificationsTab() {
                         cursor: saving.digest ? 'default' : 'pointer',
                         fontSize: 12,
                         fontWeight: 600,
-                        background:
-                          digest === freq ? 'rgba(99,102,241,0.85)' : 'transparent',
+                        background: digest === freq ? 'rgba(99,102,241,0.85)' : 'transparent',
                         color: digest === freq ? '#fff' : 'rgba(161,161,170,0.7)',
                         transition: 'background 0.15s, color 0.15s',
                         textTransform: 'capitalize',

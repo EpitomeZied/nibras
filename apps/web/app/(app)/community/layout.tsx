@@ -14,9 +14,8 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
   const pathname = usePathname() ?? '';
   const { user } = useSession();
 
-  const allTabs = user?.systemRole === 'admin'
-    ? [...TABS, { href: '/community/tags', label: 'Tags' }]
-    : TABS;
+  const allTabs =
+    user?.systemRole === 'admin' ? [...TABS, { href: '/community/tags', label: 'Tags' }] : TABS;
 
   return (
     <div className={styles.layout}>
