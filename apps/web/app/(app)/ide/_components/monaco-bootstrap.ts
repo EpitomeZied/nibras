@@ -1,19 +1,21 @@
 'use client';
 
 import { loader } from '@monaco-editor/react';
-import * as monaco from 'monaco-editor';
 
-let configured = false;
+if (typeof window !== 'undefined') {
+  loader.config({ paths: { vs: '/monaco/vs' } });
+}
 
-export function configureMonacoLoader(): void {
-  if (configured || typeof window === 'undefined') return;
+let initPromise: Promise<void> | null = null;
 
-  self.MonacoEnvironment = {
-    getWorker(_workerId, _label) {
-      return new Worker(new URL('monaco-editor/esm/vs/editor/editor.worker.js', import.meta.url));
-    },
-  };
+export function ensureMonacoReady(): Promise<void> {
+  if (typeof window === 'undefined') {
+    return Promise.resolve();
+  }
 
-  loader.config({ monaco });
-  configured = true;
+  if (!initPromise) {
+    initPromise = loader.init().then(() => undefined);
+  }
+
+  return initPromise;
 }

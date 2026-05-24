@@ -2,7 +2,7 @@
 
 import Editor, { type OnMount } from '@monaco-editor/react';
 import { useCallback, useEffect, useState } from 'react';
-import { configureMonacoLoader } from './monaco-bootstrap';
+import { ensureMonacoReady } from './monaco-bootstrap';
 import styles from '../page.module.css';
 
 type CodeEditorProps = {
@@ -21,10 +21,24 @@ export default function CodeEditor({
   readOnly = false,
 }: CodeEditorProps) {
   const [ready, setReady] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
   useEffect(() => {
-    configureMonacoLoader();
-    setReady(true);
+    let cancelled = false;
+
+    ensureMonacoReady()
+      .then(() => {
+        if (!cancelled) setReady(true);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setInitError(error instanceof Error ? error.message : 'Failed to load code editor');
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleMount: OnMount = useCallback(
@@ -36,6 +50,14 @@ export default function CodeEditor({
     },
     [onRun]
   );
+
+  if (initError) {
+    return (
+      <div className={styles.editorPane}>
+        <div className={styles.editorLoading}>{initError}</div>
+      </div>
+    );
+  }
 
   if (!ready) {
     return (
