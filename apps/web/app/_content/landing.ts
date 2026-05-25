@@ -297,36 +297,11 @@ export const cliFeatures = [
   },
 ] as const;
 
-export const testimonials = [
-  {
-    quote:
-      'Nibras completely changed how I run our capstone sequence. Templates keep projects consistent, role applications are structured, and I no longer have to glue team formation together by hand.',
-    name: 'Sarah Chen',
-    role: 'CS Instructor, State University',
-    initials: 'SC',
-  },
-  {
-    quote:
-      'We used to split planning, petitions, and delivery across too many tools. Now students can see their track, sheet, submissions, and project status in one place, which cuts confusion immediately.',
-    name: 'Marcus Wright',
-    role: 'Program Lead, TechPath',
-    initials: 'MW',
-  },
-  {
-    quote:
-      'The GitHub-backed submissions are still excellent, but the bigger win is that courses, templates, teams, and program operations now feel like one connected product instead of separate processes.',
-    name: 'Priya Nair',
-    role: 'Data Science Professor',
-    initials: 'PN',
-  },
-  {
-    quote:
-      'I used to bounce between the LMS, Discord, and LeetCode. With My Courses, dashboard deadlines, Hassona, and Nibras 75 beside my projects, I always know what to work on next.',
-    name: 'Alex Rivera',
-    role: 'CS Student, State University',
-    initials: 'AR',
-  },
-] as const;
+export const supportNotice = {
+  eyebrow: 'Support the project',
+  body: 'Help us keep nibrasplatform.me free and actively maintained. If you or your company find it useful, consider supporting the project.',
+  email: 'support@nibrasplatform.me',
+} as const;
 
 export const ctaFeatures = [
   'Free during early access',

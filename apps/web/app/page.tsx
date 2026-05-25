@@ -18,7 +18,7 @@ import {
   mockupTableRows,
   mockupUrl,
   statsBar,
-  testimonials,
+  supportNotice,
   transformGains,
   transformPains,
   transformSub,
@@ -469,28 +469,12 @@ export default function HomePage() {
       </section>
 
       <section className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <span className={styles.sectionEyebrow}>Instructor stories</span>
-          <h2 className={styles.sectionTitle}>
-            Less fragmentation. Better coordination. A system people can actually follow.
-          </h2>
-        </div>
-
-        <div className={styles.testimonials}>
-          {testimonials.map((t) => (
-            <div key={t.name} className={styles.testimonialCard}>
-              <p className={styles.testimonialQuote}>&ldquo;{t.quote}&rdquo;</p>
-              <div className={styles.testimonialAuthor}>
-                <span className={styles.testimonialAvatarInitials} aria-hidden="true">
-                  {t.initials}
-                </span>
-                <div>
-                  <strong>{t.name}</strong>
-                  <span>{t.role}</span>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className={styles.supportCard}>
+          <span className={styles.sectionEyebrow}>{supportNotice.eyebrow}</span>
+          <p className={styles.supportBody}>{supportNotice.body}</p>
+          <a className={styles.supportEmail} href={`mailto:${supportNotice.email}`}>
+            {supportNotice.email}
+          </a>
         </div>
       </section>
 

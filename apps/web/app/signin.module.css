@@ -1183,99 +1183,43 @@
   color: rgba(161, 161, 170, 0.65);
 }
 
-/* ── Testimonials ───────────────────────────────────────────────────────────── */
+/* ── Support notice ─────────────────────────────────────────────────────────── */
 
-.testimonials {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.testimonialCard {
+.supportCard {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 28px;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 40px 32px;
   border-radius: 14px;
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  transition:
-    background 0.2s,
-    border-color 0.2s;
-  position: relative;
-  overflow: hidden;
 }
 
-.testimonialCard::before {
-  content: '\201C';
-  position: absolute;
-  top: -12px;
-  left: 16px;
-  font-size: 100px;
-  line-height: 1;
-  font-weight: 900;
-  color: rgba(255, 255, 255, 0.04);
-  pointer-events: none;
-  font-family: Georgia, serif;
-}
-
-.testimonialCard:hover {
-  background: rgba(255, 255, 255, 0.035);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.testimonialQuote {
+.supportBody {
   margin: 0;
+  font-size: 15px;
+  line-height: 1.7;
+  color: rgba(161, 161, 170, 0.75);
+  max-width: 52ch;
+}
+
+.supportEmail {
   font-size: 14px;
-  line-height: 1.8;
-  color: rgba(250, 250, 250, 0.8);
-  flex: 1;
-  position: relative;
-  z-index: 1;
+  font-weight: 600;
+  color: rgba(34, 197, 94, 0.85);
+  text-decoration: none;
+  transition:
+    color 0.15s,
+    text-decoration 0.15s;
 }
 
-.testimonialAuthor {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.testimonialAvatar {
-  display: block;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex-shrink: 0;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.testimonialAvatarInitials {
-  display: inline-grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  color: #fafafa;
-  background: rgba(34, 197, 94, 0.12);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-}
-
-.testimonialAuthor strong {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-  color: #fafafa;
-}
-
-.testimonialAuthor span {
-  display: block;
-  font-size: 12px;
-  color: rgba(161, 161, 170, 0.55);
+.supportEmail:hover {
+  color: #4ade80;
+  text-decoration: underline;
 }
 
 /* ── Auth / Sign-in card ────────────────────────────────────────────────────── */
@@ -1683,9 +1627,6 @@
     gap: 16px;
   }
   .cliShowcase {
-    grid-template-columns: 1fr;
-  }
-  .testimonials {
     grid-template-columns: 1fr;
   }
   .statsBar {
