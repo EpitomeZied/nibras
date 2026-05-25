@@ -1,4 +1,8 @@
-import type { DashboardHomeResponse, DashboardMode, TrackingActivityEvent } from '@nibras/contracts';
+import type {
+  DashboardHomeResponse,
+  DashboardMode,
+  TrackingActivityEvent,
+} from '@nibras/contracts';
 import type { AchievementsDashboard } from '../../lib/services/gamification';
 
 export type DashboardSupplements = {
