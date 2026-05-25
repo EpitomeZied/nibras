@@ -11,6 +11,16 @@ import {
 } from './practice/nibras75/nibras75-client';
 import { forkNibras75Workspace, getNibras75Workspace } from './practice/nibras75/nibras75-fork';
 
+function nibras75ForkErrorStatus(err: unknown, message: string): number {
+  if (message.includes('Link your GitHub')) return 400;
+  if (message.includes('GitHub App is not configured')) return 503;
+  if (message.includes('Could not create your Nibras 75')) return 400;
+  if (err instanceof GitHubRequestError) {
+    return err.statusCode >= 500 ? 502 : 400;
+  }
+  return 502;
+}
+
 async function resolveLeetcodeHandle(
   prisma: PrismaClient,
   userId: string | undefined,
@@ -151,14 +161,10 @@ export function registerNibras75Routes(
         return { workspace };
       } catch (err) {
         let message = err instanceof Error ? err.message : String(err);
-        let status = 502;
 
-        if (message.includes('Link your GitHub')) {
-          status = 400;
-        } else if (err instanceof GitHubRequestError) {
-          status = err.statusCode >= 500 ? 502 : 400;
+        if (err instanceof GitHubRequestError) {
           try {
-            const parsed = JSON.parse(err.bodyText);
+            const parsed = JSON.parse(err.bodyText) as { message?: string };
             if (parsed.message) {
               message = parsed.message;
             }
@@ -166,6 +172,8 @@ export function registerNibras75Routes(
             // Keep original message if parsing fails
           }
         }
+
+        const status = nibras75ForkErrorStatus(err, message);
         return reply.status(status).send({ error: message });
       }
     }

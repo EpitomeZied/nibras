@@ -1,5 +1,7 @@
 import { PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import {
+  createPrivateRepository,
   forkRepository,
   generateRepositoryFromTemplate,
   getGitHubRepository,
@@ -150,6 +152,28 @@ export async function forkNibras75Workspace(
     }
   }
 
+  // When the template repo is missing or not marked as a template, still provision a workspace.
+  if (!generated) {
+    try {
+      generated = await createPrivateRepository(
+        githubConfig,
+        account.userAccessToken,
+        account.login,
+        repoName
+      );
+    } catch (err) {
+      failures.push(githubErrorMessage(err, 'Create'));
+      if (repoAlreadyExists(err)) {
+        generated = await loadExistingUserRepo(
+          githubConfig,
+          account.userAccessToken,
+          account.login,
+          repoName
+        );
+      }
+    }
+  }
+
   if (!generated) {
     throw new Error(
       failures.length > 0
@@ -162,14 +186,22 @@ export async function forkNibras75Workspace(
     ? generated.fullName.split('/', 2)
     : [account.login, repoName];
 
-  return prisma.nibras75Workspace.create({
-    data: {
-      userId,
-      owner,
-      repoName: name,
-      fullName: generated.fullName,
-      htmlUrl: generated.htmlUrl ?? `https://github.com/${generated.fullName}`,
-      cloneUrl: generated.cloneUrl,
-    },
-  });
+  try {
+    return await prisma.nibras75Workspace.create({
+      data: {
+        userId,
+        owner,
+        repoName: name,
+        fullName: generated.fullName,
+        htmlUrl: generated.htmlUrl ?? `https://github.com/${generated.fullName}`,
+        cloneUrl: generated.cloneUrl,
+      },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      const raced = await prisma.nibras75Workspace.findUnique({ where: { userId } });
+      if (raced) return raced;
+    }
+    throw err;
+  }
 }

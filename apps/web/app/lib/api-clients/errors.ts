@@ -41,10 +41,19 @@ export function isNetworkError(error: unknown): boolean {
   return false;
 }
 
+function hasActionableApiMessage(error: ApiError): boolean {
+  const message = error.message.trim();
+  if (!message) return false;
+  return !message.startsWith('Request failed with status');
+}
+
 export function friendlyMessage(error: unknown): string {
   if (error instanceof ApiError) {
     if (isAuthError(error)) {
       return 'You need to sign in again to load this data.';
+    }
+    if (hasActionableApiMessage(error)) {
+      return error.message;
     }
     if (error.status >= 500) {
       return 'The service is temporarily unavailable. Please try again in a moment.';
