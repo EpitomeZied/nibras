@@ -956,6 +956,8 @@ def ask():
 
     history = body.get("history", [])
     ai_response = generate_ai_answer(question, history=history)
+    if ai_response["status"] == "error":
+        return jsonify({"type": "error", "message": ai_response["message"]}), 503
     if ai_response["status"] != "ok":
         return jsonify({"type": "refused", "message": ai_response["message"]})
 
@@ -1014,6 +1016,8 @@ def answer_question():
         return jsonify({"error": "id and question required"}), 400
 
     ai = generate_ai_answer(question)
+    if ai["status"] == "error":
+        return jsonify({"type": "error", "message": ai["message"]}), 503
     if ai["status"] != "ok":
         return jsonify({"type": "refused", "message": ai["message"]})
 
@@ -1033,6 +1037,8 @@ def generate_for_matched():
     if ai["status"] == "ok":
         ai["tags"] = correct_tags(question, ai["tags"])
         return jsonify({"type": "generated", "data": ai})
+    if ai["status"] == "error":
+        return jsonify({"type": "error", "message": ai["message"]}), 503
     return jsonify({"type": "refused", "message": ai["message"]})
 
 

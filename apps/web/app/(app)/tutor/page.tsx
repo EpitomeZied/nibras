@@ -219,6 +219,19 @@ export default function TutorPage() {
           history,
           conversationId: activeConv?.persisted ? convId : undefined,
         });
+        if (response.refused) {
+          const message =
+            response.answer || 'This question is outside the scope of this CS platform.';
+          setError(message);
+          setActiveConv((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              messages: prev.messages.filter((m) => m.id !== placeholderId),
+            };
+          });
+          return;
+        }
         setActiveConv((prev) => {
           if (!prev) return prev;
           return {

@@ -47,7 +47,7 @@ for _ in 1 2 3 4 5 6 7 8 9 10; do
   RESP=$(curl -sS --max-time 30 -X POST "https://${FQDN}/api/ask" \
     -H "Content-Type: application/json" \
     -d '{"question":"What is Big-O notation?"}' || true)
-  if echo "$RESP" | grep -q '"type":"ai"'; then
+  if echo "$RESP" | grep -qE '"type":"(generated|community_match)"'; then
     echo "Hassona tutor is working."
     exit 0
   fi

@@ -781,6 +781,24 @@ export function registerCommunityRoutes(
 
   const CHATBOT_V1_URL = process.env.CHATBOT_V1_URL || '';
 
+  type ChatBotV1Response = {
+    type?: string;
+    message?: string;
+    data?: {
+      answer?: string;
+      hints?: string[];
+      tags?: string[];
+      question_id?: string;
+      question?: string;
+      match_score?: number;
+      xai?: {
+        reasoning?: string;
+        concepts_used?: string[];
+        might_be_unclear?: string[];
+      };
+    };
+  };
+
   app.post(
     '/v1/community/chatbot/ask',
     { schema: { tags: ['community'], summary: 'Ask the AI tutor' } },
@@ -811,32 +829,31 @@ export function registerCommunityRoutes(
           }),
           signal: AbortSignal.timeout(30000),
         });
-        if (!resp.ok) {
-          const text = await resp.text().catch(() => '');
+        const rawBody = await resp.text().catch(() => '');
+        let chatBotResponse: ChatBotV1Response | null = null;
+        try {
+          chatBotResponse = rawBody ? (JSON.parse(rawBody) as ChatBotV1Response) : null;
+        } catch {
+          chatBotResponse = null;
+        }
+        if (!resp.ok || !chatBotResponse) {
+          const detail =
+            chatBotResponse?.message || rawBody || 'AI Tutor request failed.';
           reply
-            .code(502)
+            .code(resp.status >= 500 ? resp.status : 502)
+            .send(Errors.unavailable(detail.slice(0, 300)));
+          return;
+        }
+        if (chatBotResponse.type === 'error') {
+          reply
+            .code(503)
             .send(
-              Errors.unavailable(`AI Tutor service returned ${resp.status}: ${text.slice(0, 200)}`)
+              Errors.unavailable(
+                chatBotResponse.message || 'AI generation failed. Please retry.'
+              )
             );
           return;
         }
-        const chatBotResponse = (await resp.json()) as {
-          type?: string;
-          data?: {
-            answer?: string;
-            hints?: string[];
-            tags?: string[];
-            question_id?: string;
-            question?: string;
-            match_score?: number;
-            xai?: {
-              reasoning?: string;
-              concepts_used?: string[];
-              might_be_unclear?: string[];
-            };
-          };
-          message?: string;
-        };
         if (chatBotResponse.type === 'refused') {
           return {
             answer:
