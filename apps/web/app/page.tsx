@@ -4,7 +4,6 @@ import { Suspense, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { discoverApiBaseUrl } from './lib/session';
-import CliSetupGuideControls from './_components/cli-setup-guide-controls';
 import NibrasLogo from './_components/nibras-logo';
 import {
   cliFeatures,
@@ -387,11 +386,6 @@ export default function HomePage() {
       </section>
 
       <section id="cli" className={styles.section}>
-        <CliSetupGuideControls
-          className={styles.cliGuideControls}
-          linkBasePath="/instructor/onboarding"
-          viewMode="instructor"
-        />
         <div className={styles.sectionHeader}>
           <span className={styles.sectionEyebrow}>CLI</span>
           <h2 className={styles.sectionTitle}>
