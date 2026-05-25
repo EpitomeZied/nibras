@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { apiFetch } from '../../../lib/session';
+import SelectField from '../../_components/ui/select-field';
 import s from './apply-modal.module.css';
 
 type Role = {
@@ -151,20 +152,19 @@ export default function ApplyModal({ projectId, templateTitle, roles, onClose, o
               {roles.map((_, index) => (
                 <div key={index} className={s.prefRow}>
                   <span className={s.prefRank}>Choice {index + 1}</span>
-                  <select
-                    className={s.prefSelect}
+                  <SelectField
+                    selectClassName={s.prefSelect}
                     value={preferences.find((p) => p.rank === index + 1)?.templateRoleId ?? ''}
-                    onChange={(e) => updatePreference(index + 1, e.target.value)}
-                  >
-                    <option value="" disabled>
-                      Select a role
-                    </option>
-                    {roles.map((role) => (
-                      <option key={role.id} value={role.id}>
-                        {role.label} ({role.count} spot{role.count !== 1 ? 's' : ''})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => updatePreference(index + 1, value)}
+                    options={[
+                      { value: '', label: 'Select a role', disabled: true },
+                      ...roles.map((role) => ({
+                        value: role.id,
+                        label: `${role.label} (${role.count} spot${role.count !== 1 ? 's' : ''})`,
+                      })),
+                    ]}
+                    aria-label={`Role preference ${index + 1}`}
+                  />
                 </div>
               ))}
             </div>

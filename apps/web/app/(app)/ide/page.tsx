@@ -12,6 +12,7 @@ import {
   templateForLanguage,
   writePersistedState,
 } from './_content/templates';
+import SelectField from '../_components/ui/select-field';
 import styles from './page.module.css';
 
 const CodeEditor = dynamic(() => import('./_components/CodeEditor'), {
@@ -164,21 +165,17 @@ export default function IdePage() {
   return (
     <div className={styles.page}>
       <div className={styles.toolbar}>
-        <label className={styles.panelHint} htmlFor="ide-language">
-          Language
-        </label>
-        <select
+        <SelectField
           id="ide-language"
-          className={styles.languageSelect}
-          value={languageId ?? ''}
-          onChange={(event) => handleLanguageChange(Number.parseInt(event.target.value, 10))}
-        >
-          {languages.map((language) => (
-            <option key={language.id} value={language.id}>
-              {language.name}
-            </option>
-          ))}
-        </select>
+          label="Language"
+          selectClassName={styles.languageSelect}
+          value={languageId === null ? '' : String(languageId)}
+          onChange={(value) => handleLanguageChange(Number.parseInt(value, 10))}
+          options={languages.map((language) => ({
+            value: String(language.id),
+            label: language.name,
+          }))}
+        />
 
         <button
           type="button"

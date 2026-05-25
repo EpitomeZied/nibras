@@ -5,7 +5,15 @@ import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
 import { useFormSubmit } from '../../../../../../lib/use-form-submit';
+import SelectField from '../../../../../_components/ui/select-field';
 import styles from '../../../../instructor.module.css';
+
+const DIFFICULTY_OPTIONS = [
+  { value: '', label: '— Not specified —' },
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+];
 
 type RoleRow = { key: string; label: string; count: number };
 type RubricRow = { criterion: string; maxScore: number };
@@ -22,6 +30,7 @@ export default function NewTemplatePage({ params }: { params: Promise<{ courseId
   const { courseId } = use(params);
   const router = useRouter();
   const [deliveryMode, setDeliveryMode] = useState<'team' | 'individual'>('team');
+  const [difficulty, setDifficulty] = useState('intermediate');
   const [teamSize, setTeamSize] = useState(3);
   const [roles, setRoles] = useState<RoleRow[]>([
     { key: 'backend', label: 'Backend', count: 1 },
@@ -133,26 +142,28 @@ export default function NewTemplatePage({ params }: { params: Promise<{ courseId
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="deliveryMode">Delivery Mode</label>
-          <select
+          <SelectField
             id="deliveryMode"
             name="deliveryMode"
+            label="Delivery Mode"
             value={deliveryMode}
-            onChange={(e) => setDeliveryMode(e.target.value as 'team' | 'individual')}
-          >
-            <option value="team">Team</option>
-            <option value="individual">Individual</option>
-          </select>
+            onChange={(value) => setDeliveryMode(value as 'team' | 'individual')}
+            options={[
+              { value: 'team', label: 'Team' },
+              { value: 'individual', label: 'Individual' },
+            ]}
+          />
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="difficulty">Difficulty</label>
-          <select id="difficulty" name="difficulty" defaultValue="intermediate">
-            <option value="">— Not specified —</option>
-            <option value="beginner">Beginner</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="advanced">Advanced</option>
-          </select>
+          <SelectField
+            id="difficulty"
+            name="difficulty"
+            label="Difficulty"
+            value={difficulty}
+            onChange={setDifficulty}
+            options={DIFFICULTY_OPTIONS}
+          />
         </div>
 
         <div className={styles.formGroup}>

@@ -3,7 +3,17 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useFetch } from '../../lib/use-fetch';
+import SelectField from '../_components/ui/select-field';
 import styles from './submissions.module.css';
+
+const STATUS_FILTER_OPTIONS = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'queued', label: 'Queued' },
+  { value: 'running', label: 'Running' },
+  { value: 'passed', label: 'Passed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'needs_review', label: 'Needs Review' },
+];
 
 type StudentSubmission = {
   id: string;
@@ -100,19 +110,14 @@ export default function SubmissionsPage() {
             scattered milestone screens.
           </p>
         </div>
-        <select
-          className={styles.filterSelect}
+        <SelectField
+          variant="filter"
+          selectClassName={styles.filterSelect}
           value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
+          onChange={setStatusFilter}
+          options={STATUS_FILTER_OPTIONS}
           aria-label="Filter by status"
-        >
-          <option value="all">All statuses</option>
-          <option value="queued">Queued</option>
-          <option value="running">Running</option>
-          <option value="passed">Passed</option>
-          <option value="failed">Failed</option>
-          <option value="needs_review">Needs Review</option>
-        </select>
+        />
       </div>
 
       <div className={styles.summaryCards}>

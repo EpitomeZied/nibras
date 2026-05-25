@@ -5,7 +5,13 @@ import Link from 'next/link';
 import { use } from 'react';
 import { apiFetch } from '../../../../../lib/session';
 import { getLevelLabel, getLevelBadgeSuffix, MAX_LEVEL } from '../../../../../lib/levels';
+import SelectField from '../../../../_components/ui/select-field';
 import styles from '../../../instructor.module.css';
+
+const MEMBER_ROLE_OPTIONS = [
+  { value: 'student', label: 'Student' },
+  { value: 'ta', label: 'TA' },
+];
 
 type Member = {
   id: string;
@@ -241,21 +247,13 @@ export default function CourseMembersPage({ params }: { params: Promise<{ course
               minWidth: '180px',
             }}
           />
-          <select
+          <SelectField
+            variant="filter"
             value={addRole}
-            onChange={(e) => setAddRole(e.target.value as 'student' | 'ta')}
-            style={{
-              padding: '8px 12px',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '6px',
-              color: 'var(--text)',
-              fontSize: '14px',
-            }}
-          >
-            <option value="student">Student</option>
-            <option value="ta">TA</option>
-          </select>
+            onChange={(value) => setAddRole(value as 'student' | 'ta')}
+            options={MEMBER_ROLE_OPTIONS}
+            aria-label="Role for new member"
+          />
           <button type="submit" className={styles.btnPrimary} disabled={adding}>
             {adding ? 'Adding…' : 'Add'}
           </button>
@@ -277,21 +275,13 @@ export default function CourseMembersPage({ params }: { params: Promise<{ course
             marginBottom: inviteUrl ? 12 : 0,
           }}
         >
-          <select
+          <SelectField
+            variant="filter"
             value={inviteRole}
-            onChange={(e) => setInviteRole(e.target.value as 'student' | 'ta')}
-            style={{
-              padding: '8px 12px',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '6px',
-              color: 'var(--text)',
-              fontSize: '14px',
-            }}
-          >
-            <option value="student">Student</option>
-            <option value="ta">TA</option>
-          </select>
+            onChange={(value) => setInviteRole(value as 'student' | 'ta')}
+            options={MEMBER_ROLE_OPTIONS}
+            aria-label="Invite role"
+          />
           <input
             type="datetime-local"
             value={inviteExpiry}
@@ -369,51 +359,35 @@ export default function CourseMembersPage({ params }: { params: Promise<{ course
                   marginBottom: 14,
                 }}
               >
-                <select
-                  value={levelFilter ?? ''}
-                  onChange={(e) =>
-                    setLevelFilter(e.target.value === '' ? null : Number(e.target.value))
-                  }
-                  style={{
-                    padding: '6px 10px',
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '6px',
-                    color: 'var(--text)',
-                    fontSize: '13px',
-                  }}
-                >
-                  <option value="">All Years</option>
-                  {[1, 2, 3, 4].map((lvl) => (
-                    <option key={lvl} value={lvl}>
-                      {getLevelLabel(lvl)}
-                    </option>
-                  ))}
-                </select>
+                <SelectField
+                  variant="filter"
+                  value={levelFilter === null ? '' : String(levelFilter)}
+                  onChange={(value) => setLevelFilter(value === '' ? null : Number(value))}
+                  options={[
+                    { value: '', label: 'All Years' },
+                    ...[1, 2, 3, 4].map((lvl) => ({
+                      value: String(lvl),
+                      label: getLevelLabel(lvl),
+                    })),
+                  ]}
+                  aria-label="Filter by academic year"
+                />
 
                 {selectedIds.size > 0 && (
                   <>
                     <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
                       {selectedIds.size} selected —
                     </span>
-                    <select
-                      value={bulkLevel}
-                      onChange={(e) => setBulkLevel(Number(e.target.value))}
-                      style={{
-                        padding: '6px 10px',
-                        background: 'var(--surface)',
-                        border: '1px solid var(--border)',
-                        borderRadius: '6px',
-                        color: 'var(--text)',
-                        fontSize: '13px',
-                      }}
-                    >
-                      {[1, 2, 3, 4].map((lvl) => (
-                        <option key={lvl} value={lvl}>
-                          Set to {getLevelLabel(lvl)}
-                        </option>
-                      ))}
-                    </select>
+                    <SelectField
+                      variant="filter"
+                      value={String(bulkLevel)}
+                      onChange={(value) => setBulkLevel(Number(value))}
+                      options={[1, 2, 3, 4].map((lvl) => ({
+                        value: String(lvl),
+                        label: `Set to ${getLevelLabel(lvl)}`,
+                      }))}
+                      aria-label="Bulk set academic year"
+                    />
                     <button
                       className={styles.btnPrimary}
                       onClick={() => void handleBulkPromote()}

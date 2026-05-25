@@ -7,6 +7,7 @@ import { use } from 'react';
 import { apiFetch } from '../../../../../../../lib/session';
 import { useFormSubmit } from '../../../../../../../lib/use-form-submit';
 import { getLevelLabel } from '../../../../../../../lib/levels';
+import SelectField from '../../../../../../_components/ui/select-field';
 import styles from '../../../../../instructor.module.css';
 
 type RubricRow = { criterion: string; maxScore: number };
@@ -163,35 +164,43 @@ export default function EditProjectPage({
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="deliveryMode">Delivery Mode</label>
-          <select
+          <SelectField
             id="deliveryMode"
+            label="Delivery Mode"
             value={deliveryMode}
-            onChange={(e) => setDeliveryMode(e.target.value)}
-          >
-            <option value="individual">Individual</option>
-            <option value="team">Team</option>
-          </select>
+            onChange={setDeliveryMode}
+            options={[
+              { value: 'individual', label: 'Individual' },
+              { value: 'team', label: 'Team' },
+            ]}
+          />
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="status">Status</label>
-          <select id="status" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-            <option value="archived">Archived</option>
-          </select>
+          <SelectField
+            id="status"
+            label="Status"
+            value={status}
+            onChange={setStatus}
+            options={[
+              { value: 'draft', label: 'Draft' },
+              { value: 'published', label: 'Published' },
+              { value: 'archived', label: 'Archived' },
+            ]}
+          />
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="level">Academic Year Level</label>
-          <select id="level" value={level} onChange={(e) => setLevel(Number(e.target.value))}>
-            {[1, 2, 3, 4].map((lvl) => (
-              <option key={lvl} value={lvl}>
-                {getLevelLabel(lvl)}
-              </option>
-            ))}
-          </select>
+          <SelectField
+            id="level"
+            label="Academic Year Level"
+            value={String(level)}
+            onChange={(value) => setLevel(Number(value))}
+            options={[1, 2, 3, 4].map((lvl) => ({
+              value: String(lvl),
+              label: getLevelLabel(lvl),
+            }))}
+          />
         </div>
 
         {/* Rubric */}

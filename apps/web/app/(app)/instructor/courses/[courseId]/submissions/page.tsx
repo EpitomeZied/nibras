@@ -5,7 +5,17 @@ import Link from 'next/link';
 import { use } from 'react';
 import { useFetch } from '../../../../../lib/use-fetch';
 import { apiFetch } from '../../../../../lib/session';
+import SelectField from '../../../../_components/ui/select-field';
 import styles from '../../../instructor.module.css';
+
+const INSTRUCTOR_STATUS_OPTIONS = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'needs_review', label: 'Needs review' },
+  { value: 'passed', label: 'Passed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'queued', label: 'Queued' },
+  { value: 'running', label: 'Running' },
+];
 
 type Submission = {
   id: string;
@@ -79,19 +89,14 @@ export default function CourseSubmissionsPage({
           >
             {exporting ? 'Exporting…' : '↓ Export CSV'}
           </button>
-          <select
-            className={styles.btnSecondary}
+          <SelectField
+            variant="filter"
+            selectClassName={styles.btnSecondary}
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            style={{ padding: '8px 12px', cursor: 'pointer' }}
-          >
-            <option value="all">All statuses</option>
-            <option value="needs_review">Needs review</option>
-            <option value="passed">Passed</option>
-            <option value="failed">Failed</option>
-            <option value="queued">Queued</option>
-            <option value="running">Running</option>
-          </select>
+            onChange={setStatusFilter}
+            options={INSTRUCTOR_STATUS_OPTIONS}
+            aria-label="Filter by status"
+          />
         </div>
       </div>
 

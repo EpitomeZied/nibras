@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
 import { apiFetch } from '../../../../../../../lib/session';
+import SelectField from '../../../../../../_components/ui/select-field';
 import styles from '../../../../../instructor.module.css';
 
 type Submission = {
@@ -607,18 +608,16 @@ export default function SubmissionReviewPage({
             </div>
             <form onSubmit={(e) => void handleSubmit(e)}>
               <div className={styles.formGroup} style={{ marginBottom: 16 }}>
-                <label htmlFor="reviewStatus">Decision</label>
-                <select
+                <SelectField
                   id="reviewStatus"
+                  label="Decision"
                   value={reviewStatus}
-                  onChange={(e) => setReviewStatus(e.target.value)}
-                >
-                  {REVIEW_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {s.replace('_', ' ')}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setReviewStatus}
+                  options={REVIEW_STATUSES.map((s) => ({
+                    value: s,
+                    label: s.replace('_', ' '),
+                  }))}
+                />
               </div>
 
               <div className={styles.formGroup} style={{ marginBottom: 16 }}>

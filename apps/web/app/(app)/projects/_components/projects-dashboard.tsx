@@ -25,6 +25,7 @@ import {
 import { useSession } from '../../_components/session-context';
 import SubmissionModal from './submission-modal';
 import TeamApplicationModal from './team-application-modal';
+import SelectField from '../../_components/ui/select-field';
 import styles from './projects.module.css';
 
 type SessionUser = {
@@ -412,12 +413,6 @@ export default function ProjectsDashboard({
           ? 'applied'
           : 'needs_application';
 
-  function handleCourseChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    const nextCourseId = event.target.value || null;
-    setActiveCourseId(nextCourseId);
-    syncCourseSelection(nextCourseId);
-  }
-
   function courseLabel(course: TrackingCourseSummary): string {
     return `${course.courseCode} · ${course.title}`;
   }
@@ -558,54 +553,37 @@ export default function ProjectsDashboard({
         {/* Right: course switcher stacked above stats */}
         <div className={styles.pageHeaderRight}>
           {courses.length > 0 && (
-            <label className={styles.courseSwitcher}>
-              <div className={styles.courseSwitcherHeader}>
-                <span className={styles.courseSelectLabel}>Course</span>
-                <span className={styles.courseSwitcherHint}>
-                  {courses.length > 1 ? `${courses.length} available` : 'Current workspace'}
-                </span>
-              </div>
-              <div className={styles.courseSelectShell}>
-                <div className={styles.courseSelectCurrent} aria-hidden="true">
-                  <span className={styles.courseCodeBadge}>
-                    {selectedCourse?.courseCode ?? 'Course'}
-                  </span>
-                  <span className={styles.courseSelectText}>
-                    <strong className={styles.courseSelectTitle}>
-                      {selectedCourse?.title ?? 'Select a course'}
-                    </strong>
-                    <span className={styles.courseSelectMeta}>
-                      {selectedCourse?.termLabel ?? 'Choose the course you want to work in'}
-                    </span>
-                  </span>
-                </div>
-                <select
-                  className={styles.courseSelectNative}
-                  aria-label="Choose course"
-                  title={selectedCourse ? courseLabel(selectedCourse) : 'Choose course'}
-                  value={activeCourseId ?? dashboard?.course?.id ?? ''}
-                  onChange={handleCourseChange}
-                  disabled={loading || courses.length <= 1}
-                >
-                  {courses.map((course) => (
-                    <option key={course.id} value={course.id}>
-                      {courseLabel(course)}
-                    </option>
-                  ))}
-                </select>
-                <span className={styles.courseSelectChevron} aria-hidden="true">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M4 6.5 8 10l4-3.5"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-              </div>
-            </label>
+            <SelectField
+              variant="rich"
+              className={styles.courseSwitcher}
+              label="Course"
+              hint={courses.length > 1 ? `${courses.length} available` : 'Current workspace'}
+              aria-label="Choose course"
+              value={activeCourseId ?? dashboard?.course?.id ?? ''}
+              onChange={(nextId) => {
+                const nextCourseId = nextId || null;
+                setActiveCourseId(nextCourseId);
+                syncCourseSelection(nextCourseId);
+              }}
+              disabled={loading || courses.length <= 1}
+              options={courses.map((course) => ({
+                value: course.id,
+                label: courseLabel(course),
+              }))}
+              richPreview={
+                selectedCourse
+                  ? {
+                      badge: selectedCourse.courseCode ?? 'Course',
+                      title: selectedCourse.title ?? 'Select a course',
+                      meta: selectedCourse.termLabel ?? 'Choose the course you want to work in',
+                    }
+                  : {
+                      badge: 'Course',
+                      title: 'Select a course',
+                      meta: 'Choose the course you want to work in',
+                    }
+              }
+            />
           )}
           <div className={styles.pageHeaderStats}>
             <div className={styles.headerStat}>

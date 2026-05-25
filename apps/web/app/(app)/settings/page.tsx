@@ -8,6 +8,7 @@ import { apiFetch } from '../../lib/session';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import { useSession } from '../_components/session-context';
 import { getLevelLabel, MAX_LEVEL } from '../../lib/levels';
+import SelectField from '../_components/ui/select-field';
 import styles from './page.module.css';
 
 type Tab = 'profile' | 'github' | 'notifications' | 'preferences' | 'danger' | 'admin';
@@ -277,22 +278,21 @@ function AdminYearTab() {
                     <span className={styles.levelBadge}>{getLevelLabel(currentLevel)}</span>
                   </td>
                   <td>
-                    <select
-                      className={styles.yearSelect}
-                      value={pendingLevel}
-                      onChange={(e) =>
+                    <SelectField
+                      selectClassName={styles.yearSelect}
+                      value={String(pendingLevel)}
+                      onChange={(value) =>
                         setPendingLevels((prev) => ({
                           ...prev,
-                          [s.userId]: Number(e.target.value),
+                          [s.userId]: Number(value),
                         }))
                       }
-                    >
-                      {Array.from({ length: MAX_LEVEL }, (_, i) => i + 1).map((lvl) => (
-                        <option key={lvl} value={lvl}>
-                          {getLevelLabel(lvl)}
-                        </option>
-                      ))}
-                    </select>
+                      options={Array.from({ length: MAX_LEVEL }, (_, i) => i + 1).map((lvl) => ({
+                        value: String(lvl),
+                        label: getLevelLabel(lvl),
+                      }))}
+                      aria-label={`Set year level for ${s.githubLogin || s.username}`}
+                    />
                   </td>
                   <td>
                     <button
@@ -585,16 +585,14 @@ function NotificationsTab() {
             </>
           ) : (
             <>
-              Add your Gmail here — GitHub sign-in email alone may not deliver mail if it is
-              hidden or a <code>@users.noreply.github.com</code> address.
+              Add your Gmail here — GitHub sign-in email alone may not deliver mail if it is hidden
+              or a <code>@users.noreply.github.com</code> address.
             </>
           )}
         </p>
       </div>
 
-      {error ? (
-        <p style={{ fontSize: 13, color: '#f87171', marginBottom: 12 }}>{error}</p>
-      ) : null}
+      {error ? <p style={{ fontSize: 13, color: '#f87171', marginBottom: 12 }}>{error}</p> : null}
 
       {loading ? (
         <p style={{ fontSize: 13, color: 'var(--text-soft)' }}>Loading preferences…</p>

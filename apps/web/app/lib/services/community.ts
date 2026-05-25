@@ -249,8 +249,7 @@ export async function getQuestion(
     (wire as WireQuestion & { answers?: WireAnswer[] });
   // Prefer the top-level answers array — it includes legacy `_id` aliases. Nested
   // `question.answers` only has Prisma `id` fields and breaks accept/vote actions.
-  const inlineAnswers =
-    (wire as { answers?: WireAnswer[] }).answers ?? q.answers ?? [];
+  const inlineAnswers = (wire as { answers?: WireAnswer[] }).answers ?? q.answers ?? [];
   return { question: normalizeQuestion(q), answers: inlineAnswers.map(normalizeAnswer) };
 }
 

@@ -49,8 +49,7 @@ export default function BadgeCard({
   const classes = [styles.card, rarityClass(rarity), earned ? styles.earned : styles.locked]
     .filter(Boolean)
     .join(' ');
-  const hasProgress =
-    typeof threshold === 'number' && threshold > 0;
+  const hasProgress = typeof threshold === 'number' && threshold > 0;
   const displayProgress = earned
     ? threshold!
     : typeof progress === 'number'

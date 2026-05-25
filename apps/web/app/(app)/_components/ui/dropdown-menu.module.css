@@ -1,0 +1,68 @@
+.root {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  background: var(--page-bg-alt);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  z-index: 200;
+  max-width: calc(100vw - 32px);
+  animation: dropIn 0.14s ease;
+}
+
+.panelAlignStart {
+  left: 0;
+}
+
+.panelAlignEnd {
+  right: 0;
+}
+
+.panelWidthSm {
+  width: 220px;
+}
+
+.panelWidthMd {
+  width: 240px;
+}
+
+.panelWidthLg {
+  width: 340px;
+}
+
+.panelWidthAuto {
+  min-width: 240px;
+}
+
+@keyframes dropIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+}
+
+.chevron {
+  color: rgba(161, 161, 170, 0.5);
+  flex-shrink: 0;
+  transition: transform 0.18s;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}

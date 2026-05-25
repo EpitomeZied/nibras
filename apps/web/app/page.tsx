@@ -359,8 +359,8 @@ export default function HomePage() {
           </h2>
           <p className={styles.sectionSub}>
             From templates and team formation to program planning, tutoring, community,
-            competitions, IDE practice, achievements, and analytics — Nibras turns scattered
-            tools and manual work into one clean operating layer.
+            competitions, IDE practice, achievements, and analytics — Nibras turns scattered tools
+            and manual work into one clean operating layer.
           </p>
         </div>
 
@@ -554,11 +554,7 @@ export default function HomePage() {
             <div className={styles.footerCol}>
               <span className={styles.footerColTitle}>Developers</span>
               <a href="/instructor/onboarding">CLI Setup Guide</a>
-              <a
-                href="https://github.com/nibras-platform/nibras"
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href="https://github.com/nibras-platform/nibras" target="_blank" rel="noreferrer">
                 GitHub
               </a>
             </div>

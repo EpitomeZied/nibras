@@ -7,6 +7,7 @@ import type {
   ProjectTemplateRole,
   TrackingProjectSummary,
 } from '@nibras/contracts';
+import SelectField from '../../_components/ui/select-field';
 import styles from './team-application-modal.module.css';
 
 type Props = {
@@ -141,21 +142,20 @@ export default function TeamApplicationModal({
               {project.teamRoles.map((_, index) => (
                 <div key={index} className={styles.roleRow}>
                   <span>Choice {index + 1}</span>
-                  <select
+                  <SelectField
                     value={
                       preferences.find((entry) => entry.rank === index + 1)?.templateRoleId ?? ''
                     }
-                    onChange={(event) => updatePreference(index + 1, event.target.value)}
-                  >
-                    <option value="" disabled>
-                      Select a role
-                    </option>
-                    {sortedRoles.map((role: ProjectTemplateRole) => (
-                      <option key={role.id} value={role.id}>
-                        {role.label} ({role.count})
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => updatePreference(index + 1, value)}
+                    options={[
+                      { value: '', label: 'Select a role', disabled: true },
+                      ...sortedRoles.map((role: ProjectTemplateRole) => ({
+                        value: role.id,
+                        label: `${role.label} (${role.count})`,
+                      })),
+                    ]}
+                    aria-label={`Role preference ${index + 1}`}
+                  />
                 </div>
               ))}
             </div>

@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/session';
+import DropdownMenu, { useDropdownClose } from './ui/dropdown-menu';
 
 type NotificationRecord = {
   id: string;
@@ -47,7 +48,8 @@ function BellIcon() {
   );
 }
 
-function NotificationItem({ n, onClose }: { n: NotificationRecord; onClose: () => void }) {
+function NotificationItem({ n }: { n: NotificationRecord }) {
+  const close = useDropdownClose();
   const color = colorForType(n.type);
   const inner = (
     <div
@@ -108,7 +110,7 @@ function NotificationItem({ n, onClose }: { n: NotificationRecord; onClose: () =
       <a
         href={n.link}
         style={{ textDecoration: 'none', display: 'block' }}
-        onClick={onClose}
+        onClick={close}
         {...(isInternal ? {} : { target: '_blank', rel: 'noreferrer' })}
       >
         {inner}
@@ -118,14 +120,80 @@ function NotificationItem({ n, onClose }: { n: NotificationRecord; onClose: () =
   return inner;
 }
 
+function NotificationsPanelContent({
+  loaded,
+  notifications,
+}: {
+  loaded: boolean;
+  notifications: NotificationRecord[];
+}) {
+  const unreadInList = notifications.filter((n) => !n.read).length;
+
+  return (
+    <>
+      <div
+        style={{
+          padding: '13px 16px 11px',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <strong style={{ fontSize: 13, fontWeight: 700, color: '#fafafa' }}>Notifications</strong>
+        {unreadInList > 0 && (
+          <span
+            style={{
+              fontSize: 11,
+              fontWeight: 700,
+              background: 'var(--danger)',
+              color: '#fff',
+              borderRadius: 999,
+              padding: '2px 7px',
+            }}
+          >
+            {unreadInList} new
+          </span>
+        )}
+      </div>
+
+      <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+        {!loaded ? (
+          <div
+            style={{
+              padding: '24px 16px',
+              color: 'rgba(161,161,170,0.5)',
+              fontSize: 13,
+              textAlign: 'center',
+            }}
+          >
+            Loading…
+          </div>
+        ) : notifications.length === 0 ? (
+          <div
+            style={{
+              padding: '32px 16px',
+              color: 'rgba(161,161,170,0.5)',
+              fontSize: 13,
+              textAlign: 'center',
+            }}
+          >
+            All caught up
+          </div>
+        ) : (
+          notifications.map((n) => <NotificationItem key={n.id} n={n} />)
+        )}
+      </div>
+    </>
+  );
+}
+
 export default function NotificationsPanel() {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const wrapRef = useRef<HTMLDivElement>(null);
 
-  // ── Poll unread count every 60 s ─────────────────────────────────────────
   const fetchCount = useCallback(async () => {
     try {
       const res = await apiFetch('/v1/notifications/count', { auth: true });
@@ -144,19 +212,6 @@ export default function NotificationsPanel() {
     return () => clearInterval(id);
   }, [fetchCount]);
 
-  // ── Close on outside click ────────────────────────────────────────────────
-  useEffect(() => {
-    if (!open) return;
-    function handler(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  // ── Fetch list + mark all read when panel opens ───────────────────────────
   useEffect(() => {
     if (!open) return;
 
@@ -173,7 +228,6 @@ export default function NotificationsPanel() {
         setLoaded(true);
       }
 
-      // Mark all as read (fire-and-forget)
       try {
         await apiFetch('/v1/notifications/read-all', { method: 'POST', auth: true });
         setUnreadCount(0);
@@ -183,149 +237,69 @@ export default function NotificationsPanel() {
     })();
   }, [open]);
 
-  function handleToggle() {
-    setOpen((v) => {
-      if (!v) setLoaded(false); // re-fetch fresh on every open
-      return !v;
-    });
+  function handleOpenChange(next: boolean) {
+    if (next) setLoaded(false);
+    setOpen(next);
   }
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative' }}>
-      {/* ── Bell button ── */}
-      <button
-        aria-label="Notifications"
-        title="Notifications"
-        onClick={handleToggle}
-        style={{
-          position: 'relative',
-          display: 'grid',
-          placeItems: 'center',
-          width: 32,
-          height: 32,
-          borderRadius: 8,
-          border: '1px solid transparent',
-          background: open ? 'rgba(255,255,255,0.07)' : 'transparent',
-          color: open ? 'rgba(250,250,250,0.9)' : 'rgba(161,161,170,0.7)',
-          cursor: 'pointer',
-          transition: 'background 0.15s, color 0.15s, border-color 0.15s',
-        }}
-        onMouseEnter={(e) => {
-          if (!open) {
-            e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-            e.currentTarget.style.color = 'rgba(250,250,250,0.85)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!open) {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'rgba(161,161,170,0.7)';
-          }
-        }}
-      >
-        <BellIcon />
-        {unreadCount > 0 && (
-          <span
-            style={{
-              position: 'absolute',
-              top: 5,
-              right: 5,
-              width: 7,
-              height: 7,
-              borderRadius: '50%',
-              background: 'var(--danger)',
-              border: '1.5px solid rgba(10,10,10,0.9)',
-              display: 'block',
-            }}
-          />
-        )}
-      </button>
-
-      {/* ── Dropdown panel ── */}
-      {open && (
-        <div
+    <DropdownMenu
+      align="end"
+      width="lg"
+      onOpenChange={handleOpenChange}
+      trigger={({ open, triggerRef, triggerProps }) => (
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-label="Notifications"
+          title="Notifications"
+          {...triggerProps}
           style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            width: 340,
-            background: '#111111',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4)',
-            zIndex: 200,
-            overflow: 'hidden',
-            animation: 'dropIn 0.14s ease',
+            position: 'relative',
+            display: 'grid',
+            placeItems: 'center',
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: '1px solid transparent',
+            background: open ? 'rgba(255,255,255,0.07)' : 'transparent',
+            color: open ? 'rgba(250,250,250,0.9)' : 'rgba(161,161,170,0.7)',
+            cursor: 'pointer',
+            transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            if (!open) {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+              e.currentTarget.style.color = 'rgba(250,250,250,0.85)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!open) {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'rgba(161,161,170,0.7)';
+            }
           }}
         >
-          <style>{`
-            @keyframes dropIn {
-              from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-              to   { opacity: 1; transform: translateY(0)    scale(1); }
-            }
-          `}</style>
-
-          {/* Header */}
-          <div
-            style={{
-              padding: '13px 16px 11px',
-              borderBottom: '1px solid rgba(255,255,255,0.07)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <strong style={{ fontSize: 13, fontWeight: 700, color: '#fafafa' }}>
-              Notifications
-            </strong>
-            {notifications.filter((n) => !n.read).length > 0 && (
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  background: 'var(--danger)',
-                  color: '#fff',
-                  borderRadius: 999,
-                  padding: '2px 7px',
-                }}
-              >
-                {notifications.filter((n) => !n.read).length} new
-              </span>
-            )}
-          </div>
-
-          {/* List */}
-          <div style={{ maxHeight: 360, overflowY: 'auto' }}>
-            {!loaded ? (
-              <div
-                style={{
-                  padding: '24px 16px',
-                  color: 'rgba(161,161,170,0.5)',
-                  fontSize: 13,
-                  textAlign: 'center',
-                }}
-              >
-                Loading…
-              </div>
-            ) : notifications.length === 0 ? (
-              <div
-                style={{
-                  padding: '32px 16px',
-                  color: 'rgba(161,161,170,0.5)',
-                  fontSize: 13,
-                  textAlign: 'center',
-                }}
-              >
-                All caught up 🎉
-              </div>
-            ) : (
-              notifications.map((n) => (
-                <NotificationItem key={n.id} n={n} onClose={() => setOpen(false)} />
-              ))
-            )}
-          </div>
-        </div>
+          <BellIcon />
+          {unreadCount > 0 && (
+            <span
+              style={{
+                position: 'absolute',
+                top: 5,
+                right: 5,
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: 'var(--danger)',
+                border: '1.5px solid rgba(10,10,10,0.9)',
+                display: 'block',
+              }}
+            />
+          )}
+        </button>
       )}
-    </div>
+    >
+      <NotificationsPanelContent loaded={loaded} notifications={notifications} />
+    </DropdownMenu>
   );
 }

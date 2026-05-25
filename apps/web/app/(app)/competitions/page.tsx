@@ -7,6 +7,7 @@ import EmptyState from '../_components/widgets/EmptyState';
 import ContestCalendar from './_components/ContestCalendar';
 import CalendarViewToggle, { type CalendarView } from './_components/CalendarViewToggle';
 import PlatformFilter from './_components/PlatformFilter';
+import SelectField from '../_components/ui/select-field';
 import {
   getCalendarContests,
   getLinkedAccounts,
@@ -467,30 +468,29 @@ export default function CompetitionsPage() {
                 <div className={styles.divider} />
 
                 <div className={styles.formRow}>
-                  <label className={styles.formLabel} htmlFor="link-host">
-                    Platform
-                  </label>
-                  <select
+                  <SelectField
                     id="link-host"
-                    className={styles.formSelect}
+                    label="Platform"
+                    selectClassName={styles.formSelect}
                     value={linkHost}
-                    onChange={(e) => setLinkHost(e.target.value)}
-                  >
-                    <option value="codeforces">Codeforces</option>
-                    <option value="leetcode">LeetCode</option>
-                    <option value="atcoder">AtCoder</option>
-                    <option value="codechef">CodeChef</option>
-                    <option value="vjudge">VJudge</option>
-                    <option value="ctftime">CTFtime</option>
-                    <option value="kaggle">Kaggle</option>
-                    <option value="hackthebox">Hack The Box</option>
-                    <option value="tryhackme">TryHackMe</option>
-                    <option value="picoctf">picoCTF</option>
-                    <option value="project_euler">Project Euler</option>
-                    <option value="hackerone">HackerOne</option>
-                    <option value="bugcrowd">Bugcrowd</option>
-                    <option value="defcon">DEF CON CTF</option>
-                  </select>
+                    onChange={setLinkHost}
+                    options={[
+                      { value: 'codeforces', label: 'Codeforces' },
+                      { value: 'leetcode', label: 'LeetCode' },
+                      { value: 'atcoder', label: 'AtCoder' },
+                      { value: 'codechef', label: 'CodeChef' },
+                      { value: 'vjudge', label: 'VJudge' },
+                      { value: 'ctftime', label: 'CTFtime' },
+                      { value: 'kaggle', label: 'Kaggle' },
+                      { value: 'hackthebox', label: 'Hack The Box' },
+                      { value: 'tryhackme', label: 'TryHackMe' },
+                      { value: 'picoctf', label: 'picoCTF' },
+                      { value: 'project_euler', label: 'Project Euler' },
+                      { value: 'hackerone', label: 'HackerOne' },
+                      { value: 'bugcrowd', label: 'Bugcrowd' },
+                      { value: 'defcon', label: 'DEF CON CTF' },
+                    ]}
+                  />
                 </div>
 
                 <div className={styles.formRow}>

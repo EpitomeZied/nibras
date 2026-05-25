@@ -13,6 +13,7 @@ import {
 } from '../../../lib/services/gamification';
 import { useSession } from '../../_components/session-context';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
+import SelectField from '../../_components/ui/select-field';
 
 type Period = NonNullable<LeaderboardFilters['period']>;
 type Scope = NonNullable<LeaderboardFilters['scope']>;
@@ -102,18 +103,14 @@ export default function LeaderboardPage() {
             ))}
           </div>
           <div className={styles.scopePicker}>
-            <select
+            <SelectField
+              variant="filter"
+              selectClassName={styles.select}
               value={scope}
-              onChange={(event) => setScope(event.target.value as Scope)}
-              className={styles.select}
+              onChange={(value) => setScope(value as Scope)}
+              options={scopeOptions}
               aria-label="Scope"
-            >
-              {scopeOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </div>
       </header>

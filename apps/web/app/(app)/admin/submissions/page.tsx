@@ -4,7 +4,17 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '../../../lib/session';
 import { useFetch } from '../../../lib/use-fetch';
+import SelectField from '../../_components/ui/select-field';
 import styles from '../../instructor/instructor.module.css';
+
+const ADMIN_STATUS_OPTIONS = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'queued', label: 'Queued' },
+  { value: 'running', label: 'Running' },
+  { value: 'passed', label: 'Passed' },
+  { value: 'failed', label: 'Failed' },
+  { value: 'needs_review', label: 'Needs review' },
+];
 
 type Submission = {
   id: string;
@@ -142,22 +152,17 @@ export default function AdminSubmissionsPage() {
               </button>
             </div>
           )}
-          <select
-            className={styles.btnSecondary}
+          <SelectField
+            variant="filter"
+            selectClassName={styles.btnSecondary}
             value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
+            onChange={(value) => {
+              setStatusFilter(value);
               setSelectedIds(new Set());
             }}
-            style={{ padding: '8px 12px', cursor: 'pointer' }}
-          >
-            <option value="all">All statuses</option>
-            <option value="queued">Queued</option>
-            <option value="running">Running</option>
-            <option value="passed">Passed</option>
-            <option value="failed">Failed</option>
-            <option value="needs_review">Needs review</option>
-          </select>
+            options={ADMIN_STATUS_OPTIONS}
+            aria-label="Filter by status"
+          />
         </div>
       </div>
 
@@ -215,27 +220,21 @@ export default function AdminSubmissionsPage() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                        <select
+                        <SelectField
+                          variant="filter"
                           value={overrideValues[sub.id] || ''}
-                          onChange={(e) =>
-                            setOverrideValues((prev) => ({ ...prev, [sub.id]: e.target.value }))
+                          onChange={(value) =>
+                            setOverrideValues((prev) => ({ ...prev, [sub.id]: value }))
                           }
-                          style={{
-                            padding: '4px 8px',
-                            fontSize: '12px',
-                            background: 'var(--surface)',
-                            border: '1px solid var(--border)',
-                            borderRadius: '4px',
-                            color: 'var(--text)',
-                          }}
-                        >
-                          <option value="">Select…</option>
-                          {OVERRIDE_STATUSES.map((s) => (
-                            <option key={s} value={s}>
-                              {s.replace('_', ' ')}
-                            </option>
-                          ))}
-                        </select>
+                          options={[
+                            { value: '', label: 'Select…' },
+                            ...OVERRIDE_STATUSES.map((s) => ({
+                              value: s,
+                              label: s.replace('_', ' '),
+                            })),
+                          ]}
+                          aria-label={`Override status for ${sub.id}`}
+                        />
                         <button
                           className={styles.btnPrimary}
                           style={{ padding: '4px 10px', fontSize: '12px' }}

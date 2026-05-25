@@ -7,6 +7,7 @@ import { apiFetch } from '../../../lib/session';
 import { useFetch } from '../../../lib/use-fetch';
 import SectionNav from '../../_components/section-nav';
 import { plannerSections } from '../../_components/workspace-sections';
+import SelectField from '../../_components/ui/select-field';
 import styles from '../../instructor/instructor.module.css';
 
 export default function PlannerPetitionsPage() {
@@ -99,63 +100,64 @@ export default function PlannerPetitionsPage() {
                   <h2>Submit a petition</h2>
                 </div>
                 <div className={styles.formGroup}>
-                  <label htmlFor="petitionType">Type</label>
-                  <select
+                  <SelectField
                     id="petitionType"
+                    label="Type"
                     value={type}
-                    onChange={(event) =>
-                      setType(event.target.value as 'transfer_credit' | 'substitution' | 'waiver')
+                    onChange={(value) =>
+                      setType(value as 'transfer_credit' | 'substitution' | 'waiver')
                     }
-                  >
-                    <option value="transfer_credit">Transfer / AP credit</option>
-                    <option value="substitution">Course substitution</option>
-                    <option value="waiver">Requirement waiver</option>
-                  </select>
+                    options={[
+                      { value: 'transfer_credit', label: 'Transfer / AP credit' },
+                      { value: 'substitution', label: 'Course substitution' },
+                      { value: 'waiver', label: 'Requirement waiver' },
+                    ]}
+                  />
                 </div>
                 <div className={styles.formGroup}>
-                  <label htmlFor="targetRequirementGroupId">Requirement group</label>
-                  <select
+                  <SelectField
                     id="targetRequirementGroupId"
+                    label="Requirement group"
                     value={targetRequirementGroupId}
-                    onChange={(event) => setTargetRequirementGroupId(event.target.value)}
-                  >
-                    <option value="">Optional target</option>
-                    {plan.requirementGroups.map((group) => (
-                      <option key={group.id} value={group.id}>
-                        {group.title}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setTargetRequirementGroupId}
+                    options={[
+                      { value: '', label: 'Optional target' },
+                      ...plan.requirementGroups.map((group) => ({
+                        value: group.id,
+                        label: group.title,
+                      })),
+                    ]}
+                  />
                 </div>
                 <div className={styles.formGroup}>
-                  <label htmlFor="originalCatalogCourseId">Original / satisfied course</label>
-                  <select
+                  <SelectField
                     id="originalCatalogCourseId"
+                    label="Original / satisfied course"
                     value={originalCatalogCourseId}
-                    onChange={(event) => setOriginalCatalogCourseId(event.target.value)}
-                  >
-                    <option value="">Optional course</option>
-                    {plan.catalogCourses.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.subjectCode} {course.catalogNumber} · {course.title}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setOriginalCatalogCourseId}
+                    options={[
+                      { value: '', label: 'Optional course' },
+                      ...plan.catalogCourses.map((course) => ({
+                        value: course.id,
+                        label: `${course.subjectCode} ${course.catalogNumber} · ${course.title}`,
+                      })),
+                    ]}
+                  />
                 </div>
                 <div className={styles.formGroup}>
-                  <label htmlFor="substituteCatalogCourseId">Substitute course</label>
-                  <select
+                  <SelectField
                     id="substituteCatalogCourseId"
+                    label="Substitute course"
                     value={substituteCatalogCourseId}
-                    onChange={(event) => setSubstituteCatalogCourseId(event.target.value)}
-                  >
-                    <option value="">Optional substitute</option>
-                    {plan.catalogCourses.map((course) => (
-                      <option key={course.id} value={course.id}>
-                        {course.subjectCode} {course.catalogNumber} · {course.title}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSubstituteCatalogCourseId}
+                    options={[
+                      { value: '', label: 'Optional substitute' },
+                      ...plan.catalogCourses.map((course) => ({
+                        value: course.id,
+                        label: `${course.subjectCode} ${course.catalogNumber} · ${course.title}`,
+                      })),
+                    ]}
+                  />
                 </div>
                 <div className={styles.formGroup}>
                   <label htmlFor="justification">Justification</label>

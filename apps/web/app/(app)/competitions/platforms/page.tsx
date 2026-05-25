@@ -67,7 +67,6 @@ function PlatformAvatar({ id, name }: { id: string; name: string }) {
   if (!iconFailed) {
     return (
       <span className={styles.avatarIconWrap} aria-hidden="true">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={platformIconSrc(id)}
           alt=""

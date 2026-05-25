@@ -4,7 +4,15 @@ import Link from 'next/link';
 import { useState, useEffect, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { use } from 'react';
+import SelectField from '../../../../../../_components/ui/select-field';
 import styles from '../../../../../instructor.module.css';
+
+const DIFFICULTY_OPTIONS = [
+  { value: '', label: '— Not specified —' },
+  { value: 'beginner', label: 'Beginner' },
+  { value: 'intermediate', label: 'Intermediate' },
+  { value: 'advanced', label: 'Advanced' },
+];
 import { apiFetch } from '../../../../../../../lib/session';
 
 type RoleRow = { key: string; label: string; count: number };
@@ -202,29 +210,26 @@ export default function EditTemplatePage({
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="deliveryMode">Delivery Mode</label>
-          <select
+          <SelectField
             id="deliveryMode"
+            label="Delivery Mode"
             value={deliveryMode}
-            onChange={(e) => setDeliveryMode(e.target.value as 'team' | 'individual')}
-          >
-            <option value="team">Team</option>
-            <option value="individual">Individual</option>
-          </select>
+            onChange={(value) => setDeliveryMode(value as 'team' | 'individual')}
+            options={[
+              { value: 'team', label: 'Team' },
+              { value: 'individual', label: 'Individual' },
+            ]}
+          />
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="difficulty">Difficulty</label>
-          <select
+          <SelectField
             id="difficulty"
+            label="Difficulty"
             value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
-          >
-            <option value="">— Not specified —</option>
-            <option value="beginner">Beginner</option>
-            <option value="intermediate">Intermediate</option>
-            <option value="advanced">Advanced</option>
-          </select>
+            onChange={setDifficulty}
+            options={DIFFICULTY_OPTIONS}
+          />
         </div>
 
         <div className={styles.formGroup}>

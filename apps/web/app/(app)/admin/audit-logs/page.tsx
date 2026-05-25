@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { useFetch } from '../../../lib/use-fetch';
+import SelectField from '../../_components/ui/select-field';
 import styles from '../../instructor/instructor.module.css';
 
 type AuditLog = {
@@ -28,26 +29,26 @@ type AuditLogsResponse = {
 
 /* ── Human-readable action labels ─────────────────────────────────────────── */
 const ACTION_LABELS: Record<string, { label: string; icon: string; color: string }> = {
-  'user.signed_in':        { label: 'User signed in',                icon: '🔑', color: '#818cf8' },
-  'user.roleChanged':      { label: 'User role changed',             icon: '🛡️', color: '#f59e0b' },
-  'user.accountDeleted':   { label: 'User account deleted',          icon: '🗑️', color: '#f87171' },
-  'installation.linked':   { label: 'GitHub App installation linked',icon: '🔗', color: '#34d399' },
-  'member.added':          { label: 'Member added to course',        icon: '➕', color: '#34d399' },
-  'member.removed':        { label: 'Member removed from course',    icon: '➖', color: '#f87171' },
-  'member.year_synced':    { label: 'Member academic year synced',   icon: '🔄', color: '#38bdf8' },
-  'project.created':       { label: 'Project created',               icon: '📁', color: '#34d399' },
-  'project.updated':       { label: 'Project updated',               icon: '✏️', color: '#f59e0b' },
-  'template.created':      { label: 'Template created',              icon: '📋', color: '#34d399' },
-  'template.updated':      { label: 'Template updated',              icon: '✏️', color: '#f59e0b' },
-  'teams.locked':          { label: 'Team formation locked',         icon: '🔒', color: '#f87171' },
-  'team.updated':          { label: 'Team updated',                  icon: '👥', color: '#f59e0b' },
-  'milestone.created':     { label: 'Milestone created',             icon: '🏁', color: '#34d399' },
-  'milestone.updated':     { label: 'Milestone updated',             icon: '✏️', color: '#f59e0b' },
-  'milestone.deleted':     { label: 'Milestone deleted',             icon: '🗑️', color: '#f87171' },
-  'submission.created':    { label: 'Submission created',            icon: '📤', color: '#34d399' },
-  'submission.updated':    { label: 'Submission updated',            icon: '✏️', color: '#f59e0b' },
-  'submission.overridden': { label: 'Submission score overridden',   icon: '⚙️', color: '#f59e0b' },
-  'review.created':        { label: 'Review submitted',              icon: '💬', color: '#818cf8' },
+  'user.signed_in': { label: 'User signed in', icon: '🔑', color: '#818cf8' },
+  'user.roleChanged': { label: 'User role changed', icon: '🛡️', color: '#f59e0b' },
+  'user.accountDeleted': { label: 'User account deleted', icon: '🗑️', color: '#f87171' },
+  'installation.linked': { label: 'GitHub App installation linked', icon: '🔗', color: '#34d399' },
+  'member.added': { label: 'Member added to course', icon: '➕', color: '#34d399' },
+  'member.removed': { label: 'Member removed from course', icon: '➖', color: '#f87171' },
+  'member.year_synced': { label: 'Member academic year synced', icon: '🔄', color: '#38bdf8' },
+  'project.created': { label: 'Project created', icon: '📁', color: '#34d399' },
+  'project.updated': { label: 'Project updated', icon: '✏️', color: '#f59e0b' },
+  'template.created': { label: 'Template created', icon: '📋', color: '#34d399' },
+  'template.updated': { label: 'Template updated', icon: '✏️', color: '#f59e0b' },
+  'teams.locked': { label: 'Team formation locked', icon: '🔒', color: '#f87171' },
+  'team.updated': { label: 'Team updated', icon: '👥', color: '#f59e0b' },
+  'milestone.created': { label: 'Milestone created', icon: '🏁', color: '#34d399' },
+  'milestone.updated': { label: 'Milestone updated', icon: '✏️', color: '#f59e0b' },
+  'milestone.deleted': { label: 'Milestone deleted', icon: '🗑️', color: '#f87171' },
+  'submission.created': { label: 'Submission created', icon: '📤', color: '#34d399' },
+  'submission.updated': { label: 'Submission updated', icon: '✏️', color: '#f59e0b' },
+  'submission.overridden': { label: 'Submission score overridden', icon: '⚙️', color: '#f59e0b' },
+  'review.created': { label: 'Review submitted', icon: '💬', color: '#818cf8' },
 };
 
 function formatAction(raw: string): { label: string; icon: string; color: string } {
@@ -66,16 +67,16 @@ function formatAction(raw: string): { label: string; icon: string; color: string
 
 /* ── Target type badge colors ─────────────────────────────────────────────── */
 const TARGET_COLORS: Record<string, string> = {
-  USER:          '#818cf8',
-  COURSE:        '#34d399',
-  PROJECT:       '#38bdf8',
-  TEMPLATE:      '#f59e0b',
-  MILESTONE:     '#fb923c',
-  SUBMISSION:    '#a3e635',
-  REVIEW:        '#c084fc',
-  TEAM:          '#f472b6',
+  USER: '#818cf8',
+  COURSE: '#34d399',
+  PROJECT: '#38bdf8',
+  TEMPLATE: '#f59e0b',
+  MILESTONE: '#fb923c',
+  SUBMISSION: '#a3e635',
+  REVIEW: '#c084fc',
+  TEAM: '#f472b6',
   GITHUBACCOUNT: '#e2e8f0',
-  INVITE:        '#fbbf24',
+  INVITE: '#fbbf24',
 };
 
 function formatDate(iso: string): string {
@@ -165,14 +166,16 @@ export default function AuditLogsPage() {
           </div>
 
           <div className={styles.formGroup}>
-            <label>Target Type</label>
-            <select value={targetType} onChange={(e) => setTargetType(e.target.value)}>
-              {TARGET_TYPES.map((t) => (
-                <option key={t} value={t}>
-                  {t || 'All types'}
-                </option>
-              ))}
-            </select>
+            <SelectField
+              id="audit-target-type"
+              label="Target Type"
+              value={targetType}
+              onChange={setTargetType}
+              options={TARGET_TYPES.map((t) => ({
+                value: t,
+                label: t || 'All types',
+              }))}
+            />
           </div>
 
           <div className={styles.formGroup}>
@@ -221,8 +224,7 @@ export default function AuditLogsPage() {
                     {logs.map((log) => {
                       const meta = formatAction(log.action);
                       const targetColor =
-                        TARGET_COLORS[log.targetType?.toUpperCase()] ??
-                        'rgba(255,255,255,0.5)';
+                        TARGET_COLORS[log.targetType?.toUpperCase()] ?? 'rgba(255,255,255,0.5)';
                       return (
                         <tr key={log.id}>
                           {/* ── Event (icon + human label + raw code) ── */}

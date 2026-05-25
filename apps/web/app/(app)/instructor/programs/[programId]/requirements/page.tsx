@@ -7,6 +7,7 @@ import { apiFetch } from '../../../../../lib/session';
 import { useFetch } from '../../../../../lib/use-fetch';
 import SectionNav from '../../../../_components/section-nav';
 import { programSections } from '../../../../_components/workspace-sections';
+import SelectField from '../../../../_components/ui/select-field';
 import styles from '../../../instructor.module.css';
 
 export default function ProgramRequirementsPage({
@@ -175,13 +176,13 @@ export default function ProgramRequirementsPage({
                   />
                 </div>
                 <div className={styles.formGroup}>
-                  <label htmlFor="category">Category</label>
-                  <select
+                  <SelectField
                     id="category"
+                    label="Category"
                     value={category}
-                    onChange={(event) =>
+                    onChange={(value) =>
                       setCategory(
-                        event.target.value as
+                        value as
                           | 'foundation'
                           | 'core'
                           | 'depth'
@@ -190,37 +191,23 @@ export default function ProgramRequirementsPage({
                           | 'policy'
                       )
                     }
-                  >
-                    {['foundation', 'core', 'depth', 'elective', 'capstone', 'policy'].map(
-                      (value) => (
-                        <option key={value} value={value}>
-                          {value}
-                        </option>
-                      )
+                    options={['foundation', 'core', 'depth', 'elective', 'capstone', 'policy'].map(
+                      (value) => ({ value, label: value })
                     )}
-                  </select>
+                  />
                 </div>
                 <div className={styles.formGroup}>
-                  <label htmlFor="ruleType">Rule type</label>
-                  <select
+                  <SelectField
                     id="ruleType"
+                    label="Rule type"
                     value={ruleType}
-                    onChange={(event) =>
-                      setRuleType(
-                        event.target.value as
-                          | 'required'
-                          | 'choose_n'
-                          | 'elective_pool'
-                          | 'track_gate'
-                      )
+                    onChange={(value) =>
+                      setRuleType(value as 'required' | 'choose_n' | 'elective_pool' | 'track_gate')
                     }
-                  >
-                    {['required', 'choose_n', 'elective_pool', 'track_gate'].map((value) => (
-                      <option key={value} value={value}>
-                        {value}
-                      </option>
-                    ))}
-                  </select>
+                    options={['required', 'choose_n', 'elective_pool', 'track_gate'].map(
+                      (value) => ({ value, label: value })
+                    )}
+                  />
                 </div>
                 <div className={styles.formGroup}>
                   <label htmlFor="courseIds">Catalog course IDs</label>

@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import DropdownMenu, { DropdownChevron, DropdownGroup, useDropdownClose } from './ui/dropdown-menu';
 import { usePathname } from 'next/navigation';
 import { getInitials } from '../../lib/utils';
 import NibrasLogo from '@/app/_components/nibras-logo';
@@ -134,31 +135,6 @@ function UserDropdown({
   githubAvatarUrl: string | null;
   identity: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
-
-  /* close on outside click */
-  useEffect(() => {
-    if (!open) return;
-    function handler(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  /* close on Escape */
-  useEffect(() => {
-    if (!open) return;
-    function handler(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false);
-    }
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [open]);
-
   const isAdmin = user?.systemRole === 'admin';
   const menuItems = [
     ...(isAdmin ? [{ label: 'Builder', icon: <IconBuilder />, href: '/instructor' }] : []),
@@ -172,245 +148,224 @@ function UserDropdown({
   ];
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative', flexShrink: 0 }}>
-      {/* ── Trigger button ── */}
-      <button
-        aria-label="User menu"
-        aria-expanded={open}
-        aria-haspopup="true"
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          background: open ? 'rgba(255,255,255,0.07)' : 'transparent',
-          border: open ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
-          borderRadius: 9,
-          padding: '3px 8px 3px 4px',
-          cursor: 'pointer',
-          transition: 'background 0.15s, border-color 0.15s',
-        }}
-        onMouseEnter={(e) => {
-          if (!open) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-        }}
-        onMouseLeave={(e) => {
-          if (!open) e.currentTarget.style.background = 'transparent';
-        }}
-      >
-        {githubAvatarUrl ? (
-          <Image
-            src={githubAvatarUrl}
-            alt={user?.githubLogin ?? 'avatar'}
-            width={26}
-            height={26}
-            style={{
-              borderRadius: '50%',
-              objectFit: 'cover',
-              display: 'block',
-              border: '1px solid rgba(255,255,255,0.14)',
-            }}
-          />
-        ) : (
+    <DropdownMenu
+      align="end"
+      width="sm"
+      menuKeyboard
+      trigger={({ open, triggerRef, triggerProps }) => (
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-label="User menu"
+          {...triggerProps}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            background: open ? 'rgba(255,255,255,0.07)' : 'transparent',
+            border: open ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
+            borderRadius: 9,
+            padding: '3px 8px 3px 4px',
+            cursor: 'pointer',
+            transition: 'background 0.15s, border-color 0.15s',
+          }}
+          onMouseEnter={(e) => {
+            if (!open) e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+          }}
+          onMouseLeave={(e) => {
+            if (!open) e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          {githubAvatarUrl ? (
+            <Image
+              src={githubAvatarUrl}
+              alt={user?.githubLogin ?? 'avatar'}
+              width={26}
+              height={26}
+              style={{
+                borderRadius: '50%',
+                objectFit: 'cover',
+                display: 'block',
+                border: '1px solid rgba(255,255,255,0.14)',
+              }}
+            />
+          ) : (
+            <span
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.14)',
+                display: 'grid',
+                placeItems: 'center',
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#fafafa',
+                flexShrink: 0,
+              }}
+            >
+              {loading ? '…' : getInitials(identity)}
+            </span>
+          )}
           <span
             style={{
-              width: 26,
-              height: 26,
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              display: 'grid',
-              placeItems: 'center',
-              fontSize: 10,
-              fontWeight: 700,
-              color: '#fafafa',
-              flexShrink: 0,
+              fontSize: 13,
+              fontWeight: 500,
+              color: 'rgba(250,250,250,0.8)',
+              maxWidth: 110,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
-            {loading ? '…' : getInitials(identity)}
+            {loading ? '…' : identity}
           </span>
-        )}
-        <span
+          <DropdownChevron open={open} />
+        </button>
+      )}
+    >
+      <UserMenuPanel
+        menuItems={menuItems}
+        identity={identity}
+        email={user?.email}
+        loading={loading}
+      />
+    </DropdownMenu>
+  );
+}
+
+function UserMenuPanel({
+  menuItems,
+  identity,
+  email,
+  loading,
+}: {
+  menuItems: Array<{ label: string; icon: ReactNode; href: string }>;
+  identity: string;
+  email?: string;
+  loading: boolean;
+}) {
+  const close = useDropdownClose();
+
+  return (
+    <>
+      <div
+        style={{
+          padding: '14px 16px 12px',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
+        }}
+      >
+        <div
           style={{
-            fontSize: 13,
-            fontWeight: 500,
-            color: 'rgba(250,250,250,0.8)',
-            maxWidth: 110,
+            fontSize: 14,
+            fontWeight: 700,
+            color: '#fafafa',
+            lineHeight: 1.3,
+            marginBottom: 3,
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
           }}
         >
           {loading ? '…' : identity}
-        </span>
-        <svg
-          width="11"
-          height="11"
-          viewBox="0 0 12 12"
-          fill="none"
-          aria-hidden="true"
-          style={{
-            color: 'rgba(161,161,170,0.5)',
-            flexShrink: 0,
-            transition: 'transform 0.18s',
-            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-          }}
-        >
-          <path
-            d="M2 4l4 4 4-4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-
-      {/* ── Dropdown panel ── */}
-      {open && (
+        </div>
         <div
-          role="menu"
           style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            right: 0,
-            width: 220,
-            background: '#111111',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4)',
+            fontSize: 12,
+            color: 'rgba(161,161,170,0.55)',
             overflow: 'hidden',
-            zIndex: 200,
-            animation: 'dropIn 0.14s ease',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
           }}
         >
-          <style>{`
-            @keyframes dropIn {
-              from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-              to   { opacity: 1; transform: translateY(0)    scale(1); }
-            }
-          `}</style>
+          {email || '—'}
+        </div>
+      </div>
 
-          {/* User info header */}
-          <div
+      <div style={{ padding: '6px 0' }}>
+        {menuItems.map((item) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            role="menuitem"
+            onClick={close}
             style={{
-              padding: '14px 16px 12px',
-              borderBottom: '1px solid rgba(255,255,255,0.07)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 11,
+              padding: '9px 16px',
+              fontSize: 13.5,
+              fontWeight: 500,
+              color: 'rgba(161,161,170,0.8)',
+              textDecoration: 'none',
+              transition: 'background 0.12s, color 0.12s',
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+              e.currentTarget.style.color = '#fafafa';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'rgba(161,161,170,0.8)';
             }}
           >
-            <div
+            <span
               style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: '#fafafa',
-                lineHeight: 1.3,
-                marginBottom: 3,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                color: 'rgba(161,161,170,0.5)',
+                display: 'grid',
+                placeItems: 'center',
+                flexShrink: 0,
               }}
             >
-              {loading ? '…' : identity}
-            </div>
-            <div
-              style={{
-                fontSize: 12,
-                color: 'rgba(161,161,170,0.55)',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {user?.email || '—'}
-            </div>
-          </div>
+              {item.icon}
+            </span>
+            {item.label}
+          </Link>
+        ))}
+      </div>
 
-          {/* Menu items */}
-          <div style={{ padding: '6px 0' }}>
-            {menuItems.map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                role="menuitem"
-                onClick={() => setOpen(false)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 11,
-                  padding: '9px 16px',
-                  fontSize: 13.5,
-                  fontWeight: 500,
-                  color: 'rgba(161,161,170,0.8)',
-                  textDecoration: 'none',
-                  transition: 'background 0.12s, color 0.12s',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                  e.currentTarget.style.color = '#fafafa';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'rgba(161,161,170,0.8)';
-                }}
-              >
-                <span
-                  style={{
-                    color: 'rgba(161,161,170,0.5)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  {item.icon}
-                </span>
-                {item.label}
-              </Link>
-            ))}
-          </div>
-
-          {/* Divider + Sign out */}
-          <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '6px 0' }}>
-            <Link
-              href="/"
-              role="menuitem"
-              onClick={() => setOpen(false)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 11,
-                padding: '9px 16px',
-                fontSize: 13.5,
-                fontWeight: 500,
-                color: 'rgba(248,113,113,0.75)',
-                textDecoration: 'none',
-                transition: 'background 0.12s, color 0.12s',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(239,68,68,0.07)';
-                e.currentTarget.style.color = '#f87171';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = 'rgba(248,113,113,0.75)';
-              }}
-            >
-              <span
-                style={{
-                  color: 'rgba(248,113,113,0.55)',
-                  display: 'grid',
-                  placeItems: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <IconSignOut />
-              </span>
-              Sign out
-            </Link>
-          </div>
-        </div>
-      )}
-    </div>
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', padding: '6px 0' }}>
+        <Link
+          href="/"
+          role="menuitem"
+          onClick={close}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 11,
+            padding: '9px 16px',
+            fontSize: 13.5,
+            fontWeight: 500,
+            color: 'rgba(248,113,113,0.75)',
+            textDecoration: 'none',
+            transition: 'background 0.12s, color 0.12s',
+            cursor: 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'rgba(239,68,68,0.07)';
+            e.currentTarget.style.color = '#f87171';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'rgba(248,113,113,0.75)';
+          }}
+        >
+          <span
+            style={{
+              color: 'rgba(248,113,113,0.55)',
+              display: 'grid',
+              placeItems: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <IconSignOut />
+          </span>
+          Sign out
+        </Link>
+      </div>
+    </>
   );
 }
 
@@ -458,168 +413,122 @@ function NavDropdown({
   compact: boolean;
   pathname: string | null;
 }) {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef<HTMLDivElement>(null);
   const isActive = isNavGroupActive(group.id, items, pathname);
   const activeItem = getActiveNavItemInGroup(items, pathname);
-
-  useEffect(() => {
-    if (!open) return;
-    function handler(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    function handler(e: KeyboardEvent) {
-      if (e.key === 'Escape') setOpen(false);
-    }
-    document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [open]);
 
   if (items.length === 0) return null;
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative' }}>
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-haspopup="true"
-        title={group.description}
-        onClick={() => setOpen((value) => !value)}
+    <DropdownMenu
+      align="start"
+      width="auto"
+      menuKeyboard
+      trigger={({ open, triggerRef, triggerProps }) => (
+        <button
+          ref={triggerRef}
+          type="button"
+          title={group.description}
+          {...triggerProps}
+          style={{
+            ...navLinkStyle(isActive, compact),
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 4,
+            border: 'none',
+            cursor: 'pointer',
+            font: 'inherit',
+          }}
+        >
+          {isActive && activeItem ? activeItem.label : group.label}
+          <DropdownChevron open={open} />
+        </button>
+      )}
+    >
+      <NavMenuPanel group={group} items={items} pathname={pathname} />
+    </DropdownMenu>
+  );
+}
+
+function NavMenuPanel({
+  group,
+  items,
+  pathname,
+}: {
+  group: NavDropdownGroup;
+  items: AppNavItem[];
+  pathname: string | null;
+}) {
+  const close = useDropdownClose();
+
+  return (
+    <>
+      <div
         style={{
-          ...navLinkStyle(isActive, compact),
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 4,
-          border: 'none',
-          cursor: 'pointer',
-          font: 'inherit',
+          padding: '12px 14px 10px',
+          borderBottom: '1px solid rgba(255,255,255,0.07)',
         }}
       >
-        {isActive && activeItem ? activeItem.label : group.label}
-        <svg
-          width="11"
-          height="11"
-          viewBox="0 0 12 12"
-          fill="none"
-          aria-hidden="true"
-          style={{
-            color: 'rgba(161,161,170,0.5)',
-            flexShrink: 0,
-            transition: 'transform 0.18s',
-            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
-          }}
-        >
-          <path
-            d="M2 4l4 4 4-4"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-
-      {open && (
         <div
-          role="menu"
           style={{
-            position: 'absolute',
-            top: 'calc(100% + 8px)',
-            left: 0,
-            minWidth: 240,
-            background: '#111111',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: 12,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.4)',
-            overflow: 'hidden',
-            zIndex: 200,
-            animation: 'navDropIn 0.14s ease',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'rgba(161,161,170,0.55)',
+            marginBottom: 4,
           }}
         >
-          <style>{`
-            @keyframes navDropIn {
-              from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-              to   { opacity: 1; transform: translateY(0)    scale(1); }
-            }
-          `}</style>
+          {group.label}
+        </div>
+        <div style={{ fontSize: 12, color: 'rgba(161,161,170,0.65)', lineHeight: 1.4 }}>
+          {group.description}
+        </div>
+      </div>
 
-          <div
-            style={{
-              padding: '12px 14px 10px',
-              borderBottom: '1px solid rgba(255,255,255,0.07)',
-            }}
-          >
-            <div
+      <div style={{ padding: '6px 0' }}>
+        {items.map((item) => {
+          const itemActive = isNavItemActive(item, pathname);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              role="menuitem"
+              title={item.description}
+              onClick={close}
               style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                color: 'rgba(161,161,170,0.55)',
-                marginBottom: 4,
+                display: 'block',
+                padding: '9px 14px',
+                textDecoration: 'none',
+                transition: 'background 0.12s',
+                background: itemActive ? 'rgba(255,255,255,0.05)' : 'transparent',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = itemActive
+                  ? 'rgba(255,255,255,0.05)'
+                  : 'transparent';
               }}
             >
-              {group.label}
-            </div>
-            <div style={{ fontSize: 12, color: 'rgba(161,161,170,0.65)', lineHeight: 1.4 }}>
-              {group.description}
-            </div>
-          </div>
-
-          <div style={{ padding: '6px 0' }}>
-            {items.map((item) => {
-              const itemActive = isNavItemActive(item, pathname);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  role="menuitem"
-                  title={item.description}
-                  onClick={() => setOpen(false)}
-                  style={{
-                    display: 'block',
-                    padding: '9px 14px',
-                    textDecoration: 'none',
-                    transition: 'background 0.12s',
-                    background: itemActive ? 'rgba(255,255,255,0.05)' : 'transparent',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = itemActive
-                      ? 'rgba(255,255,255,0.05)'
-                      : 'transparent';
-                  }}
-                >
-                  <div
-                    style={{
-                      fontSize: 13.5,
-                      fontWeight: itemActive ? 600 : 500,
-                      color: itemActive ? '#fafafa' : 'rgba(250,250,250,0.85)',
-                      marginBottom: 2,
-                    }}
-                  >
-                    {item.label}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'rgba(161,161,170,0.6)', lineHeight: 1.35 }}>
-                    {item.description}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </div>
+              <div
+                style={{
+                  fontSize: 13.5,
+                  fontWeight: itemActive ? 600 : 500,
+                  color: itemActive ? '#fafafa' : 'rgba(250,250,250,0.85)',
+                  marginBottom: 2,
+                }}
+              >
+                {item.label}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(161,161,170,0.6)', lineHeight: 1.35 }}>
+                {item.description}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -666,82 +575,86 @@ export default function TopHeader({
       }}
     >
       {/* ── Centered inner wrapper ── */}
-      <div
-        style={{
-          maxWidth: 1280,
-          margin: '0 auto',
-          padding: compact ? '0 24px' : '0 40px',
-          height: compact ? 46 : 52,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: compact ? 16 : 24,
-        }}
-      >
-        {/* Left: Logo + Beta + Nav */}
+      <DropdownGroup>
         <div
-          style={{ display: 'flex', alignItems: 'center', gap: compact ? 14 : 20, flexShrink: 0 }}
+          style={{
+            maxWidth: 1280,
+            margin: '0 auto',
+            padding: compact ? '0 24px' : '0 40px',
+            height: compact ? 46 : 52,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: compact ? 16 : 24,
+          }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 6 : 8 }}>
-            <a
-              href="https://nibrasplatform.me"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Visit NibrasPlaftorm.me"
-              style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
-            >
-              <NibrasLogo variant="inverse" width={compact ? 82 : 90} priority />
-            </a>
-            <span
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: 'rgba(74,222,128,0.9)',
-                background: 'rgba(34,197,94,0.1)',
-                border: '1px solid rgba(34,197,94,0.22)',
-                borderRadius: 999,
-                padding: '2px 8px',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-              }}
-            >
-              Beta
-            </span>
+          {/* Left: Logo + Beta + Nav */}
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: compact ? 14 : 20, flexShrink: 0 }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 6 : 8 }}>
+              <a
+                href="https://nibrasplatform.me"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Visit NibrasPlaftorm.me"
+                style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
+              >
+                <NibrasLogo variant="inverse" width={compact ? 82 : 90} priority />
+              </a>
+              <span
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: 'rgba(74,222,128,0.9)',
+                  background: 'rgba(34,197,94,0.1)',
+                  border: '1px solid rgba(34,197,94,0.22)',
+                  borderRadius: 999,
+                  padding: '2px 8px',
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Beta
+              </span>
+            </div>
+
+            <nav style={{ display: 'flex', alignItems: 'center', gap: compact ? 0 : 2 }}>
+              {getPrimaryNavItems(user).map((item) => (
+                <NavLink key={item.href} item={item} compact={compact} pathname={pathname} />
+              ))}
+              {navDropdownGroups.map((group) => (
+                <NavDropdown
+                  key={group.id}
+                  group={group}
+                  items={getNavItemsForGroup(group.id, user)}
+                  compact={compact}
+                  pathname={pathname}
+                />
+              ))}
+              {(() => {
+                const adminItem = getAdminNavItem(user);
+                return adminItem ? (
+                  <NavLink item={adminItem} compact={compact} pathname={pathname} />
+                ) : null;
+              })()}
+            </nav>
           </div>
 
-          <nav style={{ display: 'flex', alignItems: 'center', gap: compact ? 0 : 2 }}>
-            {getPrimaryNavItems(user).map((item) => (
-              <NavLink key={item.href} item={item} compact={compact} pathname={pathname} />
-            ))}
-            {navDropdownGroups.map((group) => (
-              <NavDropdown
-                key={group.id}
-                group={group}
-                items={getNavItemsForGroup(group.id, user)}
-                compact={compact}
-                pathname={pathname}
-              />
-            ))}
-            {(() => {
-              const adminItem = getAdminNavItem(user);
-              return adminItem ? (
-                <NavLink item={adminItem} compact={compact} pathname={pathname} />
-              ) : null;
-            })()}
-          </nav>
+          {/* Right: Notifications + User dropdown */}
+          <div
+            style={{ display: 'flex', alignItems: 'center', gap: compact ? 2 : 4, flexShrink: 0 }}
+          >
+            <NotificationsPanel />
+            <UserDropdown
+              user={user}
+              loading={loading}
+              githubAvatarUrl={githubAvatarUrl}
+              identity={identity}
+            />
+          </div>
         </div>
-
-        {/* Right: Notifications + User dropdown */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 2 : 4, flexShrink: 0 }}>
-          <NotificationsPanel />
-          <UserDropdown
-            user={user}
-            loading={loading}
-            githubAvatarUrl={githubAvatarUrl}
-            identity={identity}
-          />
-        </div>
-      </div>
+      </DropdownGroup>
     </header>
   );
 }

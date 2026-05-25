@@ -7,6 +7,7 @@ import { use } from 'react';
 import { useFormSubmit } from '../../../../../../lib/use-form-submit';
 import { useFetch } from '../../../../../../lib/use-fetch';
 import { getLevelLabel } from '../../../../../../lib/levels';
+import SelectField from '../../../../../_components/ui/select-field';
 import styles from '../../../../instructor.module.css';
 
 type RubricRow = { criterion: string; maxScore: number };
@@ -16,6 +17,7 @@ export default function NewProjectPage({ params }: { params: Promise<{ courseId:
   const { courseId } = use(params);
   const router = useRouter();
   const [level, setLevel] = useState(1);
+  const [deliveryMode, setDeliveryMode] = useState('individual');
   const [templateId, setTemplateId] = useState('');
   const [rubric, setRubric] = useState<RubricRow[]>([{ criterion: '', maxScore: 10 }]);
   const [resources, setResources] = useState<ResourceRow[]>([]);
@@ -103,20 +105,19 @@ export default function NewProjectPage({ params }: { params: Promise<{ courseId:
             </Link>
           </div>
           <div className={styles.formGroup}>
-            <label htmlFor="templateId">Project blueprint</label>
-            <select
+            <SelectField
               id="templateId"
+              label="Project blueprint"
               value={templateId}
-              onChange={(event) => setTemplateId(event.target.value)}
-            >
-              <option value="">Create from scratch</option>
-              {(templates ?? []).map((template) => (
-                <option key={template.id} value={template.id}>
-                  {template.title}
-                  {template.teamSize ? ` · ${template.teamSize} students` : ''}
-                </option>
-              ))}
-            </select>
+              onChange={setTemplateId}
+              options={[
+                { value: '', label: 'Create from scratch' },
+                ...(templates ?? []).map((template) => ({
+                  value: template.id,
+                  label: `${template.title}${template.teamSize ? ` · ${template.teamSize} students` : ''}`,
+                })),
+              ]}
+            />
             <p className={styles.muted}>
               Templates carry reusable milestones, rubric structure, team size, and role definitions
               into new project launches.
@@ -146,22 +147,30 @@ export default function NewProjectPage({ params }: { params: Promise<{ courseId:
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="level">Academic Year Level</label>
-          <select id="level" value={level} onChange={(e) => setLevel(Number(e.target.value))}>
-            {[1, 2, 3, 4].map((lvl) => (
-              <option key={lvl} value={lvl}>
-                {getLevelLabel(lvl)}
-              </option>
-            ))}
-          </select>
+          <SelectField
+            id="level"
+            label="Academic Year Level"
+            value={String(level)}
+            onChange={(value) => setLevel(Number(value))}
+            options={[1, 2, 3, 4].map((lvl) => ({
+              value: String(lvl),
+              label: getLevelLabel(lvl),
+            }))}
+          />
         </div>
 
         <div className={styles.formGroup}>
-          <label htmlFor="deliveryMode">Delivery Mode</label>
-          <select id="deliveryMode" name="deliveryMode" defaultValue="individual">
-            <option value="individual">Individual</option>
-            <option value="team">Team</option>
-          </select>
+          <SelectField
+            id="deliveryMode"
+            name="deliveryMode"
+            label="Delivery Mode"
+            value={deliveryMode}
+            onChange={setDeliveryMode}
+            options={[
+              { value: 'individual', label: 'Individual' },
+              { value: 'team', label: 'Team' },
+            ]}
+          />
         </div>
 
         {/* Rubric */}
