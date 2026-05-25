@@ -38,7 +38,7 @@ export const navDropdownGroups: NavDropdownGroup[] = [
   {
     id: 'community',
     label: 'Community',
-    description: 'Ask questions, join discussions, and browse tags.',
+    description: 'Ask questions and join course discussions.',
   },
   {
     id: 'compete',
@@ -143,8 +143,8 @@ export const appNavItems: AppNavItem[] = [
   {
     href: '/community/tags',
     label: 'Tags',
-    description: 'Browse topics and filter questions by tag.',
-    visibility: 'all',
+    description: 'Create, edit, and remove community tags.',
+    visibility: 'admin',
     placement: 'community',
   },
   {
@@ -411,8 +411,8 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: 'Long-form threads scoped to your enrolled courses.',
   },
   '/community/tags': {
-    title: 'Tags',
-    subtitle: 'Browse topics and filter questions by tag.',
+    title: 'Manage Tags',
+    subtitle: 'Create, edit, or remove community tags.',
   },
   '/competitions': {
     title: 'Contests',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
 import Skeleton from '../../_components/widgets/Skeleton';
@@ -15,7 +16,9 @@ import { friendlyMessage } from '../../../lib/api-clients/errors';
 import { useSession } from '../../_components/session-context';
 
 export default function TagsAdminPage() {
-  const { user } = useSession();
+  const router = useRouter();
+  const { user, loading: sessionLoading } = useSession();
+  const isAdmin = user?.systemRole === 'admin';
   const [tags, setTags] = useState<AdminCommunityTag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,19 +50,16 @@ export default function TagsAdminPage() {
   }, []);
 
   useEffect(() => {
+    if (sessionLoading) return;
+    if (!isAdmin) {
+      router.replace('/community');
+      return;
+    }
     void load();
-  }, [load]);
+  }, [sessionLoading, isAdmin, load, router]);
 
-  if (user?.systemRole !== 'admin') {
-    return (
-      <div className={styles.page}>
-        <EmptyState
-          title="Access denied"
-          description="Only administrators can manage tags."
-          tone="error"
-        />
-      </div>
-    );
+  if (sessionLoading || !isAdmin) {
+    return null;
   }
 
   async function handleAdd(e: React.FormEvent) {
