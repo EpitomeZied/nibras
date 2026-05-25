@@ -9,7 +9,6 @@ import { getInitials } from '../../lib/utils';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import {
   getPrimaryNavItems,
-  canAccessNavItem,
   isNavItemActive,
   type ShellSessionUser as NavShellUser,
 } from './nav-config';
