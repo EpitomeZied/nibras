@@ -39,11 +39,13 @@
     "lint:fix": "eslint . --fix && prettier --write .",
     "validate:env": "node scripts/validate-env.js",
     "verify:cli-download": "node scripts/verify-cli-download.js",
-    "seed:stanford": "npx tsx prisma/seed-stanford.ts"
+    "seed:stanford": "npx tsx prisma/seed-stanford.ts",
+    "seed:stanford-projects": "npx tsx prisma/seed-stanford-projects.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts",
-    "seed:stanford": "npx tsx prisma/seed-stanford.ts"
+    "seed:stanford": "npx tsx prisma/seed-stanford.ts",
+    "seed:stanford-projects": "npx tsx prisma/seed-stanford-projects.ts"
   },
   "files": [
     "apps",
