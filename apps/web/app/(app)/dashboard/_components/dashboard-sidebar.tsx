@@ -133,7 +133,11 @@ export default function DashboardSidebar({
               );
               if (href) {
                 return (
-                  <Link key={entry.id} href={href} className={`${styles.listRow} ${styles.toneNeutral}`}>
+                  <Link
+                    key={entry.id}
+                    href={href}
+                    className={`${styles.listRow} ${styles.toneNeutral}`}
+                  >
                     <div className={styles.listRowMain}>{body}</div>
                   </Link>
                 );

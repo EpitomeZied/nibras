@@ -92,7 +92,11 @@ function InstructorCourseCard({ course }: { course: InstructorCourseSummary }) {
   );
 }
 
-export default function InstructorDashboard({ instructor }: { instructor: InstructorHomeDashboard }) {
+export default function InstructorDashboard({
+  instructor,
+}: {
+  instructor: InstructorHomeDashboard;
+}) {
   return (
     <div className={styles.dashboardMain}>
       <section className={styles.panel}>

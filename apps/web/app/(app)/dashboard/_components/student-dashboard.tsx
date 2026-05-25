@@ -86,7 +86,9 @@ function CourseSnapshotCard({ snapshot }: { snapshot: StudentCourseSnapshot }) {
       <div className={styles.snapshotSection}>
         <span className={styles.sectionLabel}>Next milestones</span>
         {snapshot.nextMilestones.length === 0 ? (
-          <p className={styles.inlineNote}>No milestone deadlines are queued for this course yet.</p>
+          <p className={styles.inlineNote}>
+            No milestone deadlines are queued for this course yet.
+          </p>
         ) : (
           <div className={styles.miniList}>
             {snapshot.nextMilestones.map((milestone) => (

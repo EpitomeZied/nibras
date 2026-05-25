@@ -13,14 +13,20 @@ export type LandingFeatureGroup = {
   features: LandingFeature[];
 };
 
-export const heroBadge = 'Early Access · Templates, IDE, achievements & more';
+export const heroBadge = 'Early Access · My Courses, smart dashboard, IDE, badges & more';
 
 export const heroSub =
-  'One platform for courses, projects, planning, and delivery — plus Hassona tutoring, community Q&A, competitive practice, in-browser IDE, reputation & badges, and GitHub-native CLI submissions.';
+  'One platform for courses, projects, planning, and delivery — with My Courses (lectures, assignments, grades), a Projects hub, upcoming deadlines on your dashboard, Hassona tutoring, Q&A and Discussions, competitive practice, in-browser IDE, levels and badges, and GitHub-native CLI submissions.';
+
+export const whatsNew = [
+  'My Courses — videos, assignments, and grades in one enrolled-course hub',
+  'Smart dashboard — overall stats, upcoming deadlines, and course snapshots',
+  'Expanded badges — richer catalog, reputation breakdown, and level tiers',
+] as const;
 
 export const statsBar = [
   { number: '20+', label: 'Connected workflows in one system' },
-  { number: '6', label: 'Student surfaces beyond the LMS' },
+  { number: '8+', label: 'Student surfaces beyond the LMS' },
   { number: '24/7', label: 'Course operations visibility' },
 ] as const;
 
@@ -28,17 +34,19 @@ export const mockupUrl = 'nibrasplatform.me/dashboard';
 
 export const mockupSidebar = [
   { label: 'Dashboard', active: true },
-  { label: 'Catalog', active: false },
+  { label: 'Projects', active: false },
   { label: 'Planner', active: false },
   { label: 'Hassona', active: false },
-  { label: 'IDE', active: false },
-  { label: 'Community', active: false },
-  { label: 'Competitions', active: false },
-  { label: 'Achievements', active: false },
+  { label: 'My Courses', active: false },
+  { label: 'Q&A', active: false },
+  { label: 'Discussions', active: false },
+  { label: 'Nibras 75', active: false },
+  { label: 'Badges', active: false },
+  { label: 'Levels', active: false },
 ] as const;
 
 export const mockupStatCards = [
-  { label: 'Templates', value: '6', sub: 'Reusable blueprints' },
+  { label: 'Deadlines', value: '3', sub: 'Due this week' },
   { label: 'Reputation', value: '1.2k', sub: 'Points this term' },
   { label: 'Nibras 75', value: '42', sub: 'Problems solved' },
 ] as const;
@@ -46,15 +54,21 @@ export const mockupStatCards = [
 export const mockupTableRows = [
   {
     student: 'Capstone Team Project',
-    project: 'Template',
+    project: 'Projects',
     status: 'passed' as const,
     score: 'Active',
   },
   {
-    student: 'Role Preferences',
-    project: 'Team Formation',
+    student: 'HW2 — Sorting',
+    project: 'My Courses',
     status: 'pending' as const,
-    score: '12 apps',
+    score: 'Due Fri',
+  },
+  {
+    student: 'Midterm Grade',
+    project: 'Grades',
+    status: 'passed' as const,
+    score: '88%',
   },
   {
     student: 'Applied Systems Track',
@@ -63,14 +77,8 @@ export const mockupTableRows = [
     score: 'Selected',
   },
   {
-    student: 'Graduation Sheet',
-    project: 'Program Sheet',
-    status: 'failed' as const,
-    score: 'Advisor review',
-  },
-  {
     student: 'Nibras 75 Practice',
-    project: 'Competitions',
+    project: 'Compete',
     status: 'passed' as const,
     score: '42 solved',
   },
@@ -81,10 +89,16 @@ export const mockupTableRows = [
     score: 'Accepted',
   },
   {
-    student: 'Community Helper',
-    project: 'Achievements',
+    student: 'Study Group Thread',
+    project: 'Discussions',
     status: 'pending' as const,
-    score: '3 badges',
+    score: '8 replies',
+  },
+  {
+    student: 'Community Helper',
+    project: 'Levels',
+    status: 'pending' as const,
+    score: 'Tier 4',
   },
 ] as const;
 
@@ -101,7 +115,7 @@ export const howItWorksSteps = [
     step: '02',
     icon: 'timeline-people' as const,
     title: 'Coordinate people and plans',
-    desc: 'Collect role applications, generate teams, run community discussions, route petitions, and keep students on track with Hassona and achievements.',
+    desc: 'Collect role applications, generate teams, run Q&A and course Discussions, open My Courses for lectures and assignments, and keep students on track with Hassona and achievements.',
     cta: 'View CLI guide →',
     href: '/instructor/onboarding',
   },
@@ -109,7 +123,7 @@ export const howItWorksSteps = [
     step: '03',
     icon: 'timeline-delivery' as const,
     title: 'Run delivery and review',
-    desc: 'Students submit from the terminal, practice in the IDE, earn reputation, and instructors review with analytics visible all semester.',
+    desc: 'Students see upcoming deadlines on the dashboard, submit from the terminal, practice in the IDE, climb Levels, and instructors review with analytics visible all semester.',
     cta: null,
     href: null,
   },
@@ -119,7 +133,7 @@ export const transformPains = [
   'Project setup recreated manually every time a course runs',
   'Role preferences and team formation handled in forms and spreadsheets',
   'Program requirements, tracks, and petitions managed outside the product',
-  'Students jumping between portals, IDEs, and practice sites to know what comes next',
+  'LMS, practice sites, and tutoring spread across tabs with no shared deadlines view',
   'Submissions, planning, and review state living in disconnected tools',
   'AI tutoring, forums, contests, and gamification spread across separate apps',
 ] as const;
@@ -128,9 +142,9 @@ export const transformGains = [
   'Reusable templates define roles, team size, milestones, and rubric structure',
   'Students apply for roles, instructors generate teams, and final rosters get locked in one flow',
   'Planner workspaces track requirements, tracks, petitions, approvals, and printable sheets',
+  'My Courses, dashboard deadlines, and enrolled-course content live beside projects and planning',
   'Students submit with one CLI command and practice code in a built-in IDE',
-  'Courses, projects, planning, and review stay visible in the same operating layer',
-  'Hassona, community, competitions, IDE, and achievements share one reputation layer',
+  'Hassona, Q&A, Discussions, competitions, IDE, badges, and Levels share one reputation layer',
 ] as const;
 
 export const transformSub =
@@ -168,6 +182,11 @@ export const featureGroups: LandingFeatureGroup[] = [
         desc: 'Browse templates and apply to projects across all enrolled courses from one catalog.',
       },
       {
+        icon: 'courses',
+        title: 'My Courses',
+        desc: 'Open enrolled courses for lecture videos, assignments, grades, and course-scoped content — no separate LMS tab.',
+      },
+      {
         icon: 'course-ops',
         title: 'Course Operations',
         desc: 'Keep courses, projects, review queues, join links, and instructor actions visible in one system with less switching and less admin drag.',
@@ -185,6 +204,11 @@ export const featureGroups: LandingFeatureGroup[] = [
     navLabel: 'Delivery',
     features: [
       {
+        icon: 'dashboard',
+        title: 'Smart Dashboard',
+        desc: 'See overall stats, upcoming deadlines, and per-course snapshots the moment you sign in — student and instructor modes.',
+      },
+      {
         icon: 'github-cli',
         title: 'GitHub + CLI',
         desc: 'Students submit through a clean developer workflow with GitHub history, live CLI feedback, device login, and verifiable delivery.',
@@ -197,7 +221,7 @@ export const featureGroups: LandingFeatureGroup[] = [
       {
         icon: 'notifications',
         title: 'In-app Notifications',
-        desc: 'Get notified when your submission is reviewed, graded, or needs changes — instantly in-app and by email.',
+        desc: 'Get notified when your submission is reviewed, graded, or needs changes — instantly in-app and by email, with granular preferences.',
       },
       {
         icon: 'submission-analytics',
@@ -223,18 +247,28 @@ export const featureGroups: LandingFeatureGroup[] = [
       },
       {
         icon: 'community',
-        title: 'Community',
-        desc: 'Ask questions with markdown, vote on answers, browse tags, and join course-scoped discussions and threads.',
+        title: 'Community Q&A',
+        desc: 'Ask questions with markdown, vote on answers, browse tags, and get course-scoped help from peers and instructors.',
+      },
+      {
+        icon: 'discussions',
+        title: 'Course Discussions',
+        desc: 'Run long-form threads scoped to enrolled courses — study groups, clarifications, and async conversation beside Q&A.',
       },
       {
         icon: 'competitions',
         title: 'Competitions',
-        desc: 'Practice Nibras 75, Codeforces problems, contest calendars, platform integrations, and ranked competitive history.',
+        desc: 'Practice Nibras 75, Codeforces and Code Hunt problems, connect external platforms, contest calendars, and ranked history.',
       },
       {
         icon: 'achievements',
-        title: 'Achievements & Reputation',
-        desc: 'Earn badges retroactively, build reputation from real activity, climb leaderboards, and track level progression.',
+        title: 'Achievements & Badges',
+        desc: 'Earn from an expanded badge catalog with retroactive awards, full progress visibility, leaderboards, and reputation tracking.',
+      },
+      {
+        icon: 'levels',
+        title: 'Levels',
+        desc: 'Climb tier progression based on reputation and real contributions — from helper badges to competitive milestones.',
       },
     ],
   },
@@ -287,7 +321,7 @@ export const testimonials = [
   },
   {
     quote:
-      'I used to bounce between Discord, LeetCode, and our LMS. With Hassona, the IDE, achievements, and Nibras 75 beside my projects, I always know what to work on next.',
+      'I used to bounce between the LMS, Discord, and LeetCode. With My Courses, dashboard deadlines, Hassona, and Nibras 75 beside my projects, I always know what to work on next.',
     name: 'Alex Rivera',
     role: 'CS Student, State University',
     initials: 'AR',

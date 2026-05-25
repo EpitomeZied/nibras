@@ -22,6 +22,7 @@ import {
   transformGains,
   transformPains,
   transformSub,
+  whatsNew,
 } from './_content/landing';
 import { LandingIcon } from './_content/landing-icons';
 import styles from './signin.module.css';
@@ -166,6 +167,12 @@ export default function HomePage() {
 
         <p className={styles.sub}>{heroSub}</p>
 
+        <ul className={styles.whatsNew} aria-label="What's new">
+          {whatsNew.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+
         <div className={styles.heroCtas}>
           <button
             className={styles.btnHeroPrimary}
@@ -207,7 +214,7 @@ export default function HomePage() {
 
             <div className={styles.mockupContent}>
               <div className={styles.mockupHeader}>
-                <h3 className={styles.mockupTitle}>Applied Systems — Workflow Overview</h3>
+                <h3 className={styles.mockupTitle}>Dashboard — Workflow Overview</h3>
                 <span className={styles.mockupBadge}>Live</span>
               </div>
 

@@ -40,11 +40,7 @@ export default function DashboardContent({
         user={user}
         onModeChange={onModeChange}
       />
-      <DashboardMetrics
-        activeMode={activeMode}
-        dashboard={dashboard}
-        achievements={achievements}
-      />
+      <DashboardMetrics activeMode={activeMode} dashboard={dashboard} achievements={achievements} />
 
       {activeMode === 'student' && dashboard.student ? (
         <>

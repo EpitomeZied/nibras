@@ -71,7 +71,8 @@ export default function DashboardMetrics({
       },
       {
         label: 'Reputation',
-        value: achievements?.reputation?.total != null ? String(achievements.reputation.total) : '—',
+        value:
+          achievements?.reputation?.total != null ? String(achievements.reputation.total) : '—',
         meta: achievements ? 'Gamification score' : 'Achievements service unavailable',
       },
     ];

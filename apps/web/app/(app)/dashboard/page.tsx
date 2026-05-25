@@ -2,7 +2,11 @@
 
 import { startTransition, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import type { DashboardHomeResponse, DashboardMode, TrackingActivityEvent } from '@nibras/contracts';
+import type {
+  DashboardHomeResponse,
+  DashboardMode,
+  TrackingActivityEvent,
+} from '@nibras/contracts';
 import type { AchievementsDashboard } from '../../lib/services/gamification';
 import { apiFetch } from '../../lib/session';
 import { useSession } from '../_components/session-context';

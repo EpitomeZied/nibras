@@ -30,7 +30,9 @@ export function actionSummaryLabel(mode: DashboardMode): string {
   return mode === 'student' ? 'Student workspace' : 'Instructor workspace';
 }
 
-export function uniqueActions(actions: Array<DashboardAction | null | undefined>): DashboardAction[] {
+export function uniqueActions(
+  actions: Array<DashboardAction | null | undefined>
+): DashboardAction[] {
   const seen = new Set<string>();
   const result: DashboardAction[] = [];
   for (const action of actions) {
