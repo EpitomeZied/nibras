@@ -26,6 +26,58 @@ type AuditLogsResponse = {
   offset: number;
 };
 
+/* ── Human-readable action labels ─────────────────────────────────────────── */
+const ACTION_LABELS: Record<string, { label: string; icon: string; color: string }> = {
+  'user.signed_in':        { label: 'User signed in',                icon: '🔑', color: '#818cf8' },
+  'user.roleChanged':      { label: 'User role changed',             icon: '🛡️', color: '#f59e0b' },
+  'user.accountDeleted':   { label: 'User account deleted',          icon: '🗑️', color: '#f87171' },
+  'installation.linked':   { label: 'GitHub App installation linked',icon: '🔗', color: '#34d399' },
+  'member.added':          { label: 'Member added to course',        icon: '➕', color: '#34d399' },
+  'member.removed':        { label: 'Member removed from course',    icon: '➖', color: '#f87171' },
+  'member.year_synced':    { label: 'Member academic year synced',   icon: '🔄', color: '#38bdf8' },
+  'project.created':       { label: 'Project created',               icon: '📁', color: '#34d399' },
+  'project.updated':       { label: 'Project updated',               icon: '✏️', color: '#f59e0b' },
+  'template.created':      { label: 'Template created',              icon: '📋', color: '#34d399' },
+  'template.updated':      { label: 'Template updated',              icon: '✏️', color: '#f59e0b' },
+  'teams.locked':          { label: 'Team formation locked',         icon: '🔒', color: '#f87171' },
+  'team.updated':          { label: 'Team updated',                  icon: '👥', color: '#f59e0b' },
+  'milestone.created':     { label: 'Milestone created',             icon: '🏁', color: '#34d399' },
+  'milestone.updated':     { label: 'Milestone updated',             icon: '✏️', color: '#f59e0b' },
+  'milestone.deleted':     { label: 'Milestone deleted',             icon: '🗑️', color: '#f87171' },
+  'submission.created':    { label: 'Submission created',            icon: '📤', color: '#34d399' },
+  'submission.updated':    { label: 'Submission updated',            icon: '✏️', color: '#f59e0b' },
+  'submission.overridden': { label: 'Submission score overridden',   icon: '⚙️', color: '#f59e0b' },
+  'review.created':        { label: 'Review submitted',              icon: '💬', color: '#818cf8' },
+};
+
+function formatAction(raw: string): { label: string; icon: string; color: string } {
+  return (
+    ACTION_LABELS[raw] ?? {
+      // Fallback: convert "foo.bar_baz" → "Foo bar baz"
+      label: raw
+        .replace(/\./g, ' · ')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase()),
+      icon: '📌',
+      color: 'var(--text-muted, #a1a1aa)',
+    }
+  );
+}
+
+/* ── Target type badge colors ─────────────────────────────────────────────── */
+const TARGET_COLORS: Record<string, string> = {
+  USER:          '#818cf8',
+  COURSE:        '#34d399',
+  PROJECT:       '#38bdf8',
+  TEMPLATE:      '#f59e0b',
+  MILESTONE:     '#fb923c',
+  SUBMISSION:    '#a3e635',
+  REVIEW:        '#c084fc',
+  TEAM:          '#f472b6',
+  GITHUBACCOUNT: '#e2e8f0',
+  INVITE:        '#fbbf24',
+};
+
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleString('en-US', {
     month: 'short',
@@ -36,6 +88,11 @@ function formatDate(iso: string): string {
   });
 }
 
+function shortId(id: string | null, len = 10): string {
+  if (!id) return '—';
+  return id.length > len ? `${id.slice(0, len)}…` : id;
+}
+
 export default function AuditLogsPage() {
   const [action, setAction] = useState('');
   const [targetType, setTargetType] = useState('');
@@ -44,7 +101,6 @@ export default function AuditLogsPage() {
   const [offset, setOffset] = useState(0);
   const limit = 50;
 
-  // Build query string from current filters
   const queryParts: string[] = [`limit=${limit}`, `offset=${offset}`];
   if (action.trim()) queryParts.push(`action=${encodeURIComponent(action.trim())}`);
   if (targetType) queryParts.push(`targetType=${encodeURIComponent(targetType)}`);
@@ -153,8 +209,8 @@ export default function AuditLogsPage() {
                 <table className={styles.submissionTable}>
                   <thead>
                     <tr>
-                      <th>Action</th>
-                      <th>Target Type</th>
+                      <th>Event</th>
+                      <th>Target</th>
                       <th>Target ID</th>
                       <th>User ID</th>
                       <th>Course ID</th>
@@ -162,47 +218,91 @@ export default function AuditLogsPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {logs.map((log) => (
-                      <tr key={log.id}>
-                        <td>
-                          <code style={{ fontSize: 12 }}>{log.action}</code>
-                        </td>
-                        <td>
-                          <span
-                            style={{
-                              fontSize: 11,
-                              fontWeight: 600,
-                              textTransform: 'uppercase',
-                              letterSpacing: '0.05em',
-                              padding: '2px 8px',
-                              borderRadius: 999,
-                              background: 'rgba(255,255,255,0.06)',
-                              border: '1px solid rgba(255,255,255,0.1)',
-                            }}
-                          >
-                            {log.targetType}
-                          </span>
-                        </td>
-                        <td>
-                          <code style={{ fontSize: 11, opacity: 0.7 }}>
-                            {log.targetId.slice(0, 12)}…
-                          </code>
-                        </td>
-                        <td>
-                          <code style={{ fontSize: 11, opacity: 0.7 }}>
-                            {log.userId ? `${log.userId.slice(0, 8)}…` : '—'}
-                          </code>
-                        </td>
-                        <td>
-                          <code style={{ fontSize: 11, opacity: 0.7 }}>
-                            {log.courseId ? `${log.courseId.slice(0, 8)}…` : '—'}
-                          </code>
-                        </td>
-                        <td style={{ whiteSpace: 'nowrap', fontSize: 12 }}>
-                          {formatDate(log.createdAt)}
-                        </td>
-                      </tr>
-                    ))}
+                    {logs.map((log) => {
+                      const meta = formatAction(log.action);
+                      const targetColor =
+                        TARGET_COLORS[log.targetType?.toUpperCase()] ??
+                        'rgba(255,255,255,0.5)';
+                      return (
+                        <tr key={log.id}>
+                          {/* ── Event (icon + human label + raw code) ── */}
+                          <td style={{ minWidth: 220 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <span
+                                style={{
+                                  fontSize: 16,
+                                  lineHeight: 1,
+                                  flexShrink: 0,
+                                }}
+                                aria-hidden="true"
+                              >
+                                {meta.icon}
+                              </span>
+                              <div>
+                                <div
+                                  style={{
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    color: meta.color,
+                                    lineHeight: 1.3,
+                                  }}
+                                >
+                                  {meta.label}
+                                </div>
+                                <code
+                                  style={{
+                                    fontSize: 10,
+                                    opacity: 0.45,
+                                    letterSpacing: '0.02em',
+                                  }}
+                                >
+                                  {log.action}
+                                </code>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* ── Target type badge ── */}
+                          <td>
+                            <span
+                              style={{
+                                fontSize: 10,
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.07em',
+                                padding: '2px 8px',
+                                borderRadius: 999,
+                                background: `${targetColor}18`,
+                                border: `1px solid ${targetColor}40`,
+                                color: targetColor,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {log.targetType}
+                            </span>
+                          </td>
+
+                          <td>
+                            <code style={{ fontSize: 11, opacity: 0.6 }}>
+                              {shortId(log.targetId)}
+                            </code>
+                          </td>
+                          <td>
+                            <code style={{ fontSize: 11, opacity: 0.6 }}>
+                              {shortId(log.userId, 8)}
+                            </code>
+                          </td>
+                          <td>
+                            <code style={{ fontSize: 11, opacity: 0.6 }}>
+                              {shortId(log.courseId, 8)}
+                            </code>
+                          </td>
+                          <td style={{ whiteSpace: 'nowrap', fontSize: 12 }}>
+                            {formatDate(log.createdAt)}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
