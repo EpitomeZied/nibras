@@ -65,73 +65,17 @@ type AiCredentialState = {
 };
 
 function ProviderIcon({ id }: { id: ProviderId }) {
-  switch (id) {
-    case 'openai':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M12 2c2.2 0 4 1.8 4 4v1.2c2.2.4 4 2.2 4 4.5 0 2.5-2 4.5-4.5 4.5H14v2.8c0 2.2-1.8 4-4 4s-4-1.8-4-4V14.2C3.8 13.8 2 12 2 9.7 2 7.2 4 5.2 6.5 5.2H8V4c0-2.2 1.8-4 4-4z"
-            fill="#10a37f"
-          />
-        </svg>
-      );
-    case 'gemini':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path
-            d="M12 3l2.2 6.8H21l-5.5 4 2.1 6.7L12 16.4 6.4 20.5l2.1-6.7L3 9.8h6.8L12 3z"
-            fill="url(#geminiGrad)"
-          />
-          <defs>
-            <linearGradient id="geminiGrad" x1="3" y1="3" x2="21" y2="21">
-              <stop stopColor="#4285F4" />
-              <stop offset="0.5" stopColor="#9B72CB" />
-              <stop offset="1" stopColor="#D96570" />
-            </linearGradient>
-          </defs>
-        </svg>
-      );
-    case 'anthropic':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <rect x="3" y="3" width="18" height="18" rx="5" fill="#D4A574" />
-          <path
-            d="M8 17l4-10 4 10M9.5 13h5"
-            stroke="#1a1a1a"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      );
-    case 'openrouter':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="6" cy="12" r="3" fill="#6366f1" />
-          <circle cx="18" cy="6" r="3" fill="#818cf8" />
-          <circle cx="18" cy="18" r="3" fill="#a5b4fc" />
-          <path
-            d="M9 12h3M15 8.5l-2 1.5M15 15.5l-2-1.5"
-            stroke="#c7d2fe"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    case 'poe':
-      return (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <circle cx="12" cy="12" r="9" fill="#5b5ef7" />
-          <path
-            d="M8 9.5c0-1.5 1.2-2.5 4-2.5s4 1 4 2.5-1.5 3.5-4 5.5c-2.5-2-4-3.5-4-5.5z"
-            fill="#fff"
-            opacity="0.95"
-          />
-        </svg>
-      );
-    default:
-      return null;
-  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- brand SVGs from /public/ai-providers
+    <img
+      src={`/ai-providers/${id}.svg`}
+      alt=""
+      width={22}
+      height={22}
+      className={styles.aiProviderIconImg}
+      aria-hidden="true"
+    />
+  );
 }
 
 export default function AiIntegrationTab() {
