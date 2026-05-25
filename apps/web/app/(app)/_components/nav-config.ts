@@ -148,6 +148,15 @@ export const appNavItems: AppNavItem[] = [
     placement: 'community',
   },
   {
+    href: '/competitions',
+    label: 'Contests',
+    description: 'Upcoming contests, calendar, and linked accounts.',
+    visibility: 'all',
+    placement: 'compete',
+    exactHref: true,
+    matchPrefixes: ['/competitions/ranking', '/competitions/history'],
+  },
+  {
     href: '/competitions/nibras-75',
     label: 'Nibras 75',
     description: 'Curated LeetCode list — 75 essential DSA problems.',
@@ -155,7 +164,7 @@ export const appNavItems: AppNavItem[] = [
     placement: 'compete',
   },
   {
-    href: '/competitions/practice',
+    href: '/competitions/practice?tab=codeforces',
     label: 'Codeforces practice',
     description: 'Codeforces problems, tags, and rating analytics.',
     visibility: 'all',
@@ -168,15 +177,6 @@ export const appNavItems: AppNavItem[] = [
     description: 'Connect Codeforces, LeetCode, CTF, and other platforms.',
     visibility: 'all',
     placement: 'compete',
-  },
-  {
-    href: '/competitions',
-    label: 'Contests',
-    description: 'Upcoming contests, calendar, and linked accounts.',
-    visibility: 'all',
-    placement: 'compete',
-    exactHref: true,
-    matchPrefixes: ['/competitions/ranking', '/competitions/history'],
   },
   {
     href: '/achievements',

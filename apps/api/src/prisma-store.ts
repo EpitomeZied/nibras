@@ -537,6 +537,7 @@ function toCourseRecord(course: {
   termLabel: string;
   courseCode: string;
   isActive: boolean;
+  isPublic?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }): CourseRecord {
@@ -547,6 +548,7 @@ function toCourseRecord(course: {
     termLabel: course.termLabel,
     courseCode: course.courseCode,
     isActive: course.isActive,
+    isPublic: course.isPublic ?? false,
     createdAt: course.createdAt.toISOString(),
     updatedAt: course.updatedAt.toISOString(),
   };
@@ -1761,6 +1763,40 @@ export class PrismaStore implements AppStore {
     );
   }
 
+  private async ensurePublicCourseEnrollments(userId: string): Promise<void> {
+    const publicCourses = await this.prisma.course.findMany({
+      where: { isActive: true, isPublic: true },
+      select: { id: true },
+    });
+    await Promise.all(
+      publicCourses.map((course) =>
+        this.prisma.courseMembership.upsert({
+          where: { courseId_userId: { courseId: course.id, userId } },
+          update: {},
+          create: { courseId: course.id, userId, role: CourseRole.student },
+        })
+      )
+    );
+  }
+
+  async ensurePublicCourseStudentAccess(
+    apiBaseUrl: string,
+    userId: string,
+    courseId: string
+  ): Promise<void> {
+    await this.seed(apiBaseUrl);
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, isActive: true, isPublic: true, deletedAt: null },
+      select: { id: true },
+    });
+    if (!course) return;
+    await this.prisma.courseMembership.upsert({
+      where: { courseId_userId: { courseId: course.id, userId } },
+      update: {},
+      create: { courseId: course.id, userId, role: CourseRole.student },
+    });
+  }
+
   private async getProgramBundle(studentProgramId: string): Promise<{
     studentProgram: StudentProgramRecord;
     user: UserRecord;
@@ -2844,12 +2880,13 @@ export class PrismaStore implements AppStore {
   ): Promise<CourseRecord[]> {
     await this.seed(apiBaseUrl);
     await this.ensureSeededDemoEnrollments(userId);
+    await this.ensurePublicCourseEnrollments(userId);
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
     const take = opts?.limit;
     const skip = take !== undefined ? (opts?.offset ?? 0) : undefined;
     if (user.systemRole === SystemRole.admin) {
       const courses = await this.prisma.course.findMany({
-        where: { isActive: true },
+        where: { isActive: true, deletedAt: null },
         orderBy: { createdAt: 'desc' },
         take,
         skip,
@@ -2859,28 +2896,37 @@ export class PrismaStore implements AppStore {
     // Use the global yearLevel on User as the single source of truth.
     const studentLevel = (user as { yearLevel?: number }).yearLevel ?? 1;
 
-    // Show every active course that belongs to the student's current year so
-    // they always see the full curriculum for their level, even if an admin
-    // adds a new course after initial enrolment.
-    const yearCourses = await this.prisma.course.findMany({
-      where: { isActive: true, termLabel: { startsWith: `Year ${studentLevel}` } },
-      orderBy: { createdAt: 'asc' },
-      take,
-      skip,
-    });
-    return yearCourses.map(toCourseRecord);
+    const [yearCourses, publicCourses, membershipCourses] = await Promise.all([
+      this.prisma.course.findMany({
+        where: { isActive: true, deletedAt: null, termLabel: { startsWith: `Year ${studentLevel}` } },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.course.findMany({
+        where: { isActive: true, deletedAt: null, isPublic: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.course.findMany({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          memberships: { some: { userId } },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+
+    const merged = new Map<string, ReturnType<typeof toCourseRecord>>();
+    for (const course of [...yearCourses, ...publicCourses, ...membershipCourses]) {
+      merged.set(course.id, toCourseRecord(course));
+    }
+    const results = Array.from(merged.values());
+    if (take === undefined) return results;
+    const offset = skip ?? 0;
+    return results.slice(offset, offset + take);
   }
 
   async countTrackingCourses(apiBaseUrl: string, userId: string): Promise<number> {
-    await this.seed(apiBaseUrl);
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
-    if (user.systemRole === SystemRole.admin) {
-      return this.prisma.course.count({ where: { isActive: true } });
-    }
-    const studentLevel = (user as { yearLevel?: number }).yearLevel ?? 1;
-    return this.prisma.course.count({
-      where: { isActive: true, termLabel: { startsWith: `Year ${studentLevel}` } },
-    });
+    return (await this.listTrackingCourses(apiBaseUrl, userId)).length;
   }
 
   async createTrackingCourse(

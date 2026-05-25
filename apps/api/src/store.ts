@@ -169,6 +169,7 @@ export type CourseRecord = {
   termLabel: string;
   courseCode: string;
   isActive: boolean;
+  isPublic: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -1088,6 +1089,11 @@ export interface AppStore {
     opts?: PaginationOpts
   ): Promise<CourseRecord[]>;
   countTrackingCourses(apiBaseUrl: string, userId: string): Promise<number>;
+  ensurePublicCourseStudentAccess(
+    apiBaseUrl: string,
+    userId: string,
+    courseId: string
+  ): Promise<void>;
   createTrackingCourse(
     apiBaseUrl: string,
     userId: string,
@@ -2356,6 +2362,7 @@ function seedData(apiBaseUrl: string): StoreData {
         termLabel: 'Spring 2026',
         courseCode: 'CS161',
         isActive: true,
+        isPublic: false,
         createdAt,
         updatedAt: createdAt,
       },
@@ -2366,6 +2373,7 @@ function seedData(apiBaseUrl: string): StoreData {
         termLabel: CS106L_COURSE.termLabel,
         courseCode: CS106L_COURSE.courseCode,
         isActive: true,
+        isPublic: true,
         createdAt,
         updatedAt: createdAt,
       },
@@ -3357,10 +3365,15 @@ export class FileStore implements AppStore {
       const memberCourses = data.courses.filter(
         (entry) => entry.isActive && allowedCourseIds.has(entry.id)
       );
+      const publicCourses = data.courses.filter((entry) => entry.isActive && entry.isPublic);
+      const merged = new Map<string, CourseRecord>();
+      for (const course of [...memberCourses, ...publicCourses]) {
+        merged.set(course.id, course);
+      }
       // Fall back to all active courses when user has no memberships yet
       // (e.g. brand-new sign-up) — ensures CS161 Exam 1 & 2 are always visible.
       results =
-        memberCourses.length > 0 ? memberCourses : data.courses.filter((entry) => entry.isActive);
+        merged.size > 0 ? Array.from(merged.values()) : data.courses.filter((entry) => entry.isActive);
     }
     const offset = opts?.offset ?? 0;
     return opts?.limit !== undefined ? results.slice(offset, offset + opts.limit) : results;
@@ -3368,6 +3381,30 @@ export class FileStore implements AppStore {
 
   async countTrackingCourses(apiBaseUrl: string, userId: string): Promise<number> {
     return (await this.listTrackingCourses(apiBaseUrl, userId)).length;
+  }
+
+  async ensurePublicCourseStudentAccess(
+    apiBaseUrl: string,
+    userId: string,
+    courseId: string
+  ): Promise<void> {
+    const data = this.read(apiBaseUrl);
+    const course = data.courses.find((entry) => entry.id === courseId && entry.isActive && entry.isPublic);
+    if (!course) return;
+    const existing = data.courseMemberships.find(
+      (entry) => entry.courseId === courseId && entry.userId === userId
+    );
+    if (existing) return;
+    data.courseMemberships.push({
+      id: randomUUID(),
+      courseId,
+      userId,
+      role: 'student',
+      level: 1,
+      createdAt: nowIso(),
+      updatedAt: nowIso(),
+    });
+    this.write(apiBaseUrl, data);
   }
 
   async listCourseMembersForInstructor(
@@ -3677,6 +3714,7 @@ export class FileStore implements AppStore {
       termLabel: payload.termLabel,
       courseCode: payload.courseCode,
       isActive: true,
+      isPublic: false,
       createdAt: nowIso(),
       updatedAt: nowIso(),
     };

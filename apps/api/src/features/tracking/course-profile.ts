@@ -6,9 +6,10 @@ import {
 import { Prisma, PrismaClient } from '@prisma/client';
 import { requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
+import { requestBaseUrl } from '../../lib/request-base-url';
 import { validateId } from '../../lib/validate';
 import { AppStore } from '../../store';
-import { canManageCourse, canViewCourse } from './policies/access';
+import { canManageCourse, canViewCourseForRequest } from './policies/access';
 
 async function buildCourseDetail(
   prisma: PrismaClient,
@@ -50,6 +51,7 @@ async function buildCourseDetail(
     termLabel: course.termLabel,
     courseCode: course.courseCode,
     isActive: course.isActive,
+    isPublic: course.isPublic,
     description: course.description || undefined,
     thumbnailUrl: course.thumbnailUrl,
     syllabusJson: course.syllabusJson as Record<string, unknown> | null,
@@ -75,7 +77,8 @@ export function registerCourseProfileRoutes(
       if (!auth) return;
       const params = request.params as { courseId: string };
       if (!validateId(params.courseId, reply, 'courseId')) return;
-      if (!canViewCourse(auth, params.courseId)) {
+      const apiBaseUrl = requestBaseUrl(request);
+      if (!(await canViewCourseForRequest(store, apiBaseUrl, auth, params.courseId))) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -123,6 +126,7 @@ export function registerCourseProfileRoutes(
                 ? undefined
                 : (body.syllabusJson as Prisma.InputJsonValue),
           sequentialVideos: body.sequentialVideos,
+          isPublic: body.isPublic,
         },
       });
       const detail = await buildCourseDetail(prisma, params.courseId, auth.user.id);

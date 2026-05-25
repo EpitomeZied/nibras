@@ -16,7 +16,8 @@ import { requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
 import { validateId } from '../../lib/validate';
 import { AppStore } from '../../store';
-import { canManageCourse, canViewCourse } from './policies/access';
+import { requestBaseUrl } from '../../lib/request-base-url';
+import { canManageCourse, canViewCourseForRequest } from './policies/access';
 
 type VideoRow = {
   id: string;
@@ -186,7 +187,8 @@ export function registerCourseVideoRoutes(
       if (!auth) return;
       const params = request.params as { courseId: string };
       if (!validateId(params.courseId, reply, 'courseId')) return;
-      if (!canViewCourse(auth, params.courseId)) {
+      const apiBaseUrl = requestBaseUrl(request);
+      if (!(await canViewCourseForRequest(store, apiBaseUrl, auth, params.courseId))) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -526,7 +528,8 @@ export function registerCourseVideoRoutes(
         reply.code(404).send(Errors.notFound('Video not found'));
         return;
       }
-      if (!canViewCourse(auth, video.section.courseId)) {
+      const apiBaseUrl = requestBaseUrl(request);
+      if (!(await canViewCourseForRequest(store, apiBaseUrl, auth, video.section.courseId))) {
         reply.code(403).send(Errors.forbidden());
         return;
       }

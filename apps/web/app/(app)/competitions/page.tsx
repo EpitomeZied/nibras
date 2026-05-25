@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../_components/widgets/EmptyState';
@@ -386,19 +385,6 @@ export default function CompetitionsPage() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <PlatformFilter selected={platformFilter} onChange={setPlatformFilter} />
         {displayMode === 'calendar' && <CalendarViewToggle view={calView} onChange={setCalView} />}
-        <Link href="/competitions/nibras-75" className={styles.linkBtn}>
-          Nibras 75
-        </Link>
-        <Link href="/competitions/platforms" className={styles.linkBtn}>
-          Integrations
-        </Link>
-        <Link
-          href="/competitions/practice?tab=codeforces"
-          className={styles.linkBtn}
-          style={{ marginLeft: 'auto' }}
-        >
-          Codeforces practice
-        </Link>
       </div>
 
       {accounts.length > 0 && (
