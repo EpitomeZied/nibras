@@ -1,4 +1,5 @@
 import { PrismaClient, CompPlatform } from '@prisma/client';
+import { syncLinkedAccountAura } from '../lib/sync-linked-account-aura';
 
 type RawUserStats = {
   rating: number;
@@ -115,6 +116,8 @@ export async function syncSingleAccount(
       update: { solved: true },
     });
   }
+
+  await syncLinkedAccountAura(prisma, account.userId, { platform: account.platform });
 
   log('info', `Stats sync: ${account.platform}/${account.handle}`, {
     userId: account.userId,

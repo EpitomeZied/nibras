@@ -1,6 +1,7 @@
 import { PrismaClient, ReputationCategory, SubmissionStatus } from '@prisma/client';
 import { computeLevel } from '../gamification/badges-catalog';
 import { buildSyncReason, presentReputationHistory } from './history-labels';
+import { syncLinkedAccountAura } from './linked-account-aura';
 
 const REPUTATION_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -197,6 +198,8 @@ export class ReputationService {
         skipDuplicates: true,
       });
     }
+
+    await syncLinkedAccountAura(this.prisma, userId);
 
     await this.prisma.user.update({
       where: { id: userId },

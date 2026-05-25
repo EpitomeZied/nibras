@@ -12,6 +12,10 @@ import {
   PLATFORM_INTEGRATIONS,
 } from './platform-integrations';
 import type { GitHubAppConfig } from '@nibras/github';
+import {
+  computeAuraDelta,
+  syncLinkedAccountAura,
+} from '../reputation/linked-account-aura';
 
 export function registerCompetitionsRoutes(
   app: FastifyInstance,
@@ -593,6 +597,10 @@ export function registerCompetitionsRoutes(
           },
         });
 
+        await syncLinkedAccountAura(prisma, auth.user.id, {
+          platform: host as CompPlatform,
+        });
+
         await enqueueCompetitionsJob({
           type: 'account-stats-sync',
         });
@@ -603,6 +611,7 @@ export function registerCompetitionsRoutes(
           handle: account.handle,
           rating: handleInfo.rating,
           maxRating: handleInfo.maxRating,
+          auraEarned: computeAuraDelta(handleInfo.rating),
         };
       }
 

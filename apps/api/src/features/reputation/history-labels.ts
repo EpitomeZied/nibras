@@ -1,5 +1,10 @@
 import type { PrismaClient, ReputationCategory } from '@prisma/client';
 import type { ReputationEventDto } from './service';
+import {
+  AURA_RATING_MULTIPLIER,
+  computeAuraDelta,
+  platformLabel,
+} from './linked-account-aura';
 
 const CATEGORY_LABELS: Record<ReputationCategory, string> = {
   course: 'Projects',
@@ -39,6 +44,8 @@ function fallbackReason(kind: string, stored: string): string {
       return 'Participated in a contest';
     case 'badge':
       return 'Earned an achievement badge';
+    case 'linked-account':
+      return 'Connected a competitive programming account';
     default:
       return stored.includes(':') ? 'Reputation activity' : stored;
   }
@@ -238,6 +245,24 @@ export async function presentReputationHistory(
         }
         break;
       }
+      case 'linked-account': {
+        const label = platformLabel(id);
+        const rating =
+          event.delta > 0 ? Math.round(event.delta / AURA_RATING_MULTIPLIER) : 0;
+        const detail =
+          rating > 0
+            ? `${event.delta} Aura (${AURA_RATING_MULTIPLIER}× ${rating} rating)`
+            : `${event.delta} Aura`;
+        return {
+          id: event.id,
+          delta: event.delta,
+          reason: `Connected ${label} account`,
+          detail,
+          category: event.category,
+          categoryLabel,
+          createdAt: event.createdAt.toISOString(),
+        };
+      }
       default:
         break;
     }
@@ -256,6 +281,8 @@ export function buildSyncReason(
     problemTitle?: string;
     contestName?: string;
     badgeName?: string;
+    platform?: string;
+    rating?: number;
   }
 ): string {
   switch (kind) {
@@ -286,6 +313,15 @@ export function buildSyncReason(
       return context.badgeName
         ? `Earned badge “${context.badgeName}”`
         : 'Earned an achievement badge';
+    case 'linked-account': {
+      const label = context.platform ? platformLabel(context.platform) : 'Platform';
+      const aura = computeAuraDelta(context.rating);
+      const r = context.rating ?? 0;
+      if (r > 0) {
+        return `Linked ${label} account (${r} rating → ${aura} Aura)`;
+      }
+      return `Linked ${label} account`;
+    }
     default:
       return 'Reputation activity';
   }

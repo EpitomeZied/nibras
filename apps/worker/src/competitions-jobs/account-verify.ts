@@ -1,4 +1,5 @@
 import { PrismaClient, CompPlatform } from '@prisma/client';
+import { syncLinkedAccountAura } from '../lib/sync-linked-account-aura';
 import { syncSingleAccount } from './account-stats-sync';
 
 type FetcherModule = {
@@ -62,6 +63,8 @@ export async function runAccountVerify(
     });
 
     if (result.valid) {
+      await syncLinkedAccountAura(prisma, userId, { platform: platform as CompPlatform });
+
       try {
         await syncSingleAccount(prisma, {
           id: account.id,

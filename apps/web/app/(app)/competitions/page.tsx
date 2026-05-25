@@ -116,6 +116,7 @@ export default function CompetitionsPage() {
   const [verifyResult, setVerifyResult] = useState<{
     rating?: number;
     maxRating?: number;
+    auraEarned?: number;
   } | null>(null);
   const [verifyProblem, setVerifyProblem] = useState<VerificationProblem | null>(null);
   const [copied, setCopied] = useState(false);
@@ -159,7 +160,11 @@ export default function CompetitionsPage() {
         setLinkStep('simple-verify');
         const result = await verifyAccount(linkHost);
         if (result.verified) {
-          setVerifyResult({ rating: result.rating, maxRating: result.maxRating });
+          setVerifyResult({
+            rating: result.rating,
+            maxRating: result.maxRating,
+            auraEarned: result.auraEarned,
+          });
           setAccounts((prev) =>
             prev.map((a) =>
               a.host === linkHost
@@ -191,7 +196,11 @@ export default function CompetitionsPage() {
     try {
       const result = await verifyAccount(linkHost);
       if (result.verified) {
-        setVerifyResult({ rating: result.rating, maxRating: result.maxRating });
+        setVerifyResult({
+          rating: result.rating,
+          maxRating: result.maxRating,
+          auraEarned: result.auraEarned,
+        });
         setAccounts((prev) =>
           prev.map((a) =>
             a.host === linkHost
@@ -644,7 +653,12 @@ export default function CompetitionsPage() {
                     </div>
                   ) : null}
                   <p className={styles.featureHighlight}>
-                    +{((verifyResult?.rating ?? 0) * 2).toLocaleString()} Aura earned!
+                    +
+                    {(
+                      verifyResult?.auraEarned ??
+                      (verifyResult?.rating ?? 0) * 2
+                    ).toLocaleString()}{' '}
+                    Aura added to your reputation
                   </p>
                 </div>
                 <div className={styles.modalActions}>

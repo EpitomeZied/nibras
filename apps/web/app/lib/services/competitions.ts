@@ -220,12 +220,14 @@ export async function verifyAccount(host: string): Promise<{
   handle?: string;
   rating?: number;
   maxRating?: number;
+  auraEarned?: number;
 }> {
   const data = await serviceFetch<{
     verified: boolean;
     handle?: string;
     rating?: number;
     maxRating?: number;
+    auraEarned?: number;
   }>('competitions', `/v1/contests/accounts/${host}/verify`, {
     method: 'POST',
     auth: true,

@@ -90,8 +90,8 @@ export default function ReputationPage() {
       <header className={styles.header}>
         <h1 className={styles.title}>Reputation</h1>
         <p className={styles.subtitle}>
-          Your reputation grows as you submit projects, help peers in the community, and earn
-          badges.
+          Your reputation grows as you submit projects, help peers in the community, connect
+          competitive programming accounts (2× Aura per platform rating), and earn badges.
         </p>
       </header>
 
