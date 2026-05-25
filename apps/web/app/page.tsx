@@ -284,11 +284,10 @@ export default function HomePage() {
         <div className={styles.sectionHeader}>
           <span className={styles.sectionEyebrow}>How it works</span>
           <h2 className={styles.sectionTitle}>
-            From blueprint setup to active academic operations
+            From sign-in to submission in three steps
           </h2>
           <p className={styles.sectionSub}>
-            Three simple steps from blank slate to templates, team projects, Hassona support, and
-            GitHub-tracked delivery.
+            One GitHub login connects your identity, workspace, and delivery history — no setup friction.
           </p>
         </div>
 
