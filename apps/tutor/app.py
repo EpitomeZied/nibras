@@ -30,13 +30,14 @@ limiter = Limiter(
 )
 
 # ── Config ──────────────────────────────────────────────────────────────────
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") or os.getenv("NIBRAS_AI_API_KEY")
+OPENAI_API_KEY = (os.getenv("OPENAI_API_KEY") or os.getenv("NIBRAS_AI_API_KEY") or "").strip()
 if not OPENAI_API_KEY:
     raise ValueError(
         "OPENAI_API_KEY or NIBRAS_AI_API_KEY not found. Add one to the repo root .env file."
     )
 
 CHAT_MODEL        = os.getenv("NIBRAS_AI_MODEL", "gpt-4o-mini")
+OPENAI_BASE_URL   = (os.getenv("NIBRAS_AI_BASE_URL") or "").strip() or None
 THRESHOLD         = 0.55
 DB_FILE           = os.path.join(os.path.dirname(os.path.abspath(__file__)), "embeddings_cache.db")
 NIBRAS_API_URL    = os.getenv("NIBRAS_API_URL", "http://127.0.0.1:4848/v1/community")
@@ -48,7 +49,7 @@ _questions_cache: dict = {}   # tag -> (timestamp, list)
 _all_questions_cache: tuple = (0.0, [])   # (timestamp, list) — cache for full question list
 CACHE_TTL_SECONDS = 60
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
 
 # ── CS Keywords ──────────────────────────────────────────────────────────────
 CS_KEYWORDS = {
@@ -906,10 +907,34 @@ def generate_ai_answer(question: str, history: list = None) -> dict:
         }
     except Exception as e:
         logger.error(f"[AI Generation Error] {e}")
+        err = str(e).lower()
+        if "401" in err or "invalid_api_key" in err or "incorrect api key" in err:
+            return {
+                "status": "error",
+                "message": (
+                    "Hassona cannot reach OpenAI — the API key on the tutor service is "
+                    "invalid or expired. Update the openai-api-key secret on Azure "
+                    "(nibras-chatbot-v1) and restart the app."
+                ),
+            }
         return {"status": "error", "message": "AI generation failed. Please retry."}
 
 
+def _openai_key_ok() -> tuple[bool, str | None]:
+    try:
+        client.models.list()
+        return True, None
+    except Exception as e:
+        return False, str(e)
+
+
 # ── Routes ────────────────────────────────────────────────────────────────────
+@app.route("/api/health")
+def health():
+    ok, err = _openai_key_ok()
+    return jsonify({"ok": ok, "openai": "ok" if ok else "error", "detail": err}), 200 if ok else 503
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
