@@ -14,8 +14,14 @@ export function registerGamificationRoutes(
 
   app.addHook('onReady', async () => {
     try {
-      await gamification.ensureBadgeCatalog();
-      app.log.info(`Badge catalog synced (${BADGE_CATALOG.length} definitions)`);
+      const count = await gamification.ensureBadgeCatalog();
+      app.log.info(
+        { count, expected: BADGE_CATALOG.length },
+        'Badge catalog synced on API ready'
+      );
+      if (count < BADGE_CATALOG.length) {
+        app.log.warn('Badge catalog incomplete after sync');
+      }
     } catch (err) {
       app.log.error({ err }, 'Failed to sync badge catalog on startup');
     }

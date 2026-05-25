@@ -90,15 +90,18 @@ export class GamificationService {
     this.reputation = new ReputationService(prisma);
   }
 
-  async ensureBadgeCatalog(): Promise<void> {
-    for (const badge of BADGE_CATALOG) {
-      const data = badgeSeedToDefinition(badge);
-      await this.prisma.badgeDefinition.upsert({
-        where: { code: badge.code },
-        create: data,
-        update: data,
-      });
-    }
+  async ensureBadgeCatalog(): Promise<number> {
+    await this.prisma.$transaction(
+      BADGE_CATALOG.map((badge) => {
+        const data = badgeSeedToDefinition(badge);
+        return this.prisma.badgeDefinition.upsert({
+          where: { code: badge.code },
+          create: data,
+          update: data,
+        });
+      })
+    );
+    return this.prisma.badgeDefinition.count();
   }
 
   private async getMetrics(userId: string): Promise<UserMetrics> {
@@ -184,6 +187,11 @@ export class GamificationService {
   }
 
   async listBadgesForUser(userId: string): Promise<BadgeDto[]> {
+    let definitionCount = await this.ensureBadgeCatalog();
+    if (definitionCount < BADGE_CATALOG.length) {
+      definitionCount = await this.ensureBadgeCatalog();
+    }
+
     const [definitions, earned, metrics] = await Promise.all([
       this.prisma.badgeDefinition.findMany({ orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }] }),
       this.prisma.userBadge.findMany({ where: { userId } }),

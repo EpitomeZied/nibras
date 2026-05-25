@@ -17,6 +17,7 @@
     "db:push": "npx prisma db push",
     "db:migrate": "npx prisma migrate dev",
     "db:deploy": "npx prisma migrate deploy",
+    "badges:sync": "npm run build -w @nibras/api && node -r dotenv/config scripts/sync-badge-catalog.js",
     "db:local:reset": "docker compose down -v && docker compose up -d && until docker compose exec -T postgres pg_isready -U nibras -d nibras; do sleep 1; done",
     "db:local:migrate": "npm run db:deploy",
     "build:cli:package": "npm --prefix packages/contracts run build && npm --prefix packages/core run build && npm --prefix apps/cli run build",

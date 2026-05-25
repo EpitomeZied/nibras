@@ -28,8 +28,40 @@ function validateEnv(): void {
   }
 }
 
+async function syncBadgeCatalogOnStartup(): Promise<void> {
+  if (!process.env.DATABASE_URL) return;
+
+  const { PrismaClient } = await import('@prisma/client');
+  const { BADGE_CATALOG } = await import('./features/gamification/badges-catalog');
+  const { GamificationService } = await import('./features/gamification/service');
+  const prisma = new PrismaClient();
+  try {
+    const gamification = new GamificationService(prisma);
+    const count = await gamification.ensureBadgeCatalog();
+    console.log(
+      JSON.stringify({
+        level: count >= BADGE_CATALOG.length ? 'info' : 'warn',
+        msg: 'Badge catalog synced on startup',
+        count,
+        expected: BADGE_CATALOG.length,
+      })
+    );
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        msg: 'Badge catalog sync failed on startup',
+        error: err instanceof Error ? err.message : String(err),
+      })
+    );
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
 async function main(): Promise<void> {
   validateEnv();
+  await syncBadgeCatalogOnStartup();
   const port = Number(process.env.PORT || '4848');
   const host = process.env.HOST || '127.0.0.1';
   const app = buildApp();
