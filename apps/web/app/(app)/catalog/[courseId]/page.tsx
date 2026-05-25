@@ -64,6 +64,7 @@ export default function CourseHubPage() {
           <h1 className={styles.title}>{course.title}</h1>
           <p className={styles.meta}>
             {course.courseCode} · {course.termLabel}
+            {course.isPublic && <span className={styles.publicTag}> · Public</span>}
           </p>
         </div>
       </header>

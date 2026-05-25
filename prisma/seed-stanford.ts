@@ -518,6 +518,7 @@ async function main() {
         courseCode: def.courseCode,
         description: def.description,
         isActive: true,
+        isPublic: true,
       },
       create: {
         slug: def.slug,
@@ -526,6 +527,7 @@ async function main() {
         courseCode: def.courseCode,
         description: def.description,
         isActive: true,
+        isPublic: true,
       },
     });
     console.log(`✅ Course: ${def.courseCode} — ${def.title}`);

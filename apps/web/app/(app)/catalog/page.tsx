@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { apiFetch } from '../../lib/session';
 import InterestModal from './_components/interest-modal';
 import ApplyModal from './_components/apply-modal';
@@ -41,6 +42,8 @@ type ApplyTarget = {
 };
 
 export default function CatalogPage() {
+  const searchParams = useSearchParams();
+  const courseFilterId = searchParams.get('course')?.trim() ?? '';
   const [templates, setTemplates] = useState<CatalogTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -89,6 +92,7 @@ export default function CatalogPage() {
   const filtered = useMemo(() => {
     const tagFilter = filterTag.trim().toLowerCase();
     return templates.filter((t) => {
+      if (courseFilterId && t.courseId !== courseFilterId) return false;
       if (filterDelivery !== 'all' && t.deliveryMode !== filterDelivery) return false;
       if (filterDifficulty.size > 0 && (!t.difficulty || !filterDifficulty.has(t.difficulty)))
         return false;
@@ -96,7 +100,7 @@ export default function CatalogPage() {
         return false;
       return true;
     });
-  }, [templates, filterDelivery, filterDifficulty, filterTag]);
+  }, [templates, filterDelivery, filterDifficulty, filterTag, courseFilterId]);
 
   function toggleDifficulty(d: string) {
     setFilterDifficulty((prev) => {
@@ -129,7 +133,9 @@ export default function CatalogPage() {
         <span className={s.heroEyebrow}>Project Catalog</span>
         <h1 className={s.heroTitle}>Browse Projects</h1>
         <p className={s.heroSub}>
-          Discover project templates across all courses. Express interest or apply for team roles.
+          {courseFilterId
+            ? 'Project templates for this course. Express interest or apply for team roles.'
+            : 'Discover project templates across enrolled and public courses. Express interest or apply for team roles.'}
         </p>
       </header>
 

@@ -3357,23 +3357,30 @@ export class FileStore implements AppStore {
     if (user?.systemRole === 'admin') {
       results = data.courses.filter((entry) => entry.isActive);
     } else {
+      const publicCourses = data.courses.filter((entry) => entry.isActive && entry.isPublic);
+      for (const course of publicCourses) {
+        await this.ensurePublicCourseStudentAccess(apiBaseUrl, userId, course.id);
+      }
+      const refreshed = this.read(apiBaseUrl);
       const allowedCourseIds = new Set(
-        data.courseMemberships
+        refreshed.courseMemberships
           .filter((entry) => entry.userId === userId)
           .map((entry) => entry.courseId)
       );
-      const memberCourses = data.courses.filter(
+      const memberCourses = refreshed.courses.filter(
         (entry) => entry.isActive && allowedCourseIds.has(entry.id)
       );
-      const publicCourses = data.courses.filter((entry) => entry.isActive && entry.isPublic);
       const merged = new Map<string, CourseRecord>();
-      for (const course of [...memberCourses, ...publicCourses]) {
+      for (const course of memberCourses) {
+        merged.set(course.id, course);
+      }
+      for (const course of publicCourses) {
         merged.set(course.id, course);
       }
       // Fall back to all active courses when user has no memberships yet
       // (e.g. brand-new sign-up) — ensures CS161 Exam 1 & 2 are always visible.
       results =
-        merged.size > 0 ? Array.from(merged.values()) : data.courses.filter((entry) => entry.isActive);
+        merged.size > 0 ? Array.from(merged.values()) : refreshed.courses.filter((entry) => entry.isActive);
     }
     const offset = opts?.offset ?? 0;
     return opts?.limit !== undefined ? results.slice(offset, offset + opts.limit) : results;
@@ -3404,7 +3411,7 @@ export class FileStore implements AppStore {
       createdAt: nowIso(),
       updatedAt: nowIso(),
     });
-    this.write(apiBaseUrl, data);
+    this.write(data);
   }
 
   async listCourseMembersForInstructor(

@@ -3,9 +3,10 @@ import { CourseGradesRollupSchema } from '@nibras/contracts';
 import { PrismaClient } from '@prisma/client';
 import { requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
+import { requestBaseUrl } from '../../lib/request-base-url';
 import { validateId } from '../../lib/validate';
 import { AppStore } from '../../store';
-import { canViewCourse } from './policies/access';
+import { canViewCourseForRequest } from './policies/access';
 
 export function registerCourseGradesRoutes(
   app: FastifyInstance,
@@ -20,7 +21,8 @@ export function registerCourseGradesRoutes(
       if (!auth) return;
       const params = request.params as { courseId: string };
       if (!validateId(params.courseId, reply, 'courseId')) return;
-      if (!canViewCourse(auth, params.courseId)) {
+      const apiBaseUrl = requestBaseUrl(request);
+      if (!(await canViewCourseForRequest(store, apiBaseUrl, auth, params.courseId))) {
         reply.code(403).send(Errors.forbidden());
         return;
       }

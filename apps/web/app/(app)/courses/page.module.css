@@ -28,6 +28,22 @@
   color: #f87171;
 }
 
+.section {
+  margin-bottom: 32px;
+}
+
+.sectionTitle {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.sectionSub {
+  color: var(--text-soft);
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+}
+
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -35,6 +51,7 @@
 }
 
 .card {
+  position: relative;
   display: block;
   padding: 18px;
   border-radius: 12px;
@@ -49,9 +66,24 @@
   border-color: var(--accent, #6366f1);
 }
 
+.publicBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, #6366f1) 18%, transparent);
+  color: var(--accent, #6366f1);
+}
+
 .card h2 {
   font-size: 1.1rem;
   margin: 0 0 6px;
+  padding-right: 56px;
 }
 
 .meta {

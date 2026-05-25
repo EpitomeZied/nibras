@@ -45,6 +45,7 @@ export async function listMyTrackingCourses() {
       termLabel: string;
       courseCode: string;
       isActive: boolean;
+      isPublic?: boolean;
     }>
   >('tracking', '/v1/tracking/courses', { auth: true });
 }

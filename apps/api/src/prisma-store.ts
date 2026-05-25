@@ -3941,16 +3941,7 @@ export class PrismaStore implements AppStore {
       expiresAt: invite.expiresAt?.toISOString() ?? null,
       createdAt: invite.createdAt.toISOString(),
       updatedAt: invite.updatedAt.toISOString(),
-      course: {
-        id: invite.course.id,
-        slug: invite.course.slug,
-        title: invite.course.title,
-        termLabel: invite.course.termLabel,
-        courseCode: invite.course.courseCode,
-        isActive: invite.course.isActive,
-        createdAt: invite.course.createdAt.toISOString(),
-        updatedAt: invite.course.updatedAt.toISOString(),
-      },
+      course: toCourseRecord(invite.course),
     };
   }
 

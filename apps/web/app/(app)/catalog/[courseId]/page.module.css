@@ -37,6 +37,11 @@
   font-size: 14px;
 }
 
+.publicTag {
+  color: var(--accent, #6366f1);
+  font-weight: 600;
+}
+
 .description {
   line-height: 1.6;
   color: var(--text);

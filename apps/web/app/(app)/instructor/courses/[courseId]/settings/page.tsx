@@ -15,6 +15,7 @@ export default function CourseSettingsPage({ params }: { params: Promise<{ cours
   const [schedule, setSchedule] = useState('');
   const [topics, setTopics] = useState('');
   const [sequentialVideos, setSequentialVideos] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -30,6 +31,7 @@ export default function CourseSettingsPage({ params }: { params: Promise<{ cours
       setSchedule(typeof s?.schedule === 'string' ? s.schedule : '');
       setTopics(Array.isArray(s?.topics) ? (s.topics as string[]).join(', ') : '');
       setSequentialVideos(detail.sequentialVideos ?? false);
+      setIsPublic(detail.isPublic ?? false);
     } catch (err) {
       setError(friendlyMessage(err));
     } finally {
@@ -49,6 +51,7 @@ export default function CourseSettingsPage({ params }: { params: Promise<{ cours
         description,
         thumbnailUrl: thumbnailUrl.trim() || null,
         sequentialVideos,
+        isPublic,
         syllabusJson: {
           schedule: schedule || undefined,
           topics: topics
@@ -147,6 +150,14 @@ export default function CourseSettingsPage({ params }: { params: Promise<{ cours
               onChange={(e) => setSequentialVideos(e.target.checked)}
             />
             Require watching prior lecture before next (when prerequisite set per video)
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <input
+              type="checkbox"
+              checked={isPublic}
+              onChange={(e) => setIsPublic(e.target.checked)}
+            />
+            Public catalog — any signed-in student can open this course without an invite
           </label>
           <button
             type="button"

@@ -13,9 +13,10 @@ import {
 import { AssignmentSubmissionStatus, PrismaClient } from '@prisma/client';
 import { requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
+import { requestBaseUrl } from '../../lib/request-base-url';
 import { validateId } from '../../lib/validate';
 import { AppStore } from '../../store';
-import { canManageCourse, canViewCourse } from './policies/access';
+import { canManageCourse, canViewCourseForRequest } from './policies/access';
 
 type ResourceLink = { title: string; url: string };
 
@@ -103,7 +104,8 @@ export function registerCourseAssignmentRoutes(
       if (!auth) return;
       const params = request.params as { courseId: string };
       if (!validateId(params.courseId, reply, 'courseId')) return;
-      if (!canViewCourse(auth, params.courseId)) {
+      const apiBaseUrl = requestBaseUrl(request);
+      if (!(await canViewCourseForRequest(store, apiBaseUrl, auth, params.courseId))) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -260,7 +262,8 @@ export function registerCourseAssignmentRoutes(
         reply.code(404).send(Errors.notFound('Assignment'));
         return;
       }
-      if (!canViewCourse(auth, row.courseId)) {
+      const apiBaseUrl = requestBaseUrl(request);
+      if (!(await canViewCourseForRequest(store, apiBaseUrl, auth, row.courseId))) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -338,7 +341,8 @@ export function registerCourseAssignmentRoutes(
         reply.code(404).send(Errors.notFound('Assignment'));
         return;
       }
-      if (!canViewCourse(auth, row.courseId)) {
+      const apiBaseUrl = requestBaseUrl(request);
+      if (!(await canViewCourseForRequest(store, apiBaseUrl, auth, row.courseId))) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
