@@ -288,22 +288,22 @@ export default function Sidebar({
       {/* Primary nav */}
       <nav className="sidebarNav" aria-label="Primary">
         {getPrimaryNavItems(user as NavShellUser | null).map((item) => {
-            const isActive = isNavItemActive(item, pathname);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`navLink ${isActive ? 'navLinkActive navLinkAccentBorder' : ''}`}
-                title={collapsed ? item.label : undefined}
-                style={collapsed ? { justifyContent: 'center', padding: '9px 0' } : undefined}
-              >
-                <span className="navIcon" aria-hidden="true">
-                  {NAV_ICONS[item.label] ?? '•'}
-                </span>
-                {!collapsed && <strong>{item.label}</strong>}
-              </Link>
-            );
-          })}
+          const isActive = isNavItemActive(item, pathname);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`navLink ${isActive ? 'navLinkActive navLinkAccentBorder' : ''}`}
+              title={collapsed ? item.label : undefined}
+              style={collapsed ? { justifyContent: 'center', padding: '9px 0' } : undefined}
+            >
+              <span className="navIcon" aria-hidden="true">
+                {NAV_ICONS[item.label] ?? '•'}
+              </span>
+              {!collapsed && <strong>{item.label}</strong>}
+            </Link>
+          );
+        })}
       </nav>
 
       {/* Spacer */}

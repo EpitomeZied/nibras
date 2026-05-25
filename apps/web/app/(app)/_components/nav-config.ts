@@ -252,9 +252,7 @@ export function isNavItemActive(item: AppNavItem, pathname: string | null): bool
   if (pathname === base) return true;
 
   if (
-    item.matchPrefixes?.some(
-      (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-    )
+    item.matchPrefixes?.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
   ) {
     return true;
   }
