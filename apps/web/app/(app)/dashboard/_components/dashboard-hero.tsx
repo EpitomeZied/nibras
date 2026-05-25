@@ -16,7 +16,7 @@ import {
   type DashboardAction,
 } from './dashboard-utils';
 
-type DashboardUser = { username?: string | null } | null;
+type DashboardUser = { username?: string | null; displayName?: string | null } | null;
 
 function getStudentHeroActions(student: StudentHomeDashboard): DashboardAction[] {
   return uniqueActions([
@@ -97,7 +97,7 @@ export default function DashboardHero({
           <div className={styles.heroCopy}>
             <span className={styles.heroEyebrow}>{actionSummaryLabel(activeMode)}</span>
             <h1 className={styles.heroTitle}>
-              {getGreeting()}, {getDisplayName(user?.username)}
+              {getGreeting()}, {getDisplayName(user?.username, user?.displayName)}
             </h1>
             <p className={styles.heroSubtitle}>{summary}</p>
           </div>

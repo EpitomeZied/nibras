@@ -32,7 +32,6 @@ export default function DashboardMetrics({
   if (activeMode === 'student' && dashboard.student) {
     const student = dashboard.student;
     const stats = student.overallStats;
-    const health = student.submissionHealth;
     items = [
       {
         label: 'Overall progress',
@@ -48,26 +47,6 @@ export default function DashboardMetrics({
         label: 'Milestones done',
         value: `${stats.milestonesApproved}/${stats.milestonesTotal}`,
         meta: 'Approved vs total milestones',
-      },
-      {
-        label: 'Active projects',
-        value: String(stats.activeProjectCount),
-        meta: 'Projects still in progress',
-      },
-      {
-        label: 'Failed checks',
-        value: String(health.failedChecks),
-        meta: 'Needs a resubmission path',
-      },
-      {
-        label: 'Needs review',
-        value: String(health.needsReview),
-        meta: 'Ready for staff feedback',
-      },
-      {
-        label: 'Awaiting review',
-        value: String(health.awaitingReview),
-        meta: 'In progress or queued',
       },
       {
         label: 'Reputation',

@@ -3,7 +3,8 @@ import { formatHoursMinutes, formatShortDate } from '../../../lib/utils';
 
 export type DashboardAction = { label: string; href: string };
 
-export function getDisplayName(username?: string | null): string {
+export function getDisplayName(username?: string | null, displayName?: string | null): string {
+  if (displayName?.trim()) return displayName.trim();
   if (!username) return 'there';
   return username
     .split(/[._\s-]+/)

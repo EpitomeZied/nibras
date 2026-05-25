@@ -1,15 +1,10 @@
-import type {
-  DashboardHomeResponse,
-  DashboardMode,
-  TrackingActivityEvent,
-} from '@nibras/contracts';
+import type { DashboardHomeResponse, DashboardMode } from '@nibras/contracts';
 import type { AchievementsDashboard } from '../../lib/services/gamification';
 import { getAchievementsDashboard } from '../../lib/services/gamification';
 
 type FetchJson = (path: string, init?: RequestInit & { auth?: boolean }) => Promise<unknown>;
 
 export type DashboardSupplements = {
-  activity: TrackingActivityEvent[];
   achievements: AchievementsDashboard | null;
 };
 
@@ -26,23 +21,12 @@ export async function loadDashboardData({
   })) as DashboardHomeResponse;
 }
 
-export async function loadDashboardActivity(
-  fetchJson: FetchJson
-): Promise<TrackingActivityEvent[]> {
-  const payload = await fetchJson('/v1/tracking/activity', { auth: true });
-  return Array.isArray(payload) ? (payload as TrackingActivityEvent[]) : [];
-}
-
 export async function loadDashboardSupplements(
-  fetchJson: FetchJson
+  _fetchJson: FetchJson
 ): Promise<DashboardSupplements> {
-  const [activityResult, achievementsResult] = await Promise.allSettled([
-    loadDashboardActivity(fetchJson),
-    getAchievementsDashboard(),
-  ]);
+  const achievementsResult = await Promise.allSettled([getAchievementsDashboard()]);
 
   return {
-    activity: activityResult.status === 'fulfilled' ? activityResult.value : [],
-    achievements: achievementsResult.status === 'fulfilled' ? achievementsResult.value : null,
+    achievements: achievementsResult[0].status === 'fulfilled' ? achievementsResult[0].value : null,
   };
 }

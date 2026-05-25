@@ -13,6 +13,7 @@ type ShellSessionPayload = {
     id: string;
     username: string;
     email: string;
+    displayName?: string | null;
     githubLogin: string;
     githubLinked: boolean;
     githubAppInstalled: boolean;
@@ -50,22 +51,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener(PREF_EVENTS.compactChanged, onCompactChanged);
   }, []);
 
+  async function loadSession(): Promise<boolean> {
+    const response = await apiFetch('/v1/web/session', { auth: true });
+    if (!response.ok) {
+      window.location.href = '/?auth=required';
+      return false;
+    }
+    const payload = (await response.json()) as ShellSessionPayload;
+    setSession({ ...payload.user, memberships: payload.memberships ?? [] });
+    return true;
+  }
+
   useEffect(() => {
     let alive = true;
 
     void (async () => {
       try {
-        const response = await apiFetch('/v1/web/session', { auth: true });
-        if (!response.ok) {
-          if (alive) {
-            window.location.href = '/?auth=required';
-          }
-          return;
-        }
-        const payload = (await response.json()) as ShellSessionPayload;
-        if (alive) {
-          setSession({ ...payload.user, memberships: payload.memberships ?? [] });
-        }
+        await loadSession();
       } catch {
         if (alive) {
           window.location.href = '/?auth=required';
@@ -84,7 +86,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <SessionProvider value={{ user: session, loading }}>
+    <SessionProvider
+      user={session}
+      loading={loading}
+      refreshSession={async () => {
+        await loadSession();
+      }}
+    >
       <div ref={shellRef} className={styles.appShell}>
         <div className={styles.mainArea}>
           <TopHeader user={session} loading={loading} />

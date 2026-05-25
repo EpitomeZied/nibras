@@ -51,6 +51,15 @@ CACHE_TTL_SECONDS = 60
 
 client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
 
+
+def openai_client_for_request(body: dict) -> tuple[OpenAI, str]:
+    """Use per-request BYOK credentials when the API proxy forwards them."""
+    api_key = (body.get("api_key") or "").strip()
+    model = (body.get("model") or "").strip() or CHAT_MODEL
+    if api_key:
+        return OpenAI(api_key=api_key, base_url=OPENAI_BASE_URL), model
+    return client, CHAT_MODEL
+
 # ── CS Keywords ──────────────────────────────────────────────────────────────
 CS_KEYWORDS = {
     "ecir", "cissp", "ceh", "security+", "oscp", "gcih", "gpen", "elearnsecurity",
@@ -855,8 +864,16 @@ OUTPUT FORMAT — STRICT JSON ONLY
 
 
 # ── AI answer generation ──────────────────────────────────────────────────────
-def generate_ai_answer(question: str, history: list = None) -> dict:
+def generate_ai_answer(
+    question: str,
+    history: list = None,
+    *,
+    oai_client: OpenAI | None = None,
+    model: str | None = None,
+) -> dict:
     try:
+        active_client = oai_client or client
+        active_model = model or CHAT_MODEL
         messages = [{"role": "system", "content": SYSTEM_PROMPT}]
         if history:
             for msg in history[-10:]:
@@ -864,8 +881,8 @@ def generate_ai_answer(question: str, history: list = None) -> dict:
                 if role in ("user", "assistant"):
                     messages.append({"role": role, "content": msg.get("content", "")})
         messages.append({"role": "user", "content": question})
-        response = client.chat.completions.create(
-            model=CHAT_MODEL,
+        response = active_client.chat.completions.create(
+            model=active_model,
             temperature=0.2,
             response_format={"type": "json_object"},
             messages=messages,
@@ -955,7 +972,13 @@ def ask():
         })
 
     history = body.get("history", [])
-    ai_response = generate_ai_answer(question, history=history)
+    oai_client, chat_model = openai_client_for_request(body)
+    ai_response = generate_ai_answer(
+        question,
+        history=history,
+        oai_client=oai_client,
+        model=chat_model,
+    )
     if ai_response["status"] == "error":
         return jsonify({"type": "error", "message": ai_response["message"]}), 503
     if ai_response["status"] != "ok":

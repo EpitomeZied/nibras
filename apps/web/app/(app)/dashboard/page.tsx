@@ -2,11 +2,7 @@
 
 import { startTransition, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import type {
-  DashboardHomeResponse,
-  DashboardMode,
-  TrackingActivityEvent,
-} from '@nibras/contracts';
+import type { DashboardHomeResponse, DashboardMode } from '@nibras/contracts';
 import type { AchievementsDashboard } from '../../lib/services/gamification';
 import { apiFetch } from '../../lib/session';
 import { useSession } from '../_components/session-context';
@@ -82,7 +78,6 @@ export default function DashboardPage() {
 
   const [dashboard, setDashboard] = useState<DashboardHomeResponse | null>(null);
   const [activeMode, setActiveMode] = useState<DashboardMode | null>(null);
-  const [activity, setActivity] = useState<TrackingActivityEvent[]>([]);
   const [achievements, setAchievements] = useState<AchievementsDashboard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -121,13 +116,11 @@ export default function DashboardPage() {
 
         const supplements = await loadDashboardSupplements(fetchJson);
         if (!alive) return;
-        setActivity(supplements.activity);
         setAchievements(supplements.achievements);
       } catch (loadError) {
         if (!alive) return;
         setDashboard(null);
         setActiveMode(null);
-        setActivity([]);
         setAchievements(null);
         setError(toErrorMessage(loadError));
       } finally {
@@ -175,7 +168,6 @@ export default function DashboardPage() {
       activeMode={activeMode}
       user={user}
       onModeChange={handleModeChange}
-      activity={activity}
       achievements={achievements}
     />
   );

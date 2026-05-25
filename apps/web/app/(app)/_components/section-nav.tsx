@@ -9,6 +9,18 @@ export type SectionNavItem = {
   label: string;
 };
 
+/** Pick the single best-matching tab (longest href wins prefix ties). */
+export function resolveSectionNavActiveHref(
+  pathname: string,
+  items: SectionNavItem[]
+): string | null {
+  const matches = items.filter(
+    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
+  );
+  if (matches.length === 0) return null;
+  return matches.sort((a, b) => b.href.length - a.href.length)[0].href;
+}
+
 export default function SectionNav({
   eyebrow,
   title,
@@ -23,6 +35,7 @@ export default function SectionNav({
   actions?: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const activeHref = resolveSectionNavActiveHref(pathname, items);
 
   return (
     <div className={styles.wrap}>
@@ -37,7 +50,7 @@ export default function SectionNav({
 
       <nav className={styles.tabs} aria-label={`${title} sections`}>
         {items.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isActive = item.href === activeHref;
           return (
             <Link
               key={item.href}

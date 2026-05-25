@@ -5,6 +5,7 @@ export interface ShellUser {
   id: string;
   username: string;
   email: string;
+  displayName?: string | null;
   githubLogin: string | null;
   githubLinked: boolean;
   githubAppInstalled: boolean;
@@ -16,18 +17,31 @@ export interface ShellUser {
 interface SessionContextValue {
   user: ShellUser | null;
   loading: boolean;
+  refreshSession: () => Promise<void>;
 }
 
-const SessionContext = createContext<SessionContextValue>({ user: null, loading: true });
+const SessionContext = createContext<SessionContextValue>({
+  user: null,
+  loading: true,
+  refreshSession: async () => {},
+});
 
 export function SessionProvider({
   children,
-  value,
+  user,
+  loading,
+  refreshSession,
 }: {
   children: React.ReactNode;
-  value: SessionContextValue;
+  user: ShellUser | null;
+  loading: boolean;
+  refreshSession: () => Promise<void>;
 }) {
-  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
+  return (
+    <SessionContext.Provider value={{ user, loading, refreshSession }}>
+      {children}
+    </SessionContext.Provider>
+  );
 }
 
 export function useSession(): SessionContextValue {

@@ -34,6 +34,7 @@ import { registerCompetitionsRoutes } from './features/competitions/routes';
 import { registerReputationRoutes } from './features/reputation/routes';
 import { registerAnalyticsRoutes } from './features/analytics/routes';
 import { registerIdeRoutes } from './features/ide/routes';
+import { registerAiCredentialRoutes } from './features/ai-credentials/routes';
 
 function normalizeOrigin(value: string | undefined): string | null {
   if (!value) {
@@ -351,6 +352,9 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
   registerAdminRoutes(app, store);
   registerNotificationRoutes(app, store);
   registerCommunityRoutes(app, store, getSharedPrisma());
+  if (process.env.DATABASE_URL) {
+    registerAiCredentialRoutes(app, store, getSharedPrisma());
+  }
   registerGamificationRoutes(app, store, getSharedPrisma());
   registerCompetitionsRoutes(app, store, getSharedPrisma(), githubConfig);
   registerReputationRoutes(app, store, getSharedPrisma());

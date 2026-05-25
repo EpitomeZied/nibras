@@ -6,6 +6,7 @@ import { requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
 import { requestBaseUrl } from '../../lib/request-base-url';
 import { AppStore } from '../../store';
+import { getUserAiCredential } from '../../lib/ai-credentials';
 
 const authorSelect = { id: true, username: true } as const;
 
@@ -781,6 +782,19 @@ export function registerCommunityRoutes(
 
   const CHATBOT_V1_URL = process.env.CHATBOT_V1_URL || '';
 
+  async function tutorRequestPayload(
+    userId: string,
+    body: Record<string, unknown>
+  ): Promise<Record<string, unknown>> {
+    const credential = await getUserAiCredential(prisma, userId);
+    if (!credential) return body;
+    return {
+      ...body,
+      api_key: credential.apiKey,
+      model: credential.model,
+    };
+  }
+
   type ChatBotV1Response = {
     type?: string;
     message?: string;
@@ -823,10 +837,12 @@ export function registerCommunityRoutes(
         const resp = await fetch(`${CHATBOT_V1_URL}/api/ask`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            question: body.question,
-            history: body.history ?? [],
-          }),
+          body: JSON.stringify(
+            await tutorRequestPayload(auth.user.id, {
+              question: body.question,
+              history: body.history ?? [],
+            })
+          ),
           signal: AbortSignal.timeout(30000),
         });
         const rawBody = await resp.text().catch(() => '');

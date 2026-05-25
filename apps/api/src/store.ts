@@ -147,6 +147,7 @@ export type UserRecord = {
   id: string;
   username: string;
   email: string;
+  displayName?: string | null;
   notificationEmail?: string | null;
   githubLogin: string;
   githubLinked: boolean;
@@ -1025,6 +1026,11 @@ export interface AppStore {
     deviceCode: string
   ): Promise<{ record: DeviceCodeRecord | null; session: SessionRecord | null }>;
   getUserByToken(apiBaseUrl: string, accessToken: string): Promise<UserRecord | null>;
+  updateUserProfile(
+    apiBaseUrl: string,
+    userId: string,
+    displayName: string | null
+  ): Promise<UserRecord | null>;
   upsertGitHubUserSession(args: {
     githubUserId: string;
     login: string;
@@ -2946,6 +2952,19 @@ export class FileStore implements AppStore {
     const user = data.users.find((u) => u.id === userId);
     if (!user) return null;
     user.systemRole = role;
+    this.write(data);
+    return user;
+  }
+
+  async updateUserProfile(
+    apiBaseUrl: string,
+    userId: string,
+    displayName: string | null
+  ): Promise<UserRecord | null> {
+    const data = this.read(apiBaseUrl);
+    const user = data.users.find((u) => u.id === userId);
+    if (!user) return null;
+    user.displayName = displayName;
     this.write(data);
     return user;
   }

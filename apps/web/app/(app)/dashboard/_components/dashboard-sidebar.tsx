@@ -1,22 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import type {
-  StudentHomeDashboard,
-  StudentUpcomingDeadline,
-  TrackingActivityEvent,
-} from '@nibras/contracts';
+import type { StudentHomeDashboard, StudentUpcomingDeadline } from '@nibras/contracts';
 
 type StudentCourseSnapshot = StudentHomeDashboard['courseSnapshots'][number];
 import type { AchievementsDashboard } from '../../../lib/services/gamification';
 import BadgeCard from '../../_components/widgets/BadgeCard';
 import styles from '../page.module.css';
-import {
-  activityHref,
-  deadlineDueLabel,
-  deadlineToneClass,
-  formatDateTime,
-} from './dashboard-utils';
+import { deadlineDueLabel, deadlineToneClass } from './dashboard-utils';
 import { EmptyPanel, SectionHeader } from './dashboard-shared';
 
 function ActiveProjectCard({ project }: { project: StudentCourseSnapshot['projects'][number] }) {
@@ -35,12 +26,10 @@ function ActiveProjectCard({ project }: { project: StudentCourseSnapshot['projec
 export default function DashboardSidebar({
   upcomingDeadlines,
   courseSnapshots,
-  activity,
   achievements,
 }: {
   upcomingDeadlines: StudentUpcomingDeadline[];
   courseSnapshots: StudentCourseSnapshot[];
-  activity: TrackingActivityEvent[];
   achievements: AchievementsDashboard | null;
 }) {
   const activeProjects = courseSnapshots.flatMap((snapshot) =>
@@ -89,71 +78,6 @@ export default function DashboardSidebar({
 
       <section className={styles.panel}>
         <SectionHeader
-          eyebrow="Projects"
-          title="Active projects"
-          hint="Projects that still have open milestones or incomplete progress."
-        />
-        <div className={styles.projectMiniGrid}>
-          {activeProjects.length === 0 ? (
-            <EmptyPanel
-              title="No active projects"
-              body="When projects are published, in-progress work will show here."
-            />
-          ) : (
-            activeProjects.map((project) => (
-              <ActiveProjectCard key={project.projectId} project={project} />
-            ))
-          )}
-        </div>
-      </section>
-
-      <section className={styles.panel}>
-        <SectionHeader
-          eyebrow="Activity"
-          title="Recent activity"
-          hint="Latest events from your courses and submissions."
-        />
-        <div className={styles.listStack}>
-          {activity.length === 0 ? (
-            <EmptyPanel
-              title="No recent activity"
-              body="Submissions, reviews, and course events will appear here."
-            />
-          ) : (
-            activity.slice(0, 12).map((entry) => {
-              const href = activityHref(entry);
-              const body = (
-                <>
-                  <div className={styles.listRowHeader}>
-                    <h3 className={styles.listTitle}>{entry.action}</h3>
-                    <span className={styles.statusChip}>{formatDateTime(entry.createdAt)}</span>
-                  </div>
-                  <p className={styles.listBody}>{entry.summary}</p>
-                </>
-              );
-              if (href) {
-                return (
-                  <Link
-                    key={entry.id}
-                    href={href}
-                    className={`${styles.listRow} ${styles.toneNeutral}`}
-                  >
-                    <div className={styles.listRowMain}>{body}</div>
-                  </Link>
-                );
-              }
-              return (
-                <article key={entry.id} className={`${styles.listRow} ${styles.toneNeutral}`}>
-                  <div className={styles.listRowMain}>{body}</div>
-                </article>
-              );
-            })
-          )}
-        </div>
-      </section>
-
-      <section className={styles.panel}>
-        <SectionHeader
           eyebrow="Achievements"
           title="Recent badges"
           hint="Reputation and earned badges from the achievements service."
@@ -192,6 +116,26 @@ export default function DashboardSidebar({
         <Link href="/achievements" className={styles.inlineAction}>
           View all achievements
         </Link>
+      </section>
+
+      <section className={styles.panel}>
+        <SectionHeader
+          eyebrow="Projects"
+          title="Active projects"
+          hint="Projects that still have open milestones or incomplete progress."
+        />
+        <div className={styles.projectMiniGrid}>
+          {activeProjects.length === 0 ? (
+            <EmptyPanel
+              title="No active projects"
+              body="When projects are published, in-progress work will show here."
+            />
+          ) : (
+            activeProjects.map((project) => (
+              <ActiveProjectCard key={project.projectId} project={project} />
+            ))
+          )}
+        </div>
       </section>
     </div>
   );

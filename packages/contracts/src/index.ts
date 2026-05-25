@@ -100,11 +100,28 @@ export const UserSchema = z.object({
   id: z.string().min(1),
   username: z.string().min(1),
   email: z.string().email(),
+  displayName: z.string().min(1).max(80).nullable().optional(),
   githubLogin: z.string().min(1),
   githubLinked: z.boolean(),
   githubAppInstalled: z.boolean(),
   systemRole: z.enum(['user', 'admin']).optional(),
   yearLevel: z.number().int().min(1).max(4).default(1),
+});
+
+export const UpdateProfileBodySchema = z.object({
+  displayName: z.union([z.string().trim().min(1).max(80), z.null()]),
+});
+
+export const AiCredentialResponseSchema = z.object({
+  configured: z.boolean(),
+  provider: z.string(),
+  model: z.string(),
+  maskedKey: z.string().nullable(),
+});
+
+export const UpsertAiCredentialBodySchema = z.object({
+  apiKey: z.string().trim().max(512).optional(),
+  model: z.string().trim().min(1).max(64).default('gpt-4o-mini'),
 });
 
 export const DevicePollSuccessSchema = z.object({

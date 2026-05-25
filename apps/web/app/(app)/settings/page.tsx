@@ -9,9 +9,19 @@ import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import { useSession } from '../_components/session-context';
 import { getLevelLabel, MAX_LEVEL } from '../../lib/levels';
 import SelectField from '../_components/ui/select-field';
+import AiIntegrationTab from './_components/ai-integration-tab';
+import SecurityTab from './_components/security-tab';
 import styles from './page.module.css';
 
-type Tab = 'profile' | 'github' | 'notifications' | 'preferences' | 'danger' | 'admin';
+type Tab =
+  | 'profile'
+  | 'github'
+  | 'notifications'
+  | 'preferences'
+  | 'security'
+  | 'ai'
+  | 'danger'
+  | 'admin';
 
 type StudentRow = {
   userId: string;
@@ -89,6 +99,44 @@ function IconSliders() {
       <circle cx="8" cy="6" r="2" fill="currentColor" stroke="none" />
       <circle cx="16" cy="12" r="2" fill="currentColor" stroke="none" />
       <circle cx="10" cy="18" r="2" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+function IconKey() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0 3 3L22 7l-3-3m-3.5 3.5L19 4" />
+    </svg>
+  );
+}
+
+function IconSparkles() {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z" />
+      <path d="M5 16l.75 2.25L8 19l-2.25.75L5 22l-.75-2.25L2 19l2.25-.75L5 16z" />
+      <path d="M19 14l.5 1.5 1.5.5-1.5.5-.5 1.5-.5-1.5L19 17l-.5-1.5-1.5-.5 1.5-.5.5-1.5z" />
     </svg>
   );
 }
@@ -183,6 +231,8 @@ const BASE_NAV_ITEMS: NavItem[] = [
   { id: 'github', label: 'GitHub App', icon: <IconGitHub /> },
   { id: 'notifications', label: 'Notifications', icon: <IconBell /> },
   { id: 'preferences', label: 'Preferences', icon: <IconSliders /> },
+  { id: 'security', label: 'Security', icon: <IconKey /> },
+  { id: 'ai', label: 'AI Integration', icon: <IconSparkles /> },
   { id: 'danger', label: 'Danger Zone', icon: <IconShield />, danger: true },
 ];
 
@@ -746,12 +796,15 @@ function NotificationsTab() {
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
 export default function SettingsPage() {
-  const { user, loading: sessionLoading } = useSession();
+  const { user, loading: sessionLoading, refreshSession } = useSession();
   const router = useRouter();
 
   const isAdmin = user?.systemRole === 'admin';
 
   const [activeTab, setActiveTab] = useState<Tab>('profile');
+  const [displayName, setDisplayName] = useState('');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileStatus, setProfileStatus] = useState('');
   const [compact, setCompact] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [installUrl, setInstallUrl] = useState<string | null>(null);
@@ -765,6 +818,12 @@ export default function SettingsPage() {
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.displayName ?? user.username ?? '');
+    }
+  }, [user]);
 
   useEffect(() => {
     function syncPreferences() {
@@ -854,7 +913,36 @@ export default function SettingsPage() {
     }
   }
 
-  const identity = user?.username || user?.githubLogin || '—';
+  const identity = user?.displayName?.trim() || user?.username || user?.githubLogin || '—';
+
+  async function handleSaveProfile() {
+    const trimmed = displayName.trim();
+    if (!trimmed) {
+      setProfileStatus('Display name cannot be empty.');
+      return;
+    }
+    setProfileSaving(true);
+    setProfileStatus('');
+    try {
+      const res = await apiFetch('/v1/me/profile', {
+        method: 'PATCH',
+        auth: true,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ displayName: trimmed }),
+      });
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+        setProfileStatus(err.error?.message ?? `Save failed (${res.status}).`);
+        return;
+      }
+      await refreshSession();
+      setProfileStatus('Profile saved.');
+    } catch (err) {
+      setProfileStatus(err instanceof Error ? err.message : String(err));
+    } finally {
+      setProfileSaving(false);
+    }
+  }
   const githubAvatarUrl =
     user?.githubLogin && user.githubLinked
       ? `https://avatars.githubusercontent.com/${user.githubLogin}?s=80`
@@ -938,10 +1026,21 @@ export default function SettingsPage() {
                       id="display-name"
                       className={styles.formInput}
                       type="text"
-                      defaultValue={sessionLoading ? '' : identity}
-                      disabled
+                      value={sessionLoading ? '' : displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      maxLength={80}
+                      disabled={sessionLoading || profileSaving}
                     />
                   </div>
+                  <button
+                    type="button"
+                    className={styles.profileSaveBtn}
+                    onClick={() => void handleSaveProfile()}
+                    disabled={sessionLoading || profileSaving || !displayName.trim()}
+                  >
+                    {profileSaving ? 'Saving…' : 'Save profile'}
+                  </button>
+                  {profileStatus ? <p className={styles.statusLine}>{profileStatus}</p> : null}
                   <div className={styles.formField}>
                     <label htmlFor="email" className={styles.formLabel}>
                       Email address
@@ -1125,6 +1224,10 @@ export default function SettingsPage() {
           )}
 
           {/* ── Preferences tab ── */}
+          {activeTab === 'security' && <SecurityTab />}
+
+          {activeTab === 'ai' && <AiIntegrationTab />}
+
           {activeTab === 'preferences' && (
             <section className={styles.contentSection}>
               <h2 className={styles.sectionHeading}>Appearance &amp; Layout</h2>

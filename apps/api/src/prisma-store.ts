@@ -169,6 +169,7 @@ function toUserRecord(user: {
   id: string;
   username: string;
   email: string;
+  displayName?: string | null;
   githubLinked: boolean;
   githubAppInstalled: boolean;
   systemRole: SystemRole;
@@ -179,6 +180,7 @@ function toUserRecord(user: {
     id: user.id,
     username: user.username,
     email: user.email,
+    displayName: user.displayName ?? null,
     githubLogin: user.githubAccount?.login || '',
     githubLinked: user.githubLinked,
     githubAppInstalled: user.githubAppInstalled,
@@ -2316,6 +2318,22 @@ export class PrismaStore implements AppStore {
         payload: { newRole: role } as Prisma.InputJsonValue,
       },
     });
+    return toUserRecord(updated);
+  }
+
+  async updateUserProfile(
+    _apiBaseUrl: string,
+    userId: string,
+    displayName: string | null
+  ): Promise<UserRecord | null> {
+    const updated = await this.prisma.user
+      .update({
+        where: { id: userId },
+        data: { displayName },
+        include: { githubAccount: true },
+      })
+      .catch(() => null);
+    if (!updated) return null;
     return toUserRecord(updated);
   }
 

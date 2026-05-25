@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import {
   LocalTestResultRequestSchema,
   MeResponseSchema,
+  UpdateProfileBodySchema,
   PingResponseSchema,
   ProjectSetupResponseSchema,
   ProjectTaskResponseSchema,
@@ -106,6 +107,36 @@ export function registerHostedCliRoutes(
       return MeResponseSchema.parse({
         user: auth.user,
         apiBaseUrl: requestBaseUrl(request),
+      });
+    }
+  );
+
+  app.patch(
+    '/v1/me/profile',
+    { schema: { tags: ['auth'], summary: 'Update profile display name' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const parsed = UpdateProfileBodySchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send(Errors.validation(parsed.error.message));
+      }
+      const updated = await store.updateUserProfile(
+        requestBaseUrl(request),
+        auth.user.id,
+        parsed.data.displayName
+      );
+      if (!updated) {
+        return reply.code(404).send(Errors.notFound('User not found.'));
+      }
+      return MeResponseSchema.parse({
+        user: updated,
+        apiBaseUrl: requestBaseUrl(request),
+        memberships: auth.memberships.map((m) => ({
+          courseId: m.courseId,
+          role: m.role,
+          level: m.level,
+        })),
       });
     }
   );
