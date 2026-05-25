@@ -7,7 +7,12 @@ import { useState, useEffect } from 'react';
 import NibrasLogo from '@/app/_components/nibras-logo';
 import { getInitials } from '../../lib/utils';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
-import { appNavItems, canAccessNavItem, isNavItemActive } from './nav-config';
+import {
+  getPrimaryNavItems,
+  canAccessNavItem,
+  isNavItemActive,
+  type ShellSessionUser as NavShellUser,
+} from './nav-config';
 
 type ShellSessionUser = {
   username: string;
@@ -71,7 +76,7 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
       />
     </svg>
   ),
-  Achievements: (
+  Badges: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path
         d="M4 3h8v2a4 4 0 11-8 0V3z"
@@ -98,7 +103,7 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
       <circle cx="8" cy="8" r="2.4" fill="currentColor" opacity=".85" />
     </svg>
   ),
-  Community: (
+  'Q&A': (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path
         d="M2 4a2 2 0 012-2h6a2 2 0 012 2v4a2 2 0 01-2 2H6l-3 3v-3H4a2 2 0 01-2-2V4z"
@@ -108,7 +113,56 @@ const NAV_ICONS: Record<string, React.ReactNode> = {
       />
     </svg>
   ),
-  Competitions: (
+  Discussions: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M2 4a2 2 0 012-2h6a2 2 0 012 2v4a2 2 0 01-2 2H6l-3 3v-3H4a2 2 0 01-2-2V4z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+  Tags: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M2 5l6-3 6 3v6l-6 3-6-3V5z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+  'Nibras 75': (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M3 14V4l5-2 5 2v10" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M6 8h4M6 5.5h4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  ),
+  'Codeforces practice': (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M4 2v11M4 2h7l-1.5 3L11 8H4"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+      <circle cx="4" cy="14" r="1.2" fill="currentColor" />
+    </svg>
+  ),
+  Integrations: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M3 8h3l2-3 2 6 2-3h3"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+  Contests: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
       <path
         d="M4 2v11M4 2h7l-1.5 3L11 8H4"
@@ -233,9 +287,7 @@ export default function Sidebar({
 
       {/* Primary nav */}
       <nav className="sidebarNav" aria-label="Primary">
-        {appNavItems
-          .filter((item) => canAccessNavItem(item, user))
-          .map((item) => {
+        {getPrimaryNavItems(user as NavShellUser | null).map((item) => {
             const isActive = isNavItemActive(item, pathname);
             return (
               <Link

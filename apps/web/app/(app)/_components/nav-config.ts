@@ -1,9 +1,16 @@
 export type NavVisibility = 'all' | 'instructor' | 'admin';
 
 /** Where the item appears in the top header. */
-export type NavPlacement = 'primary' | 'learn' | 'compete' | 'teach' | 'admin';
+export type NavPlacement =
+  | 'primary'
+  | 'learn'
+  | 'community'
+  | 'compete'
+  | 'achievements'
+  | 'teach'
+  | 'admin';
 
-export type NavGroupId = 'learn' | 'compete' | 'teach';
+export type NavGroupId = 'learn' | 'community' | 'compete' | 'achievements' | 'teach';
 
 export type AppNavItem = {
   href: string;
@@ -11,6 +18,8 @@ export type AppNavItem = {
   description: string;
   visibility: NavVisibility;
   placement: NavPlacement;
+  /** When true, only exact href + matchPrefixes apply (not all paths under href). */
+  exactHref?: boolean;
   matchPrefixes?: string[];
 };
 
@@ -24,12 +33,22 @@ export const navDropdownGroups: NavDropdownGroup[] = [
   {
     id: 'learn',
     label: 'Learn',
-    description: 'Discover projects, discuss with peers, and write code.',
+    description: 'Catalog, enrolled courses, and the IDE.',
+  },
+  {
+    id: 'community',
+    label: 'Community',
+    description: 'Ask questions, join discussions, and browse tags.',
   },
   {
     id: 'compete',
     label: 'Compete',
-    description: 'Contests, practice, badges, and progression.',
+    description: 'Practice problems, platforms, and upcoming contests.',
+  },
+  {
+    id: 'achievements',
+    label: 'Achievements',
+    description: 'Badges, leaderboard, reputation, and levels.',
   },
   {
     id: 'teach',
@@ -74,6 +93,7 @@ export const appNavItems: AppNavItem[] = [
     description: 'Chat, insights, smart routing, and recommendations.',
     visibility: 'all',
     placement: 'primary',
+    matchPrefixes: ['/tutor/insights', '/tutor/routing', '/tutor/recommendations'],
   },
   {
     href: '/catalog',
@@ -91,14 +111,6 @@ export const appNavItems: AppNavItem[] = [
     matchPrefixes: ['/catalog/'],
   },
   {
-    href: '/community',
-    label: 'Community',
-    description: 'Ask questions, share answers, and join course discussions.',
-    visibility: 'all',
-    placement: 'learn',
-    matchPrefixes: ['/community/discussions', '/community/q', '/community/tags'],
-  },
-  {
     href: '/ide',
     label: 'IDE',
     description: 'Run code in a sandboxed playground.',
@@ -106,19 +118,86 @@ export const appNavItems: AppNavItem[] = [
     placement: 'learn',
   },
   {
-    href: '/competitions',
-    label: 'Competitions',
-    description: 'Contests, practice problems, ranking, and competitive history.',
+    href: '/community',
+    label: 'Q&A',
+    description: 'Ask questions, vote, and accept answers.',
+    visibility: 'all',
+    placement: 'community',
+    exactHref: true,
+    matchPrefixes: ['/community/q'],
+  },
+  {
+    href: '/community/discussions',
+    label: 'Discussions',
+    description: 'Long-form threads scoped to your enrolled courses.',
+    visibility: 'all',
+    placement: 'community',
+  },
+  {
+    href: '/community/tags',
+    label: 'Tags',
+    description: 'Browse topics and filter questions by tag.',
+    visibility: 'all',
+    placement: 'community',
+  },
+  {
+    href: '/competitions/nibras-75',
+    label: 'Nibras 75',
+    description: 'Curated LeetCode list — 75 essential DSA problems.',
     visibility: 'all',
     placement: 'compete',
   },
   {
-    href: '/achievements',
-    label: 'Achievements',
-    description: 'Badges, reputation, leaderboards, and level progression.',
+    href: '/competitions/practice',
+    label: 'Codeforces practice',
+    description: 'Codeforces problems, tags, and rating analytics.',
     visibility: 'all',
     placement: 'compete',
-    matchPrefixes: ['/levels'],
+    matchPrefixes: ['/competitions/codehunt'],
+  },
+  {
+    href: '/competitions/platforms',
+    label: 'Integrations',
+    description: 'Connect Codeforces, LeetCode, CTF, and other platforms.',
+    visibility: 'all',
+    placement: 'compete',
+  },
+  {
+    href: '/competitions',
+    label: 'Contests',
+    description: 'Upcoming contests, calendar, and linked accounts.',
+    visibility: 'all',
+    placement: 'compete',
+    exactHref: true,
+    matchPrefixes: ['/competitions/ranking', '/competitions/history'],
+  },
+  {
+    href: '/achievements',
+    label: 'Badges',
+    description: 'Earned badges and progress toward the next milestones.',
+    visibility: 'all',
+    placement: 'achievements',
+  },
+  {
+    href: '/achievements/leaderboard',
+    label: 'Leaderboard',
+    description: 'Compare your standing against the rest of the cohort.',
+    visibility: 'all',
+    placement: 'achievements',
+  },
+  {
+    href: '/achievements/reputation',
+    label: 'Reputation',
+    description: 'Detailed breakdown of reputation changes over time.',
+    visibility: 'all',
+    placement: 'achievements',
+  },
+  {
+    href: '/levels',
+    label: 'Levels',
+    description: 'Tier progression based on reputation and contributions.',
+    visibility: 'all',
+    placement: 'achievements',
   },
   {
     href: '/instructor',
@@ -126,7 +205,7 @@ export const appNavItems: AppNavItem[] = [
     description: 'Manage courses, templates, team formation, and programs.',
     visibility: 'instructor',
     placement: 'teach',
-    matchPrefixes: ['/instructor/programs'],
+    matchPrefixes: ['/instructor/programs', '/instructor/courses'],
   },
   {
     href: '/instructor/analytics',
@@ -162,14 +241,29 @@ export function canAccessNavItem(item: AppNavItem, user: ShellSessionUser | null
   );
 }
 
+function hrefPath(href: string): string {
+  return href.split('?')[0];
+}
+
 export function isNavItemActive(item: AppNavItem, pathname: string | null): boolean {
   if (!pathname) return false;
-  if (pathname === item.href || pathname.startsWith(`${item.href}/`)) return true;
-  return (
+  const base = hrefPath(item.href);
+
+  if (pathname === base) return true;
+
+  if (
     item.matchPrefixes?.some(
       (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
-    ) ?? false
-  );
+    )
+  ) {
+    return true;
+  }
+
+  if (item.exactHref) return false;
+
+  if (pathname.startsWith(`${base}/`)) return true;
+
+  return false;
 }
 
 export function getVisibleNavItems(user: ShellSessionUser | null): AppNavItem[] {
@@ -272,7 +366,7 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: 'Manage your account preferences and connected services.',
   },
   '/achievements': {
-    title: 'Achievements',
+    title: 'Badges',
     subtitle: 'Track the badges you have earned and the milestones still ahead.',
   },
   '/achievements/leaderboard': {
@@ -304,15 +398,19 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: 'Specialization and track suggestions tailored to your grades.',
   },
   '/community': {
-    title: 'Community',
+    title: 'Q&A',
     subtitle: 'Ask questions, share answers, and learn from your peers.',
   },
   '/community/discussions': {
-    title: 'Course Discussions',
+    title: 'Discussions',
     subtitle: 'Long-form threads scoped to your enrolled courses.',
   },
+  '/community/tags': {
+    title: 'Tags',
+    subtitle: 'Browse topics and filter questions by tag.',
+  },
   '/competitions': {
-    title: 'Competitions',
+    title: 'Contests',
     subtitle: 'Upcoming contests and linked accounts.',
   },
   '/ide': {
@@ -320,8 +418,8 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: 'Write, run, and debug code in a sandboxed playground.',
   },
   '/competitions/practice': {
-    title: 'Practice',
-    subtitle: 'Multi-platform problems and Codeforces analytics.',
+    title: 'Codeforces practice',
+    subtitle: 'Codeforces problems, tags, and rating analytics.',
   },
   '/competitions/nibras-75': {
     title: 'Nibras 75',
@@ -336,7 +434,7 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: 'Your past contest performance and rating trend.',
   },
   '/competitions/platforms': {
-    title: 'Platform Integrations',
+    title: 'Integrations',
     subtitle: 'Connect contests, CTF events, Kaggle, bug bounty, and more.',
   },
   '/instructor/analytics': {
