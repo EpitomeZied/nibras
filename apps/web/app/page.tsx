@@ -9,7 +9,7 @@ import {
   cliFeatures,
   ctaFeatures,
   featureGroups,
-  featureNavLinks,
+  landingNavLinks,
   heroBadge,
   heroSub,
   howItWorksSteps,
@@ -112,20 +112,11 @@ export default function HomePage() {
           <span className={styles.navBadge}>Beta</span>
         </div>
         <div className={styles.navLinks}>
-          <a href="#features" className={styles.navLink}>
-            Features
-          </a>
-          {featureNavLinks.map((link) => (
+          {landingNavLinks.map((link) => (
             <a key={link.href} href={link.href} className={styles.navLinkSub}>
               {link.label}
             </a>
           ))}
-          <a href="#how-it-works" className={styles.navLink}>
-            How it works
-          </a>
-          <a href="#cli" className={styles.navLink}>
-            CLI
-          </a>
           <a
             href="https://github.com/EpitomeZied/nibras"
             target="_blank"
@@ -381,7 +372,7 @@ export default function HomePage() {
           {featureGroups.map((group) => (
             <div key={group.id} id={group.id} className={styles.featureGroup}>
               <h3 className={styles.featureGroupLabel}>{group.label}</h3>
-              <div className={styles.featureGrid}>
+              <div className={`${styles.featureGrid} ${styles.featureGrid8}`}>
                 {group.features.map((f) => (
                   <FeatureCard
                     key={f.title}
@@ -545,14 +536,11 @@ export default function HomePage() {
           <div className={styles.footerLinks}>
             <div className={styles.footerCol}>
               <span className={styles.footerColTitle}>Product</span>
-              <a href="#features">Features</a>
-              {featureNavLinks.map((link) => (
+              {landingNavLinks.map((link) => (
                 <a key={link.href} href={link.href}>
                   {link.label}
                 </a>
               ))}
-              <a href="#how-it-works">How it works</a>
-              <a href="#cli">CLI</a>
             </div>
             <div className={styles.footerCol}>
               <span className={styles.footerColTitle}>Developers</span>

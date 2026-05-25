@@ -836,6 +836,7 @@
 }
 
 .featureGrid,
+.featureGrid8,
 .featureGrid9 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -844,6 +845,10 @@
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.featureGrid8 {
+  grid-template-columns: repeat(4, 1fr);
 }
 
 /* ── How it works (numbered cards) ─────────────────────────────────────────── */
@@ -1630,6 +1635,7 @@
     grid-template-columns: 1fr 1fr;
   }
   .featureGrid,
+  .featureGrid8,
   .featureGrid9 {
     grid-template-columns: 1fr 1fr;
   }
@@ -1688,6 +1694,7 @@
     grid-template-columns: 1fr;
   }
   .featureGrid,
+  .featureGrid8,
   .featureGrid9 {
     grid-template-columns: 1fr;
   }

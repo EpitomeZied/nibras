@@ -200,7 +200,7 @@ export const featureGroups: LandingFeatureGroup[] = [
   },
   {
     id: 'features-delivery',
-    label: 'Delivery and insight',
+    label: 'Delivery & insight',
     navLabel: 'Delivery',
     features: [
       {
@@ -233,11 +233,21 @@ export const featureGroups: LandingFeatureGroup[] = [
         title: 'Track Recommendations',
         desc: 'The planner recommends the best program tracks based on your Year 1 course selections and academic goals.',
       },
+      {
+        icon: 'course-ops',
+        title: 'Review Workspace',
+        desc: 'Work through submission queues, status filters, and review actions without leaving the delivery surface.',
+      },
+      {
+        icon: 'instructor-analytics',
+        title: 'Operational Insights',
+        desc: 'Spot pass-rate trends, backlog risk, and course-level bottlenecks before they turn into end-of-term surprises.',
+      },
     ],
   },
   {
     id: 'features-engagement',
-    label: 'Student engagement',
+    label: 'Student engagement & motivation',
     navLabel: 'For students',
     features: [
       {
@@ -270,9 +280,26 @@ export const featureGroups: LandingFeatureGroup[] = [
         title: 'Levels',
         desc: 'Climb tier progression based on reputation and real contributions — from helper badges to competitive milestones.',
       },
+      {
+        icon: 'dashboard',
+        title: 'Activity Feed',
+        desc: 'See recent submissions, reviews, badges, and course events in one timeline so progress never feels invisible.',
+      },
+      {
+        icon: 'submission-analytics',
+        title: 'Reputation Breakdown',
+        desc: 'Understand how points, badges, and contributions stack up across courses with a clear reputation profile.',
+      },
     ],
   },
 ];
+
+export const landingNavLinks = [
+  { href: '#features', label: 'Features' },
+  ...featureGroups.map((g) => ({ href: `#${g.id}`, label: g.navLabel })),
+  { href: '#how-it-works', label: 'How it works' },
+  { href: '#cli', label: 'CLI' },
+] as const;
 
 export const cliFeatures = [
   {
@@ -309,6 +336,7 @@ export const ctaFeatures = [
   'No credit card required',
 ] as const;
 
+/** @deprecated Use landingNavLinks — kept for any external imports */
 export const featureNavLinks = featureGroups.map((g) => ({
   href: `#${g.id}`,
   label: g.navLabel,
