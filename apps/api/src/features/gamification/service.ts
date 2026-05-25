@@ -1,5 +1,15 @@
-import { PrismaClient, SubmissionStatus } from '@prisma/client';
-import { BADGE_CATALOG, computeLevel } from './badges-catalog';
+import {
+  AssignmentSubmissionStatus,
+  PrismaClient,
+  SubmissionStatus,
+} from '@prisma/client';
+import {
+  BADGE_BY_CODE,
+  BADGE_CATALOG,
+  computeLevel,
+  progressForMetric,
+  type UserMetrics,
+} from './badges-catalog';
 import { ReputationService, type MyReputationDto } from '../reputation/service';
 
 export type AchievementsDashboardDto = {
@@ -39,17 +49,6 @@ export type LeaderboardFilters = {
   limit?: number;
 };
 
-type UserMetrics = {
-  githubLinked: boolean;
-  passedSubmissions: number;
-  questions: number;
-  answers: number;
-  acceptedAnswers: number;
-  solvedProblems: number;
-  contestParticipations: number;
-  earnedBadges: number;
-};
-
 function periodStart(period: LeaderboardFilters['period']): Date | null {
   const now = new Date();
   switch (period) {
@@ -74,32 +73,9 @@ function periodStart(period: LeaderboardFilters['period']): Date | null {
 }
 
 function progressForBadge(code: string, metrics: UserMetrics): number {
-  switch (code) {
-    case 'github-connected':
-      return metrics.githubLinked ? 1 : 0;
-    case 'first-steps':
-      return metrics.passedSubmissions;
-    case 'ship-it':
-      return metrics.passedSubmissions;
-    case 'project-veteran':
-      return metrics.passedSubmissions;
-    case 'curious-mind':
-      return metrics.questions;
-    case 'helpful-peer':
-      return metrics.answers;
-    case 'accepted-answer':
-      return metrics.acceptedAnswers;
-    case 'problem-solver-1':
-    case 'problem-solver-10':
-    case 'problem-solver-50':
-      return metrics.solvedProblems;
-    case 'contest-debut':
-      return metrics.contestParticipations;
-    case 'badge-collector':
-      return metrics.earnedBadges;
-    default:
-      return 0;
-  }
+  const badge = BADGE_BY_CODE.get(code);
+  if (!badge) return 0;
+  return progressForMetric(badge.metric, metrics);
 }
 
 function isBadgeEarned(code: string, metrics: UserMetrics, threshold: number): boolean {
@@ -135,36 +111,80 @@ export class GamificationService {
     const [
       user,
       passedSubmissions,
+      totalSubmissions,
+      failedSubmissions,
+      teamMemberships,
+      courseEnrollments,
+      assignmentSubmissions,
+      videosWatched,
       questions,
+      questionUpvotesAgg,
       answers,
       acceptedAnswers,
+      communityVotes,
+      threads,
+      threadPosts,
       solvedProblems,
+      problemBookmarks,
       contestParticipations,
+      contestBookmarks,
       earnedBadges,
     ] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: userId },
-        select: { githubLinked: true },
+        select: { githubLinked: true, githubAppInstalled: true },
       }),
       this.prisma.submissionAttempt.count({
         where: { userId, status: SubmissionStatus.passed },
       }),
+      this.prisma.submissionAttempt.count({ where: { userId } }),
+      this.prisma.submissionAttempt.count({
+        where: { userId, status: SubmissionStatus.failed },
+      }),
+      this.prisma.teamMember.count({ where: { userId } }),
+      this.prisma.courseMembership.count({ where: { userId } }),
+      this.prisma.assignmentSubmission.count({
+        where: { userId, status: { not: AssignmentSubmissionStatus.draft } },
+      }),
+      this.prisma.videoProgress.count({ where: { userId, watched: true } }),
       this.prisma.communityQuestion.count({ where: { authorId: userId } }),
+      this.prisma.communityQuestion.aggregate({
+        where: { authorId: userId },
+        _sum: { votesCount: true },
+      }),
       this.prisma.communityAnswer.count({ where: { authorId: userId } }),
       this.prisma.communityAnswer.count({ where: { authorId: userId, accepted: true } }),
+      this.prisma.communityVote.count({ where: { userId } }),
+      this.prisma.communityThread.count({ where: { authorId: userId } }),
+      this.prisma.communityPost.count({ where: { authorId: userId } }),
       this.prisma.userProblemProgress.count({ where: { userId, solved: true } }),
+      this.prisma.problemBookmark.count({ where: { userId } }),
       this.prisma.userContestParticipation.count({ where: { userId } }),
+      this.prisma.contestBookmark.count({ where: { userId } }),
       this.prisma.userBadge.count({ where: { userId } }),
     ]);
 
     return {
       githubLinked: user?.githubLinked ?? false,
+      githubAppInstalled: user?.githubAppInstalled ?? false,
+      courseEnrollments,
       passedSubmissions,
+      totalSubmissions,
+      failedSubmissions,
+      teamMemberships,
       questions,
       answers,
       acceptedAnswers,
+      questionUpvotesReceived: questionUpvotesAgg._sum.votesCount ?? 0,
+      communityVotes,
+      threads,
+      threadPosts,
       solvedProblems,
+      problemBookmarks,
       contestParticipations,
+      contestBookmarks,
+      assignmentSubmissions,
+      videosWatched,
       earnedBadges,
     };
   }

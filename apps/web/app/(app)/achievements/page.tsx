@@ -79,7 +79,7 @@ export default function AchievementsPage() {
         <div className={styles.skeleton} aria-hidden="true">
           <div className={styles.skeletonHeader} />
           <div className={styles.skeletonGrid}>
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: 15 }).map((_, i) => (
               <div key={i} className={styles.skeletonCard} />
             ))}
           </div>
