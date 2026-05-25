@@ -19,9 +19,9 @@ export const metadata: Metadata = {
   title: 'Nibras',
   description: 'The developer education platform built for serious instructors.',
   icons: {
-    icon: '/icon.svg',
-    shortcut: '/icon.svg',
-    apple: '/icon.svg',
+    icon: '/icon.svg?v=2',
+    shortcut: '/icon.svg?v=2',
+    apple: '/icon.svg?v=2',
   },
 };
 
