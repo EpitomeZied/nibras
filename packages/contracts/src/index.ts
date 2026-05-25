@@ -1,5 +1,8 @@
 import { z } from 'zod';
 export * from './tracking';
+export * from './course-content';
+export * from './course-assignments';
+export * from './course-profile';
 export * from './programs';
 export * from './ide';
 export * from './gamification';

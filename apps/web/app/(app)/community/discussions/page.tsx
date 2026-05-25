@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
 import Avatar from '../../_components/widgets/Avatar';
@@ -36,9 +36,12 @@ function formatRelative(iso?: string): string {
 
 export default function DiscussionsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: sessionLoading } = useSession();
   const [threads, setThreads] = useState<CommunityThread[]>([]);
-  const [courseId, setCourseId] = useState<string | undefined>(undefined);
+  const [courseId, setCourseId] = useState<string | undefined>(
+    () => searchParams.get('courseId') ?? undefined
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [courses, setCourses] = useState<DiscussionCourse[]>([]);
@@ -137,6 +140,13 @@ export default function DiscussionsPage() {
       setLoading(false);
     }
   }, [courseId]);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('courseId');
+    if (fromUrl && fromUrl !== courseId) {
+      setCourseId(fromUrl);
+    }
+  }, [searchParams, courseId]);
 
   useEffect(() => {
     if (!courseId && courses.length > 0) {

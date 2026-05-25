@@ -33,6 +33,15 @@
   }
 }
 
+.sectionLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  padding: 10px 10px 4px;
+}
+
 .list {
   display: flex;
   flex-direction: column;
@@ -164,4 +173,34 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--surface);
+}
+
+.markWatchedBtn {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.markWatchedBtn:hover {
+  border-color: var(--primary, #22c55e);
+}
+
+.listItemLocked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.projectLink {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.projectLink a {
+  color: var(--primary, #22c55e);
 }

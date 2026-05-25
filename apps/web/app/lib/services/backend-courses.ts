@@ -1,4 +1,5 @@
-import { serviceFetch, serviceFetchOptional } from '../api-clients/service-fetch';
+import type { CourseAssignment, CourseAssignmentDetail } from '@nibras/contracts';
+import { listMyTrackingCourses } from './course-profile';
 
 export type BackendCourse = {
   id: string;
@@ -25,96 +26,68 @@ export type CourseVideo = {
   order: number;
 };
 
-export type BackendAssignment = {
-  id: string;
-  courseId: string;
-  title: string;
-  description?: string;
-  dueAt?: string;
-  pointsPossible: number;
-  status: 'not_started' | 'in_progress' | 'submitted' | 'graded' | 'late';
-  score?: number;
-};
-
-export type AssignmentDetail = BackendAssignment & {
-  content?: string;
-  resources?: Array<{ title: string; url: string }>;
-  rubric?: Array<{ criterion: string; weight: number; description?: string }>;
-};
+export type BackendAssignment = CourseAssignment;
+export type AssignmentDetail = CourseAssignmentDetail;
 
 export type AssignmentSubmission = {
   id: string;
   assignmentId: string;
   submittedAt: string;
-  status: BackendAssignment['status'];
+  status: CourseAssignment['status'];
   score?: number;
   feedback?: string;
 };
 
-// ── Courses ─────────────────────────────────────────────────────────────────
-export async function listCourses() {
-  return serviceFetch<BackendCourse[]>('admin', '/v1/courses', { auth: true });
+// ── Courses (tracking) ──────────────────────────────────────────────────────
+export async function listCourses(): Promise<BackendCourse[]> {
+  const courses = await listMyTrackingCourses();
+  return courses.map((c) => ({
+    id: c.id,
+    code: c.courseCode,
+    title: c.title,
+  }));
 }
 
-export async function getCourse(courseId: string) {
-  return serviceFetch<BackendCourse>('admin', `/v1/courses/${courseId}`, { auth: true });
+export async function getCourse(courseId: string): Promise<BackendCourse> {
+  const { getCourseDetail } = await import('./course-profile');
+  const detail = await getCourseDetail(courseId);
+  return {
+    id: detail.id,
+    code: detail.courseCode,
+    title: detail.title,
+    description: detail.description,
+    thumbnailUrl: detail.thumbnailUrl ?? undefined,
+    videoCount: detail.videoCount,
+    assignmentCount: detail.publishedAssignmentCount,
+    progress: detail.videoProgressPercent,
+  };
 }
 
-// ── Videos ──────────────────────────────────────────────────────────────────
-// Invented endpoints — legacy dashboard doesn't expose course videos via this
-// backend. Optional variants let the page render an empty list cleanly.
-export async function listVideos(courseId: string): Promise<CourseVideo[]> {
-  const data = await serviceFetchOptional<CourseVideo[]>(
-    'admin',
-    `/v1/courses/${courseId}/videos`,
-    { auth: true }
-  );
-  return data ?? [];
-}
+// ── Videos (tracking API — see course-content.ts) ───────────────────────────
+export {
+  listCourseSections,
+  listVideos,
+  setVideoProgress,
+  createCourseSection,
+  updateCourseSection,
+  deleteCourseSection,
+  createCourseVideo,
+  updateCourseVideo,
+  deleteCourseVideo,
+} from './course-content';
+export type { CourseSection } from './course-content';
 
-export async function setVideoProgress(
-  videoId: string,
-  payload: { watched?: boolean; watchedProgress?: number }
-): Promise<{ watched: boolean; watchedProgress: number }> {
-  const data = await serviceFetchOptional<{ watched: boolean; watchedProgress: number }>(
-    'admin',
-    `/v1/videos/${videoId}/progress`,
-    {
-      method: 'POST',
-      auth: true,
-      body: payload as Record<string, unknown>,
-    }
-  );
-  return (
-    data ?? { watched: payload.watched ?? false, watchedProgress: payload.watchedProgress ?? 0 }
-  );
-}
+// ── Assignments (tracking API) ──────────────────────────────────────────────
+export {
+  listCourseAssignments as listAssignments,
+  getCourseAssignment as getAssignmentById,
+  submitCourseAssignment as submitAssignment,
+} from './course-assignments';
 
-// ── Assignments ─────────────────────────────────────────────────────────────
-export async function listAssignments(courseId: string) {
-  return serviceFetch<BackendAssignment[]>('admin', `/v1/assignments/course/${courseId}`, {
-    auth: true,
-  });
-}
-
-export async function getAssignmentById(assignmentId: string) {
-  return serviceFetch<AssignmentDetail>('admin', `/v1/assignments/${assignmentId}`, {
-    auth: true,
-  });
-}
-
-// Invented by the port. UI hides the submit form when this is unavailable.
-export async function submitAssignment(
-  assignmentId: string,
-  payload: { content: string; resources?: Array<{ title: string; url: string }> }
-): Promise<AssignmentSubmission | null> {
-  return serviceFetchOptional<AssignmentSubmission>(
-    'admin',
-    `/v1/assignments/${assignmentId}/submit`,
-    {
-      method: 'POST',
-      auth: true,
-      body: payload as Record<string, unknown>,
-    }
-  );
-}
+export {
+  getCourseDetail,
+  updateCourseProfile,
+  getMyCourseGrades,
+  getVideoAnalytics,
+  listMyTrackingCourses,
+} from './course-profile';

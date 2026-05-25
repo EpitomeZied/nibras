@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useFetch } from '../../../../../lib/use-fetch';
+import { getVideoAnalytics } from '../../../../../lib/services/course-profile';
 import styles from '../../../instructor.module.css';
 
 type MilestonePassRate = {
@@ -40,6 +41,22 @@ export default function CourseAnalyticsPage({ params }: { params: Promise<{ cour
   const { data, loading, error } = useFetch<InstructorAnalytics>(
     `/v1/tracking/analytics/instructor?courseId=${courseId}`
   );
+  const [videoStats, setVideoStats] = useState<
+    Array<{
+      videoId: string;
+      title: string;
+      sectionTitle: string;
+      watchedCount: number;
+      enrolledCount: number;
+      avgWatchedProgress: number;
+    }>
+  >([]);
+
+  useEffect(() => {
+    void getVideoAnalytics(courseId)
+      .then((r) => setVideoStats(r.videos))
+      .catch(() => setVideoStats([]));
+  }, [courseId]);
 
   return (
     <div className={styles.page}>
@@ -188,6 +205,37 @@ export default function CourseAnalyticsPage({ params }: { params: Promise<{ cour
               </table>
             )}
           </div>
+
+          {videoStats.length > 0 && (
+            <div className={styles.panel} style={{ marginTop: 20 }}>
+              <h2>Lecture completion</h2>
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>Video</th>
+                    <th>Watched</th>
+                    <th>Avg progress</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {videoStats.map((v) => (
+                    <tr key={v.videoId}>
+                      <td>
+                        {v.title}
+                        <span className={styles.muted} style={{ display: 'block', fontSize: 12 }}>
+                          {v.sectionTitle}
+                        </span>
+                      </td>
+                      <td>
+                        {v.watchedCount} / {v.enrolledCount}
+                      </td>
+                      <td>{Math.round(v.avgWatchedProgress * 100)}%</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </>
       )}
     </div>
