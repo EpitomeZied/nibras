@@ -383,6 +383,10 @@ function NotificationsTab() {
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [error, setError] = useState('');
+  const [notifyEmail, setNotifyEmail] = useState('');
+  const [outboundEmail, setOutboundEmail] = useState<string | null>(null);
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailSaved, setEmailSaved] = useState(false);
 
   useEffect(() => {
     void loadPrefs();
@@ -391,7 +395,19 @@ function NotificationsTab() {
   async function loadPrefs() {
     setLoading(true);
     try {
-      const res = await apiFetch('/v1/notifications/preferences', { auth: true });
+      const [prefsRes, emailRes] = await Promise.all([
+        apiFetch('/v1/notifications/preferences', { auth: true }),
+        apiFetch('/v1/notifications/email-address', { auth: true }),
+      ]);
+      if (emailRes.ok) {
+        const emailData = (await emailRes.json()) as {
+          notificationEmail: string | null;
+          outboundEmail: string | null;
+        };
+        setNotifyEmail(emailData.notificationEmail ?? '');
+        setOutboundEmail(emailData.outboundEmail);
+      }
+      const res = prefsRes;
       if (res.ok) {
         const data = (await res.json()) as {
           preferences: Array<{ type: string; enabled: boolean }>;
@@ -469,6 +485,36 @@ function NotificationsTab() {
     }
   }
 
+  async function saveNotificationEmail() {
+    setEmailSaving(true);
+    setEmailSaved(false);
+    setError('');
+    try {
+      const res = await apiFetch('/v1/notifications/email-address', {
+        method: 'PATCH',
+        auth: true,
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: notifyEmail.trim() || null }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(data.error ?? `Server responded with ${res.status}`);
+      }
+      const data = (await res.json()) as {
+        notificationEmail: string | null;
+        outboundEmail: string | null;
+      };
+      setNotifyEmail(data.notificationEmail ?? '');
+      setOutboundEmail(data.outboundEmail);
+      setEmailSaved(true);
+      setTimeout(() => setEmailSaved(false), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save email.');
+    } finally {
+      setEmailSaving(false);
+    }
+  }
+
   const rowStyle: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
@@ -503,9 +549,52 @@ function NotificationsTab() {
           lineHeight: 1.5,
         }}
       >
-        Choose which events send you an email. Your address is{' '}
-        <strong style={{ color: 'var(--text-muted)' }}>the one linked to your account</strong>.
+        Choose which events send you an email. Add the Gmail (or any inbox) where you want
+        submission and grade messages delivered.
       </p>
+
+      <div className={styles.notifyEmailBlock}>
+        <label className={styles.notifyEmailLabel} htmlFor="notify-email">
+          Notification email
+        </label>
+        <div className={styles.notifyEmailRow}>
+          <input
+            id="notify-email"
+            type="email"
+            className={styles.notifyEmailInput}
+            placeholder="you@gmail.com"
+            value={notifyEmail}
+            onChange={(e) => setNotifyEmail(e.target.value)}
+            autoComplete="email"
+            disabled={loading || emailSaving}
+          />
+          <button
+            type="button"
+            className={styles.notifyEmailSave}
+            onClick={() => void saveNotificationEmail()}
+            disabled={loading || emailSaving}
+          >
+            {emailSaving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+        {emailSaved && <p className={styles.notifyEmailHintOk}>✓ Saved</p>}
+        <p className={styles.notifyEmailHint}>
+          {outboundEmail ? (
+            <>
+              Emails will be sent to <strong>{outboundEmail}</strong>.
+            </>
+          ) : (
+            <>
+              Add your Gmail here — GitHub sign-in email alone may not deliver mail if it is
+              hidden or a <code>@users.noreply.github.com</code> address.
+            </>
+          )}
+        </p>
+      </div>
+
+      {error ? (
+        <p style={{ fontSize: 13, color: '#f87171', marginBottom: 12 }}>{error}</p>
+      ) : null}
 
       {loading ? (
         <p style={{ fontSize: 13, color: 'var(--text-soft)' }}>Loading preferences…</p>

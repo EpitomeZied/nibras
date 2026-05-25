@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { resolveOutboundEmail } from '@nibras/contracts';
 import { ProjectManifest } from '@nibras/contracts';
 import {
   buildCs106lManifest,
@@ -136,10 +137,17 @@ export type NotificationPreferenceRecord = {
   updatedAt: string;
 };
 
+export type UserNotificationEmailRecord = {
+  notificationEmail: string | null;
+  accountEmail: string;
+  outboundEmail: string | null;
+};
+
 export type UserRecord = {
   id: string;
   username: string;
   email: string;
+  notificationEmail?: string | null;
   githubLogin: string;
   githubLinked: boolean;
   githubAppInstalled: boolean;
@@ -1286,6 +1294,15 @@ export interface AppStore {
     enabled: boolean
   ): Promise<NotificationPreferenceRecord>;
   isNotificationEnabled(apiBaseUrl: string, userId: string, type: string): Promise<boolean>;
+  getUserNotificationEmail(
+    apiBaseUrl: string,
+    userId: string
+  ): Promise<UserNotificationEmailRecord | null>;
+  setUserNotificationEmail(
+    apiBaseUrl: string,
+    userId: string,
+    notificationEmail: string | null
+  ): Promise<UserNotificationEmailRecord>;
   createCourseInvite(
     apiBaseUrl: string,
     courseId: string,
@@ -5422,7 +5439,50 @@ export class FileStore implements AppStore {
     const submission = data.submissions.find((entry) => entry.id === submissionId);
     if (!submission) return null;
     const user = data.users.find((entry) => entry.id === submission.userId);
-    return user ? { userId: user.id, email: user.email, username: user.username } : null;
+    if (!user) return null;
+    const outbound = resolveOutboundEmail({
+      email: user.email,
+      notificationEmail: user.notificationEmail ?? null,
+    });
+    if (!outbound) return null;
+    return { userId: user.id, email: outbound, username: user.username };
+  }
+
+  async getUserNotificationEmail(
+    apiBaseUrl: string,
+    userId: string
+  ): Promise<UserNotificationEmailRecord | null> {
+    const data = this.read(apiBaseUrl);
+    const user = data.users.find((entry) => entry.id === userId);
+    if (!user) return null;
+    return {
+      notificationEmail: user.notificationEmail ?? null,
+      accountEmail: user.email,
+      outboundEmail: resolveOutboundEmail({
+        email: user.email,
+        notificationEmail: user.notificationEmail ?? null,
+      }),
+    };
+  }
+
+  async setUserNotificationEmail(
+    apiBaseUrl: string,
+    userId: string,
+    notificationEmail: string | null
+  ): Promise<UserNotificationEmailRecord> {
+    const data = this.read(apiBaseUrl);
+    const user = data.users.find((entry) => entry.id === userId);
+    if (!user) throw new Error('User not found');
+    user.notificationEmail = notificationEmail;
+    this.write(data);
+    return {
+      notificationEmail,
+      accountEmail: user.email,
+      outboundEmail: resolveOutboundEmail({
+        email: user.email,
+        notificationEmail,
+      }),
+    };
   }
 
   async listTrackingReviewQueue(

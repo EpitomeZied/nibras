@@ -20,7 +20,7 @@ import {
 import { runSandboxed } from './sandbox';
 import { VERIFICATION_QUEUE_NAME, parseRedisUrl, type VerificationJobPayload } from './queue';
 import { COMPETITIONS_QUEUE_NAME, type CompetitionsJobPayload } from './competitions-queue';
-import { NOTIFICATION_EMAIL_PREF } from '@nibras/contracts';
+import { NOTIFICATION_EMAIL_PREF, resolveOutboundEmail } from '@nibras/contracts';
 import { sendSubmissionStatusEmail, sendReviewReadyEmail } from './email';
 import { isEmailPreferenceEnabled } from './notification-prefs';
 import {
@@ -569,7 +569,9 @@ async function finalizeJob(
   const submission = await prisma.submissionAttempt.findUnique({
     where: { id: submissionAttemptId },
     include: {
-      user: { select: { id: true, username: true, email: true } },
+      user: {
+        select: { id: true, username: true, email: true, notificationEmail: true },
+      },
       project: { select: { name: true, slug: true, courseId: true } },
     },
   });
@@ -594,13 +596,16 @@ async function finalizeJob(
       NOTIFICATION_EMAIL_PREF.SUBMISSION_RESULTS
     );
     if (sendStatusEmail) {
-      await sendSubmissionStatusEmail({
-        studentEmail: submission.user.email,
-        studentName: submission.user.username,
-        projectName: submission.project.name,
-        status: studentEmailStatus,
-        submissionUrl,
-      });
+      const studentEmail = resolveOutboundEmail(submission.user);
+      if (studentEmail) {
+        await sendSubmissionStatusEmail({
+          studentEmail,
+          studentName: submission.user.username,
+          projectName: submission.project.name,
+          status: studentEmailStatus,
+          submissionUrl,
+        });
+      }
     }
   } catch (err) {
     log('warn', 'Failed to send student status email (non-fatal)', {
@@ -619,13 +624,24 @@ async function finalizeJob(
     try {
       const instructorMemberships = await prisma.courseMembership.findMany({
         where: { courseId, role: { in: ['instructor', 'ta'] } },
-        include: { user: { select: { id: true, username: true, email: true } } },
+        include: {
+          user: {
+            select: { id: true, username: true, email: true, notificationEmail: true },
+          },
+        },
       });
 
       await Promise.allSettled(
         instructorMemberships.map(async (membership) => {
           const instructor = (
-            membership as unknown as { user: { id: string; username: string; email: string } }
+            membership as unknown as {
+              user: {
+                id: string;
+                username: string;
+                email: string;
+                notificationEmail: string | null;
+              };
+            }
           ).user;
           // In-app notification
           try {
@@ -652,13 +668,16 @@ async function finalizeJob(
               NOTIFICATION_EMAIL_PREF.REVIEW_QUEUE
             );
             if (sendReviewEmail) {
-              await sendReviewReadyEmail({
-                instructorEmail: instructor.email,
-                instructorName: instructor.username,
-                studentName: submission.user.username,
-                projectName: submission.project.name,
-                reviewQueueUrl,
-              });
+              const instructorEmail = resolveOutboundEmail(instructor);
+              if (instructorEmail) {
+                await sendReviewReadyEmail({
+                  instructorEmail,
+                  instructorName: instructor.username,
+                  studentName: submission.user.username,
+                  projectName: submission.project.name,
+                  reviewQueueUrl,
+                });
+              }
             }
           } catch (err) {
             log('warn', 'Failed to send review-ready email to instructor (non-fatal)', {

@@ -10,3 +10,5 @@ export const NOTIFICATION_EMAIL_PREF = {
 
 export type NotificationEmailPrefType =
   (typeof NOTIFICATION_EMAIL_PREF)[keyof typeof NOTIFICATION_EMAIL_PREF];
+
+export * from './notification-email';

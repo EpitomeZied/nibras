@@ -180,6 +180,8 @@ model User {
   id                String             @id @default(cuid())
   username          String             @unique
   email             String             @unique
+  /// Optional inbox for transactional email (e.g. Gmail). When set, used instead of account email.
+  notificationEmail String?
   githubLinked      Boolean            @default(false)
   githubAppInstalled Boolean           @default(false)
   systemRole        SystemRole         @default(user)

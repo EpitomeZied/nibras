@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { normalizeNotificationEmail } from '@nibras/contracts';
 import { AppStore } from '../../store';
 import { requireUser } from '../../lib/auth';
 import { requestBaseUrl } from '../../lib/request-base-url';
@@ -113,6 +114,65 @@ export function registerNotificationRoutes(app: FastifyInstance, store: AppStore
         body.enabled
       );
       return { preference };
+    }
+  );
+
+  /**
+   * GET /v1/notifications/email-address
+   * Notification inbox (e.g. Gmail) used for outbound mail.
+   */
+  app.get(
+    '/v1/notifications/email-address',
+    { schema: { tags: ['notifications'], summary: 'Get notification email address' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const record = await store.getUserNotificationEmail(
+        requestBaseUrl(request),
+        auth.user.id
+      );
+      if (!record) {
+        return reply.code(404).send({ error: 'User not found.' });
+      }
+      return record;
+    }
+  );
+
+  /**
+   * PATCH /v1/notifications/email-address
+   * Body: { email: string | null } — null or "" clears the custom address.
+   */
+  app.patch(
+    '/v1/notifications/email-address',
+    { schema: { tags: ['notifications'], summary: 'Set notification email address' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const body = request.body as { email?: unknown };
+      let notificationEmail: string | null = null;
+      if (body.email === null || body.email === '') {
+        notificationEmail = null;
+      } else if (typeof body.email === 'string') {
+        const normalized = normalizeNotificationEmail(body.email);
+        if (!normalized) {
+          return reply.code(400).send({
+            error: 'Enter a valid email address (e.g. yourname@gmail.com).',
+          });
+        }
+        notificationEmail = normalized;
+      } else {
+        return reply.code(400).send({ error: '`email` must be a string or null.' });
+      }
+      try {
+        const record = await store.setUserNotificationEmail(
+          requestBaseUrl(request),
+          auth.user.id,
+          notificationEmail
+        );
+        return record;
+      } catch {
+        return reply.code(404).send({ error: 'User not found.' });
+      }
     }
   );
 }

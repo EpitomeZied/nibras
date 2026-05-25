@@ -5349,12 +5349,56 @@ export class PrismaStore implements AppStore {
     _apiBaseUrl: string,
     submissionId: string
   ): Promise<{ userId: string; email: string; username: string } | null> {
+    const { resolveOutboundEmail } = await import('@nibras/contracts');
     const attempt = await this.prisma.submissionAttempt.findUnique({
       where: { id: submissionId },
-      select: { user: { select: { id: true, email: true, username: true } } },
+      select: {
+        user: { select: { id: true, email: true, username: true, notificationEmail: true } },
+      },
     });
     if (!attempt) return null;
-    return { userId: attempt.user.id, email: attempt.user.email, username: attempt.user.username };
+    const outbound = resolveOutboundEmail(attempt.user);
+    if (!outbound) return null;
+    return {
+      userId: attempt.user.id,
+      email: outbound,
+      username: attempt.user.username,
+    };
+  }
+
+  async getUserNotificationEmail(
+    _apiBaseUrl: string,
+    userId: string
+  ): Promise<import('./store').UserNotificationEmailRecord | null> {
+    const { resolveOutboundEmail } = await import('@nibras/contracts');
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, notificationEmail: true },
+    });
+    if (!user) return null;
+    return {
+      notificationEmail: user.notificationEmail,
+      accountEmail: user.email,
+      outboundEmail: resolveOutboundEmail(user),
+    };
+  }
+
+  async setUserNotificationEmail(
+    _apiBaseUrl: string,
+    userId: string,
+    notificationEmail: string | null
+  ): Promise<import('./store').UserNotificationEmailRecord> {
+    const user = await this.prisma.user.update({
+      where: { id: userId },
+      data: { notificationEmail },
+      select: { email: true, notificationEmail: true },
+    });
+    const { resolveOutboundEmail } = await import('@nibras/contracts');
+    return {
+      notificationEmail: user.notificationEmail,
+      accountEmail: user.email,
+      outboundEmail: resolveOutboundEmail(user),
+    };
   }
 
   async listTrackingReviewQueue(
