@@ -21,4 +21,16 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
+const encKey = process.env.NIBRAS_ENCRYPTION_KEY?.trim();
+if (encKey) {
+  const bytes = Buffer.from(encKey, 'hex');
+  if (bytes.length !== 32) {
+    console.error(
+      '\n❌  NIBRAS_ENCRYPTION_KEY must be 64 hex characters (32 bytes). Generate with:\n'
+    );
+    console.error('     openssl rand -hex 32\n');
+    process.exit(1);
+  }
+}
+
 console.log('✓  All required environment variables are set.');

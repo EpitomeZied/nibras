@@ -1043,6 +1043,17 @@
   cursor: pointer;
 }
 
+.encryptionWarning {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: rgba(245, 158, 11, 0.08);
+  color: #fcd34d;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .removeKeyBtn {
   padding: 8px 14px;
   border-radius: 8px;

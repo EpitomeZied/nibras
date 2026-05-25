@@ -8,6 +8,7 @@ import * as Sentry from '@sentry/node';
 import rawBodyPlugin from 'fastify-raw-body';
 import { Counter, Registry, collectDefaultMetrics } from 'prom-client';
 import { PrismaClient } from '@prisma/client';
+import { getEncryptionKeyStatus } from '@nibras/core';
 import { loadGitHubAppConfig } from '@nibras/github';
 import { PrismaStore } from './prisma-store';
 import {
@@ -237,7 +238,11 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
           return reply.status(503).send({ ok: false, reason: 'database unavailable' });
         }
       }
-      return reply.send({ ok: true });
+      const encryption = getEncryptionKeyStatus();
+      if (encryption !== 'ok') {
+        return reply.status(503).send({ ok: false, reason: `encryption:${encryption}` });
+      }
+      return reply.send({ ok: true, encryption: 'ok' });
     }
   );
 

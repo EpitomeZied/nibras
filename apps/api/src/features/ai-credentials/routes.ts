@@ -9,6 +9,7 @@ import { Errors } from '../../lib/errors';
 import { AppStore } from '../../store';
 import {
   deleteUserAiCredential,
+  encryptionKeyErrorMessage,
   getUserAiCredentialPublic,
   upsertUserAiCredential,
 } from '../../lib/ai-credentials';
@@ -39,6 +40,10 @@ export function registerAiCredentialRoutes(
       const parsed = UpsertAiCredentialBodySchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.code(400).send(Errors.validation(parsed.error.message));
+      }
+      const encryptionError = encryptionKeyErrorMessage();
+      if (encryptionError && parsed.data.apiKey?.trim()) {
+        return reply.code(503).send(Errors.unavailable(encryptionError));
       }
       if (!parsed.data.apiKey?.trim()) {
         const existing = await prisma.userAiCredential.findUnique({

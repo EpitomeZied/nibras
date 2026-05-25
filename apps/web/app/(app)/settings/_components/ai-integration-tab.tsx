@@ -17,6 +17,7 @@ type AiCredentialState = {
   provider: string;
   model: string;
   maskedKey: string | null;
+  encryptionReady?: boolean;
 };
 
 export default function AiIntegrationTab() {
@@ -28,6 +29,7 @@ export default function AiIntegrationTab() {
   const [showKey, setShowKey] = useState(false);
   const [model, setModel] = useState('gpt-4o-mini');
   const [maskedKey, setMaskedKey] = useState<string | null>(null);
+  const [encryptionReady, setEncryptionReady] = useState(true);
 
   useEffect(() => {
     let alive = true;
@@ -40,6 +42,7 @@ export default function AiIntegrationTab() {
         setConfigured(data.configured);
         setModel(data.model || 'gpt-4o-mini');
         setMaskedKey(data.maskedKey);
+        setEncryptionReady(data.encryptionReady !== false);
       } finally {
         if (alive) setLoading(false);
       }
@@ -107,6 +110,13 @@ export default function AiIntegrationTab() {
 
   return (
     <section className={styles.contentSection}>
+      {!encryptionReady ? (
+        <p className={styles.encryptionWarning} role="alert">
+          Server encryption is not configured yet. Personal API keys cannot be saved until
+          operators set NIBRAS_ENCRYPTION_KEY in production.
+        </p>
+      ) : null}
+
       <div className={styles.aiHeaderRow}>
         <div>
           <h2 className={styles.sectionHeading}>AI Integration</h2>
@@ -118,7 +128,7 @@ export default function AiIntegrationTab() {
           type="button"
           className={styles.saveConfigBtn}
           onClick={() => void handleSave()}
-          disabled={saving || loading}
+          disabled={saving || loading || !encryptionReady}
         >
           {saving ? 'Saving…' : 'Save configuration'}
         </button>

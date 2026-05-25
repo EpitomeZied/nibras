@@ -117,6 +117,7 @@ export const AiCredentialResponseSchema = z.object({
   provider: z.string(),
   model: z.string(),
   maskedKey: z.string().nullable(),
+  encryptionReady: z.boolean(),
 });
 
 export const UpsertAiCredentialBodySchema = z.object({

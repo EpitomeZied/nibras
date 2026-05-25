@@ -1,5 +1,14 @@
-import { encrypt, decrypt } from '@nibras/core';
+import { assertEncryptionKeyConfigured, encrypt, decrypt, getEncryptionKeyStatus } from '@nibras/core';
 import type { PrismaClient } from '@prisma/client';
+
+export function encryptionKeyErrorMessage(): string | null {
+  const status = getEncryptionKeyStatus();
+  if (status === 'ok') return null;
+  if (status === 'missing') {
+    return 'Server encryption is not configured (NIBRAS_ENCRYPTION_KEY). Personal API keys cannot be saved yet.';
+  }
+  return 'Server encryption key is invalid. Contact support before saving a personal API key.';
+}
 
 export const OPENAI_MODEL_OPTIONS = [
   'gpt-4o-mini',
@@ -53,7 +62,9 @@ export async function getUserAiCredentialPublic(
   provider: string;
   model: string;
   maskedKey: string | null;
+  encryptionReady: boolean;
 }> {
+  const encryptionReady = getEncryptionKeyStatus() === 'ok';
   const row = await prisma.userAiCredential.findUnique({ where: { userId } });
   if (!row) {
     return {
@@ -61,6 +72,7 @@ export async function getUserAiCredentialPublic(
       provider: 'openai',
       model: 'gpt-4o-mini',
       maskedKey: null,
+      encryptionReady,
     };
   }
   let maskedKey: string | null = null;
@@ -74,6 +86,7 @@ export async function getUserAiCredentialPublic(
     provider: row.provider,
     model: row.model,
     maskedKey,
+    encryptionReady,
   };
 }
 
@@ -91,6 +104,7 @@ export async function upsertUserAiCredential(
   }
 
   if (trimmedKey) {
+    assertEncryptionKeyConfigured();
     await validateOpenAiApiKey(trimmedKey);
     const encryptedApiKey = encrypt(trimmedKey);
     await prisma.userAiCredential.upsert({

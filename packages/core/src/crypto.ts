@@ -4,16 +4,40 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 const AUTH_TAG_LENGTH = 16;
 
-function getKey(): Buffer {
-  const raw = process.env.NIBRAS_ENCRYPTION_KEY;
+export type EncryptionKeyStatus = 'ok' | 'missing' | 'invalid';
+
+/** Check whether NIBRAS_ENCRYPTION_KEY is present and valid (64 hex chars → 32 bytes). */
+export function getEncryptionKeyStatus(): EncryptionKeyStatus {
+  const raw = process.env.NIBRAS_ENCRYPTION_KEY?.trim();
   if (!raw) {
-    throw new Error('NIBRAS_ENCRYPTION_KEY is not set.');
+    return 'missing';
   }
-  const key = Buffer.from(raw, 'hex');
-  if (key.length !== 32) {
-    throw new Error('NIBRAS_ENCRYPTION_KEY must be a 32-byte (64 hex character) value.');
+  try {
+    const key = Buffer.from(raw, 'hex');
+    return key.length === 32 ? 'ok' : 'invalid';
+  } catch {
+    return 'invalid';
   }
-  return key;
+}
+
+export function assertEncryptionKeyConfigured(): void {
+  const status = getEncryptionKeyStatus();
+  if (status === 'missing') {
+    throw new Error(
+      'NIBRAS_ENCRYPTION_KEY is not set. Operators must configure a 32-byte hex key before storing student API keys.'
+    );
+  }
+  if (status === 'invalid') {
+    throw new Error(
+      'NIBRAS_ENCRYPTION_KEY must be a 32-byte (64 hex character) value. Generate with: openssl rand -hex 32'
+    );
+  }
+}
+
+function getKey(): Buffer {
+  assertEncryptionKeyConfigured();
+  const raw = process.env.NIBRAS_ENCRYPTION_KEY!.trim();
+  return Buffer.from(raw, 'hex');
 }
 
 /**
