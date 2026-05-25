@@ -119,6 +119,23 @@
   gap: 10px;
 }
 
+.siteLogoLink {
+  display: inline-flex;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 8px;
+  transition: opacity 0.15s;
+}
+
+.siteLogoLink:hover {
+  opacity: 0.85;
+}
+
+.siteLogoLink:focus-visible {
+  outline: 2px solid rgba(34, 197, 94, 0.6);
+  outline-offset: 4px;
+}
+
 .navBadge {
   font-size: 10px;
   font-weight: 700;

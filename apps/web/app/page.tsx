@@ -102,7 +102,13 @@ export default function HomePage() {
 
       <nav className={styles.nav}>
         <div className={styles.navLogo}>
-          <NibrasLogo variant="inverse" width={110} priority />
+          <a
+            href="https://nibrasplatform.me"
+            className={styles.siteLogoLink}
+            aria-label="nibrasplatform.me"
+          >
+            <NibrasLogo variant="inverse" width={110} priority />
+          </a>
           <span className={styles.navBadge}>Beta</span>
         </div>
         <div className={styles.navLinks}>
@@ -523,7 +529,13 @@ export default function HomePage() {
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
             <div className={styles.footerBrandRow}>
-              <NibrasLogo variant="inverse" width={100} />
+              <a
+                href="https://nibrasplatform.me"
+                className={styles.siteLogoLink}
+                aria-label="nibrasplatform.me"
+              >
+                <NibrasLogo variant="inverse" width={100} />
+              </a>
             </div>
             <p className={styles.footerTagline}>
               The academic operations platform for serious instructors and students.
