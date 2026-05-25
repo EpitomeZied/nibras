@@ -132,7 +132,8 @@ type WireAuthor = {
 };
 
 type WireQuestion = {
-  _id: string;
+  _id?: string;
+  id?: string;
   title: string;
   body: string;
   author: WireAuthor;
@@ -147,7 +148,8 @@ type WireQuestion = {
 };
 
 type WireAnswer = {
-  _id: string;
+  _id?: string;
+  id?: string;
   questionId: string;
   body: string;
   author: WireAuthor;
@@ -171,7 +173,7 @@ function normalizeAuthor(author: WireAuthor | null | undefined): CommunityAuthor
 
 function normalizeQuestion(q: WireQuestion): CommunityQuestion {
   return {
-    id: q._id,
+    id: q._id ?? q.id ?? '',
     title: q.title,
     body: q.body,
     author: normalizeAuthor(q.author),
@@ -188,7 +190,7 @@ function normalizeQuestion(q: WireQuestion): CommunityQuestion {
 
 function normalizeAnswer(a: WireAnswer): CommunityAnswer {
   return {
-    id: a._id,
+    id: a._id ?? a.id ?? '',
     questionId: a.questionId,
     body: a.body,
     author: normalizeAuthor(a.author),
@@ -240,12 +242,15 @@ export async function getQuestion(
     auth: false,
   });
   const wire = raw as
-    | { question?: WireQuestion & { answers?: WireAnswer[] } }
+    | { question?: WireQuestion & { answers?: WireAnswer[] }; answers?: WireAnswer[] }
     | (WireQuestion & { answers?: WireAnswer[] });
   const q =
     (wire as { question?: WireQuestion & { answers?: WireAnswer[] } }).question ??
     (wire as WireQuestion & { answers?: WireAnswer[] });
-  const inlineAnswers = q.answers ?? [];
+  // Prefer the top-level answers array — it includes legacy `_id` aliases. Nested
+  // `question.answers` only has Prisma `id` fields and breaks accept/vote actions.
+  const inlineAnswers =
+    (wire as { answers?: WireAnswer[] }).answers ?? q.answers ?? [];
   return { question: normalizeQuestion(q), answers: inlineAnswers.map(normalizeAnswer) };
 }
 

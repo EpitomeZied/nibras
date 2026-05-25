@@ -1,6 +1,12 @@
 import { PrismaClient, SubmissionStatus } from '@prisma/client';
 import { BADGE_CATALOG, computeLevel } from './badges-catalog';
-import { ReputationService } from '../reputation/service';
+import { ReputationService, type MyReputationDto } from '../reputation/service';
+
+export type AchievementsDashboardDto = {
+  badges: BadgeDto[];
+  reputation: MyReputationDto;
+  newlyAwarded: BadgeDto[];
+};
 
 export type BadgeDto = {
   id: string;
@@ -164,7 +170,6 @@ export class GamificationService {
   }
 
   async listBadgesForUser(userId: string): Promise<BadgeDto[]> {
-    await this.ensureBadgeCatalog();
     const [definitions, earned, metrics] = await Promise.all([
       this.prisma.badgeDefinition.findMany({ orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }] }),
       this.prisma.userBadge.findMany({ where: { userId } }),
@@ -173,7 +178,8 @@ export class GamificationService {
     const earnedByBadgeId = new Map(earned.map((e) => [e.badgeId, e.earnedAt]));
 
     return definitions.map((def) => {
-      const progress = progressForBadge(def.code, metrics);
+      const raw = progressForBadge(def.code, metrics);
+      const capped = Math.min(raw, def.threshold);
       const earnedAt = earnedByBadgeId.get(def.id);
       return {
         id: def.id,
@@ -183,15 +189,29 @@ export class GamificationService {
         iconUrl: def.iconUrl ?? undefined,
         rarity: def.rarity,
         earnedAt: earnedAt?.toISOString(),
-        progress: earnedAt ? undefined : progress,
+        progress: earnedAt ? def.threshold : capped,
         threshold: def.threshold,
       };
     });
   }
 
-  async checkAndAwardBadges(userId: string): Promise<BadgeDto[]> {
-    await this.ensureBadgeCatalog();
-    await this.reputation.syncReputationFromActivity(userId);
+  async getAchievementsDashboard(userId: string): Promise<AchievementsDashboardDto> {
+    await this.reputation.syncReputationFromActivity(userId, { force: true });
+    const newlyAwarded = await this.checkAndAwardBadges(userId, { skipSync: true });
+    const [badges, reputation] = await Promise.all([
+      this.listBadgesForUser(userId),
+      this.reputation.getMyReputation(userId, { sync: false }),
+    ]);
+    return { badges, reputation, newlyAwarded };
+  }
+
+  async checkAndAwardBadges(
+    userId: string,
+    opts?: { skipSync?: boolean }
+  ): Promise<BadgeDto[]> {
+    if (!opts?.skipSync) {
+      await this.reputation.syncReputationFromActivity(userId, { force: true });
+    }
 
     const metrics = await this.getMetrics(userId);
     const definitions = await this.prisma.badgeDefinition.findMany({
@@ -305,17 +325,29 @@ export class GamificationService {
       by: ['userId'],
       where,
       _sum: { delta: true },
+      orderBy: { _sum: { delta: 'desc' } },
     });
 
-    const userIds = grouped.map((g) => g.userId);
+    const scored = grouped
+      .map((g) => ({
+        userId: g.userId,
+        score: g._sum.delta ?? 0,
+      }))
+      .filter((e) => e.score > 0);
+
+    const total = scored.length;
+    const offset = (page - 1) * limit;
+    const pageSlice = scored.slice(offset, offset + limit);
+    const pageUserIds = pageSlice.map((r) => r.userId);
+
     const [users, badgeCounts] = await Promise.all([
       this.prisma.user.findMany({
-        where: { id: { in: userIds } },
+        where: { id: { in: pageUserIds } },
         select: { id: true, username: true },
       }),
       this.prisma.userBadge.groupBy({
         by: ['userId'],
-        where: { userId: { in: userIds } },
+        where: { userId: { in: pageUserIds } },
         _count: { id: true },
       }),
     ]);
@@ -323,28 +355,13 @@ export class GamificationService {
     const userMap = new Map(users.map((u) => [u.id, u.username]));
     const badgeMap = new Map(badgeCounts.map((b) => [b.userId, b._count.id]));
 
-    const scored = grouped
-      .map((g) => ({
-        userId: g.userId,
-        score: g._sum.delta ?? 0,
-        username: userMap.get(g.userId) ?? 'unknown',
-        badges: badgeMap.get(g.userId) ?? 0,
-        level: computeLevel(g._sum.delta ?? 0),
-      }))
-      .filter((e) => e.score > 0)
-      .sort((a, b) => b.score - a.score);
-
-    const total = scored.length;
-    const offset = (page - 1) * limit;
-    const pageSlice = scored.slice(offset, offset + limit);
-
     const entries: LeaderboardEntryDto[] = pageSlice.map((row, i) => ({
       rank: offset + i + 1,
       userId: row.userId,
-      username: row.username,
+      username: userMap.get(row.userId) ?? 'unknown',
       score: row.score,
-      badges: row.badges,
-      level: row.level,
+      badges: badgeMap.get(row.userId) ?? 0,
+      level: computeLevel(row.score),
     }));
 
     return { entries, total, page, limit };
@@ -371,19 +388,25 @@ export class GamificationService {
     if (since) where.createdAt = { gte: since };
     if (scopeUserIds) where.userId = { in: scopeUserIds };
 
-    const grouped = await this.prisma.reputationEvent.groupBy({
-      by: ['userId'],
-      where,
-      _sum: { delta: true },
-    });
+    const [myAgg, grouped, badgeCount] = await Promise.all([
+      this.prisma.reputationEvent.aggregate({
+        where: { ...where, userId },
+        _sum: { delta: true },
+      }),
+      this.prisma.reputationEvent.groupBy({
+        by: ['userId'],
+        where,
+        _sum: { delta: true },
+        orderBy: { _sum: { delta: 'desc' } },
+      }),
+      this.prisma.userBadge.count({ where: { userId } }),
+    ]);
 
+    const score = myAgg._sum.delta ?? 0;
     const scored = grouped
-      .map((g) => ({ userId: g.userId, score: g._sum.delta ?? 0 }))
-      .sort((a, b) => b.score - a.score);
-
+      .map((g) => ({ userId: g.userId, total: g._sum.delta ?? 0 }))
+      .filter((g) => g.total > 0);
     const myIndex = scored.findIndex((s) => s.userId === userId);
-    const score = myIndex >= 0 ? scored[myIndex].score : 0;
-    const badgeCount = await this.prisma.userBadge.count({ where: { userId } });
 
     return {
       rank: myIndex >= 0 ? myIndex + 1 : null,

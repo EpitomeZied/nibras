@@ -17,7 +17,9 @@ export function registerReputationRoutes(
     async (request, reply) => {
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
-      return reputation.getMyReputation(auth.user.id);
+      const query = request.query as { sync?: string };
+      const sync = query.sync === 'true' || query.sync === '1';
+      return reputation.getMyReputation(auth.user.id, { sync });
     }
   );
 }

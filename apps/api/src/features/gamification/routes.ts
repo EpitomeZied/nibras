@@ -12,6 +12,16 @@ export function registerGamificationRoutes(
   const gamification = new GamificationService(prisma);
 
   app.get(
+    '/v1/gamification/achievements-dashboard',
+    { schema: { tags: ['gamification'], summary: 'Achievements page data (badges + reputation)' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      return gamification.getAchievementsDashboard(auth.user.id);
+    }
+  );
+
+  app.get(
     '/v1/gamification/all-badges',
     { schema: { tags: ['gamification'], summary: 'List all badges' } },
     async (request, reply) => {

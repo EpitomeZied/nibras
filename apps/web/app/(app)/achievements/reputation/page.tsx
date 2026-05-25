@@ -28,11 +28,11 @@ export default function ReputationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (sync = false) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getMyReputation();
+      const data = await getMyReputation({ sync });
       setReputation(data);
     } catch (err) {
       setError(friendlyMessage(err));
@@ -73,7 +73,7 @@ export default function ReputationPage() {
           title="Couldn't load reputation"
           description={error}
           tone="error"
-          action={{ label: 'Retry', onClick: () => void load() }}
+          action={{ label: 'Retry', onClick: () => void load(true) }}
         />
       </div>
     );

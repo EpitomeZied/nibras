@@ -5,8 +5,12 @@ import styles from './page.module.css';
 import EmptyState from '../_components/widgets/EmptyState';
 import BadgeCard from '../_components/widgets/BadgeCard';
 import StatTile from '../_components/widgets/StatTile';
-import { getAllBadges, checkAwardBadges, type Badge } from '../../lib/services/gamification';
-import { getMyReputation, type MyReputation } from '../../lib/services/reputation';
+import {
+  getAchievementsDashboard,
+  clearAchievementsDashboardCache,
+  type Badge,
+} from '../../lib/services/gamification';
+import type { MyReputation } from '../../lib/services/reputation';
 import { friendlyMessage } from '../../lib/api-clients/errors';
 
 const TrophyIcon = (
@@ -45,36 +49,21 @@ export default function AchievementsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     setLoading(true);
     setError(null);
     try {
-      const [allBadges, newlyAwarded, myRep] = await Promise.allSettled([
-        getAllBadges(),
-        checkAwardBadges(),
-        getMyReputation(),
-      ]);
-
-      const list = allBadges.status === 'fulfilled' ? allBadges.value : [];
-      const freshAwards = newlyAwarded.status === 'fulfilled' ? newlyAwarded.value : [];
-      const awardedById = new Map<string, Badge>();
-      for (const b of freshAwards) awardedById.set(b.id, b);
-      const merged = list.map((b) =>
-        awardedById.has(b.id) ? { ...b, ...awardedById.get(b.id)! } : b
-      );
-
-      setBadges(merged);
-      if (freshAwards.length > 0) {
-        setNewlyAwarded(freshAwards);
+      const dashboard = await getAchievementsDashboard(force);
+      setBadges(dashboard.badges ?? []);
+      setReputation(dashboard.reputation ?? null);
+      if ((dashboard.newlyAwarded ?? []).length > 0) {
+        setNewlyAwarded(dashboard.newlyAwarded);
         setBannerDismissed(false);
-      }
-      setReputation(myRep.status === 'fulfilled' ? myRep.value : null);
-
-      if (allBadges.status === 'rejected' && myRep.status === 'rejected') {
-        setError(friendlyMessage(allBadges.reason));
       }
     } catch (err) {
       setError(friendlyMessage(err));
+      setBadges([]);
+      setReputation(null);
     } finally {
       setLoading(false);
     }
@@ -106,7 +95,13 @@ export default function AchievementsPage() {
           title="Couldn't load achievements"
           description={error}
           tone="error"
-          action={{ label: 'Retry', onClick: () => void load() }}
+          action={{
+            label: 'Retry',
+            onClick: () => {
+              clearAchievementsDashboardCache();
+              void load(true);
+            },
+          }}
         />
       </div>
     );
@@ -172,7 +167,7 @@ export default function AchievementsPage() {
         />
         <StatTile
           label="Rank Percentile"
-          value={reputation?.percentile ? `${reputation.percentile}%` : '—'}
+          value={reputation?.percentile != null ? `${reputation.percentile}%` : '—'}
           caption={reputation?.rank ? `#${reputation.rank} overall` : undefined}
         />
         <StatTile
@@ -204,6 +199,8 @@ export default function AchievementsPage() {
                     iconUrl={badge.iconUrl}
                     rarity={badge.rarity}
                     earned
+                    progress={badge.progress}
+                    threshold={badge.threshold}
                   />
                 ))}
               </div>

@@ -32,11 +32,11 @@ export default function LevelsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (sync = false) => {
     setLoading(true);
     setError(null);
     try {
-      setReputation(await getMyReputation());
+      setReputation(await getMyReputation({ sync }));
     } catch (err) {
       setError(friendlyMessage(err));
     } finally {
@@ -75,7 +75,7 @@ export default function LevelsPage() {
             title="Level data not loaded"
             description={error ?? 'Sign in and wait for the platform to compute your tier.'}
             tone={error ? 'error' : 'default'}
-            action={error ? { label: 'Retry', onClick: () => void load() } : undefined}
+            action={error ? { label: 'Retry', onClick: () => void load(true) } : undefined}
           />
         ) : (
           <>

@@ -186,6 +186,7 @@ model User {
   githubAppInstalled Boolean           @default(false)
   systemRole        SystemRole         @default(user)
   yearLevel         Int                @default(1)
+  lastReputationSyncAt DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt
   githubAccount     GithubAccount?

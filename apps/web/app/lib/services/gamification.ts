@@ -52,6 +52,32 @@ export type MyRank = {
   badges?: number;
 };
 
+export type AchievementsDashboard = {
+  badges: Badge[];
+  reputation: import('./reputation').MyReputation;
+  newlyAwarded: Badge[];
+};
+
+const DASHBOARD_CACHE_MS = 60_000;
+let dashboardCache: { data: AchievementsDashboard; at: number } | null = null;
+
+export function clearAchievementsDashboardCache(): void {
+  dashboardCache = null;
+}
+
+export async function getAchievementsDashboard(force = false): Promise<AchievementsDashboard> {
+  if (!force && dashboardCache && Date.now() - dashboardCache.at < DASHBOARD_CACHE_MS) {
+    return dashboardCache.data;
+  }
+  const data = await serviceFetch<AchievementsDashboard>(
+    'admin',
+    '/v1/gamification/achievements-dashboard',
+    { auth: true }
+  );
+  dashboardCache = { data, at: Date.now() };
+  return data;
+}
+
 export async function getAllBadges(): Promise<Badge[]> {
   const data = await serviceFetch<Badge[] | { badges: Badge[] }>(
     'admin',

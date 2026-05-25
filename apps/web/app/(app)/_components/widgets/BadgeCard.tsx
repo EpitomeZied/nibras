@@ -50,8 +50,17 @@ export default function BadgeCard({
     .filter(Boolean)
     .join(' ');
   const hasProgress =
-    typeof progress === 'number' && typeof threshold === 'number' && threshold > 0;
-  const pct = hasProgress ? Math.min(100, Math.round(((progress ?? 0) / threshold) * 100)) : 0;
+    typeof threshold === 'number' && threshold > 0;
+  const displayProgress = earned
+    ? threshold!
+    : typeof progress === 'number'
+      ? Math.min(progress, threshold ?? progress)
+      : 0;
+  const pct = hasProgress
+    ? Math.min(100, Math.round((displayProgress / threshold!) * 100))
+    : earned
+      ? 100
+      : 0;
 
   return (
     <button type="button" className={classes} onClick={onClick} aria-pressed={earned}>
@@ -67,7 +76,7 @@ export default function BadgeCard({
       )}
       {hasProgress && (
         <span className={styles.progressLabel}>
-          {progress} / {threshold}
+          {earned ? 'Complete' : `${displayProgress} / ${threshold}`}
         </span>
       )}
     </button>

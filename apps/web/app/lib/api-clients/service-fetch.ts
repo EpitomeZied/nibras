@@ -154,6 +154,9 @@ export async function serviceFetch<T = unknown>(
     const message =
       (typeof body === 'object' && body !== null
         ? ((body as Record<string, unknown>).message as string | undefined) ||
+          (typeof (body as { error?: unknown }).error === 'string'
+            ? ((body as { error: string }).error as string)
+            : undefined) ||
           ((body as { error?: { message?: string } }).error?.message ?? undefined)
         : typeof body === 'string'
           ? body
