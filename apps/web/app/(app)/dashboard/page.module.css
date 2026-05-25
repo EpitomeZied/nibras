@@ -165,10 +165,168 @@
   transform: translateY(-1px);
 }
 
-.metricsGrid {
+.metricsGrid,
+.statsRow {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 14px;
+}
+
+.dashboardLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.dashboardMain {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.sidebarStack {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.courseSwitcher {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 20px 24px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.courseSwitcherCopy {
+  display: grid;
+  gap: 6px;
+}
+
+.courseSwitcherHint {
+  margin: 0;
+  font-size: 13px;
+  color: rgba(244, 244, 245, 0.58);
+}
+
+.courseSwitcherActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.courseSelect {
+  min-width: 260px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #fafafa;
+  font-size: 14px;
+}
+
+.progressList {
+  display: grid;
+  gap: 14px;
+}
+
+.progressRow {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.progressRowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.progressRowHeader strong {
+  font-size: 15px;
+  color: #fafafa;
+}
+
+.deadlineList {
+  display: grid;
+  gap: 10px;
+}
+
+.deadlineRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.03);
+  transition:
+    transform 0.16s ease,
+    border-color 0.18s ease;
+}
+
+.deadlineRow:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.reputationLine {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(244, 244, 245, 0.72);
+}
+
+.reputationLine strong {
+  color: #fafafa;
+}
+
+.badgePreviewGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.reviewByCourseTable {
+  overflow-x: auto;
+}
+
+.dataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.dataTable th,
+.dataTable td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.dataTable th {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(244, 244, 245, 0.5);
+}
+
+.dataTable td strong {
+  color: #fafafa;
 }
 
 .metricCard {
@@ -595,8 +753,14 @@
 
 @media (max-width: 1080px) {
   .metricsGrid,
+  .statsRow,
   .primaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .primaryGrid,
+  .dashboardLayout {
+    grid-template-columns: 1fr;
   }
 
   .primaryGrid {
@@ -616,8 +780,21 @@
   }
 
   .metricsGrid,
+  .statsRow,
   .primaryGrid,
+  .dashboardLayout,
   .statPairGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .courseSelect {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .courseSwitcherActions {
+    width: 100%;
+    display: grid;
     grid-template-columns: 1fr;
   }
 

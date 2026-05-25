@@ -20,6 +20,10 @@
  *   NEW  GET   /v1/admin/audit-logs               — paginated, filterable audit log
  *   NEW  POST  /v1/admin/submissions/bulk-retry   — re-queue multiple submissions
  *   NEW  GET   /v1/tracking/analytics/instructor  — course analytics for instructors
+ *   NEW  GET   /v1/analytics/overview             — cross-course instructor overview
+ *   NEW  GET   /v1/analytics/courses              — per-course aggregate summaries
+ *   NEW  GET   /v1/analytics/students             — student risk and grade table
+ *   NEW  GET   /v1/analytics/engagement           — video engagement aggregates
  *   NEW  DELETE /v1/tracking/submissions/:id      — cancel a queued submission
  *   NEW  POST  /v1/tracking/courses/:id/invites/bulk — bulk invite code generation
  *   UPD  SubmissionStatus: added `cancelled` value
@@ -101,6 +105,8 @@ export type {
   DashboardHomeResponse,
   DashboardMode,
   StudentHomeDashboard,
+  StudentHomeOverallStats,
+  StudentUpcomingDeadline,
   InstructorHomeDashboard,
   StudentProjectsDashboardResponse,
   InstructorDashboardResponse,
@@ -1525,6 +1531,30 @@ export namespace TrackingDashboards {
   }
 
   /**
+   * GET /v1/analytics/overview?range=7d|30d|90d|term|custom&from=&to=
+   * Cross-course KPIs, daily series, rising topics, and flagged cohorts.
+   * @auth Required (instructor, ta, or admin)
+   */
+  export interface AnalyticsOverviewResponse {
+    kpis: {
+      activeStudents: number;
+      activeStudentsDelta: number;
+      submissionsThisWeek: number;
+      submissionsDelta: number;
+      passRate: number;
+      passRateDelta: number;
+      medianGrade: number;
+    };
+    series: {
+      submissions: Array<{ date: string; value: number }>;
+      passRate: Array<{ date: string; value: number }>;
+    };
+    topRisingTopics: Array<{ topic: string; delta: number }>;
+    flaggedCohorts: Array<{ cohort: string; reason: string }>;
+    meta?: { hasActivity: boolean };
+  }
+
+  /**
    * GET /v1/tracking/analytics/instructor?courseId=<required>
    * Per-milestone and per-student submission analytics for an instructor.
    * @auth Required (instructor or ta for the given course)
@@ -2444,6 +2474,10 @@ export const API_ENDPOINTS = [
   { method: 'GET', path: '/v1/tracking/dashboard/course/:courseId', auth: true, tag: 'tracking' },
   { method: 'GET', path: '/v1/tracking/analytics/student', auth: true, tag: 'tracking' },
   { method: 'GET', path: '/v1/tracking/analytics/instructor', auth: true, tag: 'tracking' },
+  { method: 'GET', path: '/v1/analytics/overview', auth: true, tag: 'analytics' },
+  { method: 'GET', path: '/v1/analytics/courses', auth: true, tag: 'analytics' },
+  { method: 'GET', path: '/v1/analytics/students', auth: true, tag: 'analytics' },
+  { method: 'GET', path: '/v1/analytics/engagement', auth: true, tag: 'analytics' },
   { method: 'GET', path: '/v1/tracking/activity', auth: true, tag: 'tracking' },
   // Programs
   { method: 'GET', path: '/v1/programs', auth: true, tag: 'programs' },

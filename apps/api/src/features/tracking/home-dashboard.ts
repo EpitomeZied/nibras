@@ -18,6 +18,8 @@ import type {
   StudentHomeAttentionItemRecord,
   StudentHomeBlockerRecord,
   StudentHomeDashboardRecord,
+  StudentHomeOverallStatsRecord,
+  StudentUpcomingDeadlineRecord,
   StudentHomeRecentSubmissionRecord,
   SubmissionRecord,
   UserRecord,
@@ -156,7 +158,7 @@ function buildStudentCourseSnapshot({
     approved: aggregate.approved,
     underReview: aggregate.underReview,
     open: aggregate.open,
-    nextMilestones: allMilestones.filter((entry) => entry.status !== 'approved').slice(0, 2),
+    nextMilestones: allMilestones.filter((entry) => entry.status !== 'approved').slice(0, 5),
     projects,
   };
 }
@@ -184,7 +186,7 @@ function buildStudentAttentionItems(args: {
   const seen = new Set<string>();
 
   const pushItem = (item: StudentHomeAttentionItemRecord | null) => {
-    if (!item || seen.has(item.id) || items.length >= 3) return;
+    if (!item || seen.has(item.id) || items.length >= 8) return;
     seen.add(item.id);
     items.push(item);
   };
@@ -356,7 +358,7 @@ function buildStudentAttentionItems(args: {
       : null
   );
 
-  if (items.length < 3) {
+  if (items.length < 8) {
     const dueWithin72 = allMilestones
       .filter(
         (entry) =>
@@ -395,7 +397,81 @@ function buildStudentAttentionItems(args: {
     );
   }
 
-  return items.slice(0, 3);
+  return items.slice(0, 8);
+}
+
+function buildStudentUpcomingDeadlines(args: {
+  snapshots: StudentDashboardRecord[];
+  submissions: SubmissionRecord[];
+  reviewsBySubmission: Record<string, ReviewRecord | null>;
+}): StudentUpcomingDeadlineRecord[] {
+  const deadlines: StudentUpcomingDeadlineRecord[] = [];
+
+  for (const snapshot of args.snapshots) {
+    const courseId = snapshot.course?.id || '';
+    const courseTitle = snapshot.course?.title || 'Course';
+    for (const project of snapshot.projects) {
+      for (const milestone of snapshot.milestonesByProject[project.id] || []) {
+        const status = resolveMilestoneStatus(milestone.id, args.submissions, args.reviewsBySubmission);
+        if (status === 'approved' || status === 'graded') continue;
+        deadlines.push({
+          milestoneId: milestone.id,
+          courseId,
+          courseTitle,
+          projectId: project.id,
+          projectTitle: project.title,
+          title: milestone.title,
+          dueAt: milestone.dueAt,
+          status,
+          statusLabel: statusLabel(status),
+          href: `/projects?courseId=${courseId || project.courseId}`,
+        });
+      }
+    }
+  }
+
+  return deadlines
+    .sort((left, right) => {
+      if (!left.dueAt && !right.dueAt) return 0;
+      if (!left.dueAt) return 1;
+      if (!right.dueAt) return -1;
+      return left.dueAt.localeCompare(right.dueAt);
+    })
+    .slice(0, 10);
+}
+
+function buildStudentOverallStats(
+  courses: CourseRecord[],
+  courseSnapshots: StudentCourseSnapshotRecord[]
+): StudentHomeOverallStatsRecord {
+  let milestonesApproved = 0;
+  let milestonesTotal = 0;
+  let activeProjectCount = 0;
+  let weightedCompletion = 0;
+  let weightTotal = 0;
+
+  for (const snapshot of courseSnapshots) {
+    const courseTotal = snapshot.approved + snapshot.underReview + snapshot.open;
+    milestonesApproved += snapshot.approved;
+    milestonesTotal += courseTotal;
+    weightedCompletion += snapshot.completion * Math.max(courseTotal, 1);
+    weightTotal += Math.max(courseTotal, 1);
+    for (const project of snapshot.projects) {
+      if (project.completion < 100 || project.open > 0) {
+        activeProjectCount += 1;
+      }
+    }
+  }
+
+  return {
+    coursesEnrolled: courses.length,
+    overallCompletionPercent: weightTotal
+      ? Math.round(weightedCompletion / weightTotal)
+      : 0,
+    milestonesApproved,
+    milestonesTotal,
+    activeProjectCount,
+  };
 }
 
 export function buildStudentHomeDashboard(args: {
@@ -427,8 +503,11 @@ export function buildStudentHomeDashboard(args: {
     }
   }
 
-  const recentSubmissions: StudentHomeRecentSubmissionRecord[] = args.submissions
-    .slice(0, 5)
+  const recentSubmissions: StudentHomeRecentSubmissionRecord[] = [...args.submissions]
+    .sort((left, right) =>
+      (right.submittedAt || right.createdAt).localeCompare(left.submittedAt || left.createdAt)
+    )
+    .slice(0, 12)
     .map((submission) => ({
       id: submission.id,
       projectKey: submission.projectKey,
@@ -502,6 +581,12 @@ export function buildStudentHomeDashboard(args: {
     },
     recentSubmissions,
     blockers,
+    overallStats: buildStudentOverallStats(args.courses, courseSnapshots),
+    upcomingDeadlines: buildStudentUpcomingDeadlines({
+      snapshots: args.snapshots,
+      submissions: args.submissions,
+      reviewsBySubmission: args.reviewsBySubmission,
+    }),
   };
 }
 
@@ -553,7 +638,7 @@ export function buildInstructorHomeDashboard(args: {
     coursePendingMap.set(course.id, list);
   }
 
-  const urgentQueue: InstructorUrgentQueueItemRecord[] = pendingQueue.slice(0, 5).map((entry) => {
+  const urgentQueue: InstructorUrgentQueueItemRecord[] = pendingQueue.slice(0, 12).map((entry) => {
     const course =
       args.courses.find(
         (courseRecord) => courseRecord.id === args.courseIdByProjectId[entry.projectId]
@@ -616,7 +701,7 @@ export function buildInstructorHomeDashboard(args: {
     });
 
   const recentActivity: InstructorRecentActivityItemRecord[] = args.activities
-    .slice(0, 8)
+    .slice(0, 15)
     .map((entry) => ({
       id: entry.id,
       action: entry.action,

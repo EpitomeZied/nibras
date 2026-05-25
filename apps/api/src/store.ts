@@ -838,6 +838,27 @@ export type StudentHomeBlockerRecord = {
   cta: DashboardCtaRecord;
 };
 
+export type StudentHomeOverallStatsRecord = {
+  coursesEnrolled: number;
+  overallCompletionPercent: number;
+  milestonesApproved: number;
+  milestonesTotal: number;
+  activeProjectCount: number;
+};
+
+export type StudentUpcomingDeadlineRecord = {
+  milestoneId: string;
+  courseId: string;
+  courseTitle: string;
+  projectId: string;
+  projectTitle: string;
+  title: string;
+  dueAt: string | null;
+  status: string;
+  statusLabel: string;
+  href: string;
+};
+
 export type StudentHomeDashboardRecord = {
   courses: CourseRecord[];
   selectedCourseId: string | null;
@@ -846,6 +867,8 @@ export type StudentHomeDashboardRecord = {
   submissionHealth: StudentSubmissionHealthRecord;
   recentSubmissions: StudentHomeRecentSubmissionRecord[];
   blockers: StudentHomeBlockerRecord[];
+  overallStats: StudentHomeOverallStatsRecord;
+  upcomingDeadlines: StudentUpcomingDeadlineRecord[];
 };
 
 export type InstructorReviewSummaryByCourseRecord = {

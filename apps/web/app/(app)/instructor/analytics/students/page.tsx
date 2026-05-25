@@ -1,26 +1,46 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import styles from './page.module.css';
 import EmptyState from '../../../_components/widgets/EmptyState';
 import Sparkline from '../../../_components/widgets/Sparkline';
 import { getStudents, type StudentRow } from '../../../../lib/services/analytics';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
+import { useAnalyticsRange } from '../../../../lib/hooks/use-analytics-range';
 
 type RiskLevel = 'low' | 'medium' | 'high';
 
-export default function StudentsAnalyticsPage() {
+function StudentsAnalyticsContent() {
+  const searchParams = useSearchParams();
+  const { filters, rangeReady } = useAnalyticsRange();
   const [risk, setRisk] = useState<RiskLevel | 'all'>('all');
   const [cohort, setCohort] = useState<string | null>(null);
   const [rows, setRows] = useState<StudentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const urlRisk = searchParams.get('risk');
+    if (urlRisk === 'low' || urlRisk === 'medium' || urlRisk === 'high') {
+      setRisk(urlRisk);
+    }
+    const urlCohort = searchParams.get('cohort');
+    if (urlCohort) setCohort(urlCohort);
+  }, [searchParams]);
+
   const load = useCallback(async () => {
+    if (!rangeReady) {
+      setRows([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
       const response = await getStudents({
+        ...filters,
         risk: risk === 'all' ? undefined : risk,
         cohort: cohort ?? undefined,
       });
@@ -30,7 +50,7 @@ export default function StudentsAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, [risk, cohort]);
+  }, [risk, cohort, filters, rangeReady]);
 
   useEffect(() => {
     void load();
@@ -50,15 +70,18 @@ export default function StudentsAnalyticsPage() {
     return styles.riskLow;
   }
 
+  if (!rangeReady) {
+    return (
+      <EmptyState
+        title="Choose a date range"
+        description="Use the range picker above to load student analytics."
+      />
+    );
+  }
+
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Students</h1>
-          <p className={styles.subtitle}>
-            Per-student engagement, grades, and risk classification.
-          </p>
-        </div>
+    <>
+      <div className={styles.filters}>
         <div className={styles.riskFilter} role="tablist" aria-label="Risk filter">
           {(['all', 'low', 'medium', 'high'] as const).map((r) => (
             <button
@@ -73,7 +96,7 @@ export default function StudentsAnalyticsPage() {
             </button>
           ))}
         </div>
-      </header>
+      </div>
 
       {(cohorts.length > 0 || cohort) && (
         <div className={styles.cohortFilter}>
@@ -107,12 +130,17 @@ export default function StudentsAnalyticsPage() {
             border: '1px solid var(--border)',
           }}
         />
-      ) : error || rows.length === 0 ? (
+      ) : error ? (
         <EmptyState
-          title="No student data"
-          description={error ?? "Student analytics haven't loaded yet."}
-          tone={error ? 'error' : 'default'}
-          action={error ? { label: 'Retry', onClick: () => void load() } : undefined}
+          title="Could not load students"
+          description={error}
+          tone="error"
+          action={{ label: 'Retry', onClick: () => void load() }}
+        />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          title="No students in range"
+          description="No student analytics match the current filters and date range."
         />
       ) : (
         <div className={styles.tableWrap}>
@@ -153,12 +181,11 @@ export default function StudentsAnalyticsPage() {
                   <td className={styles.numeric}>{row.averageGrade.toFixed(1)}</td>
                   <td>
                     <Sparkline
-                      values={Array.from({ length: 8 }, (_, idx) =>
-                        Math.max(
-                          0,
-                          row.averageGrade + (row.trend ?? 0) * (idx / 8) + (idx % 2 ? -0.2 : 0.2)
-                        )
-                      )}
+                      values={
+                        row.trendSeries && row.trendSeries.length > 0
+                          ? row.trendSeries
+                          : [row.averageGrade]
+                      }
                       width={80}
                       height={28}
                       color={
@@ -177,6 +204,25 @@ export default function StudentsAnalyticsPage() {
           </table>
         </div>
       )}
-    </div>
+    </>
+  );
+}
+
+export default function StudentsAnalyticsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div
+          style={{
+            height: 300,
+            borderRadius: 14,
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+          }}
+        />
+      }
+    >
+      <StudentsAnalyticsContent />
+    </Suspense>
   );
 }

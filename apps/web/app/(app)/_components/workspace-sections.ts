@@ -15,3 +15,10 @@ export function programSections(programId: string): SectionNavItem[] {
     { href: `/instructor/programs/${programId}/petitions`, label: 'Petitions' },
   ];
 }
+
+export const analyticsSections: SectionNavItem[] = [
+  { href: '/instructor/analytics', label: 'Overview' },
+  { href: '/instructor/analytics/students', label: 'Students' },
+  { href: '/instructor/analytics/courses', label: 'Courses' },
+  { href: '/instructor/analytics/engagement', label: 'Engagement' },
+];

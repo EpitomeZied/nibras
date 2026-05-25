@@ -1,0 +1,86 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.rangeSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.rangePicker {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+  gap: 2px;
+  align-self: flex-start;
+}
+
+.rangeChip {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.rangeChip:hover {
+  color: var(--text);
+}
+
+.rangeChipActive {
+  background: color-mix(in oklab, var(--primary, #22c55e) 18%, var(--surface));
+  color: var(--primary, #22c55e);
+}
+
+.customRange {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.customLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.customInput {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-family: inherit;
+  text-transform: none;
+}
+
+.customInput:focus {
+  outline: none;
+  border-color: var(--primary, #22c55e);
+}
+
+.customHint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  align-self: center;
+}

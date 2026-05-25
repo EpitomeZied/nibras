@@ -343,6 +343,27 @@ export const StudentHomeBlockerSchema = z.object({
   cta: DashboardCtaSchema,
 });
 
+export const StudentHomeOverallStatsSchema = z.object({
+  coursesEnrolled: z.number().int().nonnegative(),
+  overallCompletionPercent: z.number().int().nonnegative(),
+  milestonesApproved: z.number().int().nonnegative(),
+  milestonesTotal: z.number().int().nonnegative(),
+  activeProjectCount: z.number().int().nonnegative(),
+});
+
+export const StudentUpcomingDeadlineSchema = z.object({
+  milestoneId: z.string().min(1),
+  courseId: z.string().min(1),
+  courseTitle: z.string().min(1),
+  projectId: z.string().min(1),
+  projectTitle: z.string().min(1),
+  title: z.string().min(1),
+  dueAt: z.string().datetime().nullable(),
+  status: z.string().min(1),
+  statusLabel: z.string().min(1),
+  href: z.string().min(1),
+});
+
 export const StudentHomeDashboardSchema = z.object({
   courses: z.array(TrackingCourseSummarySchema),
   selectedCourseId: z.string().nullable(),
@@ -351,6 +372,8 @@ export const StudentHomeDashboardSchema = z.object({
   submissionHealth: StudentSubmissionHealthSchema,
   recentSubmissions: z.array(StudentHomeRecentSubmissionSchema),
   blockers: z.array(StudentHomeBlockerSchema),
+  overallStats: StudentHomeOverallStatsSchema,
+  upcomingDeadlines: z.array(StudentUpcomingDeadlineSchema),
 });
 
 export const InstructorReviewSummaryByCourseSchema = z.object({
@@ -701,6 +724,8 @@ export type StudentProjectsDashboardResponse = z.infer<
 export type InstructorDashboardResponse = z.infer<typeof InstructorDashboardResponseSchema>;
 export type DashboardHomeResponse = z.infer<typeof DashboardHomeResponseSchema>;
 export type DashboardMode = z.infer<typeof DashboardModeSchema>;
+export type StudentHomeOverallStats = z.infer<typeof StudentHomeOverallStatsSchema>;
+export type StudentUpcomingDeadline = z.infer<typeof StudentUpcomingDeadlineSchema>;
 export type StudentHomeDashboard = z.infer<typeof StudentHomeDashboardSchema>;
 export type InstructorHomeDashboard = z.infer<typeof InstructorHomeDashboardSchema>;
 export type ProjectRolePreference = z.infer<typeof ProjectRolePreferenceSchema>;

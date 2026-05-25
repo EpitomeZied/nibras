@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { apiFetch } from '../../lib/session';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import { SessionProvider } from './session-context';
@@ -26,9 +27,11 @@ type ShellUser = ShellSessionPayload['user'] & {
 };
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [session, setSession] = useState<ShellUser | null>(null);
   const [loading, setLoading] = useState(true);
   const shellRef = useRef<HTMLDivElement>(null);
+  const isWideDashboard = pathname === '/dashboard';
 
   // Apply compact mode from localStorage and listen for changes
   useEffect(() => {
@@ -86,7 +89,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className={styles.mainArea}>
           <TopHeader user={session} loading={loading} />
           <div className={styles.pageBody}>
-            <div className={styles.pageInner}>{children}</div>
+            <div className={styles.pageInner} data-wide={isWideDashboard ? 'true' : undefined}>
+              {children}
+            </div>
           </div>
         </div>
       </div>

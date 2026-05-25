@@ -29,6 +29,7 @@ export type OverviewResponse = {
   series: OverviewSeries;
   topRisingTopics: Array<{ topic: string; delta: number }>;
   flaggedCohorts: Array<{ cohort: string; reason: string }>;
+  meta?: { hasActivity: boolean };
 };
 
 export type CourseSummary = {
@@ -65,6 +66,7 @@ export type StudentRow = {
   averageGrade: number;
   riskLevel: 'low' | 'medium' | 'high';
   trend?: number;
+  trendSeries?: number[];
 };
 
 export type StudentsResponse = {
