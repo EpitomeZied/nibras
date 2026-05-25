@@ -1,7 +1,7 @@
 'use client';
 
 import styles from './LeaderboardTable.module.css';
-import { getInitials } from '../../../lib/utils';
+import UserAvatar from './UserAvatar';
 
 export type LeaderboardRow = {
   rank: number;
@@ -70,11 +70,7 @@ export default function LeaderboardTable({
                 </td>
                 <td>
                   <div className={styles.member}>
-                    {row.avatarUrl ? (
-                      <img src={row.avatarUrl} alt="" className={styles.avatar} />
-                    ) : (
-                      <span className={styles.avatarInitial}>{getInitials(row.username)}</span>
-                    )}
+                    <UserAvatar name={row.username} size={28} url={row.avatarUrl} />
                     <div className={styles.memberText}>
                       <strong>{row.username}</strong>
                       {row.meta && <span className={styles.meta}>{row.meta}</span>}

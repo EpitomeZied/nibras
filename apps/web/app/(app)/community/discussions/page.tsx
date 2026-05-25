@@ -378,7 +378,12 @@ export default function DiscussionsPage() {
                 </div>
                 {thread.body && <p className={styles.snippet}>{stripMarkdown(thread.body)}</p>}
                 <div className={styles.threadMeta}>
-                  <Avatar url={thread.author.avatarUrl} name={thread.author.username} size={18} />
+                  <Avatar
+                    url={thread.author.avatarUrl}
+                    githubLogin={thread.author.githubLogin}
+                    name={thread.author.username}
+                    size={18}
+                  />
                   <span>{thread.author.username}</span>
                   <span>·</span>
                   <span>{formatRelative(thread.lastActivityAt ?? thread.createdAt)}</span>

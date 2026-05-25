@@ -169,7 +169,12 @@ export default function QuestionPage() {
           />
         </div>
         <div className={styles.authorCard}>
-          <Avatar url={question.author.avatarUrl} name={question.author.username} size={28} />
+          <Avatar
+            url={question.author.avatarUrl}
+            githubLogin={question.author.githubLogin}
+            name={question.author.username}
+            size={28}
+          />
           <span className={styles.authorName}>{question.author.username}</span>
           <span>{formatTimestamp(question.createdAt)}</span>
           {question.author.reputation !== undefined && (
@@ -279,7 +284,12 @@ export default function QuestionPage() {
                 )}
               </div>
               <div className={styles.authorCard}>
-                <Avatar url={answer.author.avatarUrl} name={answer.author.username} size={24} />
+                <Avatar
+                  url={answer.author.avatarUrl}
+                  githubLogin={answer.author.githubLogin}
+                  name={answer.author.username}
+                  size={24}
+                />
                 <span className={styles.authorName}>{answer.author.username}</span>
                 <span>{formatTimestamp(answer.createdAt)}</span>
               </div>

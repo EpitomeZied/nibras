@@ -151,7 +151,12 @@ export default function ThreadPage() {
           )}
         </div>
         <div className={styles.metaRow}>
-          <Avatar url={thread.author.avatarUrl} name={thread.author.username} size={20} />
+          <Avatar
+            url={thread.author.avatarUrl}
+            githubLogin={thread.author.githubLogin}
+            name={thread.author.username}
+            size={20}
+          />
           <span>{thread.author.username}</span>
           <span>·</span>
           <span>{formatTimestamp(thread.createdAt)}</span>
@@ -215,7 +220,12 @@ export default function ThreadPage() {
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }}
               />
               <div className={styles.postAuthor}>
-                <Avatar url={post.author.avatarUrl} name={post.author.username} size={20} />
+                <Avatar
+                  url={post.author.avatarUrl}
+                  githubLogin={post.author.githubLogin}
+                  name={post.author.username}
+                  size={20}
+                />
                 <strong>{post.author.username}</strong>
                 <span>{formatTimestamp(post.createdAt)}</span>
               </div>
