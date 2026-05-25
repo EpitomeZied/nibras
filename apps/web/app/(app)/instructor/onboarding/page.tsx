@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import CliCodeBlock from '../../_components/cli-code-block';
 import TerminalMockup, { type TerminalLine } from '../../_components/terminal-mockup';
+import { useSession } from '../_components/session-context';
 import { prefs } from '../../../lib/prefs';
 import {
   buildHostedLoginCommand,
@@ -21,6 +22,7 @@ import styles from './page.module.css';
 type OS = 'mac' | 'linux' | 'windows';
 type WindowsShell = 'powershell' | 'gitbash';
 type CompletionState = Record<string, boolean>;
+type ViewMode = 'instructor' | 'student';
 
 type CommandReferenceItem = {
   command: string;
@@ -35,7 +37,8 @@ type CommandReferenceGroup = {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 const COMPLETION_KEY = 'nibras.onboarding.completion';
-const TOTAL_STEPS = 10;
+const TOTAL_STEPS_INSTRUCTOR = 10;
+const TOTAL_STEPS_STUDENT = 8;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function detectOS(): OS {
@@ -173,18 +176,39 @@ const submitOutput: TerminalLine[] = [
 ];
 
 // ── Steps ─────────────────────────────────────────────────────────────────────
-const STEPS = [
-  { id: 'step-01', number: '01', label: 'Prerequisites' },
-  { id: 'step-02', number: '02', label: 'Install the CLI' },
-  { id: 'step-03', number: '03', label: 'Authenticate' },
-  { id: 'step-04', number: '04', label: 'Create a course' },
-  { id: 'step-05', number: '05', label: 'Set up a project' },
-  { id: 'step-06', number: '06', label: 'Run tests' },
-  { id: 'step-07', number: '07', label: 'Submit' },
-  { id: 'step-08', number: '08', label: 'Check status' },
-  { id: 'step-09', number: '09', label: 'Share with students' },
-  { id: 'step-10', number: '10', label: 'Troubleshooting' },
+const ALL_STEPS = [
+  { id: 'step-01', number: '01', label: 'Prerequisites', studentVisible: true },
+  { id: 'step-02', number: '02', label: 'Install the CLI', studentVisible: true },
+  { id: 'step-03', number: '03', label: 'Authenticate', studentVisible: true },
+  { id: 'step-04', number: '04', label: 'Create a course', studentVisible: false },
+  { id: 'step-05', number: '05', label: 'Set up a project', studentVisible: true },
+  { id: 'step-06', number: '06', label: 'Run tests', studentVisible: true },
+  { id: 'step-07', number: '07', label: 'Submit', studentVisible: true },
+  { id: 'step-08', number: '08', label: 'Check status', studentVisible: true },
+  { id: 'step-09', number: '09', label: 'Share with students', studentVisible: false },
+  { id: 'step-10', number: '10', label: 'Troubleshooting', studentVisible: true },
 ];
+
+function getSteps(mode: ViewMode) {
+  if (mode === 'instructor') return ALL_STEPS;
+  const visible = ALL_STEPS.filter((s) => s.studentVisible);
+  return visible.map((s, i) => ({ ...s, number: String(i + 1).padStart(2, '0') }));
+}
+
+/** YouTube walkthroughs embedded in setup steps (16:9, up to 1080px wide). */
+const STEP_VIDEOS: Partial<Record<string, string>> = {
+  'step-01': 'EPtpi7PvtII',
+  'step-03': '3XgKwFjB_v4',
+  'step-05': 'hBMsjdeLuJI',
+  'step-06': 'pZLOjB6XWK8',
+  'step-07': '2QrjBe-D0BE',
+};
+
+function stepNumber(stepId: string, mode: ViewMode): string {
+  return getSteps(mode).find((s) => s.id === stepId)?.number ?? '—';
+}
+
+const COMMAND_REFERENCE_STUDENT_HIDDEN = new Set(['Advanced / compatibility']);
 
 // ── Command reference ─────────────────────────────────────────────────────────
 const COMMAND_REFERENCE_GROUPS: CommandReferenceGroup[] = [
@@ -867,6 +891,7 @@ function EmailTemplate({
 
 // ── Main page ─────────────────────────────────────────────────────────────────
 export default function OnboardingPage() {
+  const { user } = useSession();
   const [os, setOs] = useState<OS>('mac');
   const [windowsShell, setWindowsShell] = useState<WindowsShell>('powershell');
   const [activeStep, setActiveStep] = useState('step-01');
@@ -876,6 +901,25 @@ export default function OnboardingPage() {
     'loading'
   );
   const [apiDiscoveryError, setApiDiscoveryError] = useState<string | null>(null);
+
+  // Role detection
+  const isInstructor =
+    user?.systemRole === 'admin' ||
+    (user?.memberships?.some((m) => {
+      const r = m.role.toLowerCase();
+      return r === 'instructor' || r === 'ta';
+    }) ??
+      false);
+
+  const [viewMode, setViewMode] = useState<ViewMode>('instructor');
+  useEffect(() => {
+    if (user) setViewMode(isInstructor ? 'instructor' : 'student');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!user]);
+
+  // Derived steps and count for current mode
+  const STEPS = getSteps(viewMode);
+  const TOTAL_STEPS = viewMode === 'instructor' ? TOTAL_STEPS_INSTRUCTOR : TOTAL_STEPS_STUDENT;
 
   // Load OS + completion on mount
   useEffect(() => {
@@ -930,6 +974,11 @@ export default function OnboardingPage() {
     });
   }
 
+  useEffect(() => {
+    const first = STEPS[0]?.id;
+    if (first) setActiveStep(first);
+  }, [viewMode]);
+
   // IntersectionObserver — active section tracking
   useEffect(() => {
     const observers: IntersectionObserver[] = [];
@@ -946,16 +995,22 @@ export default function OnboardingPage() {
       observers.push(obs);
     });
     return () => observers.forEach((o) => o.disconnect());
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode]);
 
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // Derived values
-  const completedCount = Object.values(completion).filter(Boolean).length;
-  const progressPct = Math.round((completedCount / TOTAL_STEPS) * 100);
-  const allDone = completedCount === TOTAL_STEPS;
+  // Derived values (only count steps visible in the current view)
+  const completedCount = STEPS.filter((s) => completion[s.id]).length;
+  const progressPct = TOTAL_STEPS > 0 ? Math.round((completedCount / TOTAL_STEPS) * 100) : 0;
+  const allDone = completedCount === TOTAL_STEPS && TOTAL_STEPS > 0;
+  const stepNum = (id: string) => stepNumber(id, viewMode);
+  const commandReferenceGroups =
+    viewMode === 'student'
+      ? COMMAND_REFERENCE_GROUPS.filter((g) => !COMMAND_REFERENCE_STUDENT_HIDDEN.has(g.title))
+      : COMMAND_REFERENCE_GROUPS;
 
   const configPath = getOnboardingConfigPath(os);
   const dirExample = getOnboardingDirExample(os, windowsShell);
@@ -1059,21 +1114,59 @@ export default function OnboardingPage() {
                 {completedCount}/{TOTAL_STEPS} steps done
               </div>
             )}
+            {isInstructor ? (
+              <div className={styles.viewModeTabs}>
+                <button
+                  type="button"
+                  className={`${styles.viewModeTab} ${viewMode === 'instructor' ? styles.viewModeTabActive : ''}`}
+                  onClick={() => setViewMode('instructor')}
+                >
+                  🎓 Instructor
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.viewModeTab} ${viewMode === 'student' ? styles.viewModeTabActive : ''}`}
+                  onClick={() => setViewMode('student')}
+                >
+                  👨‍💻 Student
+                </button>
+              </div>
+            ) : (
+              <div className={styles.viewModeTabs}>
+                <span className={`${styles.viewModeTab} ${styles.viewModeTabActive}`}>
+                  👨‍💻 Student guide
+                </span>
+              </div>
+            )}
           </div>
           <h1 className={styles.heroTitle}>
             {allDone ? "You're all set" : 'Get the Nibras CLI running'}
           </h1>
           <p className={styles.heroSub}>
             {allDone
-              ? "The CLI is installed, you're authenticated, and the project is set up. Head to the instructor dashboard to manage courses and review submissions."
-              : 'Install the CLI, authenticate with GitHub, create a project, and make your first submission — step by step, for your OS.'}
+              ? viewMode === 'instructor'
+                ? "The CLI is installed, you're authenticated, and the project is set up. Head to the instructor dashboard to manage courses and review submissions."
+                : "The CLI is installed and you're authenticated. Head to your dashboard to view your courses and submit assignments."
+              : viewMode === 'instructor'
+                ? 'Install the CLI, authenticate with GitHub, create a course and project, then share with students — step by step, for your OS.'
+                : 'Install the CLI, authenticate with GitHub, set up your project, and make your first submission — step by step, for your OS.'}
           </p>
           {/* Outcome chips */}
           {!allDone && (
             <div className={styles.heroOutcomes}>
-              <span className={styles.heroOutcomeChip}>✓ Students submit via CLI</span>
-              <span className={styles.heroOutcomeChip}>✓ Auto-verified results</span>
-              <span className={styles.heroOutcomeChip}>✓ Full instructor dashboard</span>
+              {viewMode === 'instructor' ? (
+                <>
+                  <span className={styles.heroOutcomeChip}>✓ Students submit via CLI</span>
+                  <span className={styles.heroOutcomeChip}>✓ Auto-verified results</span>
+                  <span className={styles.heroOutcomeChip}>✓ Full instructor dashboard</span>
+                </>
+              ) : (
+                <>
+                  <span className={styles.heroOutcomeChip}>✓ GitHub-backed submissions</span>
+                  <span className={styles.heroOutcomeChip}>✓ Live terminal feedback</span>
+                  <span className={styles.heroOutcomeChip}>✓ Instant pass/fail results</span>
+                </>
+              )}
             </div>
           )}
           {/* Meta row */}
@@ -1097,27 +1190,40 @@ export default function OnboardingPage() {
           </div>
           <OsTabs os={os} setOs={handleSetOs} />
           <div className={styles.heroActions}>
-            <Link href="/instructor/courses/new" className={styles.btnPrimary}>
-              {allDone ? 'Go to dashboard →' : 'Create a course first →'}
-            </Link>
-            <a
-              href="https://github.com/nibras-platform/nibras"
-              target="_blank"
-              rel="noreferrer"
-              className={styles.btnGhost}
-            >
-              GitHub →
-            </a>
+            {viewMode === 'instructor' ? (
+              <>
+                <Link href="/instructor/courses/new" className={styles.btnPrimary}>
+                  {allDone ? 'Go to dashboard →' : 'Create a course first →'}
+                </Link>
+                <a
+                  href="https://github.com/nibras-platform/nibras"
+                  target="_blank"
+                  rel="noreferrer"
+                  className={styles.btnGhost}
+                >
+                  GitHub →
+                </a>
+              </>
+            ) : (
+              <>
+                <Link href="/dashboard" className={styles.btnPrimary}>
+                  {allDone ? 'Go to dashboard →' : 'Open your dashboard →'}
+                </Link>
+                <Link href="/courses" className={styles.btnGhost}>
+                  My Courses →
+                </Link>
+              </>
+            )}
           </div>
         </div>
 
-        <FlowOverview />
+        {viewMode === 'instructor' && <FlowOverview />}
 
         <div className={styles.content}>
           {/* ── 01 Prerequisites ──────────────────────────────────────────── */}
           <Section
             id="step-01"
-            number="01"
+            number={stepNum('step-01')}
             title="Prerequisites"
             completed={!!completion['step-01']}
             onToggleComplete={() => toggleStep('step-01')}
@@ -1126,7 +1232,10 @@ export default function OnboardingPage() {
               You need <strong>Node.js ≥ 18</strong>, <strong>npm ≥ 9</strong>, and{' '}
               <strong>git</strong> before installing the CLI. Follow the steps for your OS.
             </p>
-            <VideoPlaceholder title="Installing Node.js, npm, and Git" youtubeId="EPtpi7PvtII" />
+            <VideoPlaceholder
+              title="Installing Node.js, npm, and Git"
+              youtubeId={STEP_VIDEOS['step-01']}
+            />
 
             {os === 'windows' && (
               <WindowsQuickStart shell={windowsShell} setShell={setWindowsShell} />
@@ -1250,7 +1359,7 @@ export default function OnboardingPage() {
           {/* ── 02 Install ─────────────────────────────────────────────────── */}
           <Section
             id="step-02"
-            number="02"
+            number={stepNum('step-02')}
             title="Install the CLI"
             completed={!!completion['step-02']}
             onToggleComplete={() => toggleStep('step-02')}
@@ -1325,7 +1434,7 @@ export default function OnboardingPage() {
           {/* ── 03 Authenticate ────────────────────────────────────────────── */}
           <Section
             id="step-03"
-            number="03"
+            number={stepNum('step-03')}
             title="Authenticate with GitHub"
             completed={!!completion['step-03']}
             onToggleComplete={() => toggleStep('step-03')}
@@ -1337,7 +1446,10 @@ export default function OnboardingPage() {
               prints a one-time URL and short code, then tries to open the browser automatically
               unless you pass <code className={styles.inlineCode}>--no-open</code>.
             </p>
-            <VideoPlaceholder title="GitHub OAuth authentication flow" />
+            <VideoPlaceholder
+              title="GitHub OAuth authentication flow"
+              youtubeId={STEP_VIDEOS['step-03']}
+            />
             {os === 'windows' && (
               <div className={`${styles.callout} ${styles.calloutInfo}`}>
                 <span className={styles.calloutIcon}>⊞</span>
@@ -1383,53 +1495,69 @@ export default function OnboardingPage() {
             </p>
           </Section>
 
-          {/* ── 04 Create a course ─────────────────────────────────────────── */}
-          <Section
-            id="step-04"
-            number="04"
-            title="Create a course (web)"
-            completed={!!completion['step-04']}
-            onToggleComplete={() => toggleStep('step-04')}
-          >
-            <p className={styles.bodyText}>
-              Before students can use the CLI, create a course and at least one project from the web
-              dashboard.
-            </p>
-            <ol className={styles.steps}>
-              <li>
-                Go to <strong>Instructor → New Course</strong>
-              </li>
-              <li>
-                Enter the course code (e.g. <code className={styles.inlineCode}>cs101</code>),
-                title, and term
-              </li>
-              <li>Add a project with an allowed file path pattern</li>
-              <li>
-                Copy the project key (e.g.{' '}
-                <code className={styles.inlineCode}>cs101/assignment-1</code>)
-              </li>
-            </ol>
-            <Link href="/instructor/courses/new" className={styles.btnPrimary}>
-              Open course creator →
-            </Link>
-          </Section>
+          {/* ── 04 Create a course (instructor only) ─────────────────────── */}
+          {viewMode === 'instructor' && (
+            <Section
+              id="step-04"
+              number={stepNum('step-04')}
+              title="Create a course (web)"
+              completed={!!completion['step-04']}
+              onToggleComplete={() => toggleStep('step-04')}
+            >
+              <p className={styles.bodyText}>
+                Before students can use the CLI, create a course and at least one project from the web
+                dashboard.
+              </p>
+              <ol className={styles.steps}>
+                <li>
+                  Go to <strong>Instructor → New Course</strong>
+                </li>
+                <li>
+                  Enter the course code (e.g. <code className={styles.inlineCode}>cs101</code>),
+                  title, and term
+                </li>
+                <li>Add a project with an allowed file path pattern</li>
+                <li>
+                  Copy the project key (e.g.{' '}
+                  <code className={styles.inlineCode}>cs101/assignment-1</code>)
+                </li>
+              </ol>
+              <Link href="/instructor/courses/new" className={styles.btnPrimary}>
+                Open course creator →
+              </Link>
+            </Section>
+          )}
 
           {/* ── 05 Setup ───────────────────────────────────────────────────── */}
           <Section
             id="step-05"
-            number="05"
+            number={stepNum('step-05')}
             title="Set up a project locally"
             completed={!!completion['step-05']}
             onToggleComplete={() => toggleStep('step-05')}
           >
-            <p className={styles.bodyText}>
-              Run <code className={styles.inlineCode}>nibras setup</code> with the project key to
-              bootstrap the local directory. It writes{' '}
-              <code className={styles.inlineCode}>.nibras/project.json</code> and{' '}
-              <code className={styles.inlineCode}>.nibras/task.md</code>, initialises git if needed,
-              and adds <code className={styles.inlineCode}>origin</code> for the student repo.
-            </p>
-            <VideoPlaceholder title="Running nibras setup for a project" />
+            {viewMode === 'student' ? (
+              <p className={styles.bodyText}>
+                Get the <strong>project key</strong> from your instructor or course page (e.g.{' '}
+                <code className={styles.inlineCode}>cs101/assignment-1</code>), then run{' '}
+                <code className={styles.inlineCode}>nibras setup</code> in your project folder. The
+                CLI writes <code className={styles.inlineCode}>.nibras/project.json</code>,{' '}
+                <code className={styles.inlineCode}>.nibras/task.md</code>, and links your repo to
+                Nibras.
+              </p>
+            ) : (
+              <p className={styles.bodyText}>
+                Run <code className={styles.inlineCode}>nibras setup</code> with the project key to
+                bootstrap the local directory. It writes{' '}
+                <code className={styles.inlineCode}>.nibras/project.json</code> and{' '}
+                <code className={styles.inlineCode}>.nibras/task.md</code>, initialises git if needed,
+                and adds <code className={styles.inlineCode}>origin</code> for the student repo.
+              </p>
+            )}
+            <VideoPlaceholder
+              title="Running nibras setup for a project"
+              youtubeId={STEP_VIDEOS['step-05']}
+            />
             <CliCodeBlock code="nibras setup --project cs101/assignment-1" />
             <div className={styles.terminalWrapper}>
               <TerminalMockup title="nibras setup" lines={setupOutput} />
@@ -1457,7 +1585,7 @@ export default function OnboardingPage() {
           {/* ── 06 Tests ───────────────────────────────────────────────────── */}
           <Section
             id="step-06"
-            number="06"
+            number={stepNum('step-06')}
             title="Run local tests"
             completed={!!completion['step-06']}
             onToggleComplete={() => toggleStep('step-06')}
@@ -1468,6 +1596,10 @@ export default function OnboardingPage() {
               <code className={styles.inlineCode}>--previous</code> only when the project manifest
               supports it.
             </p>
+            <VideoPlaceholder
+              title="Running nibras test locally"
+              youtubeId={STEP_VIDEOS['step-06']}
+            />
             <CliCodeBlock
               code={`nibras test\nnibras test --previous   # include previous milestone tests`}
             />
@@ -1481,7 +1613,7 @@ export default function OnboardingPage() {
           {/* ── 07 Submit ──────────────────────────────────────────────────── */}
           <Section
             id="step-07"
-            number="07"
+            number={stepNum('step-07')}
             title="Submit your solution"
             completed={!!completion['step-07']}
             onToggleComplete={() => toggleStep('step-07')}
@@ -1492,7 +1624,10 @@ export default function OnboardingPage() {
               <code className={styles.inlineCode}>origin</code>, registers the submission, and polls
               for server-side verification.
             </p>
-            <VideoPlaceholder title="Submitting your first solution" />
+            <VideoPlaceholder
+              title="Submitting your first solution"
+              youtubeId={STEP_VIDEOS['step-07']}
+            />
             <CliCodeBlock code="nibras submit" />
             <div className={styles.terminalWrapper}>
               <TerminalMockup title="nibras submit" lines={submitOutput} />
@@ -1514,7 +1649,7 @@ export default function OnboardingPage() {
           {/* ── 08 Check status ────────────────────────────────────────────── */}
           <Section
             id="step-08"
-            number="08"
+            number={stepNum('step-08')}
             title="Check status"
             completed={!!completion['step-08']}
             onToggleComplete={() => toggleStep('step-08')}
@@ -1530,56 +1665,58 @@ export default function OnboardingPage() {
             </p>
           </Section>
 
-          {/* ── 09 Share ───────────────────────────────────────────────────── */}
-          <Section
-            id="step-09"
-            number="09"
-            title="Share with students"
-            completed={!!completion['step-09']}
-            onToggleComplete={() => toggleStep('step-09')}
-          >
-            <p className={styles.bodyText}>
-              Students follow the same flow: install the CLI, run{' '}
-              <code className={styles.inlineCode}>nibras login --api-base-url &lt;api-url&gt;</code>
-              , and <code className={styles.inlineCode}>nibras setup --project &lt;key&gt;</code>.
-              Share the project key with your class.
-            </p>
+          {/* ── 09 Share (instructor only) ─────────────────────────────────── */}
+          {viewMode === 'instructor' && (
+            <Section
+              id="step-09"
+              number={stepNum('step-09')}
+              title="Share with students"
+              completed={!!completion['step-09']}
+              onToggleComplete={() => toggleStep('step-09')}
+            >
+              <p className={styles.bodyText}>
+                Students follow the same flow: install the CLI, run{' '}
+                <code className={styles.inlineCode}>nibras login --api-base-url &lt;api-url&gt;</code>
+                , and <code className={styles.inlineCode}>nibras setup --project &lt;key&gt;</code>.
+                Share the project key with your class.
+              </p>
 
-            {os === 'windows' && (
-              <div className={`${styles.callout} ${styles.calloutInfo}`}>
-                <span className={styles.calloutIcon}>⊞</span>
-                <p>
-                  Windows students can use either <strong>PowerShell</strong> or{' '}
-                  <strong>Git Bash</strong>. Match any troubleshooting snippets to the shell they
-                  actually use.
-                </p>
-              </div>
-            )}
-
-            <div className={styles.shareCard}>
-              <div className={styles.shareCardTitle}>Student quick-start</div>
-              {studentQuickStart ? (
-                <CliCodeBlock code={studentQuickStart} />
-              ) : (
-                <p className={styles.bodyText} style={{ padding: '16px' }}>
-                  {apiDiscoveryState === 'loading'
-                    ? 'Waiting for a reachable hosted API before rendering the student login command…'
-                    : (apiDiscoveryError ??
-                      'Ask your admin for the hosted API URL before sharing the login command with students.')}
-                </p>
+              {os === 'windows' && (
+                <div className={`${styles.callout} ${styles.calloutInfo}`}>
+                  <span className={styles.calloutIcon}>⊞</span>
+                  <p>
+                    Windows students can use either <strong>PowerShell</strong> or{' '}
+                    <strong>Git Bash</strong>. Match any troubleshooting snippets to the shell they
+                    actually use.
+                  </p>
+                </div>
               )}
-            </div>
-            <EmailTemplate apiBaseUrl={hostedApiBaseUrl} />
-            <p className={styles.hint}>
-              Students can view assignment instructions at any time with{' '}
-              <code className={styles.inlineCode}>nibras task</code>.
-            </p>
-          </Section>
+
+              <div className={styles.shareCard}>
+                <div className={styles.shareCardTitle}>Student quick-start</div>
+                {studentQuickStart ? (
+                  <CliCodeBlock code={studentQuickStart} />
+                ) : (
+                  <p className={styles.bodyText} style={{ padding: '16px' }}>
+                    {apiDiscoveryState === 'loading'
+                      ? 'Waiting for a reachable hosted API before rendering the student login command…'
+                      : (apiDiscoveryError ??
+                        'Ask your admin for the hosted API URL before sharing the login command with students.')}
+                  </p>
+                )}
+              </div>
+              <EmailTemplate apiBaseUrl={hostedApiBaseUrl} />
+              <p className={styles.hint}>
+                Students can view assignment instructions at any time with{' '}
+                <code className={styles.inlineCode}>nibras task</code>.
+              </p>
+            </Section>
+          )}
 
           {/* ── 10 Troubleshooting ─────────────────────────────────────────── */}
           <Section
             id="step-10"
-            number="10"
+            number={stepNum('step-10')}
             title="Troubleshooting"
             completed={!!completion['step-10']}
             onToggleComplete={() => toggleStep('step-10')}
@@ -1627,7 +1764,7 @@ export default function OnboardingPage() {
               </p>
             </div>
             <div className={styles.referenceGroups}>
-              {COMMAND_REFERENCE_GROUPS.map((group) => (
+              {commandReferenceGroups.map((group) => (
                 <section key={group.title} className={styles.referenceGroup}>
                   <h3 className={styles.referenceGroupTitle}>{group.title}</h3>
                   <div className={styles.referenceList}>

@@ -5,7 +5,7 @@
   grid-template-columns: 200px 1fr;
   gap: 40px;
   align-items: start;
-  max-width: 1020px;
+  max-width: 1080px;
 }
 
 /* ── Step nav sidebar ─────────────────────────────────────────────────────── */
@@ -1079,6 +1079,8 @@
   border-radius: 14px;
   overflow: hidden;
   background: #000;
+  max-width: 1080px;
+  width: 100%;
 }
 
 .videoEmbedHeader {
