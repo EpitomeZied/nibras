@@ -1,13 +1,18 @@
 import { PrismaClient, ReputationCategory, SubmissionStatus } from '@prisma/client';
 import { computeLevel } from '../gamification/badges-catalog';
+import { buildSyncReason, presentReputationHistory } from './history-labels';
 
 const REPUTATION_SYNC_INTERVAL_MS = 5 * 60 * 1000;
 
 export type ReputationEventDto = {
   id: string;
   delta: number;
+  /** Primary line shown in Recent activity */
   reason: string;
-  source?: string;
+  /** Optional context (project name, question title, etc.) */
+  detail?: string;
+  category?: string;
+  categoryLabel?: string;
   createdAt: string;
 };
 
@@ -65,12 +70,17 @@ export class ReputationService {
 
     const passedSubmissions = await this.prisma.submissionAttempt.findMany({
       where: { userId, status: SubmissionStatus.passed },
-      select: { id: true, submittedAt: true, createdAt: true },
+      select: {
+        id: true,
+        submittedAt: true,
+        createdAt: true,
+        project: { select: { name: true } },
+      },
     });
     for (const sub of passedSubmissions) {
       events.push({
         delta: 10,
-        reason: 'Passed project submission',
+        reason: buildSyncReason('submission', { projectName: sub.project.name }),
         source: `submission:${sub.id}`,
         category: 'course',
         createdAt: sub.submittedAt ?? sub.createdAt,
@@ -79,12 +89,18 @@ export class ReputationService {
 
     const acceptedAnswers = await this.prisma.communityAnswer.findMany({
       where: { authorId: userId, accepted: true },
-      select: { id: true, createdAt: true },
+      select: {
+        id: true,
+        createdAt: true,
+        question: { select: { title: true } },
+      },
     });
     for (const answer of acceptedAnswers) {
       events.push({
         delta: 15,
-        reason: 'Answer accepted by question author',
+        reason: buildSyncReason('answer-accepted', {
+          questionTitle: answer.question.title,
+        }),
         source: `answer-accepted:${answer.id}`,
         category: 'community',
         createdAt: answer.createdAt,
@@ -93,12 +109,15 @@ export class ReputationService {
 
     const questions = await this.prisma.communityQuestion.findMany({
       where: { authorId: userId, votesCount: { gt: 0 } },
-      select: { id: true, votesCount: true, createdAt: true },
+      select: { id: true, votesCount: true, createdAt: true, title: true },
     });
     for (const q of questions) {
       events.push({
         delta: q.votesCount * 3,
-        reason: `Question upvotes (${q.votesCount})`,
+        reason: buildSyncReason('question-upvotes', {
+          questionTitle: q.title,
+          votesCount: q.votesCount,
+        }),
         source: `question-upvotes:${q.id}`,
         category: 'community',
         createdAt: q.createdAt,
@@ -107,12 +126,17 @@ export class ReputationService {
 
     const solvedProblems = await this.prisma.userProblemProgress.findMany({
       where: { userId, solved: true },
-      select: { problemId: true, solvedAt: true, createdAt: true },
+      select: {
+        problemId: true,
+        solvedAt: true,
+        createdAt: true,
+        problem: { select: { title: true } },
+      },
     });
     for (const p of solvedProblems) {
       events.push({
         delta: 5,
-        reason: 'Solved practice problem',
+        reason: buildSyncReason('problem', { problemTitle: p.problem.title }),
         source: `problem:${p.problemId}`,
         category: 'problem',
         createdAt: p.solvedAt ?? p.createdAt,
@@ -121,12 +145,16 @@ export class ReputationService {
 
     const contestParticipations = await this.prisma.userContestParticipation.findMany({
       where: { userId },
-      select: { contestId: true, createdAt: true },
+      select: {
+        contestId: true,
+        createdAt: true,
+        contest: { select: { name: true } },
+      },
     });
     for (const c of contestParticipations) {
       events.push({
         delta: 5,
-        reason: 'Contest participation',
+        reason: buildSyncReason('contest', { contestName: c.contest.name }),
         source: `contest:${c.contestId}`,
         category: 'contest',
         createdAt: c.createdAt,
@@ -141,7 +169,7 @@ export class ReputationService {
       if (ub.badge.points > 0) {
         events.push({
           delta: ub.badge.points,
-          reason: `Earned badge: ${ub.badge.name}`,
+          reason: buildSyncReason('badge', { badgeName: ub.badge.name }),
           source: `badge:${ub.badge.code}`,
           category: 'badge',
           createdAt: ub.earnedAt,
@@ -227,19 +255,15 @@ export class ReputationService {
         ? Math.round(((sortedTotals.length - rank) / sortedTotals.length) * 100)
         : null;
 
+    const history = await presentReputationHistory(this.prisma, historyEvents);
+
     return {
       total: fullTotal,
       weeklyDelta,
       monthlyDelta,
       rank,
       percentile,
-      history: historyEvents.map((e) => ({
-        id: e.id,
-        delta: e.delta,
-        reason: e.reason,
-        source: e.source,
-        createdAt: e.createdAt.toISOString(),
-      })),
+      history,
     };
   }
 

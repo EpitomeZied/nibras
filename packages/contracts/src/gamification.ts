@@ -26,7 +26,9 @@ export const ReputationEventSchema = z.object({
   id: z.string().min(1),
   delta: z.number().int(),
   reason: z.string().min(1),
-  source: z.string().optional(),
+  detail: z.string().optional(),
+  category: z.string().optional(),
+  categoryLabel: z.string().optional(),
   createdAt: z.string().datetime(),
 });
 

@@ -133,12 +133,16 @@ export default function ReputationPage() {
                   className={`${styles.delta} ${
                     event.delta >= 0 ? styles.deltaPositive : styles.deltaNegative
                   }`}
+                  aria-label={`${event.delta >= 0 ? 'Gained' : 'Lost'} ${Math.abs(event.delta)} reputation`}
                 >
                   {event.delta >= 0 ? `+${event.delta}` : event.delta}
                 </span>
                 <div className={styles.eventBody}>
+                  {event.categoryLabel && (
+                    <span className={styles.eventCategory}>{event.categoryLabel}</span>
+                  )}
                   <span className={styles.eventReason}>{event.reason}</span>
-                  {event.source && <span className={styles.eventSource}>{event.source}</span>}
+                  {event.detail && <span className={styles.eventDetail}>{event.detail}</span>}
                 </div>
                 <span className={styles.eventTime}>{formatRelative(event.createdAt)}</span>
               </div>

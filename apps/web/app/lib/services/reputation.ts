@@ -4,7 +4,9 @@ export type ReputationEvent = {
   id: string;
   delta: number;
   reason: string;
-  source?: string;
+  detail?: string;
+  category?: string;
+  categoryLabel?: string;
   createdAt: string;
 };
 
