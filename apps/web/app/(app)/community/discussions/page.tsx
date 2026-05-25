@@ -8,11 +8,14 @@ import Avatar from '../../_components/widgets/Avatar';
 import EmptyState from '../../_components/widgets/EmptyState';
 import Skeleton from '../../_components/widgets/Skeleton';
 import MarkdownToolbar from '../../_components/widgets/MarkdownToolbar';
+import type { TrackingCourseSummary } from '@nibras/contracts';
 import { createThread, listThreads, type CommunityThread } from '../../../lib/services/community';
 import { useSession } from '../../_components/session-context';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
-import { listCourses, type BackendCourse } from '../../../lib/services/backend-courses';
+import { apiFetch } from '../../../lib/session';
 import { stripMarkdown } from '../../../lib/strip-markdown';
+
+type DiscussionCourse = { id: string; title: string; courseCode: string };
 
 function formatRelative(iso?: string): string {
   if (!iso) return '';
@@ -33,12 +36,14 @@ function formatRelative(iso?: string): string {
 
 export default function DiscussionsPage() {
   const router = useRouter();
-  const { user } = useSession();
+  const { user, loading: sessionLoading } = useSession();
   const [threads, setThreads] = useState<CommunityThread[]>([]);
   const [courseId, setCourseId] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [courseList, setCourseList] = useState<BackendCourse[]>([]);
+  const [courses, setCourses] = useState<DiscussionCourse[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [coursesError, setCoursesError] = useState<string | null>(null);
 
   const [threadOpen, setThreadOpen] = useState(false);
   const [threadTitle, setThreadTitle] = useState('');
@@ -67,23 +72,52 @@ export default function DiscussionsPage() {
     }
   }
 
-  const courses = useMemo(() => {
-    return (user?.memberships ?? []).map((m) => ({ id: m.courseId, role: m.role }));
-  }, [user]);
-
   const courseNameMap = useMemo(() => {
     const map = new Map<string, string>();
-    for (const c of courseList) {
-      map.set(c.id, c.title || c.code);
+    for (const c of courses) {
+      map.set(c.id, c.title || c.courseCode);
     }
     return map;
-  }, [courseList]);
+  }, [courses]);
 
   useEffect(() => {
-    void listCourses()
-      .then(setCourseList)
-      .catch(() => {});
-  }, []);
+    if (sessionLoading) return;
+    if (!user) {
+      setCourses([]);
+      setCoursesLoading(false);
+      return;
+    }
+    let alive = true;
+    setCoursesLoading(true);
+    setCoursesError(null);
+    void (async () => {
+      try {
+        const res = await apiFetch('/v1/tracking/courses', { auth: true });
+        if (!res.ok) {
+          const body = (await res.json().catch(() => ({}))) as { error?: string };
+          throw new Error(body.error || `Failed to load courses (${res.status}).`);
+        }
+        const list = (await res.json()) as TrackingCourseSummary[];
+        if (!alive) return;
+        setCourses(
+          list.map((c) => ({
+            id: c.id,
+            title: c.title,
+            courseCode: c.courseCode,
+          }))
+        );
+      } catch (err) {
+        if (!alive) return;
+        setCourses([]);
+        setCoursesError(friendlyMessage(err));
+      } finally {
+        if (alive) setCoursesLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [user, sessionLoading]);
 
   const load = useCallback(async () => {
     if (!courseId) {
@@ -254,12 +288,49 @@ export default function DiscussionsPage() {
         </div>
       )}
 
-      {!courseId ? (
+      {sessionLoading || coursesLoading ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <Skeleton variant="card" height={72} count={4} />
+        </div>
+      ) : !user ? (
+        <EmptyState
+          title="Sign in to view discussions"
+          description="Course threads are available after you sign in with GitHub."
+          action={{ label: 'Sign in', onClick: () => router.push('/connect') }}
+        />
+      ) : coursesError ? (
+        <EmptyState
+          title="Could not load your courses"
+          description={coursesError}
+          tone="error"
+          action={{
+            label: 'Retry',
+            onClick: () => {
+              setCoursesLoading(true);
+              setCoursesError(null);
+              void apiFetch('/v1/tracking/courses', { auth: true })
+                .then(async (res) => {
+                  if (!res.ok) throw new Error(`Failed (${res.status})`);
+                  const list = (await res.json()) as TrackingCourseSummary[];
+                  setCourses(
+                    list.map((c) => ({
+                      id: c.id,
+                      title: c.title,
+                      courseCode: c.courseCode,
+                    }))
+                  );
+                })
+                .catch((err) => setCoursesError(friendlyMessage(err)))
+                .finally(() => setCoursesLoading(false));
+            },
+          }}
+        />
+      ) : !courseId ? (
         <EmptyState
           title={courses.length === 0 ? 'No courses to discuss' : 'Pick a course to see threads'}
           description={
             courses.length === 0
-              ? 'Discussion threads are scoped per course. Enrol in a course to see its threads.'
+              ? 'No active courses are assigned to your year level yet. Check Projects or ask your instructor.'
               : 'Discussion threads are scoped per course. Choose one above to load its threads.'
           }
         />
