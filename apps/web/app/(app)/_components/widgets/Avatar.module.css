@@ -17,3 +17,8 @@
   object-fit: cover;
   border-radius: 50%;
 }
+
+.avatarImg {
+  border-radius: 50%;
+  object-fit: cover;
+}

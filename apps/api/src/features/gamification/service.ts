@@ -50,6 +50,12 @@ export type LeaderboardFilters = {
   limit?: number;
 };
 
+function githubAvatarUrlForLogin(login: string | null | undefined, size = 64): string | undefined {
+  const trimmed = login?.trim();
+  if (!trimmed) return undefined;
+  return `https://avatars.githubusercontent.com/${encodeURIComponent(trimmed)}?s=${size}`;
+}
+
 function periodStart(period: LeaderboardFilters['period']): Date | null {
   const now = new Date();
   switch (period) {
@@ -367,7 +373,11 @@ export class GamificationService {
     const [users, badgeCounts] = await Promise.all([
       this.prisma.user.findMany({
         where: { id: { in: pageUserIds } },
-        select: { id: true, username: true },
+        select: {
+          id: true,
+          username: true,
+          githubAccount: { select: { login: true } },
+        },
       }),
       this.prisma.userBadge.groupBy({
         by: ['userId'],
@@ -376,17 +386,26 @@ export class GamificationService {
       }),
     ]);
 
-    const userMap = new Map(users.map((u) => [u.id, u.username]));
+    const userMap = new Map(
+      users.map((u) => [
+        u.id,
+        { username: u.username, login: u.githubAccount?.login ?? null },
+      ])
+    );
     const badgeMap = new Map(badgeCounts.map((b) => [b.userId, b._count.id]));
 
-    const entries: LeaderboardEntryDto[] = pageSlice.map((row, i) => ({
-      rank: offset + i + 1,
-      userId: row.userId,
-      username: userMap.get(row.userId) ?? 'unknown',
-      score: row.score,
-      badges: badgeMap.get(row.userId) ?? 0,
-      level: computeLevel(row.score),
-    }));
+    const entries: LeaderboardEntryDto[] = pageSlice.map((row, i) => {
+      const user = userMap.get(row.userId);
+      return {
+        rank: offset + i + 1,
+        userId: row.userId,
+        username: user?.username ?? 'unknown',
+        avatarUrl: githubAvatarUrlForLogin(user?.login),
+        score: row.score,
+        badges: badgeMap.get(row.userId) ?? 0,
+        level: computeLevel(row.score),
+      };
+    });
 
     return { entries, total, page, limit };
   }

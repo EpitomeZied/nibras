@@ -1,11 +1,10 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import DropdownMenu, { DropdownChevron, DropdownGroup, useDropdownClose } from './ui/dropdown-menu';
 import { usePathname } from 'next/navigation';
-import { getInitials } from '../../lib/utils';
+import UserAvatar from './widgets/UserAvatar';
 import NibrasLogo from '@/app/_components/nibras-logo';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import NotificationsPanel from './notifications-panel';
@@ -127,12 +126,10 @@ function IconSignOut() {
 function UserDropdown({
   user,
   loading,
-  githubAvatarUrl,
   identity,
 }: {
   user: ShellSessionUser | null;
   loading: boolean;
-  githubAvatarUrl: string | null;
   identity: string;
 }) {
   const isAdmin = user?.systemRole === 'admin';
@@ -176,38 +173,18 @@ function UserDropdown({
             if (!open) e.currentTarget.style.background = 'transparent';
           }}
         >
-          {githubAvatarUrl ? (
-            <Image
-              src={githubAvatarUrl}
-              alt={user?.githubLogin ?? 'avatar'}
-              width={26}
-              height={26}
-              style={{
-                borderRadius: '50%',
-                objectFit: 'cover',
-                display: 'block',
-                border: '1px solid rgba(255,255,255,0.14)',
-              }}
-            />
-          ) : (
-            <span
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: '50%',
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.14)',
-                display: 'grid',
-                placeItems: 'center',
-                fontSize: 10,
-                fontWeight: 700,
-                color: '#fafafa',
-                flexShrink: 0,
-              }}
-            >
-              {loading ? '…' : getInitials(identity)}
-            </span>
-          )}
+          <UserAvatar
+            name={identity}
+            size={26}
+            githubLogin={user?.githubLogin}
+            loading={loading}
+            alt={user?.githubLogin ?? 'avatar'}
+            useNextImage
+            style={{
+              border: '1px solid rgba(255,255,255,0.14)',
+              flexShrink: 0,
+            }}
+          />
           <span
             style={{
               fontSize: 13,
@@ -545,11 +522,6 @@ export default function TopHeader({
   const identity = user?.username || user?.githubLogin || 'Nibras';
   const [compact, setCompact] = useState(false);
 
-  const githubAvatarUrl =
-    user?.githubLogin && user.githubLinked
-      ? `https://avatars.githubusercontent.com/${user.githubLogin}?s=64`
-      : null;
-
   useEffect(() => {
     function syncCompact() {
       setCompact(prefs.getCompact());
@@ -646,12 +618,7 @@ export default function TopHeader({
             style={{ display: 'flex', alignItems: 'center', gap: compact ? 2 : 4, flexShrink: 0 }}
           >
             <NotificationsPanel />
-            <UserDropdown
-              user={user}
-              loading={loading}
-              githubAvatarUrl={githubAvatarUrl}
-              identity={identity}
-            />
+            <UserDropdown user={user} loading={loading} identity={identity} />
           </div>
         </div>
       </DropdownGroup>

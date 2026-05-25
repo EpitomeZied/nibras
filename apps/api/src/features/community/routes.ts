@@ -8,14 +8,31 @@ import { requestBaseUrl } from '../../lib/request-base-url';
 import { AppStore } from '../../store';
 import { getUserAiCredential } from '../../lib/ai-credentials';
 
-const authorSelect = { id: true, username: true } as const;
+const authorSelect = {
+  id: true,
+  username: true,
+  githubAccount: { select: { login: true } },
+} as const;
 
-function presentAuthor(author: { id: string; username: string }) {
+function githubAvatarUrlForLogin(login: string | null | undefined, size = 64): string | undefined {
+  const trimmed = login?.trim();
+  if (!trimmed) return undefined;
+  return `https://avatars.githubusercontent.com/${encodeURIComponent(trimmed)}?s=${size}`;
+}
+
+function presentAuthor(author: {
+  id: string;
+  username: string;
+  githubAccount: { login: string } | null;
+}) {
+  const login = author.githubAccount?.login;
   return {
     _id: author.id,
     userId: author.id,
     name: author.username,
     username: author.username,
+    githubLogin: login,
+    avatarUrl: githubAvatarUrlForLogin(login),
   };
 }
 

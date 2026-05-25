@@ -3,6 +3,7 @@ import { serviceFetch } from '../api-clients/service-fetch';
 export type CommunityAuthor = {
   userId: string;
   username: string;
+  githubLogin?: string;
   avatarUrl?: string;
   reputation?: number;
   badges?: number;
@@ -126,6 +127,7 @@ type WireAuthor = {
   name?: string;
   username?: string;
   email?: string;
+  githubLogin?: string;
   avatarUrl?: string;
   reputationScore?: number;
   reputation?: { total?: number };
@@ -163,9 +165,11 @@ type WireAnswer = {
 type WireTag = { _id?: string; name: string; description?: string; usageCount?: number };
 
 function normalizeAuthor(author: WireAuthor | null | undefined): CommunityAuthor {
+  const githubLogin = author?.githubLogin;
   return {
     userId: author?._id ?? author?.userId ?? '',
     username: author?.name ?? author?.username ?? 'Unknown',
+    githubLogin,
     avatarUrl: author?.avatarUrl,
     reputation: author?.reputation?.total ?? author?.reputationScore,
   };

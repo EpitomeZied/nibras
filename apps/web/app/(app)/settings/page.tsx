@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,6 +10,7 @@ import { getLevelLabel, MAX_LEVEL } from '../../lib/levels';
 import SelectField from '../_components/ui/select-field';
 import AiIntegrationTab from './_components/ai-integration-tab';
 import SecurityTab from './_components/security-tab';
+import UserAvatar from '../_components/widgets/UserAvatar';
 import styles from './page.module.css';
 
 type Tab =
@@ -943,10 +943,6 @@ export default function SettingsPage() {
       setProfileSaving(false);
     }
   }
-  const githubAvatarUrl =
-    user?.githubLogin && user.githubLinked
-      ? `https://avatars.githubusercontent.com/${user.githubLogin}?s=80`
-      : null;
   const appInstalled = user?.githubAppInstalled ?? null;
 
   return (
@@ -996,19 +992,15 @@ export default function SettingsPage() {
                 <p className={styles.sectionSub}>Your public identity on Nibras.</p>
 
                 <div className={styles.avatarRow}>
-                  {githubAvatarUrl ? (
-                    <Image
-                      src={githubAvatarUrl}
-                      alt={user?.githubLogin ?? 'avatar'}
-                      width={72}
-                      height={72}
-                      className={styles.avatarImg}
-                    />
-                  ) : (
-                    <div className={styles.avatarFallback}>
-                      {sessionLoading ? '…' : identity.slice(0, 1).toUpperCase()}
-                    </div>
-                  )}
+                  <UserAvatar
+                    name={identity}
+                    size={72}
+                    githubLogin={user?.githubLogin || undefined}
+                    loading={sessionLoading}
+                    alt={user?.githubLogin ?? 'avatar'}
+                    useNextImage
+                    className={styles.avatarImg}
+                  />
                   <div className={styles.avatarInfo}>
                     <span className={styles.avatarName}>
                       {sessionLoading ? 'Loading…' : identity}

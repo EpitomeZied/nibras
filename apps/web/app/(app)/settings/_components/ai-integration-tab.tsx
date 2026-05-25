@@ -226,8 +226,8 @@ export default function AiIntegrationTab() {
     <section className={styles.contentSection}>
       {!encryptionReady ? (
         <p className={styles.encryptionWarning} role="alert">
-          Server encryption is not configured yet. Personal API keys cannot be saved until
-          operators set NIBRAS_ENCRYPTION_KEY in production.
+          Server encryption is not configured yet. Personal API keys cannot be saved until operators
+          set NIBRAS_ENCRYPTION_KEY in production.
         </p>
       ) : null}
 

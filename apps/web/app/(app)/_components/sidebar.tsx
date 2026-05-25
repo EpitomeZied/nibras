@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import NibrasLogo from '@/app/_components/nibras-logo';
-import { getInitials } from '../../lib/utils';
+import UserAvatar from './widgets/UserAvatar';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import {
   getPrimaryNavItems,
@@ -369,7 +369,13 @@ export default function Sidebar({
       {!collapsed && (
         <div className="sidebarFooter">
           <div className="sidebarProfile">
-            <span className="avatarCircle">{loading ? '…' : getInitials(displayName)}</span>
+            <UserAvatar
+              name={displayName}
+              size={40}
+              githubLogin={user?.githubLogin}
+              loading={loading}
+              className="avatarCircle"
+            />
             <div>
               <strong>{loading ? 'Loading session' : displayName}</strong>
               <span>{user?.email || 'GitHub-linked account'}</span>
@@ -384,9 +390,13 @@ export default function Sidebar({
       {/* Collapsed: just avatar */}
       {collapsed && (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 8 }}>
-          <span className="avatarCircle" title={displayName}>
-            {loading ? '…' : getInitials(displayName)}
-          </span>
+          <UserAvatar
+            name={displayName}
+            size={40}
+            githubLogin={user?.githubLogin}
+            loading={loading}
+            className="avatarCircle"
+          />
         </div>
       )}
     </aside>

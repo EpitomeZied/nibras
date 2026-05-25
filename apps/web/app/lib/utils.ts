@@ -47,6 +47,12 @@ export function getInitials(value: string): string {
   );
 }
 
+export function githubAvatarUrl(login: string | null | undefined, size = 64): string | null {
+  const trimmed = login?.trim();
+  if (!trimmed) return null;
+  return `https://avatars.githubusercontent.com/${encodeURIComponent(trimmed)}?s=${size}`;
+}
+
 /**
  * Returns a CSS module class name suffix for a given status string.
  * Callers compose it with their own styles object, e.g. `styles[statusColor(s)]`.

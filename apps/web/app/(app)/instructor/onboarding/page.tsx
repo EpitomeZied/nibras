@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import CliCodeBlock from '../../_components/cli-code-block';
 import TerminalMockup, { type TerminalLine } from '../../_components/terminal-mockup';
-import { useSession } from '../_components/session-context';
+import { useSession } from '../../_components/session-context';
 import { prefs } from '../../../lib/prefs';
 import {
   buildHostedLoginCommand,
@@ -995,7 +995,7 @@ export default function OnboardingPage() {
       observers.push(obs);
     });
     return () => observers.forEach((o) => o.disconnect());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewMode]);
 
   function scrollTo(id: string) {
@@ -1505,8 +1505,8 @@ export default function OnboardingPage() {
               onToggleComplete={() => toggleStep('step-04')}
             >
               <p className={styles.bodyText}>
-                Before students can use the CLI, create a course and at least one project from the web
-                dashboard.
+                Before students can use the CLI, create a course and at least one project from the
+                web dashboard.
               </p>
               <ol className={styles.steps}>
                 <li>
@@ -1550,8 +1550,9 @@ export default function OnboardingPage() {
                 Run <code className={styles.inlineCode}>nibras setup</code> with the project key to
                 bootstrap the local directory. It writes{' '}
                 <code className={styles.inlineCode}>.nibras/project.json</code> and{' '}
-                <code className={styles.inlineCode}>.nibras/task.md</code>, initialises git if needed,
-                and adds <code className={styles.inlineCode}>origin</code> for the student repo.
+                <code className={styles.inlineCode}>.nibras/task.md</code>, initialises git if
+                needed, and adds <code className={styles.inlineCode}>origin</code> for the student
+                repo.
               </p>
             )}
             <VideoPlaceholder
@@ -1676,7 +1677,9 @@ export default function OnboardingPage() {
             >
               <p className={styles.bodyText}>
                 Students follow the same flow: install the CLI, run{' '}
-                <code className={styles.inlineCode}>nibras login --api-base-url &lt;api-url&gt;</code>
+                <code className={styles.inlineCode}>
+                  nibras login --api-base-url &lt;api-url&gt;
+                </code>
                 , and <code className={styles.inlineCode}>nibras setup --project &lt;key&gt;</code>.
                 Share the project key with your class.
               </p>
