@@ -60,35 +60,19 @@ export async function getCourse(courseId: string) {
   return serviceFetch<BackendCourse>('admin', `/v1/courses/${courseId}`, { auth: true });
 }
 
-// ── Videos ──────────────────────────────────────────────────────────────────
-// Invented endpoints — legacy dashboard doesn't expose course videos via this
-// backend. Optional variants let the page render an empty list cleanly.
-export async function listVideos(courseId: string): Promise<CourseVideo[]> {
-  const data = await serviceFetchOptional<CourseVideo[]>(
-    'admin',
-    `/v1/courses/${courseId}/videos`,
-    { auth: true }
-  );
-  return data ?? [];
-}
-
-export async function setVideoProgress(
-  videoId: string,
-  payload: { watched?: boolean; watchedProgress?: number }
-): Promise<{ watched: boolean; watchedProgress: number }> {
-  const data = await serviceFetchOptional<{ watched: boolean; watchedProgress: number }>(
-    'admin',
-    `/v1/videos/${videoId}/progress`,
-    {
-      method: 'POST',
-      auth: true,
-      body: payload as Record<string, unknown>,
-    }
-  );
-  return (
-    data ?? { watched: payload.watched ?? false, watchedProgress: payload.watchedProgress ?? 0 }
-  );
-}
+// ── Videos (tracking API — see course-content.ts) ───────────────────────────
+export {
+  listCourseSections,
+  listVideos,
+  setVideoProgress,
+  createCourseSection,
+  updateCourseSection,
+  deleteCourseSection,
+  createCourseVideo,
+  updateCourseVideo,
+  deleteCourseVideo,
+} from './course-content';
+export type { CourseSection } from './course-content';
 
 // ── Assignments ─────────────────────────────────────────────────────────────
 export async function listAssignments(courseId: string) {

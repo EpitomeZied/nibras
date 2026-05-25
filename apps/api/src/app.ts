@@ -21,6 +21,7 @@ import { AppStore, FileStore, getStorePath } from './store';
 import { registerGitHubRoutes } from './features/github/routes';
 import { registerHostedCliRoutes } from './features/hosted-cli/routes';
 import { registerTrackingRoutes } from './features/tracking/routes';
+import { registerCourseVideoRoutes } from './features/tracking/course-videos';
 import { registerAdminRoutes } from './features/admin/routes';
 import { registerNotificationRoutes } from './features/notifications/routes';
 import { registerProgramRoutes } from './features/programs/routes';
@@ -336,6 +337,9 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
   registerGitHubRoutes(app, store, githubConfig);
   registerHostedCliRoutes(app, store, githubConfig);
   registerTrackingRoutes(app, store);
+  if (process.env.DATABASE_URL) {
+    registerCourseVideoRoutes(app, store, getSharedPrisma());
+  }
   registerProgramRoutes(app, store);
   registerAdminRoutes(app, store);
   registerNotificationRoutes(app, store);

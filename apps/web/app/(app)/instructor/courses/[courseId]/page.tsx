@@ -70,6 +70,9 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
           <Link href={`/instructor/courses/${courseId}/analytics`} className={styles.btnSecondary}>
             Analytics
           </Link>
+          <Link href={`/instructor/courses/${courseId}/content`} className={styles.btnSecondary}>
+            Lectures
+          </Link>
           <Link href={`/instructor/courses/${courseId}/projects/new`} className={styles.btnPrimary}>
             + New Project
           </Link>

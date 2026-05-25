@@ -3,18 +3,21 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { CourseSection } from '@nibras/contracts';
+import VideoEmbed from '../../../_components/VideoEmbed';
 import styles from './page.module.css';
 import EmptyState from '../../../_components/widgets/EmptyState';
 import {
-  listVideos,
+  listCourseSections,
   setVideoProgress,
-  type CourseVideo,
-} from '../../../../lib/services/backend-courses';
+  type FlatCourseVideo,
+} from '../../../../lib/services/course-content';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
 
-function formatDuration(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
+function formatDuration(seconds: number | undefined): string {
+  const s = seconds ?? 0;
+  const mins = Math.floor(s / 60);
+  const secs = s % 60;
   if (mins >= 60) {
     const hrs = Math.floor(mins / 60);
     return `${hrs}h ${mins % 60}m`;
@@ -25,20 +28,41 @@ function formatDuration(seconds: number): string {
 export default function CourseVideosPage() {
   const params = useParams<{ courseId: string }>();
   const courseId = params?.courseId ?? '';
-  const [videos, setVideos] = useState<CourseVideo[]>([]);
+  const [sections, setSections] = useState<CourseSection[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const videos = useMemo(() => {
+    const flat: FlatCourseVideo[] = [];
+    for (const section of sections) {
+      for (const video of section.videos) {
+        flat.push({
+          ...video,
+          order: video.sortOrder,
+          url: video.playbackUrl,
+        });
+      }
+    }
+    return flat.sort((a, b) => a.order - b.order);
+  }, [sections]);
 
   const load = useCallback(async () => {
     if (!courseId) return;
     setLoading(true);
     setError(null);
     try {
-      const list = await listVideos(courseId);
-      const sorted = [...list].sort((a, b) => a.order - b.order);
-      setVideos(sorted);
-      if (sorted.length > 0) setActiveId(sorted[0].id);
+      const list = await listCourseSections(courseId);
+      setSections(list);
+      const flat: FlatCourseVideo[] = [];
+      for (const section of list) {
+        for (const video of section.videos) {
+          flat.push({ ...video, order: video.sortOrder, url: video.playbackUrl });
+        }
+      }
+      flat.sort((a, b) => a.order - b.order);
+      if (flat.length > 0) setActiveId(flat[0].id);
+      else setActiveId(null);
     } catch (err) {
       setError(friendlyMessage(err));
     } finally {
@@ -52,22 +76,25 @@ export default function CourseVideosPage() {
 
   const active = useMemo(() => videos.find((v) => v.id === activeId) ?? null, [videos, activeId]);
 
-  async function markWatched(video: CourseVideo) {
+  async function markWatched(video: FlatCourseVideo) {
     try {
       const result = await setVideoProgress(video.id, { watched: true, watchedProgress: 1 });
-      setVideos((prev) =>
-        prev.map((v) =>
-          v.id === video.id
-            ? { ...v, watched: result.watched, watchedProgress: result.watchedProgress }
-            : v
-        )
+      setSections((prev) =>
+        prev.map((section) => ({
+          ...section,
+          videos: section.videos.map((v) =>
+            v.id === video.id
+              ? { ...v, watched: result.watched, watchedProgress: result.watchedProgress }
+              : v
+          ),
+        }))
       );
     } catch {
-      /* swallow — UI stays optimistic */
+      /* optimistic UI */
     }
   }
 
-  function advanceToNext(current: CourseVideo) {
+  function advanceToNext(current: FlatCourseVideo) {
     const idx = videos.findIndex((v) => v.id === current.id);
     const next = videos[idx + 1];
     if (next) setActiveId(next.id);
@@ -98,6 +125,8 @@ export default function CourseVideosPage() {
     return () => window.removeEventListener('keydown', handleKey);
   }, [active, videos]);
 
+  const hasVideos = videos.length > 0;
+
   return (
     <div className={styles.page}>
       <header className={styles.breadcrumb}>
@@ -114,63 +143,67 @@ export default function CourseVideosPage() {
             border: '1px solid var(--border)',
           }}
         />
-      ) : error || videos.length === 0 ? (
+      ) : error || !hasVideos ? (
         <EmptyState
           title={error ? 'Could not load videos' : 'No videos'}
-          description={error ?? 'Lecture videos will appear here.'}
+          description={
+            error ??
+            'Lecture videos will appear here once your instructor adds content to this course.'
+          }
           tone={error ? 'error' : 'default'}
           action={error ? { label: 'Retry', onClick: () => void load() } : undefined}
         />
       ) : (
         <div className={styles.layout}>
           <div className={styles.list}>
-            {videos.map((video) => (
-              <button
-                key={video.id}
-                type="button"
-                className={`${styles.listItem} ${video.id === activeId ? styles.listItemActive : ''}`}
-                onClick={() => setActiveId(video.id)}
-              >
-                {video.thumbnailUrl ? (
-                  <img src={video.thumbnailUrl} alt="" className={styles.thumb} />
-                ) : (
-                  <div className={styles.thumb} />
-                )}
-                <div className={styles.itemBody}>
-                  <span className={styles.itemTitle}>{video.title}</span>
-                  <span className={styles.itemMeta}>{formatDuration(video.durationSeconds)}</span>
-                </div>
-                {video.watched && <span className={styles.watchedDot} aria-label="Watched" />}
-              </button>
+            {sections.map((section) => (
+              <div key={section.id}>
+                <div className={styles.sectionLabel}>{section.title}</div>
+                {section.videos.map((video) => {
+                  const flat = videos.find((v) => v.id === video.id);
+                  if (!flat) return null;
+                  return (
+                    <button
+                      key={video.id}
+                      type="button"
+                      className={`${styles.listItem} ${video.id === activeId ? styles.listItemActive : ''}`}
+                      onClick={() => setActiveId(video.id)}
+                    >
+                      {flat.thumbnailUrl ? (
+                        <img src={flat.thumbnailUrl} alt="" className={styles.thumb} />
+                      ) : (
+                        <div className={styles.thumb} />
+                      )}
+                      <div className={styles.itemBody}>
+                        <span className={styles.itemTitle}>{video.title}</span>
+                        <span className={styles.itemMeta}>
+                          {formatDuration(video.durationSeconds)}
+                        </span>
+                      </div>
+                      {video.watched && <span className={styles.watchedDot} aria-label="Watched" />}
+                    </button>
+                  );
+                })}
+              </div>
             ))}
           </div>
           <div className={styles.player}>
             {active && (
               <>
                 <div className={styles.videoFrame}>
-                  {active.url.includes('youtube.com') || active.url.includes('youtu.be') ? (
-                    <iframe
-                      src={active.url
-                        .replace('watch?v=', 'embed/')
-                        .replace('youtu.be/', 'youtube.com/embed/')}
-                      title={active.title}
-                      allow="accelerometer; encrypted-media; picture-in-picture"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <video
-                      key={active.id}
-                      src={active.url}
-                      controls
-                      onEnded={() => {
-                        void markWatched(active);
-                        advanceToNext(active);
-                      }}
-                    />
-                  )}
+                  <VideoEmbed
+                    video={active}
+                    onEnded={() => {
+                      void markWatched(active);
+                      advanceToNext(active);
+                    }}
+                  />
                 </div>
                 <div className={styles.videoHeader}>
                   <h2 className={styles.videoTitle}>{active.title}</h2>
+                  {active.sectionTitle && (
+                    <p className={styles.videoDescription}>{active.sectionTitle}</p>
+                  )}
                   {active.description && (
                     <p className={styles.videoDescription}>{active.description}</p>
                   )}
@@ -185,6 +218,13 @@ export default function CourseVideosPage() {
                       <kbd>M</kbd> mark watched
                     </span>
                   </div>
+                  <button
+                    type="button"
+                    className={styles.markWatchedBtn}
+                    onClick={() => void markWatched(active)}
+                  >
+                    Mark watched
+                  </button>
                 </div>
               </>
             )}

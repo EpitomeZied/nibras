@@ -92,7 +92,24 @@ Open a submission → **Add Review**:
 
 ---
 
-## 6. Course-Level Dashboard
+## 6. Adding lecture videos
+
+Nibras stores lecture videos on the same **tracking course** you use for projects and grading. Content is embed-only (YouTube, Bilibili, or a direct MP4/embed URL) — there is no file upload in the platform.
+
+1. Open **Course → Lectures** (or `/instructor/courses/<courseId>/content`).
+2. Create one or more **sections** (e.g. “Week 1”, “Midterm review”).
+3. For each section, **Add video**:
+   - **YouTube / Bilibili**: paste the video ID (YouTube id or Bilibili `BV…` id).
+   - **MP4 / URL**: paste the full HTTPS URL to the media or embed page.
+4. Use **Preview** to confirm playback before students enroll.
+
+Students watch lectures at **`/catalog/<courseId>/videos`**, where `<courseId>` is the tracking course id from the instructor URL (not the legacy student-dashboard catalog ids).
+
+**Legacy student dashboard:** Courses built from static `courseData.js` in the old dashboard are unchanged and do not sync with this feature. Only courses you configure in the main Nibras app use database-backed videos.
+
+---
+
+## 7. Course-Level Dashboard
 
 **Dashboard → Course** shows an overview for your course:
 
@@ -102,7 +119,7 @@ Open a submission → **Add Review**:
 
 ---
 
-## 7. Archiving a Project
+## 8. Archiving a Project
 
 When a project is complete, archive it to hide it from the review queue without deleting data:
 
@@ -111,7 +128,7 @@ When a project is complete, archive it to hide it from the review queue without 
 
 ---
 
-## 8. API Access (Advanced)
+## 9. API Access (Advanced)
 
 The full REST API is documented at `/docs` (Swagger UI). All endpoints require a Bearer token or web session cookie.
 
@@ -124,7 +141,7 @@ curl -H "Authorization: Bearer <your-token>" \
 
 ---
 
-## 9. Getting Help
+## 10. Getting Help
 
 - Check `/healthz` and `/readyz` for API status
 - Metrics at `/metrics` (requires `NIBRAS_METRICS_TOKEN` if set)
