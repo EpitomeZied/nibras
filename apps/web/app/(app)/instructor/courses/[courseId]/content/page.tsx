@@ -468,10 +468,12 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
                         ) : (
                           <>
                             <span>
-                              {video.title}{' '}
-                              <span className={styles.muted}>({video.provider})</span>
+                              {video.title} <span className={styles.muted}>({video.provider})</span>
                               {video.linkedProjectTitle && (
-                                <span className={styles.muted}> · → {video.linkedProjectTitle}</span>
+                                <span className={styles.muted}>
+                                  {' '}
+                                  · → {video.linkedProjectTitle}
+                                </span>
                               )}
                             </span>
                             <div className={localStyles.rowActions}>

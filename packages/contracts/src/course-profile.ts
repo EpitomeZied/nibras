@@ -73,4 +73,6 @@ export const VideoAnalyticsResponseSchema = z.object({
 });
 
 export type TrackingCourseDetail = z.infer<typeof TrackingCourseDetailSchema>;
+export type UpdateCourseProfileRequest = z.infer<typeof UpdateCourseProfileRequestSchema>;
 export type CourseGradesRollup = z.infer<typeof CourseGradesRollupSchema>;
+export type VideoAnalyticsResponse = z.infer<typeof VideoAnalyticsResponseSchema>;

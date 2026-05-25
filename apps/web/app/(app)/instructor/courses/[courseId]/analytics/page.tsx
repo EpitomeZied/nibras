@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { use, useEffect, useState } from 'react';
 import { useFetch } from '../../../../../lib/use-fetch';
 import { getVideoAnalytics } from '../../../../../lib/services/course-profile';
-import { friendlyMessage } from '../../../../../lib/api-clients/errors';
 import styles from '../../../instructor.module.css';
 
 type MilestonePassRate = {

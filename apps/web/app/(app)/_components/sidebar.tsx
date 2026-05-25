@@ -280,7 +280,6 @@ export default function Sidebar({
           </span>
           {!collapsed && <strong>Settings</strong>}
         </Link>
-
       </nav>
 
       {/* Collapse toggle */}

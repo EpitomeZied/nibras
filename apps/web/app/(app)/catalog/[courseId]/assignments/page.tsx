@@ -8,7 +8,10 @@ import EmptyState from '../../../_components/widgets/EmptyState';
 import { listAssignments, type BackendAssignment } from '../../../../lib/services/backend-courses';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
 
-function dueBadgeClass(dueAt: string | undefined, status: BackendAssignment['status']) {
+function dueBadgeClass(
+  dueAt: string | null | undefined,
+  status: BackendAssignment['status'] | undefined
+) {
   if (!dueAt) return styles.dueOk;
   if (status === 'late') return styles.dueLate;
   const diff = new Date(dueAt).getTime() - Date.now();
@@ -32,7 +35,7 @@ function statusBadgeClass(status: BackendAssignment['status']) {
   }
 }
 
-function formatDue(iso: string | undefined): string {
+function formatDue(iso: string | null | undefined): string {
   if (!iso) return 'No due date';
   try {
     return `Due ${new Date(iso).toLocaleDateString(undefined, {
@@ -120,8 +123,10 @@ export default function CourseAssignmentsPage() {
               >
                 {formatDue(assignment.dueAt)}
               </span>
-              <span className={`${styles.statusBadge} ${statusBadgeClass(assignment.status)}`}>
-                {assignment.status.replace('_', ' ')}
+              <span
+                className={`${styles.statusBadge} ${statusBadgeClass(assignment.status ?? 'not_started')}`}
+              >
+                {(assignment.status ?? 'not_started').replace('_', ' ')}
               </span>
             </Link>
           ))}

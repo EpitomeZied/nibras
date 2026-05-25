@@ -33,14 +33,20 @@ export default function CourseHubPage() {
   }, [load]);
 
   if (loading) {
-    return <div className={styles.page}><div className={styles.skeleton} /></div>;
+    return (
+      <div className={styles.page}>
+        <div className={styles.skeleton} />
+      </div>
+    );
   }
 
   if (error || !course) {
     return (
       <div className={styles.page}>
         <p className={styles.error}>{error ?? 'Course not found'}</p>
-        <button type="button" onClick={() => void load()}>Retry</button>
+        <button type="button" onClick={() => void load()}>
+          Retry
+        </button>
       </div>
     );
   }
@@ -53,9 +59,7 @@ export default function CourseHubPage() {
         <Link href="/courses" className={styles.back}>
           ← My courses
         </Link>
-        {course.thumbnailUrl && (
-          <img src={course.thumbnailUrl} alt="" className={styles.thumb} />
-        )}
+        {course.thumbnailUrl && <img src={course.thumbnailUrl} alt="" className={styles.thumb} />}
         <div>
           <h1 className={styles.title}>{course.title}</h1>
           <p className={styles.meta}>

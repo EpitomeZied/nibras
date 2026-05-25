@@ -89,7 +89,13 @@ export default function CourseSettingsPage({ params }: { params: Promise<{ cours
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
-              style={{ width: '100%', marginTop: 4, padding: 8, borderRadius: 8, border: '1px solid var(--border)' }}
+              style={{
+                width: '100%',
+                marginTop: 4,
+                padding: 8,
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+              }}
             />
           </label>
           <label>
@@ -97,7 +103,13 @@ export default function CourseSettingsPage({ params }: { params: Promise<{ cours
             <input
               value={thumbnailUrl}
               onChange={(e) => setThumbnailUrl(e.target.value)}
-              style={{ width: '100%', marginTop: 4, padding: 8, borderRadius: 8, border: '1px solid var(--border)' }}
+              style={{
+                width: '100%',
+                marginTop: 4,
+                padding: 8,
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+              }}
             />
           </label>
           <label>
@@ -105,7 +117,13 @@ export default function CourseSettingsPage({ params }: { params: Promise<{ cours
             <input
               value={schedule}
               onChange={(e) => setSchedule(e.target.value)}
-              style={{ width: '100%', marginTop: 4, padding: 8, borderRadius: 8, border: '1px solid var(--border)' }}
+              style={{
+                width: '100%',
+                marginTop: 4,
+                padding: 8,
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+              }}
             />
           </label>
           <label>
@@ -113,7 +131,13 @@ export default function CourseSettingsPage({ params }: { params: Promise<{ cours
             <input
               value={topics}
               onChange={(e) => setTopics(e.target.value)}
-              style={{ width: '100%', marginTop: 4, padding: 8, borderRadius: 8, border: '1px solid var(--border)' }}
+              style={{
+                width: '100%',
+                marginTop: 4,
+                padding: 8,
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+              }}
             />
           </label>
           <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

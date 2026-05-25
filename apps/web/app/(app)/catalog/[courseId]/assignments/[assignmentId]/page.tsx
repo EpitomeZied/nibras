@@ -105,12 +105,14 @@ export default function AssignmentDetailPage() {
       <div className={styles.header}>
         <div className={styles.titleRow}>
           <h1 className={styles.title}>{assignment.title}</h1>
-          <span className={`${styles.statusBadge} ${statusBadgeClass(assignment.status)}`}>
-            {assignment.status.replace('_', ' ')}
+          <span
+            className={`${styles.statusBadge} ${statusBadgeClass(assignment.status ?? 'not_started')}`}
+          >
+            {(assignment.status ?? 'not_started').replace('_', ' ')}
           </span>
         </div>
         <span className={styles.subtitle}>
-          {formatDue(assignment.dueAt)} · {assignment.pointsPossible} pts
+          {formatDue(assignment.dueAt ?? undefined)} · {assignment.pointsPossible} pts
           {typeof assignment.score === 'number' &&
             ` · scored ${assignment.score}/${assignment.pointsPossible}`}
         </span>
@@ -157,7 +159,7 @@ export default function AssignmentDetailPage() {
             </div>
             <div className={styles.metaRow}>
               <span>Status</span>
-              <span>{assignment.status.replace('_', ' ')}</span>
+              <span>{(assignment.status ?? 'not_started').replace('_', ' ')}</span>
             </div>
             {assignment.dueAt && (
               <div className={styles.metaRow}>
@@ -187,7 +189,7 @@ export default function AssignmentDetailPage() {
             </section>
           )}
 
-          {assignment.status !== 'graded' && (
+          {(assignment.status ?? 'not_started') !== 'graded' && (
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>Your submission</h2>
               <textarea

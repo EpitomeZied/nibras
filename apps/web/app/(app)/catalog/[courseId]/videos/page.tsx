@@ -213,7 +213,8 @@ export default function CourseVideosPage() {
                   {active.linkedProjectId && (
                     <p className={styles.projectLink}>
                       <Link href={`/projects?course=${courseId}`}>
-                        Go to linked project{active.linkedProjectTitle ? `: ${active.linkedProjectTitle}` : ''}
+                        Go to linked project
+                        {active.linkedProjectTitle ? `: ${active.linkedProjectTitle}` : ''}
                       </Link>
                     </p>
                   )}

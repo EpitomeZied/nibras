@@ -78,10 +78,7 @@ export async function submitCourseAssignment(
   );
 }
 
-export async function gradeCourseAssignment(
-  assignmentId: string,
-  payload: GradeAssignmentRequest
-) {
+export async function gradeCourseAssignment(assignmentId: string, payload: GradeAssignmentRequest) {
   return serviceFetch<AssignmentSubmissionResponse>(
     'tracking',
     `/v1/tracking/assignments/${assignmentId}/grade`,

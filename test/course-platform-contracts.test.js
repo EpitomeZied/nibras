@@ -1,12 +1,12 @@
-import assert from 'node:assert/strict';
-import test from 'node:test';
-import {
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const {
   AssignmentSubmissionsListSchema,
   CourseAssignmentSchema,
   CreateCourseAssignmentRequestSchema,
   TrackingCourseDetailSchema,
   VideoAnalyticsResponseSchema,
-} from '@nibras/contracts';
+} = require('@nibras/contracts');
 
 test('CourseAssignmentSchema parses list item', () => {
   const parsed = CourseAssignmentSchema.parse({
