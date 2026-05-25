@@ -283,11 +283,10 @@ export default function HomePage() {
       <section id="how-it-works" className={styles.section}>
         <div className={styles.sectionHeader}>
           <span className={styles.sectionEyebrow}>How it works</span>
-          <h2 className={styles.sectionTitle}>
-            From sign-in to submission in three steps
-          </h2>
+          <h2 className={styles.sectionTitle}>From sign-in to submission in three steps</h2>
           <p className={styles.sectionSub}>
-            One GitHub login connects your identity, workspace, and delivery history — no setup friction.
+            One GitHub login connects your identity, workspace, and delivery history — no setup
+            friction.
           </p>
         </div>
 

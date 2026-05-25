@@ -123,7 +123,7 @@ export const howItWorksSteps = [
     step: '03',
     icon: 'timeline-delivery' as const,
     title: 'Deliver work and level up',
-    desc: 'Submit from the terminal, practice in the IDE, earn badges, and see your progress across every course you\'re in.',
+    desc: "Submit from the terminal, practice in the IDE, earn badges, and see your progress across every course you're in.",
     cta: 'Sign in to begin →',
     href: '/',
   },
