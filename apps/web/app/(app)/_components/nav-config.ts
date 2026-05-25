@@ -33,7 +33,7 @@ export const navDropdownGroups: NavDropdownGroup[] = [
   {
     id: 'learn',
     label: 'Learn',
-    description: 'Catalog, enrolled courses, and the IDE.',
+    description: 'CLI setup, catalog, enrolled courses, and the IDE.',
   },
   {
     id: 'community',
@@ -94,6 +94,13 @@ export const appNavItems: AppNavItem[] = [
     visibility: 'all',
     placement: 'primary',
     matchPrefixes: ['/tutor/insights', '/tutor/routing', '/tutor/recommendations'],
+  },
+  {
+    href: '/instructor/onboarding',
+    label: 'CLI Setup Guide',
+    description: 'Install the CLI, authenticate with GitHub, and submit your first project.',
+    visibility: 'all',
+    placement: 'learn',
   },
   {
     href: '/catalog',
