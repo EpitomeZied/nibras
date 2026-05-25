@@ -107,9 +107,43 @@ Students watch lectures at **`/catalog/<courseId>/videos`**, where `<courseId>` 
 
 **Legacy student dashboard:** Courses built from static `courseData.js` in the old dashboard are unchanged and do not sync with this feature. Only courses you configure in the main Nibras app use database-backed videos.
 
+### Lecture management (edit, reorder, links)
+
+On the same **Lectures** page you can:
+
+- **Reorder sections** (↑↓ in the sidebar) and **videos** within a section
+- **Edit** section title/description and video metadata
+- **Move** a video to another section via the edit form
+- **Link** a published project to a video (students see a “Go to project” CTA on the player)
+- Enable **sequential unlock** under **Course → Settings** (`sequentialVideos`) so each lecture unlocks after the prior one is marked watched
+
+**Analytics:** **Course → Analytics** includes per-video watch counts and average progress.
+
 ---
 
-## 7. Course-Level Dashboard
+## 7. Assignments
+
+Tracking-native assignments live on the same course (no Railway admin API).
+
+1. Open **Course → Assignments** (`/instructor/courses/<courseId>/assignments`).
+2. Create assignments with title, instructions (markdown), due date, and points.
+3. Use **Grade submissions** to score student work (text + optional resource links) and leave feedback.
+
+Students submit at `/catalog/<courseId>/assignments`.
+
+---
+
+## 8. Course profile and syllabus
+
+**Course → Settings** (`/instructor/courses/<courseId>/settings`):
+
+- Course **description** and optional **thumbnail URL**
+- **Syllabus** fields (schedule, topics, policies) shown on the student course hub
+- **Sequential videos** toggle
+
+---
+
+## 9. Course-Level Dashboard
 
 **Dashboard → Course** shows an overview for your course:
 
@@ -119,7 +153,7 @@ Students watch lectures at **`/catalog/<courseId>/videos`**, where `<courseId>` 
 
 ---
 
-## 8. Archiving a Project
+## 10. Archiving a Project
 
 When a project is complete, archive it to hide it from the review queue without deleting data:
 
@@ -128,7 +162,7 @@ When a project is complete, archive it to hide it from the review queue without 
 
 ---
 
-## 9. API Access (Advanced)
+## 11. API Access (Advanced)
 
 The full REST API is documented at `/docs` (Swagger UI). All endpoints require a Bearer token or web session cookie.
 
@@ -141,7 +175,7 @@ curl -H "Authorization: Bearer <your-token>" \
 
 ---
 
-## 10. Getting Help
+## 12. Getting Help
 
 - Check `/healthz` and `/readyz` for API status
 - Metrics at `/metrics` (requires `NIBRAS_METRICS_TOKEN` if set)

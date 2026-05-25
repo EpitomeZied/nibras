@@ -667,6 +667,23 @@ Delete the file to wipe all saved sessions (equivalent to `nibras logout`).
 
 ---
 
+## Web dashboard — courses (lectures, assignments, grades)
+
+If your institution uses the main Nibras web app (not only the legacy student dashboard):
+
+1. Sign in with GitHub and open **My Courses** in the Learn menu (`/courses`).
+2. Open a course card to reach the **course hub** (`/catalog/<courseId>`).
+3. From the hub:
+   - **Lectures** — watch embedded videos; use **M** to mark watched. If your instructor enabled sequential unlock, later videos stay locked until you finish earlier ones.
+   - **Assignments** — read instructions and submit text plus optional resource links.
+   - **Projects** — browse published projects for the course.
+   - **Grades** — see project review scores and assignment grades in one place.
+   - **Discussions** — course-scoped community threads.
+
+Use the **tracking course id** from your instructor (in invite links or URLs), not legacy `courseData.js` catalog ids from the old dashboard.
+
+---
+
 ## Getting Help
 
 1. Run `nibras ping` and share the output with your instructor — it captures most diagnostic information in one command.

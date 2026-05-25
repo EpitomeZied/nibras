@@ -190,3 +190,17 @@
 .markWatchedBtn:hover {
   border-color: var(--primary, #22c55e);
 }
+
+.listItemLocked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.projectLink {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.projectLink a {
+  color: var(--primary, #22c55e);
+}

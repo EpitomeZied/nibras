@@ -8,6 +8,7 @@ import {
   CreateCourseVideoRequestSchema,
   UpdateCourseSectionRequestSchema,
   UpdateCourseVideoRequestSchema,
+  VideoAnalyticsResponseSchema,
   VideoProgressRequestSchema,
   VideoProgressResponseSchema,
 } from '@nibras/contracts';
@@ -27,7 +28,11 @@ type VideoRow = {
   embedUrl: string | null;
   durationSeconds: number | null;
   sortOrder: number;
+  requiresVideoId: string | null;
+  linkedProjectId: string | null;
+  linkedMilestoneId: string | null;
   section: { id: string; courseId: string; title: string };
+  linkedProject?: { id: string; name: string } | null;
 };
 
 export function resolvePlaybackUrl(video: {
@@ -73,7 +78,8 @@ function validateVideoPayload(body: {
 
 function presentVideo(
   video: VideoRow,
-  progress?: { watched: boolean; watchedProgress: number } | null
+  progress?: { watched: boolean; watchedProgress: number } | null,
+  opts?: { locked?: boolean }
 ) {
   const playbackUrl = resolvePlaybackUrl(video);
   return CourseVideoSchema.parse({
@@ -92,14 +98,24 @@ function presentVideo(
     sortOrder: video.sortOrder,
     watched: progress?.watched,
     watchedProgress: progress?.watchedProgress,
+    locked: opts?.locked ?? false,
+    requiresVideoId: video.requiresVideoId,
+    linkedProjectId: video.linkedProjectId,
+    linkedMilestoneId: video.linkedMilestoneId,
+    linkedProjectTitle: video.linkedProject?.name,
   });
 }
 
 async function loadSectionsWithVideos(
   prisma: PrismaClient,
   courseId: string,
-  userId: string
+  userId: string,
+  isManager: boolean
 ) {
+  const course = await prisma.course.findFirst({
+    where: { id: courseId, deletedAt: null },
+    select: { sequentialVideos: true },
+  });
   const sections = await prisma.courseSection.findMany({
     where: { courseId },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
@@ -108,6 +124,7 @@ async function loadSectionsWithVideos(
         orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
         include: {
           section: { select: { id: true, courseId: true, title: true } },
+          linkedProject: { select: { id: true, name: true } },
           progress: {
             where: { userId },
             take: 1,
@@ -117,6 +134,14 @@ async function loadSectionsWithVideos(
     },
   });
 
+  const progressByVideoId = new Map<string, { watched: boolean; watchedProgress: number }>();
+  for (const section of sections) {
+    for (const video of section.videos) {
+      const p = video.progress[0];
+      if (p) progressByVideoId.set(video.id, p);
+    }
+  }
+
   return sections.map((section) =>
     CourseSectionSchema.parse({
       id: section.id,
@@ -124,15 +149,18 @@ async function loadSectionsWithVideos(
       title: section.title,
       description: section.description,
       sortOrder: section.sortOrder,
-      videos: section.videos.map((video) =>
-        presentVideo(
-          {
-            ...video,
-            section: video.section,
-          },
-          video.progress[0] ?? null
-        )
-      ),
+      videos: section.videos.map((video) => {
+        let locked = false;
+        if (course?.sequentialVideos && !isManager && video.requiresVideoId) {
+          const prereq = progressByVideoId.get(video.requiresVideoId);
+          locked = !prereq?.watched;
+        }
+        return presentVideo(
+          { ...video, section: video.section, linkedProject: video.linkedProject },
+          video.progress[0] ?? null,
+          { locked }
+        );
+      }),
     })
   );
 }
@@ -167,7 +195,12 @@ export function registerCourseVideoRoutes(
         reply.code(404).send(Errors.notFound('Course not found'));
         return;
       }
-      const sections = await loadSectionsWithVideos(prisma, params.courseId, auth.user.id);
+      const sections = await loadSectionsWithVideos(
+        prisma,
+        params.courseId,
+        auth.user.id,
+        canManageCourse(auth, params.courseId)
+      );
       return CourseSectionsResponseSchema.parse({ sections });
     }
   );
@@ -328,8 +361,14 @@ export function registerCourseVideoRoutes(
           embedUrl: body.embedUrl?.trim() || null,
           durationSeconds: body.durationSeconds ?? null,
           sortOrder,
+          requiresVideoId: body.requiresVideoId ?? null,
+          linkedProjectId: body.linkedProjectId ?? null,
+          linkedMilestoneId: body.linkedMilestoneId ?? null,
         },
-        include: { section: { select: { id: true, courseId: true, title: true } } },
+        include: {
+          section: { select: { id: true, courseId: true, title: true } },
+          linkedProject: { select: { id: true, name: true } },
+        },
       });
       return presentVideo(video);
     }
@@ -390,10 +429,58 @@ export function registerCourseVideoRoutes(
           durationSeconds:
             body.durationSeconds === null ? null : body.durationSeconds ?? undefined,
           sortOrder: body.sortOrder,
+          requiresVideoId:
+            body.requiresVideoId !== undefined ? body.requiresVideoId : undefined,
+          linkedProjectId:
+            body.linkedProjectId !== undefined ? body.linkedProjectId : undefined,
+          linkedMilestoneId:
+            body.linkedMilestoneId !== undefined ? body.linkedMilestoneId : undefined,
         },
-        include: { section: { select: { id: true, courseId: true, title: true } } },
+        include: {
+          section: { select: { id: true, courseId: true, title: true } },
+          linkedProject: { select: { id: true, name: true } },
+        },
       });
       return presentVideo(video);
+    }
+  );
+
+  app.get(
+    '/v1/tracking/courses/:courseId/videos/analytics',
+    { schema: { tags: ['tracking'], summary: 'Video completion analytics (instructor)' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const params = request.params as { courseId: string };
+      if (!validateId(params.courseId, reply, 'courseId')) return;
+      if (!canManageCourse(auth, params.courseId)) {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const enrolledCount = await prisma.courseMembership.count({
+        where: { courseId: params.courseId, role: 'student' },
+      });
+      const videos = await prisma.courseVideo.findMany({
+        where: { section: { courseId: params.courseId } },
+        include: { section: { select: { title: true } }, progress: true },
+        orderBy: { sortOrder: 'asc' },
+      });
+      const items = videos.map((v) => {
+        const watched = v.progress.filter((p) => p.watched);
+        const avg =
+          v.progress.length > 0
+            ? v.progress.reduce((s, p) => s + p.watchedProgress, 0) / v.progress.length
+            : 0;
+        return {
+          videoId: v.id,
+          title: v.title,
+          sectionTitle: v.section.title,
+          enrolledCount,
+          watchedCount: watched.length,
+          avgWatchedProgress: avg,
+        };
+      });
+      return VideoAnalyticsResponseSchema.parse({ videos: items });
     }
   );
 

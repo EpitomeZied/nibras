@@ -7,6 +7,7 @@ import styles from './page.module.css';
 import EmptyState from '../../../../_components/widgets/EmptyState';
 import {
   getAssignmentById,
+  submitAssignment,
   type AssignmentDetail,
 } from '../../../../../lib/services/backend-courses';
 import { friendlyMessage } from '../../../../../lib/api-clients/errors';
@@ -43,6 +44,8 @@ export default function AssignmentDetailPage() {
   const [assignment, setAssignment] = useState<AssignmentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [submitContent, setSubmitContent] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
     if (!assignmentId) return;
@@ -81,7 +84,7 @@ export default function AssignmentDetailPage() {
     return (
       <div className={styles.page}>
         <header className={styles.breadcrumb}>
-          <Link href={`/catalog/${courseId}/assignments`}>← Back to assignments</Link>
+          <Link href={`/catalog/${courseId}`}>← Course home</Link>
         </header>
         <EmptyState
           title="Could not load assignment"
@@ -96,7 +99,7 @@ export default function AssignmentDetailPage() {
   return (
     <div className={styles.page}>
       <header className={styles.breadcrumb}>
-        <Link href={`/catalog/${courseId}/assignments`}>← Back to assignments</Link>
+        <Link href={`/catalog/${courseId}`}>← Course home</Link>
       </header>
 
       <div className={styles.header}>
@@ -181,6 +184,48 @@ export default function AssignmentDetailPage() {
                   </li>
                 ))}
               </ul>
+            </section>
+          )}
+
+          {assignment.status !== 'graded' && (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Your submission</h2>
+              <textarea
+                value={submitContent}
+                onChange={(e) => setSubmitContent(e.target.value)}
+                rows={6}
+                placeholder="Write your answer…"
+                style={{
+                  width: '100%',
+                  padding: 10,
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  marginBottom: 8,
+                }}
+              />
+              <button
+                type="button"
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: 8,
+                  border: '1px solid var(--border)',
+                  background: 'var(--primary, #22c55e)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                }}
+                disabled={submitting || !submitContent.trim()}
+                onClick={async () => {
+                  setSubmitting(true);
+                  try {
+                    await submitAssignment(assignmentId, { content: submitContent.trim() });
+                    await load();
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+              >
+                Submit
+              </button>
             </section>
           )}
         </aside>

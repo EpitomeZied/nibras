@@ -18,6 +18,11 @@ export const CourseVideoSchema = z.object({
   sortOrder: z.number().int().nonnegative(),
   watched: z.boolean().optional(),
   watchedProgress: z.number().min(0).max(1).optional(),
+  locked: z.boolean().optional(),
+  requiresVideoId: z.string().nullable().optional(),
+  linkedProjectId: z.string().nullable().optional(),
+  linkedMilestoneId: z.string().nullable().optional(),
+  linkedProjectTitle: z.string().optional(),
 });
 
 export const CourseSectionSchema = z.object({
@@ -53,6 +58,9 @@ export const CreateCourseVideoRequestSchema = z.object({
   embedUrl: z.string().url().max(2000).optional(),
   durationSeconds: z.number().int().nonnegative().optional(),
   sortOrder: z.number().int().nonnegative().optional(),
+  requiresVideoId: z.string().optional(),
+  linkedProjectId: z.string().optional(),
+  linkedMilestoneId: z.string().optional(),
 });
 
 export const UpdateCourseVideoRequestSchema = z.object({
@@ -64,6 +72,9 @@ export const UpdateCourseVideoRequestSchema = z.object({
   durationSeconds: z.number().int().nonnegative().nullable().optional(),
   sortOrder: z.number().int().nonnegative().optional(),
   sectionId: z.string().min(1).optional(),
+  requiresVideoId: z.string().nullable().optional(),
+  linkedProjectId: z.string().nullable().optional(),
+  linkedMilestoneId: z.string().nullable().optional(),
 });
 
 export const VideoProgressRequestSchema = z.object({

@@ -130,7 +130,7 @@ export default function CourseVideosPage() {
   return (
     <div className={styles.page}>
       <header className={styles.breadcrumb}>
-        <Link href={`/catalog/${courseId}`}>← Back to course</Link>
+        <Link href={`/catalog/${courseId}`}>← Course home</Link>
       </header>
       <h1 className={styles.title}>Videos</h1>
 
@@ -166,8 +166,11 @@ export default function CourseVideosPage() {
                     <button
                       key={video.id}
                       type="button"
-                      className={`${styles.listItem} ${video.id === activeId ? styles.listItemActive : ''}`}
-                      onClick={() => setActiveId(video.id)}
+                      className={`${styles.listItem} ${video.id === activeId ? styles.listItemActive : ''} ${video.locked ? styles.listItemLocked : ''}`}
+                      onClick={() => {
+                        if (!video.locked) setActiveId(video.id);
+                      }}
+                      disabled={video.locked}
                     >
                       {flat.thumbnailUrl ? (
                         <img src={flat.thumbnailUrl} alt="" className={styles.thumb} />
@@ -206,6 +209,13 @@ export default function CourseVideosPage() {
                   )}
                   {active.description && (
                     <p className={styles.videoDescription}>{active.description}</p>
+                  )}
+                  {active.linkedProjectId && (
+                    <p className={styles.projectLink}>
+                      <Link href={`/projects?course=${courseId}`}>
+                        Go to linked project{active.linkedProjectTitle ? `: ${active.linkedProjectTitle}` : ''}
+                      </Link>
+                    </p>
                   )}
                   <div className={styles.shortcuts}>
                     <span>

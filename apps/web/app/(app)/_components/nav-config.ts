@@ -83,6 +83,14 @@ export const appNavItems: AppNavItem[] = [
     placement: 'learn',
   },
   {
+    href: '/courses',
+    label: 'My Courses',
+    description: 'Your enrolled courses — lectures, assignments, and grades.',
+    visibility: 'all',
+    placement: 'learn',
+    matchPrefixes: ['/catalog/'],
+  },
+  {
     href: '/community',
     label: 'Community',
     description: 'Ask questions, share answers, and join course discussions.',
@@ -214,6 +222,10 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/catalog': {
     title: 'Project Catalog',
     subtitle: 'Discover projects, browse templates, and apply.',
+  },
+  '/courses': {
+    title: 'My Courses',
+    subtitle: 'Enrolled courses — lectures, assignments, grades, and discussions.',
   },
   '/planner': {
     title: 'Planner',

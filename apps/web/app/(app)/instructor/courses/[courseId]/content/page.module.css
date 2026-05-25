@@ -27,7 +27,26 @@
   padding: 10px;
 }
 
+.sectionRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sectionReorder {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sectionReorder button {
+  padding: 2px 6px;
+  font-size: 11px;
+  min-width: 28px;
+}
+
 .sectionBtn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;

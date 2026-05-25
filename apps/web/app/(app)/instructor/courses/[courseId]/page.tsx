@@ -73,6 +73,15 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
           <Link href={`/instructor/courses/${courseId}/content`} className={styles.btnSecondary}>
             Lectures
           </Link>
+          <Link
+            href={`/instructor/courses/${courseId}/assignments`}
+            className={styles.btnSecondary}
+          >
+            Assignments
+          </Link>
+          <Link href={`/instructor/courses/${courseId}/settings`} className={styles.btnSecondary}>
+            Settings
+          </Link>
           <Link href={`/instructor/courses/${courseId}/projects/new`} className={styles.btnPrimary}>
             + New Project
           </Link>

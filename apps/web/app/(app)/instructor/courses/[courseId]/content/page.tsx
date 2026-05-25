@@ -11,7 +11,10 @@ import {
   deleteCourseSection,
   deleteCourseVideo,
   listCourseSections,
+  updateCourseSection,
+  updateCourseVideo,
 } from '../../../../../lib/services/course-content';
+import { useFetch } from '../../../../../lib/use-fetch';
 import styles from '../../../../instructor/instructor.module.css';
 import localStyles from './page.module.css';
 
@@ -36,7 +39,24 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
   const [videoExternalId, setVideoExternalId] = useState('');
   const [videoEmbedUrl, setVideoEmbedUrl] = useState('');
   const [videoDuration, setVideoDuration] = useState('');
+  const [videoLinkedProjectId, setVideoLinkedProjectId] = useState('');
   const [saving, setSaving] = useState(false);
+  const [editingSection, setEditingSection] = useState(false);
+  const [sectionTitleEdit, setSectionTitleEdit] = useState('');
+  const [sectionDescEdit, setSectionDescEdit] = useState('');
+  const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
+  const [editVideoTitle, setEditVideoTitle] = useState('');
+  const [editVideoDesc, setEditVideoDesc] = useState('');
+  const [editVideoLinkedProject, setEditVideoLinkedProject] = useState('');
+  const [editVideoMoveSection, setEditVideoMoveSection] = useState('');
+
+  const { data: projects } = useFetch<Array<{ id: string; title: string; status: string }>>(
+    `/v1/tracking/courses/${courseId}/projects`
+  );
+  const publishedProjects = useMemo(
+    () => (projects ?? []).filter((p) => p.status === 'published'),
+    [projects]
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -113,11 +133,98 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
         embedUrl:
           videoProvider === 'mp4' || videoProvider === 'url' ? videoEmbedUrl.trim() : undefined,
         durationSeconds: videoDuration ? parseInt(videoDuration, 10) : undefined,
+        linkedProjectId: videoLinkedProjectId.trim() || undefined,
       });
       setVideoTitle('');
       setVideoExternalId('');
       setVideoEmbedUrl('');
       setVideoDuration('');
+      await load();
+    } catch (err) {
+      setError(friendlyMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function moveVideo(video: CourseVideo, delta: number) {
+    if (!activeSection) return;
+    const idx = activeSection.videos.findIndex((v) => v.id === video.id);
+    const target = activeSection.videos[idx + delta];
+    if (!target) return;
+    setSaving(true);
+    try {
+      await updateCourseVideo(courseId, video.id, { sortOrder: target.sortOrder });
+      await updateCourseVideo(courseId, target.id, { sortOrder: video.sortOrder });
+      await load();
+    } catch (err) {
+      setError(friendlyMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function moveSection(section: CourseSection, delta: number) {
+    const idx = sections.findIndex((s) => s.id === section.id);
+    const target = sections[idx + delta];
+    if (!target) return;
+    setSaving(true);
+    try {
+      await updateCourseSection(courseId, section.id, { sortOrder: target.sortOrder });
+      await updateCourseSection(courseId, target.id, { sortOrder: section.sortOrder });
+      await load();
+    } catch (err) {
+      setError(friendlyMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function saveSectionEdit() {
+    if (!activeSection) return;
+    setSaving(true);
+    try {
+      await updateCourseSection(courseId, activeSection.id, {
+        title: sectionTitleEdit.trim() || activeSection.title,
+        description: sectionDescEdit.trim() || null,
+      });
+      setEditingSection(false);
+      await load();
+    } catch (err) {
+      setError(friendlyMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function startEditSection() {
+    if (!activeSection) return;
+    setSectionTitleEdit(activeSection.title);
+    setSectionDescEdit(activeSection.description ?? '');
+    setEditingSection(true);
+  }
+
+  function startEditVideo(video: CourseVideo) {
+    setEditingVideoId(video.id);
+    setEditVideoTitle(video.title);
+    setEditVideoDesc(video.description ?? '');
+    setEditVideoLinkedProject(video.linkedProjectId ?? '');
+    setEditVideoMoveSection(video.sectionId);
+  }
+
+  async function saveVideoEdit(videoId: string) {
+    setSaving(true);
+    try {
+      await updateCourseVideo(courseId, videoId, {
+        title: editVideoTitle.trim() || undefined,
+        description: editVideoDesc.trim() || null,
+        linkedProjectId: editVideoLinkedProject.trim() || null,
+        sectionId:
+          editVideoMoveSection && editVideoMoveSection !== activeSectionId
+            ? editVideoMoveSection
+            : undefined,
+      });
+      setEditingVideoId(null);
       await load();
     } catch (err) {
       setError(friendlyMessage(err));
@@ -170,21 +277,42 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
         <div className={localStyles.layout}>
           <aside className={localStyles.sidebar}>
             <strong style={{ fontSize: 13, padding: '4px 8px' }}>Sections</strong>
-            {sections.map((section) => (
-              <button
-                key={section.id}
-                type="button"
-                className={`${localStyles.sectionBtn} ${
-                  section.id === activeSectionId ? localStyles.sectionBtnActive : ''
-                }`}
-                onClick={() => {
-                  setActiveSectionId(section.id);
-                  setPreviewVideoId(null);
-                }}
-              >
-                <span>{section.title}</span>
-                <span className={styles.muted}>{section.videos.length}</span>
-              </button>
+            {sections.map((section, sIdx) => (
+              <div key={section.id} className={localStyles.sectionRow}>
+                <button
+                  type="button"
+                  className={`${localStyles.sectionBtn} ${
+                    section.id === activeSectionId ? localStyles.sectionBtnActive : ''
+                  }`}
+                  onClick={() => {
+                    setActiveSectionId(section.id);
+                    setPreviewVideoId(null);
+                    setEditingSection(false);
+                    setEditingVideoId(null);
+                  }}
+                >
+                  <span>{section.title}</span>
+                  <span className={styles.muted}>{section.videos.length}</span>
+                </button>
+                <div className={localStyles.sectionReorder}>
+                  <button
+                    type="button"
+                    className={styles.btnSecondary}
+                    disabled={saving || sIdx === 0}
+                    onClick={() => void moveSection(section, -1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.btnSecondary}
+                    disabled={saving || sIdx === sections.length - 1}
+                    onClick={() => void moveSection(section, 1)}
+                  >
+                    ↓
+                  </button>
+                </div>
+              </div>
             ))}
             <div className={localStyles.form}>
               <label>
@@ -212,15 +340,62 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
             ) : (
               <>
                 <div className={styles.panelHeader}>
-                  <h2>{activeSection.title}</h2>
-                  <button
-                    type="button"
-                    className={styles.btnSecondary}
-                    disabled={saving}
-                    onClick={() => void handleDeleteSection(activeSection.id)}
-                  >
-                    Delete section
-                  </button>
+                  {editingSection ? (
+                    <div className={localStyles.form} style={{ flex: 1 }}>
+                      <label>
+                        Section title
+                        <input
+                          value={sectionTitleEdit}
+                          onChange={(e) => setSectionTitleEdit(e.target.value)}
+                        />
+                      </label>
+                      <label>
+                        Description
+                        <input
+                          value={sectionDescEdit}
+                          onChange={(e) => setSectionDescEdit(e.target.value)}
+                        />
+                      </label>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
+                          className={styles.btnPrimary}
+                          disabled={saving}
+                          onClick={() => void saveSectionEdit()}
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.btnSecondary}
+                          onClick={() => setEditingSection(false)}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <h2>{activeSection.title}</h2>
+                  )}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {!editingSection && (
+                      <button
+                        type="button"
+                        className={styles.btnSecondary}
+                        onClick={startEditSection}
+                      >
+                        Edit section
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      className={styles.btnSecondary}
+                      disabled={saving}
+                      onClick={() => void handleDeleteSection(activeSection.id)}
+                    >
+                      Delete section
+                    </button>
+                  </div>
                 </div>
 
                 <div className={localStyles.videoList}>
@@ -229,26 +404,118 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
                   ) : (
                     activeSection.videos.map((video) => (
                       <div key={video.id} className={localStyles.videoRow}>
-                        <span>
-                          {video.title} <span className={styles.muted}>({video.provider})</span>
-                        </span>
-                        <div className={localStyles.rowActions}>
-                          <button
-                            type="button"
-                            className={styles.btnSecondary}
-                            onClick={() => setPreviewVideoId(video.id)}
-                          >
-                            Preview
-                          </button>
-                          <button
-                            type="button"
-                            className={styles.btnSecondary}
-                            disabled={saving}
-                            onClick={() => void handleDeleteVideo(video)}
-                          >
-                            Delete
-                          </button>
-                        </div>
+                        {editingVideoId === video.id ? (
+                          <div className={localStyles.form} style={{ flex: 1 }}>
+                            <label>
+                              Title
+                              <input
+                                value={editVideoTitle}
+                                onChange={(e) => setEditVideoTitle(e.target.value)}
+                              />
+                            </label>
+                            <label>
+                              Description
+                              <input
+                                value={editVideoDesc}
+                                onChange={(e) => setEditVideoDesc(e.target.value)}
+                              />
+                            </label>
+                            <label>
+                              Linked project
+                              <select
+                                value={editVideoLinkedProject}
+                                onChange={(e) => setEditVideoLinkedProject(e.target.value)}
+                              >
+                                <option value="">None</option>
+                                {publishedProjects.map((p) => (
+                                  <option key={p.id} value={p.id}>
+                                    {p.title}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <label>
+                              Move to section
+                              <select
+                                value={editVideoMoveSection}
+                                onChange={(e) => setEditVideoMoveSection(e.target.value)}
+                              >
+                                {sections.map((s) => (
+                                  <option key={s.id} value={s.id}>
+                                    {s.title}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button
+                                type="button"
+                                className={styles.btnPrimary}
+                                disabled={saving}
+                                onClick={() => void saveVideoEdit(video.id)}
+                              >
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.btnSecondary}
+                                onClick={() => setEditingVideoId(null)}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <span>
+                              {video.title}{' '}
+                              <span className={styles.muted}>({video.provider})</span>
+                              {video.linkedProjectTitle && (
+                                <span className={styles.muted}> · → {video.linkedProjectTitle}</span>
+                              )}
+                            </span>
+                            <div className={localStyles.rowActions}>
+                              <button
+                                type="button"
+                                className={styles.btnSecondary}
+                                disabled={saving}
+                                onClick={() => void moveVideo(video, -1)}
+                              >
+                                ↑
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.btnSecondary}
+                                disabled={saving}
+                                onClick={() => void moveVideo(video, 1)}
+                              >
+                                ↓
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.btnSecondary}
+                                onClick={() => startEditVideo(video)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.btnSecondary}
+                                onClick={() => setPreviewVideoId(video.id)}
+                              >
+                                Preview
+                              </button>
+                              <button
+                                type="button"
+                                className={styles.btnSecondary}
+                                disabled={saving}
+                                onClick={() => void handleDeleteVideo(video)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))
                   )}
@@ -311,6 +578,20 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
                       value={videoDuration}
                       onChange={(e) => setVideoDuration(e.target.value)}
                     />
+                  </label>
+                  <label>
+                    Linked project (optional)
+                    <select
+                      value={videoLinkedProjectId}
+                      onChange={(e) => setVideoLinkedProjectId(e.target.value)}
+                    >
+                      <option value="">None</option>
+                      {publishedProjects.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.title}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                   <button
                     type="button"

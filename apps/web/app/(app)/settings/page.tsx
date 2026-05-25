@@ -585,16 +585,14 @@ function NotificationsTab() {
             </>
           ) : (
             <>
-              Add your Gmail here — GitHub sign-in email alone may not deliver mail if it is
-              hidden or a <code>@users.noreply.github.com</code> address.
+              Add your Gmail here — GitHub sign-in email alone may not deliver mail if it is hidden
+              or a <code>@users.noreply.github.com</code> address.
             </>
           )}
         </p>
       </div>
 
-      {error ? (
-        <p style={{ fontSize: 13, color: '#f87171', marginBottom: 12 }}>{error}</p>
-      ) : null}
+      {error ? <p style={{ fontSize: 13, color: '#f87171', marginBottom: 12 }}>{error}</p> : null}
 
       {loading ? (
         <p style={{ fontSize: 13, color: 'var(--text-soft)' }}>Loading preferences…</p>

@@ -79,7 +79,7 @@ export default function CourseAssignmentsPage() {
   return (
     <div className={styles.page}>
       <header className={styles.breadcrumb}>
-        <Link href={`/catalog/${courseId}`}>← Back to course</Link>
+        <Link href={`/catalog/${courseId}`}>← Course home</Link>
       </header>
       <h1 className={styles.title}>Assignments</h1>
 
