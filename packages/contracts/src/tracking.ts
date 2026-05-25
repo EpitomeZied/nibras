@@ -48,6 +48,7 @@ export const TrackingCourseSummarySchema = z.object({
   termLabel: z.string().min(1),
   courseCode: z.string().min(1),
   isActive: z.boolean(),
+  isPublic: z.boolean().optional(),
 });
 
 export const TrackingMembershipSchema = z.object({

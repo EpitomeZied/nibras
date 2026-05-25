@@ -15,6 +15,7 @@ export const TrackingCourseDetailSchema = z.object({
   termLabel: z.string().min(1),
   courseCode: z.string().min(1),
   isActive: z.boolean(),
+  isPublic: z.boolean().optional(),
   description: z.string().optional(),
   thumbnailUrl: z.string().nullable().optional(),
   syllabusJson: CourseSyllabusSchema.nullable().optional(),
@@ -34,6 +35,7 @@ export const UpdateCourseProfileRequestSchema = z.object({
   thumbnailUrl: z.string().url().nullable().optional(),
   syllabusJson: CourseSyllabusSchema.nullable().optional(),
   sequentialVideos: z.boolean().optional(),
+  isPublic: z.boolean().optional(),
 });
 
 export const CourseGradesRollupSchema = z.object({

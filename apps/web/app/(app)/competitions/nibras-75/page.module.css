@@ -397,9 +397,36 @@
   text-decoration: none;
 }
 
-.linkBtn:hover {
+.linkBtn:hover:not(:disabled) {
   border-color: var(--primary, #22c55e);
   color: var(--primary, #22c55e);
+}
+
+.linkBtnDisabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.forkBtnContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.forkBtnIcon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+
+.comingSoonBadge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--text-muted) 18%, transparent);
+  color: var(--text-muted);
 }
 
 .linkInput {

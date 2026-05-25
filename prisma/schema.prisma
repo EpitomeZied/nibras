@@ -255,6 +255,7 @@ model Course {
   thumbnailUrl     String?
   syllabusJson     Json?
   sequentialVideos Boolean            @default(false)
+  isPublic         Boolean            @default(false)
   isActive         Boolean            @default(true)
   deletedAt        DateTime?
   createdAt        DateTime           @default(now())
