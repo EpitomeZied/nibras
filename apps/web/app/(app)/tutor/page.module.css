@@ -264,6 +264,13 @@
   cursor: pointer;
 }
 
+.errorBannerLink {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .chatContainer {
   flex: 1;
   display: flex;

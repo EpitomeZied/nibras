@@ -654,10 +654,7 @@ export default function CompetitionsPage() {
                   ) : null}
                   <p className={styles.featureHighlight}>
                     +
-                    {(
-                      verifyResult?.auraEarned ??
-                      (verifyResult?.rating ?? 0) * 2
-                    ).toLocaleString()}{' '}
+                    {(verifyResult?.auraEarned ?? (verifyResult?.rating ?? 0) * 2).toLocaleString()}{' '}
                     Aura added to your reputation
                   </p>
                 </div>

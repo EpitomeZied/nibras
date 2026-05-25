@@ -1,7 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import CliSetupGuideControls, {
+  type CliGuideViewMode,
+} from '../../../_components/cli-setup-guide-controls';
 import CliCodeBlock from '../../_components/cli-code-block';
 import TerminalMockup, { type TerminalLine } from '../../_components/terminal-mockup';
 import { useSession } from '../../_components/session-context';
@@ -22,7 +25,7 @@ import styles from './page.module.css';
 type OS = 'mac' | 'linux' | 'windows';
 type WindowsShell = 'powershell' | 'gitbash';
 type CompletionState = Record<string, boolean>;
-type ViewMode = 'instructor' | 'student';
+type ViewMode = CliGuideViewMode;
 
 type CommandReferenceItem = {
   command: string;
@@ -912,10 +915,27 @@ export default function OnboardingPage() {
       false);
 
   const [viewMode, setViewMode] = useState<ViewMode>('instructor');
+
+  const setViewModeWithUrl = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('mode', mode);
+    window.history.replaceState(null, '', url.toString());
+  }, []);
+
   useEffect(() => {
-    if (user) setViewMode(isInstructor ? 'instructor' : 'student');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!user]);
+    if (!user) return;
+    const fromUrl =
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('mode')
+        : null;
+    if (fromUrl === 'student' || fromUrl === 'instructor') {
+      if (isInstructor || fromUrl === 'student') setViewMode(fromUrl);
+      return;
+    }
+    setViewMode(isInstructor ? 'instructor' : 'student');
+  }, [user, isInstructor]);
 
   // Derived steps and count for current mode
   const STEPS = getSteps(viewMode);
@@ -1105,40 +1125,17 @@ export default function OnboardingPage() {
         <div className={`${styles.hero} ${allDone ? styles.heroDone : ''}`}>
           {/* Radial glow backdrop */}
           <div className={styles.heroGlow} aria-hidden="true" />
-          <div className={styles.heroTopRow}>
-            <div className={styles.heroBadge}>
-              {allDone ? '🎉 Setup complete' : 'CLI Setup Guide'}
-            </div>
-            {completedCount > 0 && !allDone && (
-              <div className={styles.heroProgressPill}>
-                {completedCount}/{TOTAL_STEPS} steps done
-              </div>
-            )}
-            {isInstructor ? (
-              <div className={styles.viewModeTabs}>
-                <button
-                  type="button"
-                  className={`${styles.viewModeTab} ${viewMode === 'instructor' ? styles.viewModeTabActive : ''}`}
-                  onClick={() => setViewMode('instructor')}
-                >
-                  🎓 Instructor
-                </button>
-                <button
-                  type="button"
-                  className={`${styles.viewModeTab} ${viewMode === 'student' ? styles.viewModeTabActive : ''}`}
-                  onClick={() => setViewMode('student')}
-                >
-                  👨‍💻 Student
-                </button>
-              </div>
-            ) : (
-              <div className={styles.viewModeTabs}>
-                <span className={`${styles.viewModeTab} ${styles.viewModeTabActive}`}>
-                  👨‍💻 Student guide
-                </span>
-              </div>
-            )}
-          </div>
+          <CliSetupGuideControls
+            className={styles.heroTopRow}
+            badgeLabel={allDone ? 'Setup complete' : 'CLI Setup Guide'}
+            badgeDone={allDone}
+            progressLabel={
+              completedCount > 0 && !allDone ? `${completedCount}/${TOTAL_STEPS} steps done` : null
+            }
+            viewMode={viewMode}
+            onViewModeChange={isInstructor ? setViewModeWithUrl : undefined}
+            showViewSwitch={isInstructor}
+          />
           <h1 className={styles.heroTitle}>
             {allDone ? "You're all set" : 'Get the Nibras CLI running'}
           </h1>

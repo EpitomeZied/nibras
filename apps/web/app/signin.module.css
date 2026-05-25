@@ -1050,6 +1050,12 @@
 
 /* ── CLI showcase ───────────────────────────────────────────────────────────── */
 
+.cliGuideControls {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto 28px;
+}
+
 .cliShowcase {
   display: grid;
   grid-template-columns: 1fr 340px;

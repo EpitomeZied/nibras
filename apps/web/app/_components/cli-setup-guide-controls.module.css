@@ -1,0 +1,110 @@
+/* CLI Setup Guide badge + instructor/student switch (landing + onboarding) */
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.rowStart {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #4ade80;
+  background: rgba(15, 46, 28, 0.95);
+  border: 1px solid rgba(74, 222, 128, 0.42);
+  border-radius: 999px;
+  padding: 6px 14px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.badgeDone {
+  color: #86efac;
+  border-color: rgba(134, 239, 172, 0.45);
+}
+
+.progressPill {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #4ade80;
+  background: rgba(15, 46, 28, 0.7);
+  border: 1px solid rgba(74, 222, 128, 0.28);
+  border-radius: 999px;
+  padding: 5px 12px;
+  white-space: nowrap;
+}
+
+.viewSwitch {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+  flex-shrink: 0;
+}
+
+.viewSegment {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border: none;
+  background: rgba(161, 161, 170, 0.22);
+  color: #3f3f46;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.viewSegment + .viewSegment {
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.viewSegment:hover:not(.viewSegmentActive):not(:disabled) {
+  background: rgba(228, 228, 231, 0.35);
+}
+
+.viewSegmentActive {
+  background: #ffffff;
+  color: #18181b;
+  cursor: default;
+}
+
+.viewSegment:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
+.viewSegmentIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: inherit;
+}
+
+.viewSegmentStatic {
+  cursor: default;
+}

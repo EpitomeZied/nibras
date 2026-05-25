@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './page.module.css';
 import ChatPanel, { type ChatMessage } from '../_components/widgets/ChatPanel';
@@ -414,7 +415,17 @@ export default function TutorPage() {
 
         {error && (
           <div className={styles.errorBanner}>
-            <span>{error}</span>
+            <span>
+              {error}
+              {error.includes('AI Integration') && (
+                <>
+                  {' '}
+                  <Link href="/settings" className={styles.errorBannerLink}>
+                    Open Settings
+                  </Link>
+                </>
+              )}
+            </span>
             <button type="button" onClick={() => setError(null)}>
               Dismiss
             </button>

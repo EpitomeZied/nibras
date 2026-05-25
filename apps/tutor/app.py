@@ -60,6 +60,23 @@ def openai_client_for_request(body: dict) -> tuple[OpenAI, str]:
         return OpenAI(api_key=api_key, base_url=OPENAI_BASE_URL), model
     return client, CHAT_MODEL
 
+
+def request_uses_personal_api_key(body: dict) -> bool:
+    return bool((body.get("api_key") or "").strip())
+
+
+def openai_key_error_message(*, using_personal_key: bool) -> str:
+    if using_personal_key:
+        return (
+            "Hassona cannot reach OpenAI — your API key is invalid or expired. "
+            "Open Settings → AI Integration, enter a valid OpenAI API key, and save."
+        )
+    return (
+        "Hassona cannot reach OpenAI. Add your OpenAI API key in "
+        "Settings → AI Integration (recommended), or contact your administrator "
+        "if the platform tutor key is misconfigured."
+    )
+
 # ── CS Keywords ──────────────────────────────────────────────────────────────
 CS_KEYWORDS = {
     "ecir", "cissp", "ceh", "security+", "oscp", "gcih", "gpen", "elearnsecurity",
@@ -870,6 +887,7 @@ def generate_ai_answer(
     *,
     oai_client: OpenAI | None = None,
     model: str | None = None,
+    using_personal_key: bool = False,
 ) -> dict:
     try:
         active_client = oai_client or client
@@ -928,11 +946,7 @@ def generate_ai_answer(
         if "401" in err or "invalid_api_key" in err or "incorrect api key" in err:
             return {
                 "status": "error",
-                "message": (
-                    "Hassona cannot reach OpenAI — the API key on the tutor service is "
-                    "invalid or expired. Update the openai-api-key secret on Azure "
-                    "(nibras-chatbot-v1) and restart the app."
-                ),
+                "message": openai_key_error_message(using_personal_key=using_personal_key),
             }
         return {"status": "error", "message": "AI generation failed. Please retry."}
 
@@ -978,6 +992,7 @@ def ask():
         history=history,
         oai_client=oai_client,
         model=chat_model,
+        using_personal_key=request_uses_personal_api_key(body),
     )
     if ai_response["status"] == "error":
         return jsonify({"type": "error", "message": ai_response["message"]}), 503
@@ -1038,7 +1053,13 @@ def answer_question():
     if not question_id or not question:
         return jsonify({"error": "id and question required"}), 400
 
-    ai = generate_ai_answer(question)
+    oai_client, chat_model = openai_client_for_request(body)
+    ai = generate_ai_answer(
+        question,
+        oai_client=oai_client,
+        model=chat_model,
+        using_personal_key=request_uses_personal_api_key(body),
+    )
     if ai["status"] == "error":
         return jsonify({"type": "error", "message": ai["message"]}), 503
     if ai["status"] != "ok":
@@ -1052,11 +1073,18 @@ def answer_question():
 @app.route("/api/generate-for-matched", methods=["POST"])
 @limiter.limit("20 per minute")
 def generate_for_matched():
-    question = (request.get_json(silent=True) or {}).get("question", "").strip()
+    body = request.get_json(silent=True) or {}
+    question = body.get("question", "").strip()
     if not question:
         return jsonify({"error": "question required"}), 400
 
-    ai = generate_ai_answer(question)
+    oai_client, chat_model = openai_client_for_request(body)
+    ai = generate_ai_answer(
+        question,
+        oai_client=oai_client,
+        model=chat_model,
+        using_personal_key=request_uses_personal_api_key(body),
+    )
     if ai["status"] == "ok":
         ai["tags"] = correct_tags(question, ai["tags"])
         return jsonify({"type": "generated", "data": ai})
