@@ -6,6 +6,7 @@ import {
 import {
   BADGE_BY_CODE,
   BADGE_CATALOG,
+  badgeSeedToDefinition,
   computeLevel,
   progressForMetric,
   type UserMetrics,
@@ -91,18 +92,11 @@ export class GamificationService {
 
   async ensureBadgeCatalog(): Promise<void> {
     for (const badge of BADGE_CATALOG) {
+      const data = badgeSeedToDefinition(badge);
       await this.prisma.badgeDefinition.upsert({
         where: { code: badge.code },
-        create: badge,
-        update: {
-          name: badge.name,
-          description: badge.description,
-          rarity: badge.rarity,
-          category: badge.category,
-          threshold: badge.threshold,
-          points: badge.points,
-          sortOrder: badge.sortOrder,
-        },
+        create: data,
+        update: data,
       });
     }
   }
@@ -216,6 +210,7 @@ export class GamificationService {
   }
 
   async getAchievementsDashboard(userId: string): Promise<AchievementsDashboardDto> {
+    await this.ensureBadgeCatalog();
     await this.reputation.syncReputationFromActivity(userId, { force: true });
     const newlyAwarded = await this.checkAndAwardBadges(userId, { skipSync: true });
     const [badges, reputation] = await Promise.all([
@@ -229,6 +224,7 @@ export class GamificationService {
     userId: string,
     opts?: { skipSync?: boolean }
   ): Promise<BadgeDto[]> {
+    await this.ensureBadgeCatalog();
     if (!opts?.skipSync) {
       await this.reputation.syncReputationFromActivity(userId, { force: true });
     }

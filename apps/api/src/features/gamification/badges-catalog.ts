@@ -713,6 +713,20 @@ const BOOLEAN_METRICS = new Set<BadgeMetric>(['githubLinked', 'githubAppInstalle
 
 export const BADGE_BY_CODE = new Map(BADGE_CATALOG.map((b) => [b.code, b]));
 
+/** Prisma row fields only (BadgeSeed.metric is runtime-only). */
+export function badgeSeedToDefinition(badge: BadgeSeed) {
+  return {
+    code: badge.code,
+    name: badge.name,
+    description: badge.description,
+    rarity: badge.rarity,
+    category: badge.category,
+    threshold: badge.threshold,
+    points: badge.points,
+    sortOrder: badge.sortOrder,
+  };
+}
+
 export function progressForMetric(metric: BadgeMetric, metrics: UserMetrics): number {
   const value = metrics[metric];
   if (BOOLEAN_METRICS.has(metric)) return value ? 1 : 0;

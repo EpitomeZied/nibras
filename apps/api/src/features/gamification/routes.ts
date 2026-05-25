@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { requireUser } from '../../lib/auth';
 import { AppStore } from '../../store';
+import { BADGE_CATALOG } from './badges-catalog';
 import { GamificationService } from './service';
 
 export function registerGamificationRoutes(
@@ -10,6 +11,15 @@ export function registerGamificationRoutes(
   prisma: PrismaClient
 ): void {
   const gamification = new GamificationService(prisma);
+
+  app.addHook('onReady', async () => {
+    try {
+      await gamification.ensureBadgeCatalog();
+      app.log.info(`Badge catalog synced (${BADGE_CATALOG.length} definitions)`);
+    } catch (err) {
+      app.log.error({ err }, 'Failed to sync badge catalog on startup');
+    }
+  });
 
   app.get(
     '/v1/gamification/achievements-dashboard',
