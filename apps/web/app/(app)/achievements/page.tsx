@@ -70,7 +70,8 @@ export default function AchievementsPage() {
   }, []);
 
   useEffect(() => {
-    void load();
+    clearAchievementsDashboardCache();
+    void load(true);
   }, [load]);
 
   if (loading) {

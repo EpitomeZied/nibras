@@ -58,7 +58,7 @@ export type AchievementsDashboard = {
   newlyAwarded: Badge[];
 };
 
-const DASHBOARD_CACHE_MS = 60_000;
+const DASHBOARD_CACHE_MS = 15_000;
 let dashboardCache: { data: AchievementsDashboard; at: number } | null = null;
 
 export function clearAchievementsDashboardCache(): void {
