@@ -14,6 +14,7 @@
 - [Overview](#overview)
 - [Key Features](#key-features)
 - [Architecture](#architecture)
+- [System Design](#system-design)
 - [Quick Start](#quick-start)
   - [Local Development](#local-development)
   - [CLI Installation](#cli-installation)
@@ -59,36 +60,43 @@ Nibras is a modern, full-stack course operations platform built specifically for
 ✅ **Local Testing** — Run tests locally before submission with guaranteed environment consistency  
 ✅ **Smart Submissions** — Automatic file staging, commit creation, and push to GitHub  
 ✅ **Real-time Status** — Live submission status updates and verification results  
-✅ **Project Discovery** — List and filter enrolled courses and projects
+✅ **Public Course Discovery** — Explore and enroll in public courses, with role-based onboarding for students and instructors  
+✅ **GitHub Integration** — Seamless avatar sync and linked account support for personalized profiles
 
 ### Instructor Experience
 
-✅ **Course Management** — Create and configure courses, projects, and milestones  
+✅ **Course Management** — Create and configure courses, projects, and milestones with public visibility controls  
 ✅ **Submission Tracking** — View all submissions with detailed metadata and status filters  
 ✅ **Code Review Interface** — In-app code review with diff viewing and commenting  
 ✅ **Analytics Dashboard** — Per-course submission metrics, milestone progress, and student activity  
 ✅ **Bulk Operations** — Retry failed submissions, update grades, export results  
-✅ **Notifications** — In-app and email notifications for review-ready and graded work
+✅ **Community Management** — Administer Q&A tags, manage community content (admin-restricted)  
+✅ **Notifications** — In-app and email notifications for review-ready and graded work  
+✅ **Competition Insights** — Track competitions with account verification and linked account synchronization
 
 ### Platform Features
 
-✅ **Optional AI Grading** — Semantic grading with configurable confidence thresholds  
+✅ **Multi-Provider AI Grading** — OpenAI, Anthropic, Gemini, OpenRouter, Poe support with semantic grading and confidence thresholds  
+✅ **Personal AI Credentials** — Secure BYOK (Bring Your Own Key) management with encryption key validation  
+✅ **Encryption Key Management** — Azure and local key support with environment validation (`setup-azure-encryption-key.sh`)  
 ✅ **Notification System** — In-app notifications, email alerts, and preference controls  
 ✅ **Audit Logging** — Complete audit trail of all platform operations  
 ✅ **Job Queue** — Redis-backed BullMQ for instant job dispatch (with DB-polling fallback)  
 ✅ **SSE Streams** — Live submission updates via Server-Sent Events  
 ✅ **Multi-Course Support** — Isolated courses with independent project configurations
+✅ **Gamification & Reputation** — Badge system, leaderboards, and linked account aura synchronization  
+✅ **Competitions** — Built-in competition framework with account verification and analytics
 
-### System Updates (Latest)
+### Latest Enhancements (v1.0.2)
 
-- **CLI Improvements**: `nibras list`, `nibras status`, and `nibras submit --milestone <slug>` fully integrated
-- **Live Submission UX**: Web app streams submission state via SSE for real-time updates
-- **Analytics**: Per-course student analytics and instructor class-wide milestone tracking
-- **Notifications**: Built-in notification preferences, unread counts, and per-type controls
-- **Admin Operations**: Audit log browsing, bulk submission retry, enhanced review tooling
-- **Submission Control**: Cancelled submissions tracked and queryable by status
-- **Job Dispatch**: Redis/BullMQ for instant processing with graceful DB polling fallback
-- **Grading Intelligence**: AI confidence thresholds push work to `needs_review` with automatic instructor notification
+- **AI Integration Suite**: Multi-provider support (OpenAI, Anthropic, Gemini, OpenRouter, Poe) with personal credential management and encryption key validation
+- **Reputation & Aura System**: Linked account synchronization with enhanced reputation history and competitive leaderboards
+- **Dual-Mode Onboarding**: Role-based onboarding flows for instructors and students with step-by-step guidance
+- **Community Features**: Admin-restricted tag management, Q&A moderation, and community content curation
+- **Enhanced Course Access**: Public course visibility, enrollment workflows, and role-based access controls
+- **Gamification Expansion**: Badge catalog, points system, and leaderboards with account verification
+- **CLI Refactoring**: Cleaner integration, removed setup guide controls for improved UX
+- **Avatar & Profile Sync**: GitHub integration for seamless user profile updates and avatar synchronization
 
 ---
 
@@ -199,6 +207,168 @@ Nibras is a modern, full-stack course operations platform built specifically for
 6. Instructor reviews and approves/corrects grade
 7. Final grade stored and exported
 ```
+
+### AI Integration Architecture
+
+Nibras supports **multi-provider AI grading** with secure credential management:
+
+| Provider          | Supported | BYOK Support | Config Variable              |
+| ----------------- | --------- | ------------ | ---------------------------- |
+| OpenAI            | ✅        | ✅           | `NIBRAS_AI_BASE_URL`, token  |
+| Anthropic         | ✅        | ✅           | Compatible with OpenAI API   |
+| Gemini            | ✅        | ✅           | OpenAI-compatible endpoint   |
+| OpenRouter        | ✅        | ✅           | Unified API gateway          |
+| Poe               | ✅        | ✅           | Custom integration           |
+
+**Encryption & Key Management:**
+- Personal AI credentials stored encrypted in database (`apps/api/src/features/ai-credentials/`)
+- Encryption key validation via environment (`NIBRAS_ENCRYPTION_KEY`)
+- Azure Key Vault support via `setup-azure-encryption-key.sh` script
+- Credentials never exposed in logs or API responses
+
+**Grading Pipeline:**
+- Worker calls AI provider with submission content
+- Confidence threshold (`NIBRAS_AI_MIN_CONFIDENCE`) determines auto-pass vs. review
+- Failed API calls gracefully degrade to `needs_review` status
+- Retry logic with exponential backoff for transient failures
+
+### Reputation & Gamification Engine
+
+**Reputation System:**
+- User reputation tracked across submissions, reviews, and community activity
+- Linked account aura synchronization: reputation aggregates across verified connected accounts
+- Real-time reputation updates reflected in instructor dashboards and student leaderboards
+
+**Gamification Components:**
+- **Badges**: Earned via milestones (first submission, perfect scores, peer reviews, etc.)
+- **Leaderboards**: Course-level and global rankings by reputation, submission velocity, accuracy
+- **Points System**: Configurable per-course point awards for submissions, reviews, and achievements
+- **Account Verification**: Linked accounts (GitHub, social) increase reputation multiplier
+
+Implementation: `apps/api/src/features/gamification/` and `apps/api/src/features/reputation/`
+
+### Community & Competition System
+
+**Community Features:**
+- **Q&A System**: Question posting, community answers, instructor-marked solutions
+- **Tag Management**: Admin-restricted tag creation and curation for organizing discussions
+- **Moderation**: Flag system for inappropriate content, admin review queue
+
+**Competitions:**
+- Time-limited coding challenges with leaderboards
+- Account verification ensures fair play
+- Linked account aura affects ranking (encourages authentic participation)
+- Real-time submission tracking and score updates via SSE
+
+Implementation: `apps/api/src/features/community/` and `apps/api/src/features/competitions/`
+
+### Job Processing Pipeline
+
+**Async Job Queue:**
+- **Primary**: Redis-backed BullMQ for instant job dispatch
+- **Fallback**: Database polling (when Redis unavailable)
+- Configurable concurrency (`WORKER_CONCURRENCY`), retry logic, and timeout handling
+
+**Job Types:**
+1. **Verification**: Run tests, check submission format, store results
+2. **Grading**: Call AI provider, store semantic grades, update reputation
+3. **Notifications**: Email dispatch for submission status, review requests, grade updates
+4. **Analytics**: Aggregate metrics, update leaderboards, sync aura across linked accounts
+
+**Monitoring:**
+- Health check endpoint: `GET /healthz`
+- Prometheus metrics: job counts, success/failure rates, processing duration
+- Optional Sentry integration for error tracking and alerting
+
+---
+
+## System Design
+
+### Architectural Patterns
+
+**Async Job Queue Pattern**
+- All long-running operations (test verification, AI grading, email dispatch) are processed asynchronously via BullMQ or database polling
+- Immediate response to client; status updates streamed via SSE
+- Graceful degradation: if Redis is unavailable, jobs queue in database and are polled at configurable intervals
+
+**Event-Driven Architecture**
+- Webhook events from GitHub trigger submission creation and GitHub status updates
+- Job completion events trigger downstream notifications and leaderboard updates
+- SSE streams broadcast real-time updates to instructor dashboards
+
+**Circuit Breaker Pattern**
+- External API calls (GitHub, AI providers, email service) wrapped with timeout and retry logic
+- If failure rate exceeds threshold, circuit opens and falls back to safe state (e.g., marking as needs_review)
+- Prevents cascading failures and system overload
+
+### Data Model Principles
+
+**Prisma ORM & PostgreSQL:**
+- Schema-first design with type-safe migrations
+- Enums for workflow states (e.g., `SubmissionStatus`: queued, verifying, verified, graded, needs_review, cancelled)
+- Indexes on frequently queried columns (user_id, project_id, status, created_at)
+- Soft deletes for audit compliance; hard deletion only after retention period
+
+**Entity Relationships:**
+- User (account holder, role = student/instructor/admin)
+- Course (scope for projects, enrollments, analytics)
+- Project (assignment configuration, test suite, grading rules)
+- Submission (student work, linked to GitHub repo and test results)
+- Reputation (aggregated scores, linked accounts, earned badges)
+
+### Security Design
+
+**Encryption:**
+- User credentials (GitHub tokens) encrypted at rest using AES-256-GCM
+- Encryption key sourced from environment (`NIBRAS_ENCRYPTION_KEY`) or Azure Key Vault
+- Personal AI credentials stored encrypted; never logged or exposed in API responses
+
+**Authentication & Authorization:**
+- GitHub OAuth 2.0 device flow for CLI (no credentials stored locally in plaintext)
+- Session tokens with expiration and refresh token rotation
+- Role-based access control (RBAC): student, instructor, admin with feature gates
+- Audit logging of all sensitive operations (user creation, permission changes, grade updates)
+
+**API Security:**
+- CORS restricted to whitelisted origins
+- Rate limiting per endpoint and per IP
+- HMAC-SHA256 signing for GitHub webhook validation
+- HTTPS enforced in production
+
+### Scalability Considerations
+
+**Horizontal Scaling:**
+- **API**: Stateless Fastify servers behind load balancer (L7 with sticky sessions for SSE)
+- **Worker**: Multiple instances consume from shared job queue (Redis or database)
+- **Database**: Connection pooling via Prisma; read replicas for analytics queries (not yet implemented, but planned)
+
+**Performance Optimization:**
+- Database query optimization: indexes on (user_id, project_id, status), (course_id, created_at), etc.
+- Redis caching for frequent lookups (user profiles, course configs, badge definitions)
+- Pagination enforced for list endpoints (max 100 items per page)
+- Compression enabled for API responses
+
+**Job Queue Tuning:**
+- Configurable concurrency per job type (`WORKER_CONCURRENCY`)
+- Priority queue: verification jobs prioritized over grading and notifications
+- Automatic retry with exponential backoff; manual retry via UI for failed jobs
+
+### Extensibility
+
+**Plugin Architecture for AI Providers:**
+- AI grading abstracted via `@nibras/grading` package with OpenAI-compatible interface
+- New providers added by implementing standard API contract
+- User can select provider and configure credentials per-course or globally
+
+**Community & Gamification Modules:**
+- Badge definitions configurable in database; award logic in worker
+- Tag system allows instructor customization for course-specific categories
+- Leaderboard queries templated; easy to add new ranking criteria (e.g., by language, by milestone)
+
+**Custom Workflows:**
+- Project submission rules (allowed files, forbidden files, required structure) defined in `.nibras/project.json`
+- Custom test suites supported; worker executes and logs results
+- Grading rubrics configurable per project with point allocations
 
 ---
 
