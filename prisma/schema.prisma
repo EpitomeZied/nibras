@@ -193,6 +193,8 @@ model User {
   id                String             @id @default(cuid())
   username          String             @unique
   email             String             @unique
+  emailVerified     Boolean            @default(false)
+  image             String?
   /// User-chosen display name shown in the UI (falls back to username when unset).
   displayName       String?
   /// Optional inbox for transactional email (e.g. Gmail). When set, used instead of account email.
@@ -243,9 +245,61 @@ model User {
   videoProgress            VideoProgress[]
   assignmentSubmissions    AssignmentSubmission[]
   aiCredential             UserAiCredential?
+  authSessions             AuthSession[]
+  authAccounts             AuthAccount[]
 
   @@index([systemRole])
   @@index([yearLevel])
+}
+
+/// Better Auth session store (separate from WebSession / CliSession).
+model AuthSession {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_session")
+}
+
+/// Better Auth linked OAuth / credential accounts.
+model AuthAccount {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("auth_account")
+}
+
+/// Better Auth verification tokens (magic link, etc.).
+model AuthVerification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("auth_verification")
 }
 
 model Course {
