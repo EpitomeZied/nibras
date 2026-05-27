@@ -571,6 +571,7 @@ export default function HomePage() {
             </div>
             <div className={styles.footerCol}>
               <span className={styles.footerColTitle}>Developers</span>
+              <Link href="/docs">Documentation</Link>
               <a href="/instructor/onboarding">CLI Setup Guide</a>
               <a href="https://github.com/nibras-platform/nibras" target="_blank" rel="noreferrer">
                 GitHub
