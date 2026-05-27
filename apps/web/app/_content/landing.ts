@@ -299,6 +299,7 @@ export const landingNavLinks = [
   ...featureGroups.map((g) => ({ href: `#${g.id}`, label: g.navLabel })),
   { href: '#how-it-works', label: 'How it works' },
   { href: '#cli', label: 'CLI' },
+  { href: '/changelog', label: 'Changelog' },
 ] as const;
 
 export const cliFeatures = [

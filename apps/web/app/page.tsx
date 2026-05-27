@@ -61,6 +61,29 @@ function FeatureCard({ icon, title, desc }: { icon: ReactNode; title: string; de
   );
 }
 
+function LandingNavAnchor({
+  href,
+  label,
+  className,
+}: {
+  href: string;
+  label: string;
+  className?: string;
+}) {
+  if (href.startsWith('#')) {
+    return (
+      <a href={href} className={className}>
+        {label}
+      </a>
+    );
+  }
+  return (
+    <Link href={href} className={className}>
+      {label}
+    </Link>
+  );
+}
+
 export default function HomePage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -113,9 +136,12 @@ export default function HomePage() {
         </div>
         <div className={styles.navLinks}>
           {landingNavLinks.map((link) => (
-            <a key={link.href} href={link.href} className={styles.navLinkSub}>
-              {link.label}
-            </a>
+            <LandingNavAnchor
+              key={link.href}
+              href={link.href}
+              label={link.label}
+              className={styles.navLinkSub}
+            />
           ))}
           <a
             href="https://github.com/EpitomeZied/nibras"
@@ -169,6 +195,11 @@ export default function HomePage() {
             <li key={item}>{item}</li>
           ))}
         </ul>
+        <p className={styles.whatsNewLinkWrap}>
+          <Link href="/changelog" className={styles.whatsNewLink}>
+            View full changelog →
+          </Link>
+        </p>
 
         <div className={styles.heroCtas}>
           <button
@@ -535,9 +566,7 @@ export default function HomePage() {
             <div className={styles.footerCol}>
               <span className={styles.footerColTitle}>Product</span>
               {landingNavLinks.map((link) => (
-                <a key={link.href} href={link.href}>
-                  {link.label}
-                </a>
+                <LandingNavAnchor key={link.href} href={link.href} label={link.label} />
               ))}
             </div>
             <div className={styles.footerCol}>
