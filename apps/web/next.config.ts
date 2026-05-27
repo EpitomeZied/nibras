@@ -73,7 +73,7 @@ const securityHeaders = [
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
-      'frame-src https://www.youtube-nocookie.com https://www.youtube.com',
+      'frame-src https://www.youtube-nocookie.com https://www.youtube.com https://player.bilibili.com',
       "frame-ancestors 'none'",
     ].join('; '),
   },

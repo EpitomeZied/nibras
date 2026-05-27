@@ -36,16 +36,70 @@ type VideoRow = {
   linkedProject?: { id: string; name: string } | null;
 };
 
+const YOUTUBE_ID_RE = /^[\w-]{11}$/;
+
+/** Accept bare IDs or common YouTube URL shapes pasted into externalId. */
+export function normalizeYouTubeExternalId(input: string): string | null {
+  const raw = input.trim();
+  if (!raw) return null;
+  if (YOUTUBE_ID_RE.test(raw)) return raw;
+
+  try {
+    const url = raw.includes('://') ? new URL(raw) : new URL(`https://${raw}`);
+    const host = url.hostname.replace(/^www\./, '');
+    if (host === 'youtu.be') {
+      const id = url.pathname.slice(1).split('/')[0];
+      return id && YOUTUBE_ID_RE.test(id) ? id : null;
+    }
+    if (host === 'youtube.com' || host === 'm.youtube.com') {
+      if (url.pathname === '/watch') {
+        const v = url.searchParams.get('v');
+        return v && YOUTUBE_ID_RE.test(v) ? v : null;
+      }
+      const pathId = url.pathname.match(/^\/(?:embed|shorts|live)\/([\w-]{11})/)?.[1];
+      if (pathId) return pathId;
+    }
+  } catch {
+    /* not a URL */
+  }
+
+  const fromQuery = raw.match(/(?:^|[?&])v=([\w-]{11})/)?.[1];
+  return fromQuery && YOUTUBE_ID_RE.test(fromQuery) ? fromQuery : null;
+}
+
+/** Accept bare BV ids or Bilibili page URLs pasted into externalId. */
+export function normalizeBilibiliExternalId(input: string): string | null {
+  const raw = input.trim();
+  if (!raw) return null;
+  const fromUrl = raw.match(/(BV[0-9A-Za-z]+)/i);
+  if (fromUrl) return fromUrl[1];
+  return /^BV[0-9A-Za-z]+$/i.test(raw) ? raw : null;
+}
+
+function normalizeExternalId(
+  provider: VideoProvider,
+  externalId: string | null | undefined
+): string | null {
+  if (!externalId?.trim()) return null;
+  if (provider === 'youtube') return normalizeYouTubeExternalId(externalId);
+  if (provider === 'bilibili') return normalizeBilibiliExternalId(externalId);
+  return externalId.trim();
+}
+
 export function resolvePlaybackUrl(video: {
   provider: VideoProvider;
   externalId: string | null;
   embedUrl: string | null;
 }): string {
   if (video.provider === 'youtube' && video.externalId) {
-    return `https://www.youtube.com/embed/${video.externalId}`;
+    const id = normalizeYouTubeExternalId(video.externalId);
+    if (id) return `https://www.youtube-nocookie.com/embed/${id}`;
   }
   if (video.provider === 'bilibili' && video.externalId) {
-    return `https://player.bilibili.com/player.html?bvid=${video.externalId}&high_quality=1`;
+    const bvid = normalizeBilibiliExternalId(video.externalId);
+    if (bvid) {
+      return `https://player.bilibili.com/player.html?bvid=${bvid}&high_quality=1`;
+    }
   }
   return video.embedUrl ?? '';
 }
@@ -55,7 +109,8 @@ function resolveThumbnailUrl(video: {
   externalId: string | null;
 }): string | undefined {
   if (video.provider === 'youtube' && video.externalId) {
-    return `https://img.youtube.com/vi/${video.externalId}/hqdefault.jpg`;
+    const id = normalizeYouTubeExternalId(video.externalId);
+    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
   }
   return undefined;
 }
@@ -333,7 +388,19 @@ export function registerCourseVideoRoutes(
         return;
       }
       const body = CreateCourseVideoRequestSchema.parse(request.body ?? {});
-      const validationError = validateVideoPayload(body);
+      const normalizedExternalId = normalizeExternalId(body.provider, body.externalId);
+      if (
+        (body.provider === 'youtube' || body.provider === 'bilibili') &&
+        body.externalId?.trim() &&
+        !normalizedExternalId
+      ) {
+        reply.code(400).send(Errors.validation(`Invalid ${body.provider} video id or URL`));
+        return;
+      }
+      const validationError = validateVideoPayload({
+        ...body,
+        externalId: normalizedExternalId,
+      });
       if (validationError) {
         reply.code(400).send(Errors.validation(validationError));
         return;
@@ -359,7 +426,7 @@ export function registerCourseVideoRoutes(
           title: body.title,
           description: body.description,
           provider: body.provider,
-          externalId: body.externalId?.trim() || null,
+          externalId: normalizedExternalId,
           embedUrl: body.embedUrl?.trim() || null,
           durationSeconds: body.durationSeconds ?? null,
           sortOrder,
@@ -398,10 +465,21 @@ export function registerCourseVideoRoutes(
         reply.code(404).send(Errors.notFound('Video not found'));
         return;
       }
+      const mergedProvider = body.provider ?? existing.provider;
+      const mergedExternalRaw =
+        body.externalId !== undefined ? body.externalId : existing.externalId;
+      const normalizedExternalId = normalizeExternalId(mergedProvider, mergedExternalRaw);
+      if (
+        (mergedProvider === 'youtube' || mergedProvider === 'bilibili') &&
+        mergedExternalRaw?.trim() &&
+        !normalizedExternalId
+      ) {
+        reply.code(400).send(Errors.validation(`Invalid ${mergedProvider} video id or URL`));
+        return;
+      }
       const merged = {
-        provider: body.provider ?? existing.provider,
-        externalId:
-          body.externalId !== undefined ? body.externalId : existing.externalId,
+        provider: mergedProvider,
+        externalId: normalizedExternalId,
         embedUrl: body.embedUrl !== undefined ? body.embedUrl : existing.embedUrl,
       };
       const validationError = validateVideoPayload(merged);
@@ -426,7 +504,7 @@ export function registerCourseVideoRoutes(
           description: body.description === null ? null : body.description,
           provider: body.provider,
           externalId:
-            body.externalId !== undefined ? body.externalId?.trim() || null : undefined,
+            body.externalId !== undefined ? normalizedExternalId : undefined,
           embedUrl: body.embedUrl !== undefined ? body.embedUrl?.trim() || null : undefined,
           durationSeconds:
             body.durationSeconds === null ? null : body.durationSeconds ?? undefined,
