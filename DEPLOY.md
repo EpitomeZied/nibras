@@ -35,10 +35,23 @@ This guide covers deploying Nibras on Railway or Fly.io. The stack consists of f
 
 ### Web service (Next.js)
 
-| Variable                          | Description                         |
-| --------------------------------- | ----------------------------------- |
-| `NEXT_PUBLIC_NIBRAS_API_BASE_URL` | Public API URL (exposed to browser) |
-| `NEXT_PUBLIC_NIBRAS_WEB_BASE_URL` | Public web URL (exposed to browser) |
+| Variable                          | Description                                                         |
+| --------------------------------- | ------------------------------------------------------------------- |
+| `DATABASE_URL`                    | Same Postgres URL as API (Better Auth + session bridge)             |
+| `BETTER_AUTH_SECRET`              | Required in production (`openssl rand -base64 32`)                  |
+| `BETTER_AUTH_URL`                 | Public web origin, e.g. `https://nibrasplatform.me`                 |
+| `GITHUB_APP_CLIENT_ID`            | GitHub OAuth (same as API GitHub App)                               |
+| `GITHUB_APP_CLIENT_SECRET`        | GitHub OAuth secret                                                 |
+| `RESEND_API_KEY`                  | Magic-link and welcome emails (optional; skipped if unset)          |
+| `NIBRAS_EMAIL_FROM`               | Verified Resend sender                                              |
+| `NIBRAS_ENCRYPTION_KEY`           | Encrypt GitHub tokens written by session bridge (same as API)       |
+| `NEXT_PUBLIC_NIBRAS_API_BASE_URL` | Public API URL (exposed to browser)                                 |
+| `NEXT_PUBLIC_NIBRAS_WEB_BASE_URL` | Public web URL (exposed to browser)                                 |
+| `POLAR_ACCESS_TOKEN`              | (Optional) Enables Polar plugin scaffold                            |
+| `POLAR_WEBHOOK_SECRET`            | (Optional) Polar webhook verification                               |
+| `POLAR_SERVER`                    | `sandbox` or `production`                                           |
+| `POLAR_PRODUCT_PRO_ID`            | (Optional) Polar product UUID when enabling checkout                |
+| `NEXT_PUBLIC_POLAR_ENABLED`       | Set `true` when Polar checkout is configured                        |
 
 ### Worker service
 

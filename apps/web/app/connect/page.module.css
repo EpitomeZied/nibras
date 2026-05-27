@@ -151,6 +151,38 @@
   cursor: not-allowed;
 }
 
+.submitSecondary {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.submitSecondary:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--primary, #22c55e) 40%, var(--border));
+}
+
+.submitSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.noticeSuccess {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--primary, #22c55e);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--primary, #22c55e) 12%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--primary, #22c55e) 28%, var(--border));
+}
+
 .footer {
   display: flex;
   flex-direction: column;

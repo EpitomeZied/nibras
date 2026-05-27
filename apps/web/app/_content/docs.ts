@@ -60,7 +60,12 @@ export const docsFaq: DocsFaqItem[] = [
   {
     question: 'Do I need a GitHub account?',
     answer:
-      'Yes. Nibras uses GitHub device-flow OAuth for sign-in and pushes CLI submissions to GitHub repositories. Create a free account at github.com if you do not have one.',
+      'For the web dashboard you can sign in with a magic link sent to your email. GitHub is required for CLI submissions and pushing project work — connect GitHub from the dashboard or sign in with GitHub on the landing page.',
+  },
+  {
+    question: 'I signed in with a magic link — can I use the CLI?',
+    answer:
+      'Not until GitHub is linked. Install the CLI, run nibras login, and complete GitHub device authorization. Magic-link sign-in only establishes your web session.',
   },
   {
     question: 'Is Nibras only for the command line?',

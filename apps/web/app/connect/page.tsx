@@ -1,27 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
-import { discoverApiBaseUrl } from '../lib/session';
+import AuthSignIn from '../_components/auth-sign-in';
 import styles from './page.module.css';
 
 export default function ConnectDashboardPage() {
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleSignIn() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      const apiBaseUrl = await discoverApiBaseUrl();
-      const returnTo = `${window.location.origin}/auth/complete`;
-      window.location.href = `${apiBaseUrl}/v1/github/oauth/start?return_to=${encodeURIComponent(returnTo)}`;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setSubmitting(false);
-    }
-  }
-
   function disconnect() {
     try {
       window.localStorage.removeItem('nibras.webSession');
@@ -53,7 +36,7 @@ export default function ConnectDashboardPage() {
         <header className={styles.header}>
           <h1 className={styles.title}>Connect to Nibras</h1>
           <p className={styles.subtitle}>
-            Sign in with your GitHub account to unlock Community, Competitions, Achievements, and
+            Sign in with GitHub or a magic link to unlock Community, Competitions, Achievements, and
             all dashboard features.
           </p>
         </header>
@@ -68,20 +51,15 @@ export default function ConnectDashboardPage() {
           </div>
         )}
 
-        {error && (
-          <p className={styles.error} role="alert">
-            {error}
-          </p>
-        )}
-
-        <button
-          type="button"
-          className={styles.submit}
-          disabled={submitting}
-          onClick={handleSignIn}
-        >
-          {submitting ? 'Redirecting…' : 'Sign in with GitHub'}
-        </button>
+        <AuthSignIn
+          githubClassName={styles.submit}
+          magicLinkClassName={styles.submitSecondary}
+          emailInputClassName={styles.input}
+          errorClassName={styles.error}
+          noticeClassName={styles.noticeSuccess}
+          githubLabel="Sign in with GitHub"
+          compact
+        />
 
         <footer className={styles.footer}>
           <p>

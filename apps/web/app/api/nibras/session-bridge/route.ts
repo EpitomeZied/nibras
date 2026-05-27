@@ -30,9 +30,6 @@ export async function GET(request: NextRequest) {
 
   const response = NextResponse.redirect(redirectUrl);
   const secure = process.env.NODE_ENV === 'production';
-  response.headers.append(
-    'Set-Cookie',
-    buildNibrasWebSessionCookie(webSessionToken, { secure })
-  );
+  response.headers.append('Set-Cookie', buildNibrasWebSessionCookie(webSessionToken, { secure }));
   return response;
 }

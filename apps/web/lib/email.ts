@@ -37,10 +37,7 @@ export async function sendMagicLinkEmail(args: { email: string; url: string }): 
   });
 }
 
-export async function sendWelcomeEmail(args: {
-  email: string;
-  name: string;
-}): Promise<void> {
+export async function sendWelcomeEmail(args: { email: string; name: string }): Promise<void> {
   const resend = getResend();
   if (!resend) return;
 

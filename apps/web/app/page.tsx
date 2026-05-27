@@ -1,10 +1,10 @@
 'use client';
 
-import { Suspense, useState, type ReactNode } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { discoverApiBaseUrl } from './lib/session';
 import NibrasLogo from './_components/nibras-logo';
+import AuthSignIn from './_components/auth-sign-in';
 import {
   cliFeatures,
   ctaFeatures,
@@ -85,33 +85,6 @@ function LandingNavAnchor({
 }
 
 export default function HomePage() {
-  const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-
-  async function handleSignIn() {
-    setError('');
-    setSubmitting(true);
-    try {
-      const apiBaseUrl = await discoverApiBaseUrl();
-      const configRes = await fetch(`${apiBaseUrl}/v1/github/config`);
-      if (configRes.ok) {
-        const config = (await configRes.json()) as { configured: boolean };
-        if (!config.configured) {
-          setError(
-            'GitHub App is not configured. Set GITHUB_APP_ID, GITHUB_APP_CLIENT_ID, and related environment variables, then restart the API.'
-          );
-          setSubmitting(false);
-          return;
-        }
-      }
-      const returnTo = `${window.location.origin}/auth/complete`;
-      window.location.href = `${apiBaseUrl}/v1/github/oauth/start?return_to=${encodeURIComponent(returnTo)}`;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setSubmitting(false);
-    }
-  }
-
   return (
     <main className={styles.page}>
       <Suspense>
@@ -166,13 +139,9 @@ export default function HomePage() {
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
             </svg>
           </a>
-          <button
-            className={styles.navSignIn}
-            onClick={() => void handleSignIn()}
-            disabled={submitting}
-          >
-            {submitting ? 'Connecting…' : 'Sign in'}
-          </button>
+          <Link href="/sign-in" className={styles.navSignIn}>
+            Sign in
+          </Link>
         </div>
       </nav>
 
@@ -201,17 +170,17 @@ export default function HomePage() {
           </Link>
         </p>
 
+        <div className={styles.heroAuth}>
+          <AuthSignIn
+            githubClassName={styles.btnHeroPrimary}
+            magicLinkClassName={styles.btnMagicLink}
+            emailInputClassName={styles.magicLinkEmail}
+            errorClassName={styles.errorMsg}
+            noticeClassName={styles.authNotice}
+            githubLabel="Get started free with GitHub"
+          />
+        </div>
         <div className={styles.heroCtas}>
-          <button
-            className={styles.btnHeroPrimary}
-            onClick={() => void handleSignIn()}
-            disabled={submitting}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-            </svg>
-            {submitting ? 'Connecting…' : 'Get started free'}
-          </button>
           <a href="#how-it-works" className={styles.btnHeroGhost}>
             See how it works →
           </a>
@@ -524,24 +493,14 @@ export default function HomePage() {
             ))}
           </div>
 
-          {error && <p className={styles.errorMsg}>{error}</p>}
-
-          <button
-            className={styles.btnGitHub}
-            type="button"
-            onClick={() => void handleSignIn()}
-            disabled={submitting}
-          >
-            <svg
-              className={styles.githubIcon}
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              fill="currentColor"
-            >
-              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-            </svg>
-            {submitting ? 'Connecting…' : 'Continue with GitHub'}
-          </button>
+          <AuthSignIn
+            githubClassName={styles.btnGitHub}
+            magicLinkClassName={styles.btnMagicLink}
+            emailInputClassName={styles.magicLinkEmail}
+            errorClassName={styles.errorMsg}
+            noticeClassName={styles.authNotice}
+            githubLabel="Continue with GitHub"
+          />
         </div>
       </section>
 
@@ -579,19 +538,7 @@ export default function HomePage() {
             </div>
             <div className={styles.footerCol}>
               <span className={styles.footerColTitle}>Account</span>
-              <button
-                onClick={() => void handleSignIn()}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'inherit',
-                  cursor: 'pointer',
-                  padding: 0,
-                  font: 'inherit',
-                }}
-              >
-                Sign in
-              </button>
+              <Link href="/sign-in">Sign in</Link>
               <a href="/dashboard">Dashboard</a>
             </div>
           </div>
