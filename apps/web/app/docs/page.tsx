@@ -1,7 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import NibrasLogo from '../_components/nibras-logo';
-import { docsFaq, docsGettingStarted, docsIntro, docsNavSections } from '../_content/docs';
+import {
+  docsFaq,
+  docsFaqHelp,
+  docsGettingStarted,
+  docsIntro,
+  docsNavSections,
+} from '../_content/docs';
 import styles from './page.module.css';
 
 export const metadata: Metadata = {
@@ -82,6 +88,18 @@ export default function DocsPage() {
               </details>
             ))}
           </div>
+          <aside className={styles.faqHelp}>
+            <h3 className={styles.faqHelpTitle}>{docsFaqHelp.title}</h3>
+            <p className={styles.faqHelpText}>{docsFaqHelp.lines[0]}</p>
+            <a
+              href={docsFaqHelp.issueUrl}
+              className={styles.faqHelpLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {docsFaqHelp.lines[1]}
+            </a>
+          </aside>
         </section>
 
         <section id="getting-started" className={styles.section} aria-labelledby="start-heading">

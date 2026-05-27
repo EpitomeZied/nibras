@@ -99,6 +99,12 @@ export const docsFaq: DocsFaqItem[] = [
   },
 ];
 
+export const docsFaqHelp = {
+  title: 'Need More Help?',
+  lines: ['Have a question? Found a bug? Want a new feature?', 'Open an issue on GitHub'],
+  issueUrl: 'https://github.com/nibras-platform/nibras/issues',
+} as const;
+
 export const docsGettingStarted: DocsGettingStartedStep[] = [
   {
     title: '1. Sign in with GitHub',
