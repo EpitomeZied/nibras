@@ -2,7 +2,12 @@
 
 import Link from 'next/link';
 import { use, useCallback, useEffect, useState } from 'react';
-import type { AssignmentSubmissionQueueItem, CourseAssignment } from '@nibras/contracts';
+import {
+  McqAssignmentConfigInputSchema,
+  type AssignmentSubmissionQueueItem,
+  type CourseAssignment,
+  type CourseAssignmentType,
+} from '@nibras/contracts';
 import {
   createCourseAssignment,
   deleteCourseAssignment,
@@ -28,6 +33,26 @@ export default function InstructorAssignmentsPage({
   const [content, setContent] = useState('');
   const [dueAt, setDueAt] = useState('');
   const [points, setPoints] = useState('100');
+  const [assignmentType, setAssignmentType] = useState<CourseAssignmentType>('text');
+  const [mcqJson, setMcqJson] = useState(
+    JSON.stringify(
+      {
+        questions: [
+          {
+            id: 'q1',
+            prompt: 'Sample question?',
+            options: [
+              { id: 'a', text: 'Option A' },
+              { id: 'b', text: 'Option B' },
+            ],
+            correctOptionId: 'a',
+          },
+        ],
+      },
+      null,
+      2
+    )
+  );
   const [saving, setSaving] = useState(false);
   const [gradeAssignmentId, setGradeAssignmentId] = useState<string | null>(null);
   const [submissions, setSubmissions] = useState<AssignmentSubmissionQueueItem[]>([]);
@@ -69,10 +94,21 @@ export default function InstructorAssignmentsPage({
     if (!title.trim()) return;
     setSaving(true);
     try {
+      let config: ReturnType<typeof McqAssignmentConfigInputSchema.parse> | undefined;
+      if (assignmentType === 'mcq' || assignmentType === 'quiz') {
+        const parsed = McqAssignmentConfigInputSchema.safeParse(JSON.parse(mcqJson));
+        if (!parsed.success) {
+          setError(parsed.error.issues[0]?.message ?? 'Invalid MCQ configuration JSON.');
+          return;
+        }
+        config = parsed.data;
+      }
       await createCourseAssignment(courseId, {
         title: title.trim(),
+        assignmentType,
         description: description.trim() || undefined,
         content: content.trim() || undefined,
+        config,
         dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
         pointsPossible: points ? parseInt(points, 10) : undefined,
         published: true,
@@ -126,6 +162,15 @@ export default function InstructorAssignmentsPage({
       <div className={styles.panel} style={{ marginBottom: 16 }}>
         <h2>New assignment</h2>
         <div style={{ display: 'grid', gap: 8, marginTop: 8, maxWidth: 560 }}>
+          <select
+            value={assignmentType}
+            onChange={(e) => setAssignmentType(e.target.value as CourseAssignmentType)}
+            style={{ padding: 8, borderRadius: 8, border: '1px solid var(--border)' }}
+          >
+            <option value="text">Text submission</option>
+            <option value="mcq">Multiple choice (MCQ)</option>
+            <option value="quiz">Quiz (MCQ + copy protection)</option>
+          </select>
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -146,6 +191,21 @@ export default function InstructorAssignmentsPage({
             rows={4}
             style={{ padding: 8, borderRadius: 8, border: '1px solid var(--border)' }}
           />
+          {(assignmentType === 'mcq' || assignmentType === 'quiz') && (
+            <textarea
+              value={mcqJson}
+              onChange={(e) => setMcqJson(e.target.value)}
+              placeholder="MCQ config JSON"
+              rows={12}
+              style={{
+                padding: 8,
+                borderRadius: 8,
+                border: '1px solid var(--border)',
+                fontFamily: 'monospace',
+                fontSize: 12,
+              }}
+            />
+          )}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input
               type="datetime-local"
@@ -190,7 +250,8 @@ export default function InstructorAssignmentsPage({
             <div>
               <strong>{a.title}</strong>
               <span className={styles.muted} style={{ marginLeft: 8 }}>
-                {a.pointsPossible} pts · {a.published ? 'published' : 'draft'}
+                {a.assignmentType ?? 'text'} · {a.pointsPossible} pts ·{' '}
+                {a.published ? 'published' : 'draft'}
               </span>
               {a.dueAt && (
                 <p className={styles.muted} style={{ margin: '4px 0 0', fontSize: 12 }}>

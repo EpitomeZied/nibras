@@ -12,6 +12,8 @@ import {
 } from '../../../../../lib/services/backend-courses';
 import { friendlyMessage } from '../../../../../lib/api-clients/errors';
 import { renderMarkdown } from '../../../../../lib/markdown';
+import McqAssignmentForm from '../../../../_components/McqAssignmentForm';
+import type { CourseAssignmentType } from '@nibras/contracts';
 
 function statusBadgeClass(status: AssignmentDetail['status']) {
   switch (status) {
@@ -45,6 +47,7 @@ export default function AssignmentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [submitContent, setSubmitContent] = useState('');
+  const [mcqAnswers, setMcqAnswers] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async () => {
@@ -96,6 +99,84 @@ export default function AssignmentDetailPage() {
     );
   }
 
+  const assignmentType: CourseAssignmentType = assignment.assignmentType ?? 'text';
+  const isMcqLike = assignmentType === 'mcq' || assignmentType === 'quiz';
+  const canSubmit = (assignment.status ?? 'not_started') !== 'graded';
+  const mcqComplete =
+    !isMcqLike ||
+    !assignment.config?.questions?.length ||
+    assignment.config.questions.every((q) => Boolean(mcqAnswers[q.id]));
+
+  const briefSection = (
+    <section className={styles.section}>
+      <h2 className={styles.sectionTitle}>Brief</h2>
+      {assignment.content || assignment.description ? (
+        <div
+          className={styles.description}
+          dangerouslySetInnerHTML={{
+            __html: renderMarkdown(assignment.content ?? assignment.description ?? ''),
+          }}
+        />
+      ) : (
+        <p className={styles.description}>No brief provided.</p>
+      )}
+    </section>
+  );
+
+  const submitSection = canSubmit ? (
+    <section className={styles.section}>
+      <h2 className={styles.sectionTitle}>{isMcqLike ? 'Submit answers' : 'Your submission'}</h2>
+      {!isMcqLike && (
+        <textarea
+          value={submitContent}
+          onChange={(e) => setSubmitContent(e.target.value)}
+          rows={6}
+          placeholder="Write your answer…"
+          style={{
+            width: '100%',
+            padding: 10,
+            borderRadius: 8,
+            border: '1px solid var(--border)',
+            marginBottom: 8,
+          }}
+        />
+      )}
+      {isMcqLike && !mcqComplete && (
+        <p className={styles.description} style={{ marginBottom: 8 }}>
+          Answer every question before submitting.
+        </p>
+      )}
+      <button
+        type="button"
+        style={{
+          padding: '8px 14px',
+          borderRadius: 8,
+          border: '1px solid var(--border)',
+          background: 'var(--primary, #22c55e)',
+          color: '#fff',
+          cursor: 'pointer',
+          marginTop: isMcqLike ? 12 : 0,
+        }}
+        disabled={submitting || (isMcqLike ? !mcqComplete : !submitContent.trim())}
+        onClick={async () => {
+          setSubmitting(true);
+          try {
+            if (isMcqLike) {
+              await submitAssignment(assignmentId, { answers: mcqAnswers });
+            } else {
+              await submitAssignment(assignmentId, { content: submitContent.trim() });
+            }
+            await load();
+          } finally {
+            setSubmitting(false);
+          }
+        }}
+      >
+        Submit
+      </button>
+    </section>
+  ) : null;
+
   return (
     <div className={styles.page}>
       <header className={styles.breadcrumb}>
@@ -120,19 +201,19 @@ export default function AssignmentDetailPage() {
 
       <div className={styles.layout}>
         <div className={styles.main}>
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Brief</h2>
-            {assignment.content || assignment.description ? (
-              <div
-                className={styles.description}
-                dangerouslySetInnerHTML={{
-                  __html: renderMarkdown(assignment.content ?? assignment.description ?? ''),
-                }}
+          {briefSection}
+
+          {isMcqLike && assignment.config && (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Questions</h2>
+              <McqAssignmentForm
+                config={assignment.config}
+                answers={mcqAnswers}
+                onChange={setMcqAnswers}
+                disabled={!canSubmit || submitting}
               />
-            ) : (
-              <p className={styles.description}>No brief provided.</p>
-            )}
-          </section>
+            </section>
+          )}
 
           {assignment.rubric && assignment.rubric.length > 0 && (
             <section className={styles.section}>
@@ -189,47 +270,7 @@ export default function AssignmentDetailPage() {
             </section>
           )}
 
-          {(assignment.status ?? 'not_started') !== 'graded' && (
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>Your submission</h2>
-              <textarea
-                value={submitContent}
-                onChange={(e) => setSubmitContent(e.target.value)}
-                rows={6}
-                placeholder="Write your answer…"
-                style={{
-                  width: '100%',
-                  padding: 10,
-                  borderRadius: 8,
-                  border: '1px solid var(--border)',
-                  marginBottom: 8,
-                }}
-              />
-              <button
-                type="button"
-                style={{
-                  padding: '8px 14px',
-                  borderRadius: 8,
-                  border: '1px solid var(--border)',
-                  background: 'var(--primary, #22c55e)',
-                  color: '#fff',
-                  cursor: 'pointer',
-                }}
-                disabled={submitting || !submitContent.trim()}
-                onClick={async () => {
-                  setSubmitting(true);
-                  try {
-                    await submitAssignment(assignmentId, { content: submitContent.trim() });
-                    await load();
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-              >
-                Submit
-              </button>
-            </section>
-          )}
+          {submitSection}
         </aside>
       </div>
     </div>
