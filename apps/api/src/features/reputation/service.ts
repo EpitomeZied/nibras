@@ -144,6 +144,41 @@ export class ReputationService {
       });
     }
 
+    // Daily problem solves
+    const dailySolves = await this.prisma.dailyProblemAssignment.findMany({
+      where: { userId, solved: true },
+      select: {
+        id: true,
+        solvedAt: true,
+        createdAt: true,
+        problem: { select: { title: true } },
+      },
+    });
+    for (const ds of dailySolves) {
+      events.push({
+        delta: 10,
+        reason: buildSyncReason('daily-solve', { problemTitle: ds.problem.title }),
+        source: `daily-solve:${ds.id}`,
+        category: 'problem',
+        createdAt: ds.solvedAt ?? ds.createdAt,
+      });
+    }
+
+    // Daily missed penalties
+    const dailyMisses = await this.prisma.dailyProblemAssignment.findMany({
+      where: { userId, missedAt: { not: null }, solved: false, skipped: false },
+      select: { id: true, missedAt: true },
+    });
+    for (const dm of dailyMisses) {
+      events.push({
+        delta: -3,
+        reason: buildSyncReason('daily-miss', {}),
+        source: `daily-miss:${dm.id}`,
+        category: 'problem',
+        createdAt: dm.missedAt!,
+      });
+    }
+
     const contestParticipations = await this.prisma.userContestParticipation.findMany({
       where: { userId },
       select: {

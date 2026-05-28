@@ -164,6 +164,13 @@ export const appNavItems: AppNavItem[] = [
     placement: 'compete',
   },
   {
+    href: '/competitions/daily',
+    label: 'Daily Problem',
+    description: 'Solve one problem a day and build your streak.',
+    visibility: 'all',
+    placement: 'compete',
+  },
+  {
     href: '/competitions/practice?tab=codeforces',
     label: 'Codeforces practice',
     description: 'Codeforces problems, tags, and rating analytics.',
@@ -429,6 +436,10 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/competitions/nibras-75': {
     title: 'Nibras 75',
     subtitle: 'Curated LeetCode interview list — 75 essential DSA problems.',
+  },
+  '/competitions/daily': {
+    title: 'Daily Problem',
+    subtitle: 'Solve one problem per day to build your streak and earn badges.',
   },
   '/competitions/ranking': {
     title: 'Ranking',

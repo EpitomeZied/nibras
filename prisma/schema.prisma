@@ -247,6 +247,8 @@ model User {
   aiCredential             UserAiCredential?
   authSessions             AuthSession[]
   authAccounts             AuthAccount[]
+  dailyProblemConfig       DailyProblemConfig?
+  dailyProblemAssignments  DailyProblemAssignment[]
 
   @@index([systemRole])
   @@index([yearLevel])
@@ -1334,6 +1336,7 @@ model Problem {
   updatedAt         DateTime     @updatedAt
   userProgress      UserProblemProgress[]
   bookmarks         ProblemBookmark[]
+  dailyAssignments  DailyProblemAssignment[]
 
   @@unique([platform, platformProblemId])
   @@index([platform])
@@ -1451,6 +1454,50 @@ model CompSyncLog {
   createdAt    DateTime @default(now())
 
   @@index([jobType, createdAt])
+}
+
+// ── Daily Problem System ───────────────────────────────────────────────────
+
+model DailyProblemConfig {
+  id                String                  @id @default(cuid())
+  userId            String                  @unique
+  enabled           Boolean                 @default(true)
+  difficultyPref    Int[]
+  tagPrefs          String[]
+  timezone          String                  @default("UTC")
+  pausedUntil       DateTime?
+  currentStreak     Int                     @default(0)
+  longestStreak     Int                     @default(0)
+  totalCompleted    Int                     @default(0)
+  lastCompletedDate String?
+  streakFreezes     Int                     @default(2)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignments       DailyProblemAssignment[]
+
+  @@index([userId])
+}
+
+model DailyProblemAssignment {
+  id           String              @id @default(cuid())
+  userId       String
+  problemId    String
+  configId     String
+  assignedDate String
+  solved       Boolean             @default(false)
+  solvedAt     DateTime?
+  skipped      Boolean             @default(false)
+  missedAt     DateTime?
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem      Problem             @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  config       DailyProblemConfig  @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, assignedDate])
+  @@index([userId, solved])
+  @@index([userId, assignedDate])
 }
 
 // ── Tutor Conversations ────────────────────────────────────────────────────

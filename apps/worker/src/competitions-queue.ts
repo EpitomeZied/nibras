@@ -11,6 +11,7 @@ export type AccountVerifyPayload = {
 export type AccountStatsSyncPayload = { type: 'account-stats-sync' };
 export type RankingCalcPayload = { type: 'ranking-calc' };
 export type ContestReminderPayload = { type: 'contest-reminder' };
+export type DailyProblemSweepPayload = { type: 'daily-problem-sweep' };
 
 export type CompetitionsJobPayload =
   | ContestSyncPayload
@@ -18,4 +19,5 @@ export type CompetitionsJobPayload =
   | AccountVerifyPayload
   | AccountStatsSyncPayload
   | RankingCalcPayload
-  | ContestReminderPayload;
+  | ContestReminderPayload
+  | DailyProblemSweepPayload;

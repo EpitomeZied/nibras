@@ -132,6 +132,7 @@ export class GamificationService {
       contestParticipations,
       contestBookmarks,
       earnedBadges,
+      dailyConfig,
     ] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: userId },
@@ -165,6 +166,10 @@ export class GamificationService {
       this.prisma.userContestParticipation.count({ where: { userId } }),
       this.prisma.contestBookmark.count({ where: { userId } }),
       this.prisma.userBadge.count({ where: { userId } }),
+      this.prisma.dailyProblemConfig.findUnique({
+        where: { userId },
+        select: { currentStreak: true, longestStreak: true, totalCompleted: true },
+      }),
     ]);
 
     return {
@@ -189,6 +194,9 @@ export class GamificationService {
       assignmentSubmissions,
       videosWatched,
       earnedBadges,
+      dailyStreakCurrent: dailyConfig?.currentStreak ?? 0,
+      dailyStreakLongest: dailyConfig?.longestStreak ?? 0,
+      dailyProblemsCompleted: dailyConfig?.totalCompleted ?? 0,
     };
   }
 

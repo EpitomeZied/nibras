@@ -28,6 +28,11 @@ test('GamificationService awards github-connected badge when linked', async () =
   const userBadges = [];
 
   const prisma = {
+    $transaction: async (ops) => {
+      const results = [];
+      for (const op of ops) results.push(await op);
+      return results;
+    },
     badgeDefinition: {
       upsert: async ({ where, create }) => {
         const code = where.code;
@@ -41,16 +46,30 @@ test('GamificationService awards github-connected badge when linked', async () =
           description: b.description,
           iconUrl: null,
         })),
+      count: async () => BADGE_CATALOG.length,
     },
     user: {
-      findUnique: async () => ({ githubLinked: true }),
+      findUnique: async () => ({ githubLinked: true, githubAppInstalled: false, lastReputationSyncAt: null }),
       findMany: async () => [],
+      update: async () => ({}),
     },
     submissionAttempt: { count: async () => 0, findMany: async () => [] },
-    communityQuestion: { count: async () => 0, findMany: async () => [] },
+    communityQuestion: { count: async () => 0, findMany: async () => [], aggregate: async () => ({ _sum: { votesCount: 0 } }) },
     communityAnswer: { count: async () => 0, findMany: async () => [] },
+    communityVote: { count: async () => 0 },
+    communityThread: { count: async () => 0 },
+    communityPost: { count: async () => 0 },
     userProblemProgress: { count: async () => 0, findMany: async () => [] },
     userContestParticipation: { count: async () => 0, findMany: async () => [] },
+    teamMember: { count: async () => 0 },
+    courseMembership: { count: async () => 0 },
+    assignmentSubmission: { count: async () => 0 },
+    videoProgress: { count: async () => 0 },
+    problemBookmark: { count: async () => 0 },
+    contestBookmark: { count: async () => 0 },
+    dailyProblemConfig: { findUnique: async () => null },
+    dailyProblemAssignment: { findMany: async () => [] },
+    linkedAccount: { findMany: async () => [] },
     userBadge: {
       count: async () => userBadges.length,
       findMany: async () => userBadges,
@@ -65,6 +84,7 @@ test('GamificationService awards github-connected badge when linked', async () =
         events.push(create);
         return create;
       },
+      createMany: async () => ({ count: 0 }),
       findMany: async () => [],
       groupBy: async () => [],
       aggregate: async () => ({ _sum: { delta: 0 } }),
@@ -82,19 +102,32 @@ test('ReputationService sync is idempotent for duplicate sources', async () => {
   const store = new Map();
 
   const prisma = {
+    user: {
+      findUnique: async () => ({ lastReputationSyncAt: null }),
+      update: async () => ({}),
+    },
     submissionAttempt: {
-      findMany: async () => [{ id: 'sub1', submittedAt: new Date(), createdAt: new Date() }],
+      findMany: async () => [{ id: 'sub1', submittedAt: new Date(), createdAt: new Date(), project: { name: 'Test Project' } }],
     },
     communityAnswer: { findMany: async () => [] },
     communityQuestion: { findMany: async () => [] },
     userProblemProgress: { findMany: async () => [] },
     userContestParticipation: { findMany: async () => [] },
     userBadge: { findMany: async () => [] },
+    dailyProblemAssignment: { findMany: async () => [] },
+    linkedAccount: { findMany: async () => [] },
     reputationEvent: {
       upsert: async ({ where, create }) => {
         const key = `${where.userId_source.userId}:${where.userId_source.source}`;
         if (!store.has(key)) store.set(key, create);
         return store.get(key);
+      },
+      createMany: async ({ data }) => {
+        for (const row of data) {
+          const key = `${row.userId}:${row.source}`;
+          if (!store.has(key)) store.set(key, row);
+        }
+        return { count: data.length };
       },
       findMany: async () => Array.from(store.values()),
       groupBy: async () => [{ userId, _sum: { delta: 10 } }],

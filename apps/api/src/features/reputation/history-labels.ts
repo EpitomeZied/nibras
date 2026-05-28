@@ -46,6 +46,12 @@ function fallbackReason(kind: string, stored: string): string {
       return 'Earned an achievement badge';
     case 'linked-account':
       return 'Connected a competitive programming account';
+    case 'daily-solve':
+      return 'Solved the daily problem';
+    case 'daily-miss':
+      return 'Missed the daily problem';
+    case 'daily-streak-bonus':
+      return 'Reached a daily streak milestone';
     default:
       return stored.includes(':') ? 'Reputation activity' : stored;
   }
@@ -85,6 +91,8 @@ export async function presentReputationHistory(
   const problemIds = byKind.get('problem') ?? [];
   const contestIds = byKind.get('contest') ?? [];
   const badgeCodes = byKind.get('badge') ?? [];
+  const dailySolveIds = byKind.get('daily-solve') ?? [];
+  const dailyMissIds = byKind.get('daily-miss') ?? [];
 
   const [
     submissions,
@@ -93,6 +101,8 @@ export async function presentReputationHistory(
     problems,
     contests,
     badges,
+    dailySolves,
+    dailyMisses,
   ] = await Promise.all([
     submissionIds.length > 0
       ? prisma.submissionAttempt.findMany({
@@ -133,6 +143,18 @@ export async function presentReputationHistory(
           select: { code: true, name: true },
         })
       : Promise.resolve([]),
+    dailySolveIds.length > 0
+      ? prisma.dailyProblemAssignment.findMany({
+          where: { id: { in: dailySolveIds } },
+          select: { id: true, problem: { select: { title: true } } },
+        })
+      : Promise.resolve([]),
+    dailyMissIds.length > 0
+      ? prisma.dailyProblemAssignment.findMany({
+          where: { id: { in: dailyMissIds } },
+          select: { id: true, problem: { select: { title: true } } },
+        })
+      : Promise.resolve([]),
   ]);
 
   const projectBySubmission = new Map(
@@ -147,6 +169,8 @@ export async function presentReputationHistory(
   const problemTitle = new Map(problems.map((p) => [p.id, p.title] as const));
   const contestName = new Map(contests.map((c) => [c.id, c.name] as const));
   const badgeName = new Map(badges.map((b) => [b.code, b.name] as const));
+  const dailySolveTitle = new Map(dailySolves.map((d) => [d.id, d.problem.title] as const));
+  const dailyMissTitle = new Map(dailyMisses.map((d) => [d.id, d.problem.title] as const));
 
   return events.map((event) => {
     const { kind, id } = parseSource(event.source);
@@ -245,6 +269,41 @@ export async function presentReputationHistory(
         }
         break;
       }
+      case 'daily-solve': {
+        const title = dailySolveTitle.get(id);
+        return {
+          id: event.id,
+          delta: event.delta,
+          reason: 'Solved the daily problem',
+          detail: title ?? undefined,
+          category: event.category,
+          categoryLabel,
+          createdAt: event.createdAt.toISOString(),
+        };
+      }
+      case 'daily-miss': {
+        const title = dailyMissTitle.get(id);
+        return {
+          id: event.id,
+          delta: event.delta,
+          reason: 'Missed the daily problem',
+          detail: title ?? undefined,
+          category: event.category,
+          categoryLabel,
+          createdAt: event.createdAt.toISOString(),
+        };
+      }
+      case 'daily-streak-bonus': {
+        return {
+          id: event.id,
+          delta: event.delta,
+          reason: 'Reached a daily streak milestone',
+          detail: `${id.split(':')[0]}-day streak`,
+          category: event.category,
+          categoryLabel,
+          createdAt: event.createdAt.toISOString(),
+        };
+      }
       case 'linked-account': {
         const label = platformLabel(id);
         const rating =
@@ -313,6 +372,14 @@ export function buildSyncReason(
       return context.badgeName
         ? `Earned badge “${context.badgeName}”`
         : 'Earned an achievement badge';
+    case 'daily-solve':
+      return context.problemTitle
+        ? `Solved daily problem "${context.problemTitle}"`
+        : 'Solved the daily problem';
+    case 'daily-miss':
+      return 'Missed the daily problem';
+    case 'daily-streak-bonus':
+      return 'Reached a daily streak milestone';
     case 'linked-account': {
       const label = context.platform ? platformLabel(context.platform) : 'Platform';
       const aura = computeAuraDelta(context.rating);

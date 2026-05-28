@@ -21,7 +21,10 @@ export type BadgeMetric =
   | 'contestBookmarks'
   | 'assignmentSubmissions'
   | 'videosWatched'
-  | 'earnedBadges';
+  | 'earnedBadges'
+  | 'dailyStreakCurrent'
+  | 'dailyStreakLongest'
+  | 'dailyProblemsCompleted';
 
 export type BadgeSeed = {
   code: string;
@@ -561,6 +564,85 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     sortOrder: 59,
   },
 
+  // ── Daily ───────────────────────────────────────────────────────────────────
+  {
+    code: 'daily-starter',
+    name: 'Daily Starter',
+    description: 'Complete your first daily problem.',
+    rarity: 'common',
+    category: 'practice',
+    metric: 'dailyProblemsCompleted',
+    threshold: 1,
+    points: 25,
+    sortOrder: 60,
+  },
+  {
+    code: 'daily-streak-7',
+    name: 'Week Warrior',
+    description: 'Reach a seven-day daily problem streak.',
+    rarity: 'rare',
+    category: 'practice',
+    metric: 'dailyStreakLongest',
+    threshold: 7,
+    points: 100,
+    sortOrder: 61,
+  },
+  {
+    code: 'daily-streak-14',
+    name: 'Two-Week Grinder',
+    description: 'Reach a fourteen-day daily problem streak.',
+    rarity: 'rare',
+    category: 'practice',
+    metric: 'dailyStreakLongest',
+    threshold: 14,
+    points: 175,
+    sortOrder: 62,
+  },
+  {
+    code: 'daily-streak-30',
+    name: 'Monthly Machine',
+    description: 'Reach a thirty-day daily problem streak.',
+    rarity: 'epic',
+    category: 'practice',
+    metric: 'dailyStreakLongest',
+    threshold: 30,
+    points: 300,
+    sortOrder: 63,
+  },
+  {
+    code: 'daily-streak-100',
+    name: 'Century Streak',
+    description: 'Reach a hundred-day daily problem streak.',
+    rarity: 'legendary',
+    category: 'practice',
+    metric: 'dailyStreakLongest',
+    threshold: 100,
+    points: 750,
+    sortOrder: 64,
+  },
+  {
+    code: 'daily-completed-25',
+    name: 'Daily Devotee',
+    description: 'Complete twenty-five daily problems.',
+    rarity: 'rare',
+    category: 'practice',
+    metric: 'dailyProblemsCompleted',
+    threshold: 25,
+    points: 150,
+    sortOrder: 65,
+  },
+  {
+    code: 'daily-completed-100',
+    name: 'Daily Champion',
+    description: 'Complete one hundred daily problems.',
+    rarity: 'legendary',
+    category: 'practice',
+    metric: 'dailyProblemsCompleted',
+    threshold: 100,
+    points: 500,
+    sortOrder: 66,
+  },
+
   // ── Competitions ────────────────────────────────────────────────────────────
   {
     code: 'contest-debut',
@@ -571,7 +653,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'contestParticipations',
     threshold: 1,
     points: 50,
-    sortOrder: 60,
+    sortOrder: 70,
   },
   {
     code: 'contest-triple',
@@ -582,7 +664,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'contestParticipations',
     threshold: 3,
     points: 75,
-    sortOrder: 61,
+    sortOrder: 71,
   },
   {
     code: 'contest-regular',
@@ -593,7 +675,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'contestParticipations',
     threshold: 5,
     points: 125,
-    sortOrder: 62,
+    sortOrder: 72,
   },
   {
     code: 'arena-veteran',
@@ -604,7 +686,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'contestParticipations',
     threshold: 15,
     points: 275,
-    sortOrder: 63,
+    sortOrder: 73,
   },
   {
     code: 'contest-marathon',
@@ -615,7 +697,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'contestParticipations',
     threshold: 30,
     points: 450,
-    sortOrder: 64,
+    sortOrder: 74,
   },
   {
     code: 'contest-planner',
@@ -626,7 +708,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'contestBookmarks',
     threshold: 5,
     points: 40,
-    sortOrder: 65,
+    sortOrder: 75,
   },
   {
     code: 'contest-tracker',
@@ -637,7 +719,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'contestBookmarks',
     threshold: 15,
     points: 90,
-    sortOrder: 66,
+    sortOrder: 76,
   },
 
   // ── Meta ────────────────────────────────────────────────────────────────────
@@ -650,7 +732,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'earnedBadges',
     threshold: 5,
     points: 150,
-    sortOrder: 70,
+    sortOrder: 80,
   },
   {
     code: 'achievement-hunter',
@@ -661,7 +743,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'earnedBadges',
     threshold: 10,
     points: 200,
-    sortOrder: 71,
+    sortOrder: 81,
   },
   {
     code: 'trophy-cabinet',
@@ -672,7 +754,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'earnedBadges',
     threshold: 15,
     points: 300,
-    sortOrder: 72,
+    sortOrder: 82,
   },
   {
     code: 'completionist',
@@ -683,7 +765,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'earnedBadges',
     threshold: 20,
     points: 500,
-    sortOrder: 73,
+    sortOrder: 83,
   },
   {
     code: 'badge-maven',
@@ -694,7 +776,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'earnedBadges',
     threshold: 25,
     points: 600,
-    sortOrder: 74,
+    sortOrder: 84,
   },
   {
     code: 'badge-legend',
@@ -705,7 +787,7 @@ export const BADGE_CATALOG: BadgeSeed[] = [
     metric: 'earnedBadges',
     threshold: 35,
     points: 800,
-    sortOrder: 75,
+    sortOrder: 85,
   },
 ];
 

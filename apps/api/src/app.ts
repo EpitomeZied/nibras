@@ -36,6 +36,7 @@ import { registerReputationRoutes } from './features/reputation/routes';
 import { registerAnalyticsRoutes } from './features/analytics/routes';
 import { registerIdeRoutes } from './features/ide/routes';
 import { registerAiCredentialRoutes } from './features/ai-credentials/routes';
+import { registerDailyProblemRoutes } from './features/daily-problem/routes';
 
 function normalizeOrigin(value: string | undefined): string | null {
   if (!value) {
@@ -147,6 +148,7 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
           { name: 'competitions', description: 'Contests, practice problems, and rankings' },
           { name: 'reputation', description: 'User reputation scores' },
           { name: 'analytics', description: 'Instructor analytics and dashboards' },
+          { name: 'daily-problem', description: 'Daily problem assignments, streaks, and configuration' },
           { name: 'system', description: 'Health, readiness, and metrics' },
         ],
       },
@@ -365,6 +367,9 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
   registerReputationRoutes(app, store, getSharedPrisma());
   registerAnalyticsRoutes(app, store, getSharedPrisma());
   registerIdeRoutes(app, store);
+  if (process.env.DATABASE_URL) {
+    registerDailyProblemRoutes(app, store, getSharedPrisma());
+  }
 
   return app;
 }

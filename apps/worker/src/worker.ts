@@ -36,6 +36,7 @@ import { runAccountVerify } from './competitions-jobs/account-verify';
 import { runAccountStatsSync } from './competitions-jobs/account-stats-sync';
 import { runRankingCalc } from './competitions-jobs/ranking-calc';
 import { runContestReminder } from './competitions-jobs/contest-reminder';
+import { runDailyProblemSweep } from './competitions-jobs/daily-problem-sweep';
 
 const execFileAsync = promisify(execFile);
 
@@ -1001,6 +1002,9 @@ async function main(): Promise<void> {
           case 'contest-reminder':
             await runContestReminder(prisma);
             break;
+          case 'daily-problem-sweep':
+            await runDailyProblemSweep(prisma);
+            break;
         }
       },
       {
@@ -1057,6 +1061,14 @@ async function main(): Promise<void> {
       {
         repeat: { every: 60 * 1000 },
         jobId: 'contest-reminder-repeat',
+      }
+    );
+    await compQ.add(
+      'daily-problem-sweep',
+      { type: 'daily-problem-sweep' },
+      {
+        repeat: { every: 60 * 60 * 1000 },
+        jobId: 'daily-problem-sweep-repeat',
       }
     );
     log('info', 'Competitions repeatable jobs registered');

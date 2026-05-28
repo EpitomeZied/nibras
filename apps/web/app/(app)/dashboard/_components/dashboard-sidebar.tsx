@@ -5,10 +5,69 @@ import type { StudentHomeDashboard, StudentUpcomingDeadline } from '@nibras/cont
 
 type StudentCourseSnapshot = StudentHomeDashboard['courseSnapshots'][number];
 import type { AchievementsDashboard } from '../../../lib/services/gamification';
+import { useFetch } from '../../../lib/use-fetch';
 import BadgeCard from '../../_components/widgets/BadgeCard';
 import styles from '../page.module.css';
 import { deadlineDueLabel, deadlineToneClass } from './dashboard-utils';
 import { EmptyPanel, SectionHeader } from './dashboard-shared';
+
+type DailyTodayResponse = {
+  paused: boolean;
+  pausedUntil?: string;
+  assignment?: {
+    id: string;
+    assignedDate: string;
+    solved: boolean;
+    problem: { title: string; difficulty: number; platform: string };
+  };
+  streak: { current: number; longest: number; totalCompleted: number; freezesLeft: number };
+};
+
+function DailyWidget() {
+  const { data } = useFetch<DailyTodayResponse>('/v1/daily-problem/today');
+  if (!data) return null;
+
+  const diffLabel = (d: number) => (d <= 1000 ? 'Easy' : d <= 1800 ? 'Medium' : 'Hard');
+
+  return (
+    <section className={styles.panel}>
+      <SectionHeader
+        eyebrow="Daily Challenge"
+        title="Today's problem"
+        hint="Solve one problem every day to build your streak."
+      />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <span style={{ fontSize: '1.5rem' }}>&#128293;</span>
+        <strong style={{ fontSize: '1.25rem' }}>{data.streak.current}</strong>
+        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted, #666)' }}>day streak</span>
+      </div>
+      {data.paused ? (
+        <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted, #666)' }}>
+          Paused until {new Date(data.pausedUntil!).toLocaleDateString()}
+        </p>
+      ) : data.assignment ? (
+        <div style={{ fontSize: '0.8125rem' }}>
+          <strong>{data.assignment.problem.title}</strong>
+          <span style={{ marginLeft: 8, fontSize: '0.75rem', color: 'var(--text-muted, #666)' }}>
+            {diffLabel(data.assignment.problem.difficulty)}
+          </span>
+          {data.assignment.solved && (
+            <span style={{ marginLeft: 8, color: '#16a34a', fontWeight: 600 }}>
+              &#10003; Solved
+            </span>
+          )}
+        </div>
+      ) : (
+        <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted, #666)' }}>
+          No problem assigned today.
+        </p>
+      )}
+      <Link href="/competitions/daily" className={styles.inlineAction}>
+        Go to daily problems
+      </Link>
+    </section>
+  );
+}
 
 function ActiveProjectCard({ project }: { project: StudentCourseSnapshot['projects'][number] }) {
   return (
@@ -43,6 +102,8 @@ export default function DashboardSidebar({
 
   return (
     <div className={styles.sidebarStack}>
+      <DailyWidget />
+
       <section className={styles.panel}>
         <SectionHeader
           eyebrow="Deadlines"
