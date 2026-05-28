@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import NibrasLogo from './_components/nibras-logo';
 import AuthSignIn from './_components/auth-sign-in';
+import AgentMissionControlSection from './_components/agent-mission-control';
 import {
   cliFeatures,
   ctaFeatures,
@@ -186,6 +187,8 @@ export default function HomePage() {
           </a>
         </div>
       </div>
+
+      <AgentMissionControlSection />
 
       <div className={styles.productMockupWrap}>
         <div className={styles.productMockup}>
