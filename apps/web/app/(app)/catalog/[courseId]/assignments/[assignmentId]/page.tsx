@@ -12,6 +12,7 @@ import {
 } from '../../../../../lib/services/backend-courses';
 import { friendlyMessage } from '../../../../../lib/api-clients/errors';
 import { renderMarkdown } from '../../../../../lib/markdown';
+import CopyProtection from '../../../../_components/CopyProtection';
 import McqAssignmentForm from '../../../../_components/McqAssignmentForm';
 import type { CourseAssignmentType } from '@nibras/contracts';
 
@@ -201,17 +202,32 @@ export default function AssignmentDetailPage() {
 
       <div className={styles.layout}>
         <div className={styles.main}>
-          {briefSection}
+          {assignmentType === 'quiz' ? (
+            <CopyProtection>{briefSection}</CopyProtection>
+          ) : (
+            briefSection
+          )}
 
           {isMcqLike && assignment.config && (
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>Questions</h2>
-              <McqAssignmentForm
-                config={assignment.config}
-                answers={mcqAnswers}
-                onChange={setMcqAnswers}
-                disabled={!canSubmit || submitting}
-              />
+              {assignmentType === 'quiz' ? (
+                <CopyProtection>
+                  <McqAssignmentForm
+                    config={assignment.config}
+                    answers={mcqAnswers}
+                    onChange={setMcqAnswers}
+                    disabled={!canSubmit || submitting}
+                  />
+                </CopyProtection>
+              ) : (
+                <McqAssignmentForm
+                  config={assignment.config}
+                  answers={mcqAnswers}
+                  onChange={setMcqAnswers}
+                  disabled={!canSubmit || submitting}
+                />
+              )}
             </section>
           )}
 
