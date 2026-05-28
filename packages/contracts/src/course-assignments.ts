@@ -13,12 +13,41 @@ export const AssignmentResourceSchema = z.object({
   url: z.string().url(),
 });
 
+export const CourseAssignmentTypeSchema = z.enum(['text', 'mcq', 'quiz']);
+
+export const McqOptionSchema = z.object({
+  id: z.string().min(1),
+  text: z.string().min(1),
+});
+
+export const McqQuestionInputSchema = z.object({
+  id: z.string().min(1),
+  prompt: z.string().min(1),
+  options: z.array(McqOptionSchema).min(2),
+  correctOptionId: z.string().min(1),
+});
+
+/** Student-facing questions omit `correctOptionId`. */
+export const McqQuestionSchema = McqQuestionInputSchema.extend({
+  correctOptionId: z.string().min(1).optional(),
+});
+
+export const McqAssignmentConfigInputSchema = z.object({
+  questions: z.array(McqQuestionInputSchema).min(1),
+});
+
+export const McqAssignmentConfigSchema = z.object({
+  questions: z.array(McqQuestionSchema).min(1),
+});
+
 export const CourseAssignmentSchema = z.object({
   id: z.string().min(1),
   courseId: z.string().min(1),
   title: z.string().min(1),
+  assignmentType: CourseAssignmentTypeSchema.optional(),
   description: z.string().optional(),
   content: z.string().optional(),
+  config: McqAssignmentConfigSchema.optional(),
   dueAt: z.string().datetime().nullable().optional(),
   pointsPossible: z.number().int().nonnegative(),
   sortOrder: z.number().int().nonnegative(),
@@ -43,8 +72,10 @@ export const CourseAssignmentDetailSchema = CourseAssignmentSchema.extend({
 
 export const CreateCourseAssignmentRequestSchema = z.object({
   title: z.string().min(1).max(200),
+  assignmentType: CourseAssignmentTypeSchema.optional(),
   description: z.string().max(5000).optional(),
   content: z.string().max(50000).optional(),
+  config: McqAssignmentConfigInputSchema.optional(),
   dueAt: z.string().datetime().nullable().optional(),
   pointsPossible: z.number().int().positive().optional(),
   sortOrder: z.number().int().nonnegative().optional(),
@@ -53,10 +84,15 @@ export const CreateCourseAssignmentRequestSchema = z.object({
 
 export const UpdateCourseAssignmentRequestSchema = CreateCourseAssignmentRequestSchema.partial();
 
-export const SubmitAssignmentRequestSchema = z.object({
-  content: z.string().min(1),
-  resources: z.array(AssignmentResourceSchema).optional(),
-});
+export const SubmitAssignmentRequestSchema = z
+  .object({
+    content: z.string().max(50000).optional(),
+    answers: z.record(z.string(), z.string()).optional(),
+    resources: z.array(AssignmentResourceSchema).optional(),
+  })
+  .refine((body) => Boolean(body.content?.trim()) || (body.answers && Object.keys(body.answers).length > 0), {
+    message: 'content or answers required',
+  });
 
 export const GradeAssignmentRequestSchema = z.object({
   userId: z.string().min(1),
@@ -88,6 +124,8 @@ export const AssignmentSubmissionsListSchema = z.object({
   items: z.array(AssignmentSubmissionQueueItemSchema),
 });
 
+export type CourseAssignmentType = z.infer<typeof CourseAssignmentTypeSchema>;
+export type McqAssignmentConfig = z.infer<typeof McqAssignmentConfigSchema>;
 export type CourseAssignment = z.infer<typeof CourseAssignmentSchema>;
 export type CourseAssignmentDetail = z.infer<typeof CourseAssignmentDetailSchema>;
 export type AssignmentDisplayStatus = z.infer<typeof AssignmentDisplayStatusSchema>;

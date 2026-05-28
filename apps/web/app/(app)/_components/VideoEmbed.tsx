@@ -90,7 +90,11 @@ function resolveIframeSrc(
 export default function VideoEmbed({ video, className, onEnded }: VideoEmbedProps) {
   const playbackUrl = video.playbackUrl;
 
-  if (video.provider === 'url' && looksLikeDirectMediaUrl(playbackUrl)) {
+  if (
+    video.provider === 'mp4' ||
+    (video.provider === 'url' && looksLikeDirectMediaUrl(playbackUrl))
+  ) {
+    if (!playbackUrl) return null;
     return (
       <video key={playbackUrl} className={className} src={playbackUrl} controls onEnded={onEnded} />
     );

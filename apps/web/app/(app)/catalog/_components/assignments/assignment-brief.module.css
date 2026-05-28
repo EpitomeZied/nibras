@@ -1,0 +1,29 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.description {
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--text);
+  margin: 0;
+}
+
+.description :global(p) {
+  margin: 0 0 0.75em;
+}
+
+.protected {
+  display: block;
+}

@@ -91,17 +91,33 @@ export function resolvePlaybackUrl(video: {
   externalId: string | null;
   embedUrl: string | null;
 }): string {
-  if (video.provider === 'youtube' && video.externalId) {
-    const id = normalizeYouTubeExternalId(video.externalId);
-    if (id) return `https://www.youtube-nocookie.com/embed/${id}`;
-  }
-  if (video.provider === 'bilibili' && video.externalId) {
-    const bvid = normalizeBilibiliExternalId(video.externalId);
-    if (bvid) {
-      return `https://player.bilibili.com/player.html?bvid=${bvid}&high_quality=1`;
+  if (video.provider === 'youtube') {
+    for (const candidate of [video.externalId, video.embedUrl]) {
+      if (!candidate?.trim()) continue;
+      const id = normalizeYouTubeExternalId(candidate);
+      if (id) return `https://www.youtube-nocookie.com/embed/${id}`;
     }
   }
-  return video.embedUrl ?? '';
+  if (video.provider === 'bilibili') {
+    for (const candidate of [video.externalId, video.embedUrl]) {
+      if (!candidate?.trim()) continue;
+      const bvid = normalizeBilibiliExternalId(candidate);
+      if (bvid) {
+        return `https://player.bilibili.com/player.html?bvid=${bvid}&high_quality=1`;
+      }
+    }
+  }
+  const embed = video.embedUrl?.trim() ?? '';
+  if (embed) return embed;
+  return '';
+}
+
+export function isVideoPlayable(video: {
+  provider: VideoProvider;
+  externalId: string | null;
+  embedUrl: string | null;
+}): boolean {
+  return resolvePlaybackUrl(video).length > 0;
 }
 
 function resolveThumbnailUrl(video: {
@@ -124,10 +140,16 @@ function validateVideoPayload(body: {
     if (!body.externalId?.trim()) {
       return `${body.provider} requires externalId`;
     }
+    if (!isVideoPlayable(body as { provider: VideoProvider; externalId: string | null; embedUrl: string | null })) {
+      return `Invalid ${body.provider} video id or URL`;
+    }
     return null;
   }
   if (!body.embedUrl?.trim()) {
     return `${body.provider} requires embedUrl`;
+  }
+  if (!isVideoPlayable(body as { provider: VideoProvider; externalId: string | null; embedUrl: string | null })) {
+    return `${body.provider} requires a valid playback URL`;
   }
   return null;
 }
@@ -138,6 +160,7 @@ function presentVideo(
   opts?: { locked?: boolean }
 ) {
   const playbackUrl = resolvePlaybackUrl(video);
+  const playable = playbackUrl.length > 0;
   return CourseVideoSchema.parse({
     id: video.id,
     courseId: video.section.courseId,
@@ -149,6 +172,7 @@ function presentVideo(
     externalId: video.externalId,
     embedUrl: video.embedUrl,
     playbackUrl,
+    playable,
     thumbnailUrl: resolveThumbnailUrl(video),
     durationSeconds: video.durationSeconds ?? 0,
     sortOrder: video.sortOrder,

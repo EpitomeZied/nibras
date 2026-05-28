@@ -1,0 +1,24 @@
+.badge {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.text {
+  background: var(--surface-strong, color-mix(in oklab, var(--border) 60%, transparent));
+  color: var(--text-muted);
+}
+
+.mcq {
+  background: color-mix(in oklab, #6366f1 18%, var(--surface));
+  color: #6366f1;
+}
+
+.quiz {
+  background: color-mix(in oklab, #f59e0b 18%, var(--surface));
+  color: #d97706;
+}

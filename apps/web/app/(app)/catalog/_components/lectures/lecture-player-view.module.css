@@ -1,0 +1,130 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.breadcrumb a {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: var(--primary, #22c55e);
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.player {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.videoFrame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 14px;
+  background: #000;
+  overflow: hidden;
+}
+
+.videoFrame video,
+.videoFrame iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.unavailable {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 200px;
+  color: var(--text-muted);
+  font-size: 14px;
+  background: var(--surface);
+}
+
+.videoHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.videoTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.videoDescription {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.shortcuts {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.shortcuts kbd {
+  font-family: var(--font-geist-mono, ui-monospace, SFMono-Regular);
+  font-size: 11px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.markWatchedBtn {
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.markWatchedBtn:hover {
+  border-color: var(--primary, #22c55e);
+}
+
+.projectLink {
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.projectLink a {
+  color: var(--primary, #22c55e);
+}
