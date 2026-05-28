@@ -6,6 +6,7 @@ import DropdownMenu, { DropdownChevron, DropdownGroup, useDropdownClose } from '
 import { usePathname } from 'next/navigation';
 import UserAvatar from './widgets/UserAvatar';
 import NibrasLogo from '@/app/_components/nibras-logo';
+import { WEB_BASE_URL } from '@/app/lib/web-base-url';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import NotificationsPanel from './notifications-panel';
 import {
@@ -566,7 +567,7 @@ export default function TopHeader({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: compact ? 6 : 8 }}>
               <a
-                href="https://nibrasplatform.me"
+                href={WEB_BASE_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 title="Visit NibrasPlaftorm.me"
