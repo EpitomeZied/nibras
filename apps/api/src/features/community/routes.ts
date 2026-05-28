@@ -59,7 +59,10 @@ export function registerCommunityRoutes(
         ];
       }
       if (query.tags) {
-        const tagList = query.tags.split(',').map((t) => t.trim()).filter(Boolean);
+        const tagList = query.tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean);
         if (tagList.length > 0) where.tags = { hasSome: tagList };
       } else if (query.tag) {
         where.tags = { has: query.tag };
@@ -321,12 +324,7 @@ export function registerCommunityRoutes(
           link: `/community/q/${answer.questionId}`,
         });
       }
-      void awardAnswerAccepted(
-        prisma,
-        answer.authorId,
-        answerId,
-        answer.question.title
-      );
+      void awardAnswerAccepted(prisma, answer.authorId, answerId, answer.question.title);
       return { accepted: true };
     }
   );
@@ -424,12 +422,7 @@ export function registerCommunityRoutes(
             contentAuthorId = q.authorId;
             contentTitle = q.title;
             contentLink = `/community/q/${body.targetId}`;
-            void awardQuestionUpvoteReceived(
-              prisma,
-              q.authorId,
-              body.targetId,
-              auth.user.id
-            );
+            void awardQuestionUpvoteReceived(prisma, q.authorId, body.targetId, auth.user.id);
           }
         } else if (targetType === CommunityVoteTargetType.answer) {
           const a = await prisma.communityAnswer.findUnique({
@@ -984,8 +977,7 @@ export function registerCommunityRoutes(
           chatBotResponse = null;
         }
         if (!resp.ok || !chatBotResponse) {
-          const detail =
-            chatBotResponse?.message || rawBody || 'AI Tutor request failed.';
+          const detail = chatBotResponse?.message || rawBody || 'AI Tutor request failed.';
           reply
             .code(resp.status >= 500 ? resp.status : 502)
             .send(Errors.unavailable(detail.slice(0, 300)));
@@ -995,9 +987,7 @@ export function registerCommunityRoutes(
           reply
             .code(503)
             .send(
-              Errors.unavailable(
-                chatBotResponse.message || 'AI generation failed. Please retry.'
-              )
+              Errors.unavailable(chatBotResponse.message || 'AI generation failed. Please retry.')
             );
           return;
         }

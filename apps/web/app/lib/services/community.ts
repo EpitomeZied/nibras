@@ -488,9 +488,13 @@ export async function deleteTag(tagId: string) {
 
 // ── Bookmarks (server) ──────────────────────────────────────────────────────
 export async function listBookmarkIds(): Promise<string[]> {
-  const raw = await serviceFetch<{ questionIds?: string[] }>('community', '/v1/community/bookmarks', {
-    auth: true,
-  });
+  const raw = await serviceFetch<{ questionIds?: string[] }>(
+    'community',
+    '/v1/community/bookmarks',
+    {
+      auth: true,
+    }
+  );
   return raw.questionIds ?? [];
 }
 
@@ -569,11 +573,15 @@ export async function deleteQuestion(questionId: string) {
 }
 
 export async function updateAnswer(answerId: string, body: string) {
-  return serviceFetch<{ answer: CommunityAnswer }>('community', `/v1/community/answers/${answerId}`, {
-    method: 'PATCH',
-    auth: true,
-    body: { body },
-  });
+  return serviceFetch<{ answer: CommunityAnswer }>(
+    'community',
+    `/v1/community/answers/${answerId}`,
+    {
+      method: 'PATCH',
+      auth: true,
+      body: { body },
+    }
+  );
 }
 
 export async function deleteAnswer(answerId: string) {

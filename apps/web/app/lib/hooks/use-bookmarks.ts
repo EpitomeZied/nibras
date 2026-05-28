@@ -55,21 +55,15 @@ export function useBookmarks() {
   const toggle = useCallback(
     async (id: string) => {
       const nextOn = !bookmarks.includes(id);
-      setBookmarks((prev) =>
-        nextOn ? [...prev, id] : prev.filter((b) => b !== id)
-      );
+      setBookmarks((prev) => (nextOn ? [...prev, id] : prev.filter((b) => b !== id)));
       if (user) {
         try {
           await toggleQuestionBookmark(id, nextOn);
         } catch {
-          setBookmarks((prev) =>
-            nextOn ? prev.filter((b) => b !== id) : [...prev, id]
-          );
+          setBookmarks((prev) => (nextOn ? prev.filter((b) => b !== id) : [...prev, id]));
         }
       } else {
-        const next = nextOn
-          ? [...bookmarks, id]
-          : bookmarks.filter((b) => b !== id);
+        const next = nextOn ? [...bookmarks, id] : bookmarks.filter((b) => b !== id);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       }
     },

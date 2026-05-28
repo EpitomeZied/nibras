@@ -44,7 +44,9 @@ export default function CommunityLayout({ children }: { children: React.ReactNod
                   textDecoration: 'none',
                   color: active ? 'var(--primary)' : 'var(--text-muted)',
                   border: `1px solid ${active ? 'var(--primary)' : 'var(--border)'}`,
-                  background: active ? 'color-mix(in srgb, var(--primary) 12%, transparent)' : 'transparent',
+                  background: active
+                    ? 'color-mix(in srgb, var(--primary) 12%, transparent)'
+                    : 'transparent',
                 }}
               >
                 {tab.label}

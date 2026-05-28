@@ -53,9 +53,7 @@ export default function ReportContentButton({ targetType, targetId, className }:
       >
         Report
       </button>
-      {done && (
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Report submitted</span>
-      )}
+      {done && <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Report submitted</span>}
       {open && (
         <div
           role="dialog"

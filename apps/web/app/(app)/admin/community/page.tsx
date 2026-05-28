@@ -2,11 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import {
-  listReportsAdmin,
-  reviewReport,
-  type AdminReport,
-} from '../../../lib/services/community';
+import { listReportsAdmin, reviewReport, type AdminReport } from '../../../lib/services/community';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 import { useSession } from '../../_components/session-context';
 import { useRouter } from 'next/navigation';
@@ -87,11 +83,25 @@ export default function AdminCommunityPage() {
       {loading ? (
         <Skeleton variant="card" height={80} count={4} />
       ) : error ? (
-        <EmptyState title="Could not load reports" description={error} tone="error" action={{ label: 'Retry', onClick: () => void load() }} />
+        <EmptyState
+          title="Could not load reports"
+          description={error}
+          tone="error"
+          action={{ label: 'Retry', onClick: () => void load() }}
+        />
       ) : reports.length === 0 ? (
         <EmptyState title="Queue is clear" description="No pending community reports." />
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <ul
+          style={{
+            listStyle: 'none',
+            padding: 0,
+            margin: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
           {reports.map((report) => (
             <li
               key={report.id}
@@ -101,7 +111,14 @@ export default function AdminCommunityPage() {
                 padding: 16,
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
                 <div>
                   <strong>{report.targetType}</strong>
                   <span style={{ color: 'var(--text-muted)', marginLeft: 8, fontSize: 13 }}>
@@ -114,7 +131,9 @@ export default function AdminCommunityPage() {
                     </p>
                   )}
                 </div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                <div
+                  style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-start' }}
+                >
                   <Link href={contentLink(report)} style={{ fontSize: 13 }}>
                     View
                   </Link>

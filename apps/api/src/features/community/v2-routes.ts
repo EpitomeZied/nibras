@@ -53,7 +53,9 @@ export function registerCommunityV2Routes(
       }
       const existing = await findPendingReport(prisma, auth.user.id, targetType, body.targetId);
       if (existing) {
-        reply.code(409).send(Errors.validation('You already have a pending report for this content.'));
+        reply
+          .code(409)
+          .send(Errors.validation('You already have a pending report for this content.'));
         return;
       }
       const report = await prisma.communityReport.create({
@@ -153,9 +155,7 @@ export function registerCommunityV2Routes(
         });
       } else {
         const status =
-          action === 'hide'
-            ? CommunityModerationStatus.hidden
-            : CommunityModerationStatus.removed;
+          action === 'hide' ? CommunityModerationStatus.hidden : CommunityModerationStatus.removed;
         await setTargetModerationStatus(prisma, report.targetType, report.targetId, status);
         await prisma.communityReport.update({
           where: { id: reportId },
