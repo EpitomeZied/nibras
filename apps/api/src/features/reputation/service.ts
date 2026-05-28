@@ -108,23 +108,6 @@ export class ReputationService {
       });
     }
 
-    const questions = await this.prisma.communityQuestion.findMany({
-      where: { authorId: userId, votesCount: { gt: 0 } },
-      select: { id: true, votesCount: true, createdAt: true, title: true },
-    });
-    for (const q of questions) {
-      events.push({
-        delta: q.votesCount * 3,
-        reason: buildSyncReason('question-upvotes', {
-          questionTitle: q.title,
-          votesCount: q.votesCount,
-        }),
-        source: `question-upvotes:${q.id}`,
-        category: 'community',
-        createdAt: q.createdAt,
-      });
-    }
-
     const solvedProblems = await this.prisma.userProblemProgress.findMany({
       where: { userId, solved: true },
       select: {

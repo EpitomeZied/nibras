@@ -175,7 +175,7 @@ function normalizeAuthor(author: WireAuthor | null | undefined): CommunityAuthor
   };
 }
 
-function normalizeQuestion(q: WireQuestion): CommunityQuestion {
+function normalizeQuestion(q: WireQuestion & { viewCount?: number }): CommunityQuestion {
   return {
     id: q._id ?? q.id ?? '',
     title: q.title,
@@ -186,7 +186,7 @@ function normalizeQuestion(q: WireQuestion): CommunityQuestion {
     myVote: q.myVote,
     answerCount: q.answersCount ?? 0,
     acceptedAnswerId: q.acceptedAnswerId ?? null,
-    views: q.views,
+    views: q.views ?? q.viewCount,
     createdAt: q.createdAt,
     updatedAt: q.updatedAt,
   };

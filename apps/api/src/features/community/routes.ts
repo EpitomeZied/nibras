@@ -1,40 +1,26 @@
 import { FastifyInstance } from 'fastify';
-import { PrismaClient } from '@prisma/client';
-
-type CommunityVoteTargetType = 'question' | 'answer' | 'post';
-import { requireUser } from '../../lib/auth';
+import { CommunityVoteTargetType, PrismaClient } from '@prisma/client';
+import { optionalAuth, requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
 import { requestBaseUrl } from '../../lib/request-base-url';
 import { AppStore } from '../../store';
 import { getUserAiCredential } from '../../lib/ai-credentials';
-
-const authorSelect = {
-  id: true,
-  username: true,
-  githubAccount: { select: { login: true } },
-} as const;
-
-function githubAvatarUrlForLogin(login: string | null | undefined, size = 64): string | undefined {
-  const trimmed = login?.trim();
-  if (!trimmed) return undefined;
-  return `https://avatars.githubusercontent.com/${encodeURIComponent(trimmed)}?s=${size}`;
-}
-
-function presentAuthor(author: {
-  id: string;
-  username: string;
-  githubAccount: { login: string } | null;
-}) {
-  const login = author.githubAccount?.login;
-  return {
-    _id: author.id,
-    userId: author.id,
-    name: author.username,
-    username: author.username,
-    githubLogin: login,
-    avatarUrl: githubAvatarUrlForLogin(login),
-  };
-}
+import { assertCourseManage, assertCourseView, canAcceptAnswer } from './access';
+import {
+  authorSelect,
+  loadReputationTotals,
+  presentAuthor,
+  presentQuestion,
+  presentThread,
+} from './present';
+import {
+  awardAnswerAccepted,
+  awardAnswerUpvoteReceived,
+  awardPostUpvoteReceived,
+  awardQuestionUpvoteReceived,
+} from './reputation';
+import { questionOrderBy } from './sort';
+import { attachMyVotes } from './votes';
 
 export function registerCommunityRoutes(
   app: FastifyInstance,
@@ -46,7 +32,8 @@ export function registerCommunityRoutes(
   app.get(
     '/v1/community/questions',
     { schema: { tags: ['community'], summary: 'List community questions' } },
-    async (request) => {
+    async (request, reply) => {
+      const auth = await optionalAuth(request, reply, store);
       const query = request.query as {
         q?: string;
         tag?: string;
@@ -77,12 +64,7 @@ export function registerCommunityRoutes(
         where.authorId = query.authorId;
       }
 
-      const orderBy =
-        query.sort === 'top'
-          ? { votesCount: 'desc' as const }
-          : query.sort === 'unanswered'
-            ? { answersCount: 'asc' as const }
-            : { createdAt: 'desc' as const };
+      const orderBy = questionOrderBy(query.sort);
 
       const [questions, total] = await Promise.all([
         prisma.communityQuestion.findMany({
@@ -95,12 +77,19 @@ export function registerCommunityRoutes(
         prisma.communityQuestion.count({ where }),
       ]);
 
+      const reputationByUserId = await loadReputationTotals(
+        prisma,
+        questions.map((q) => q.author.id)
+      );
+      const withVotes = await attachMyVotes(
+        prisma,
+        auth?.user.id,
+        CommunityVoteTargetType.question,
+        questions
+      );
+
       return {
-        questions: questions.map((q) => ({
-          ...q,
-          _id: q.id,
-          author: presentAuthor(q.author),
-        })),
+        questions: withVotes.map((q) => presentQuestion(q, reputationByUserId, q.myVote)),
         pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       };
     }
@@ -110,6 +99,7 @@ export function registerCommunityRoutes(
     '/v1/community/questions/:questionId',
     { schema: { tags: ['community'], summary: 'Get a community question' } },
     async (request, reply) => {
+      const auth = await optionalAuth(request, reply, store);
       const { questionId } = request.params as { questionId: string };
       const question = await prisma.communityQuestion.findUnique({
         where: { id: questionId },
@@ -122,16 +112,35 @@ export function registerCommunityRoutes(
         reply.code(404).send(Errors.notFound('Question'));
         return;
       }
+      if (!auth || auth.user.id !== question.authorId) {
+        await prisma.communityQuestion.update({
+          where: { id: questionId },
+          data: { viewCount: { increment: 1 } },
+        });
+        question.viewCount += 1;
+      }
+      const reputationByUserId = await loadReputationTotals(prisma, [
+        question.author.id,
+        ...question.answers.map((a) => a.author.id),
+      ]);
+      const [questionVote] = await attachMyVotes(
+        prisma,
+        auth?.user.id,
+        CommunityVoteTargetType.question,
+        [question]
+      );
+      const answersWithVotes = await attachMyVotes(
+        prisma,
+        auth?.user.id,
+        CommunityVoteTargetType.answer,
+        question.answers
+      );
       return {
-        question: {
-          ...question,
-          _id: question.id,
-          author: presentAuthor(question.author),
-        },
-        answers: question.answers.map((a) => ({
+        question: presentQuestion(questionVote, reputationByUserId, questionVote.myVote),
+        answers: answersWithVotes.map((a) => ({
           ...a,
           _id: a.id,
-          author: presentAuthor(a.author),
+          author: presentAuthor(a.author, reputationByUserId),
         })),
       };
     }
@@ -180,6 +189,7 @@ export function registerCommunityRoutes(
     '/v1/community/answers/question/:questionId',
     { schema: { tags: ['community'], summary: 'List answers for a question' } },
     async (request, reply) => {
+      const auth = await optionalAuth(request, reply, store);
       const { questionId } = request.params as { questionId: string };
       const question = await prisma.communityQuestion.findUnique({ where: { id: questionId } });
       if (!question) {
@@ -191,11 +201,21 @@ export function registerCommunityRoutes(
         orderBy: { createdAt: 'asc' },
         include: { author: { select: authorSelect } },
       });
+      const reputationByUserId = await loadReputationTotals(
+        prisma,
+        answers.map((a) => a.author.id)
+      );
+      const withVotes = await attachMyVotes(
+        prisma,
+        auth?.user.id,
+        CommunityVoteTargetType.answer,
+        answers
+      );
       return {
-        answers: answers.map((a) => ({
+        answers: withVotes.map((a) => ({
           ...a,
           _id: a.id,
-          author: presentAuthor(a.author),
+          author: presentAuthor(a.author, reputationByUserId),
         })),
       };
     }
@@ -229,7 +249,7 @@ export function registerCommunityRoutes(
       const answerCount = await prisma.communityAnswer.count({ where: { questionId } });
       await prisma.communityQuestion.update({
         where: { id: questionId },
-        data: { answersCount: answerCount },
+        data: { answersCount: answerCount, updatedAt: new Date() },
       });
       if (question.authorId !== auth.user.id) {
         void store.createNotification(requestBaseUrl(request), question.authorId, {
@@ -259,7 +279,7 @@ export function registerCommunityRoutes(
         reply.code(404).send(Errors.notFound('Answer'));
         return;
       }
-      if (answer.question.authorId !== auth.user.id && auth.user.systemRole !== 'admin') {
+      if (!canAcceptAnswer(auth, answer.question.authorId)) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -285,6 +305,12 @@ export function registerCommunityRoutes(
           link: `/community/q/${answer.questionId}`,
         });
       }
+      void awardAnswerAccepted(
+        prisma,
+        answer.authorId,
+        answerId,
+        answer.question.title
+      );
       return { accepted: true };
     }
   );
@@ -302,7 +328,11 @@ export function registerCommunityRoutes(
         reply.code(400).send(Errors.validation('targetType, targetId, and value are required.'));
         return;
       }
-      const validTypes: CommunityVoteTargetType[] = ['question', 'answer', 'post'];
+      const validTypes: CommunityVoteTargetType[] = [
+        CommunityVoteTargetType.question,
+        CommunityVoteTargetType.answer,
+        CommunityVoteTargetType.post,
+      ];
       if (!validTypes.includes(body.targetType as CommunityVoteTargetType)) {
         reply.code(400).send(Errors.validation('targetType must be question, answer, or post.'));
         return;
@@ -364,11 +394,12 @@ export function registerCommunityRoutes(
         votesCount = updated.votesCount;
       }
 
-      if (action === 'voted' && value === 1) {
+      const awardedUpvote = value === 1 && (action === 'voted' || action === 'changed');
+      if (awardedUpvote) {
         let contentAuthorId: string | null = null;
         let contentTitle = '';
         let contentLink = '';
-        if (targetType === 'question') {
+        if (targetType === CommunityVoteTargetType.question) {
           const q = await prisma.communityQuestion.findUnique({
             where: { id: body.targetId },
             select: { authorId: true, title: true },
@@ -377,8 +408,14 @@ export function registerCommunityRoutes(
             contentAuthorId = q.authorId;
             contentTitle = q.title;
             contentLink = `/community/q/${body.targetId}`;
+            void awardQuestionUpvoteReceived(
+              prisma,
+              q.authorId,
+              body.targetId,
+              auth.user.id
+            );
           }
-        } else if (targetType === 'answer') {
+        } else if (targetType === CommunityVoteTargetType.answer) {
           const a = await prisma.communityAnswer.findUnique({
             where: { id: body.targetId },
             select: { authorId: true, questionId: true },
@@ -387,8 +424,9 @@ export function registerCommunityRoutes(
             contentAuthorId = a.authorId;
             contentLink = `/community/q/${a.questionId}`;
             contentTitle = 'your answer';
+            void awardAnswerUpvoteReceived(prisma, a.authorId, body.targetId, auth.user.id);
           }
-        } else if (targetType === 'post') {
+        } else if (targetType === CommunityVoteTargetType.post) {
           const p = await prisma.communityPost.findUnique({
             where: { id: body.targetId },
             select: { authorId: true, threadId: true },
@@ -397,6 +435,7 @@ export function registerCommunityRoutes(
             contentAuthorId = p.authorId;
             contentLink = `/community/discussions/${p.threadId}`;
             contentTitle = 'your post';
+            void awardPostUpvoteReceived(prisma, p.authorId, body.targetId, auth.user.id);
           }
         }
         if (contentAuthorId && contentAuthorId !== auth.user.id) {
@@ -557,7 +596,9 @@ export function registerCommunityRoutes(
     async (request, reply) => {
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
+      const apiBaseUrl = requestBaseUrl(request);
       const { courseId } = request.params as { courseId: string };
+      if (!(await assertCourseView(store, apiBaseUrl, auth, courseId, reply))) return;
       const query = request.query as { q?: string; page?: string; limit?: string };
       const page = Math.max(1, parseInt(query.page || '1', 10) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(query.limit || '30', 10) || 30));
@@ -574,7 +615,7 @@ export function registerCommunityRoutes(
       const [threads, total] = await Promise.all([
         prisma.communityThread.findMany({
           where,
-          orderBy: [{ pinned: 'desc' }, { createdAt: 'desc' }],
+          orderBy: [{ pinned: 'desc' }, { lastActivityAt: 'desc' }],
           skip,
           take: limit,
           include: { author: { select: authorSelect } },
@@ -582,13 +623,13 @@ export function registerCommunityRoutes(
         prisma.communityThread.count({ where }),
       ]);
 
+      const reputationByUserId = await loadReputationTotals(
+        prisma,
+        threads.map((t) => t.author.id)
+      );
+
       return {
-        items: threads.map((t) => ({
-          ...t,
-          _id: t.id,
-          author: presentAuthor(t.author),
-          replyCount: t.postsCount,
-        })),
+        items: threads.map((t) => presentThread(t, reputationByUserId)),
         total,
         page,
         limit,
@@ -602,6 +643,7 @@ export function registerCommunityRoutes(
     async (request, reply) => {
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
+      const apiBaseUrl = requestBaseUrl(request);
       const { threadId } = request.params as { threadId: string };
       const thread = await prisma.communityThread.findUnique({
         where: { id: threadId },
@@ -611,12 +653,9 @@ export function registerCommunityRoutes(
         reply.code(404).send(Errors.notFound('Thread'));
         return;
       }
-      return {
-        ...thread,
-        _id: thread.id,
-        author: presentAuthor(thread.author),
-        replyCount: thread.postsCount,
-      };
+      if (!(await assertCourseView(store, apiBaseUrl, auth, thread.courseId, reply))) return;
+      const reputationByUserId = await loadReputationTotals(prisma, [thread.author.id]);
+      return presentThread(thread, reputationByUserId);
     }
   );
 
@@ -626,12 +665,15 @@ export function registerCommunityRoutes(
     async (request, reply) => {
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
+      const apiBaseUrl = requestBaseUrl(request);
       const { courseId } = request.params as { courseId: string };
+      if (!(await assertCourseView(store, apiBaseUrl, auth, courseId, reply))) return;
       const body = request.body as { title?: string; body?: string; tags?: string[] };
       if (!body.title?.trim()) {
         reply.code(400).send(Errors.validation('Title is required.'));
         return;
       }
+      const now = new Date();
       const thread = await prisma.communityThread.create({
         data: {
           courseId,
@@ -639,11 +681,13 @@ export function registerCommunityRoutes(
           title: body.title.trim(),
           body: body.body?.trim() ?? '',
           tags: body.tags ?? [],
+          lastActivityAt: now,
         },
         include: { author: { select: authorSelect } },
       });
+      const reputationByUserId = await loadReputationTotals(prisma, [thread.author.id]);
       reply.code(201);
-      return { ...thread, _id: thread.id, author: presentAuthor(thread.author), replyCount: 0 };
+      return presentThread(thread, reputationByUserId);
     }
   );
 
@@ -654,17 +698,19 @@ export function registerCommunityRoutes(
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
       const { threadId } = request.params as { threadId: string };
+      const existing = await prisma.communityThread.findUnique({ where: { id: threadId } });
+      if (!existing) {
+        reply.code(404).send(Errors.notFound('Thread'));
+        return;
+      }
+      if (!assertCourseManage(auth, existing.courseId, reply)) return;
       const thread = await prisma.communityThread.update({
         where: { id: threadId },
         data: { pinned: true },
         include: { author: { select: authorSelect } },
       });
-      return {
-        ...thread,
-        _id: thread.id,
-        author: presentAuthor(thread.author),
-        replyCount: thread.postsCount,
-      };
+      const reputationByUserId = await loadReputationTotals(prisma, [thread.author.id]);
+      return presentThread(thread, reputationByUserId);
     }
   );
 
@@ -675,17 +721,19 @@ export function registerCommunityRoutes(
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
       const { threadId } = request.params as { threadId: string };
+      const existing = await prisma.communityThread.findUnique({ where: { id: threadId } });
+      if (!existing) {
+        reply.code(404).send(Errors.notFound('Thread'));
+        return;
+      }
+      if (!assertCourseManage(auth, existing.courseId, reply)) return;
       const thread = await prisma.communityThread.update({
         where: { id: threadId },
         data: { pinned: false },
         include: { author: { select: authorSelect } },
       });
-      return {
-        ...thread,
-        _id: thread.id,
-        author: presentAuthor(thread.author),
-        replyCount: thread.postsCount,
-      };
+      const reputationByUserId = await loadReputationTotals(prisma, [thread.author.id]);
+      return presentThread(thread, reputationByUserId);
     }
   );
 
@@ -696,17 +744,19 @@ export function registerCommunityRoutes(
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
       const { threadId } = request.params as { threadId: string };
+      const existing = await prisma.communityThread.findUnique({ where: { id: threadId } });
+      if (!existing) {
+        reply.code(404).send(Errors.notFound('Thread'));
+        return;
+      }
+      if (!assertCourseManage(auth, existing.courseId, reply)) return;
       const thread = await prisma.communityThread.update({
         where: { id: threadId },
         data: { closed: true },
         include: { author: { select: authorSelect } },
       });
-      return {
-        ...thread,
-        _id: thread.id,
-        author: presentAuthor(thread.author),
-        replyCount: thread.postsCount,
-      };
+      const reputationByUserId = await loadReputationTotals(prisma, [thread.author.id]);
+      return presentThread(thread, reputationByUserId);
     }
   );
 
@@ -717,17 +767,19 @@ export function registerCommunityRoutes(
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
       const { threadId } = request.params as { threadId: string };
+      const existing = await prisma.communityThread.findUnique({ where: { id: threadId } });
+      if (!existing) {
+        reply.code(404).send(Errors.notFound('Thread'));
+        return;
+      }
+      if (!assertCourseManage(auth, existing.courseId, reply)) return;
       const thread = await prisma.communityThread.update({
         where: { id: threadId },
         data: { closed: false },
         include: { author: { select: authorSelect } },
       });
-      return {
-        ...thread,
-        _id: thread.id,
-        author: presentAuthor(thread.author),
-        replyCount: thread.postsCount,
-      };
+      const reputationByUserId = await loadReputationTotals(prisma, [thread.author.id]);
+      return presentThread(thread, reputationByUserId);
     }
   );
 
@@ -739,13 +791,34 @@ export function registerCommunityRoutes(
     async (request, reply) => {
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
+      const apiBaseUrl = requestBaseUrl(request);
       const { threadId } = request.params as { threadId: string };
+      const thread = await prisma.communityThread.findUnique({ where: { id: threadId } });
+      if (!thread) {
+        reply.code(404).send(Errors.notFound('Thread'));
+        return;
+      }
+      if (!(await assertCourseView(store, apiBaseUrl, auth, thread.courseId, reply))) return;
       const posts = await prisma.communityPost.findMany({
         where: { threadId },
         orderBy: { createdAt: 'asc' },
         include: { author: { select: authorSelect } },
       });
-      return posts.map((p) => ({ ...p, _id: p.id, author: presentAuthor(p.author) }));
+      const reputationByUserId = await loadReputationTotals(
+        prisma,
+        posts.map((p) => p.author.id)
+      );
+      const withVotes = await attachMyVotes(
+        prisma,
+        auth.user.id,
+        CommunityVoteTargetType.post,
+        posts
+      );
+      return withVotes.map((p) => ({
+        ...p,
+        _id: p.id,
+        author: presentAuthor(p.author, reputationByUserId),
+      }));
     }
   );
 
@@ -761,11 +834,13 @@ export function registerCommunityRoutes(
         reply.code(400).send(Errors.validation('Post body is required.'));
         return;
       }
+      const apiBaseUrl = requestBaseUrl(request);
       const thread = await prisma.communityThread.findUnique({ where: { id: threadId } });
       if (!thread) {
         reply.code(404).send(Errors.notFound('Thread'));
         return;
       }
+      if (!(await assertCourseView(store, apiBaseUrl, auth, thread.courseId, reply))) return;
       if (thread.closed) {
         reply.code(400).send(Errors.validation('Thread is closed.'));
         return;
@@ -778,9 +853,10 @@ export function registerCommunityRoutes(
         },
         include: { author: { select: authorSelect } },
       });
+      const now = new Date();
       await prisma.communityThread.update({
         where: { id: threadId },
-        data: { postsCount: { increment: 1 } },
+        data: { postsCount: { increment: 1 }, lastActivityAt: now, updatedAt: now },
       });
       if (thread.authorId !== auth.user.id) {
         void store.createNotification(requestBaseUrl(request), thread.authorId, {
