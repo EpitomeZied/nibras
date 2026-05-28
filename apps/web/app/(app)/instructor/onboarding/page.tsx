@@ -247,7 +247,19 @@ const COMMAND_REFERENCE_GROUPS: CommandReferenceGroup[] = [
       },
       {
         command: 'nibras status',
-        description: 'Show recent submissions with live status badges.',
+        description: 'Show recent submission statuses.',
+      },
+      {
+        command: 'nibras milestones',
+        description: 'List milestones for the current or given project.',
+      },
+      {
+        command: 'nibras config',
+        description: 'View or update CLI configuration.',
+      },
+      {
+        command: 'nibras doctor',
+        description: 'Check local tooling and API connectivity.',
       },
     ],
   },

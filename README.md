@@ -177,7 +177,7 @@ Nibras is a modern, full-stack course operations platform built specifically for
 3. API generates device code, shows authorization URL
 4. Student opens URL in browser, authorizes CLI app
 5. API exchanges device code for GitHub OAuth token
-6. Token stored in ~/.nibras/cli.json (encrypted)
+6. Token stored in platform config (`~/.config/nibras/config.json` on Linux)
 7. CLI now authenticated for all operations
 ```
 
@@ -487,7 +487,7 @@ The published `@nibras/cli` package is available on npm:
 npm install -g @nibras/cli
 
 # Or install a specific version
-npm install -g @nibras/cli@1.0.2
+npm install -g @nibras/cli@2.0.0
 
 # Verify installation
 nibras --version
@@ -672,7 +672,7 @@ nibras logout
 nibras login --api-base-url https://different-instance.edu
 ```
 
-**Stores:** Token to `~/.nibras/cli.json` (encrypted)
+**Stores:** Session tokens in the platform config file (see `nibras config path`).
 
 #### `nibras logout`
 
@@ -682,7 +682,17 @@ Clear the local CLI session.
 nibras logout
 ```
 
-**Removes:** Token from `~/.nibras/cli.json`
+**Removes:** Tokens from the platform config file (keeps API base URL).
+
+#### `nibras config`
+
+View or update CLI settings.
+
+```bash
+nibras config path
+nibras config get api-base-url
+nibras config set api-base-url https://nibras.yourschool.edu
+```
 
 #### `nibras whoami`
 
@@ -733,6 +743,31 @@ cs161/lab1
 cs106L/warmup
   Submission 1: cancelled ⊘ (3 days ago)
     Reason: Manual cancellation
+```
+
+```bash
+# Machine-readable output
+nibras status --json
+
+# One submission in detail
+nibras status show <submissionId>
+```
+
+#### `nibras milestones`
+
+List milestones for the current project directory or a project key.
+
+```bash
+nibras milestones
+nibras milestones cs161/lab1
+```
+
+#### `nibras doctor`
+
+Check Node.js, git, config, session, and API connectivity.
+
+```bash
+nibras doctor
 ```
 
 ### Project Setup

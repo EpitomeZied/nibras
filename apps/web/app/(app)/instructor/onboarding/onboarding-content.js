@@ -1,7 +1,7 @@
 import { discoverApiBaseUrlWith, normalizeApiBaseUrl } from '../../../lib/session-core.js';
 
-export const PINNED_RELEASE_TAG = 'v1.0.2';
-export const NPM_INSTALL_COMMAND = 'npm install -g @nibras/cli@1.0.2';
+export const PINNED_RELEASE_TAG = 'v2.0.0';
+export const NPM_INSTALL_COMMAND = 'npm install -g @nibras/cli@2.0.0';
 export const GIT_INSTALL_COMMAND = NPM_INSTALL_COMMAND;
 
 export function getOnboardingConfigPath(os) {
