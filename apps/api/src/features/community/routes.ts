@@ -552,11 +552,32 @@ export function registerCommunityRoutes(
   // ── Threads ─────────────────────────────────────────────────────────────
 
   app.get(
+    '/v1/community/discussion-courses',
+    { schema: { tags: ['community'], summary: 'List courses with discussion threads (public read)' } },
+    async () => {
+      const courses = await prisma.course.findMany({
+        where: {
+          deletedAt: null,
+          isActive: true,
+          communityThreads: { some: {} },
+        },
+        select: { id: true, title: true, courseCode: true },
+        orderBy: { title: 'asc' },
+      });
+      return {
+        courses: courses.map((c) => ({
+          id: c.id,
+          title: c.title,
+          courseCode: c.courseCode,
+        })),
+      };
+    }
+  );
+
+  app.get(
     '/v1/community/threads/course/:courseId',
     { schema: { tags: ['community'], summary: 'List threads for a course' } },
     async (request, reply) => {
-      const auth = await requireUser(request, reply, store);
-      if (!auth) return;
       const { courseId } = request.params as { courseId: string };
       const query = request.query as { q?: string; page?: string; limit?: string };
       const page = Math.max(1, parseInt(query.page || '1', 10) || 1);
@@ -600,8 +621,6 @@ export function registerCommunityRoutes(
     '/v1/community/threads/:threadId',
     { schema: { tags: ['community'], summary: 'Get a thread' } },
     async (request, reply) => {
-      const auth = await requireUser(request, reply, store);
-      if (!auth) return;
       const { threadId } = request.params as { threadId: string };
       const thread = await prisma.communityThread.findUnique({
         where: { id: threadId },
@@ -737,8 +756,6 @@ export function registerCommunityRoutes(
     '/v1/community/posts/thread/:threadId',
     { schema: { tags: ['community'], summary: 'List posts in a thread' } },
     async (request, reply) => {
-      const auth = await requireUser(request, reply, store);
-      if (!auth) return;
       const { threadId } = request.params as { threadId: string };
       const posts = await prisma.communityPost.findMany({
         where: { threadId },
