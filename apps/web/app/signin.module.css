@@ -418,6 +418,39 @@
   cursor: not-allowed;
 }
 
+.btnGoogleSignIn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 28px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    opacity 0.15s,
+    transform 0.1s,
+    box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  letter-spacing: -0.01em;
+}
+
+.btnGoogleSignIn:hover:not(:disabled) {
+  opacity: 0.95;
+  transform: translateY(-1px);
+}
+
+.btnGoogleSignIn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
 .heroAuth {
   display: flex;
   flex-direction: column;

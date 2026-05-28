@@ -119,7 +119,9 @@ export default function CliSetupGuideControls({
   return (
     <div className={[styles.row, className].filter(Boolean).join(' ')}>
       <div className={styles.rowStart}>
-        <span className={[styles.badge, badgeDone ? styles.badgeDone : ''].filter(Boolean).join(' ')}>
+        <span
+          className={[styles.badge, badgeDone ? styles.badgeDone : ''].filter(Boolean).join(' ')}
+        >
           {badgeLabel}
         </span>
         {progressLabel ? <span className={styles.progressPill}>{progressLabel}</span> : null}
@@ -146,12 +148,7 @@ export default function CliSetupGuideControls({
         </div>
       ) : (
         <div className={styles.viewSwitch} role="group" aria-label="Guide audience">
-          <ViewSegment
-            mode="student"
-            label="Student guide"
-            active
-            interactive={false}
-          />
+          <ViewSegment mode="student" label="Student guide" active interactive={false} />
         </div>
       )}
     </div>

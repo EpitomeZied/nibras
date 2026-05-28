@@ -173,6 +173,7 @@ export default function HomePage() {
 
         <div className={styles.heroAuth}>
           <AuthSignIn
+            googleClassName={styles.btnGoogleSignIn}
             githubClassName={styles.btnHeroPrimary}
             magicLinkClassName={styles.btnMagicLink}
             emailInputClassName={styles.magicLinkEmail}
@@ -497,6 +498,7 @@ export default function HomePage() {
           </div>
 
           <AuthSignIn
+            googleClassName={styles.btnGoogleSignIn}
             githubClassName={styles.btnGitHub}
             magicLinkClassName={styles.btnMagicLink}
             emailInputClassName={styles.magicLinkEmail}

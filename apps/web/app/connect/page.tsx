@@ -36,8 +36,8 @@ export default function ConnectDashboardPage() {
         <header className={styles.header}>
           <h1 className={styles.title}>Connect to Nibras</h1>
           <p className={styles.subtitle}>
-            Sign in with GitHub or a magic link to unlock Community, Competitions, Achievements, and
-            all dashboard features.
+            Sign in with Google, GitHub, or a magic link to unlock Community, Competitions,
+            Achievements, and all dashboard features.
           </p>
         </header>
 

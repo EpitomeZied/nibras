@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import { apiFetch } from '../../lib/session';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import { useSession } from '../_components/session-context';
+import { authClient } from '@/lib/auth-client';
+import { googleAuthEnabled } from '@/lib/auth-providers';
+import { webSessionBridgePath } from '@/lib/web-session-cookie';
 import { getLevelLabel, MAX_LEVEL } from '../../lib/levels';
 import SelectField from '../_components/ui/select-field';
 import AiIntegrationTab from './_components/ai-integration-tab';
@@ -812,6 +815,9 @@ export default function SettingsPage() {
   const [manualInstallId, setManualInstallId] = useState('');
   const [manualInstallStatus, setManualInstallStatus] = useState('');
   const [manualInstallSubmitting, setManualInstallSubmitting] = useState(false);
+  const [googleLinked, setGoogleLinked] = useState(false);
+  const [googleLinkLoading, setGoogleLinkLoading] = useState(false);
+  const [googleConnecting, setGoogleConnecting] = useState(false);
 
   // ── Delete account state ─────────────────────────────────────────────────────
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -824,6 +830,46 @@ export default function SettingsPage() {
       setDisplayName(user.displayName ?? user.username ?? '');
     }
   }, [user]);
+
+  useEffect(() => {
+    if (!googleAuthEnabled) return;
+    let cancelled = false;
+    async function loadGoogleLink() {
+      setGoogleLinkLoading(true);
+      try {
+        const res = await fetch('/api/auth/linked-providers', { credentials: 'include' });
+        if (!res.ok) return;
+        const body = (await res.json()) as { providers?: string[] };
+        if (!cancelled) {
+          setGoogleLinked((body.providers ?? []).includes('google'));
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        if (!cancelled) setGoogleLinkLoading(false);
+      }
+    }
+    void loadGoogleLink();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  async function handleConnectGoogle() {
+    setGoogleConnecting(true);
+    try {
+      const callbackURL =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}${webSessionBridgePath()}?next=${encodeURIComponent('/settings')}`
+          : webSessionBridgePath();
+      await authClient.linkSocial({
+        provider: 'google',
+        callbackURL,
+      });
+    } catch {
+      setGoogleConnecting(false);
+    }
+  }
 
   useEffect(() => {
     function syncPreferences() {
@@ -1073,15 +1119,28 @@ export default function SettingsPage() {
                     </button>
                   </div>
 
-                  {/* Google — coming soon */}
+                  {/* Google */}
                   <div className={styles.connectedRow}>
                     <span className={styles.connectedIcon}>
                       <IconGoogle />
                     </span>
                     <span className={styles.connectedName}>Google</span>
-                    <span className={styles.connectedBadgeGray}>Coming soon</span>
-                    <button className={styles.connectedBtn} disabled>
-                      Connect
+                    {!googleAuthEnabled ? (
+                      <span className={styles.connectedBadgeGray}>Not configured</span>
+                    ) : googleLinkLoading ? (
+                      <span className={styles.connectedBadgeGray}>Checking…</span>
+                    ) : googleLinked ? (
+                      <span className={styles.connectedBadgeGreen}>Connected</span>
+                    ) : (
+                      <span className={styles.connectedBadgeGray}>Not connected</span>
+                    )}
+                    <button
+                      type="button"
+                      className={styles.connectedBtn}
+                      disabled={!googleAuthEnabled || googleLinked || googleConnecting}
+                      onClick={() => void handleConnectGoogle()}
+                    >
+                      {googleConnecting ? 'Redirecting…' : googleLinked ? 'Connected' : 'Connect'}
                     </button>
                   </div>
                 </div>
