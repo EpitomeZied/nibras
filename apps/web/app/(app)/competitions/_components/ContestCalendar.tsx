@@ -5,11 +5,13 @@ import styles from './ContestCalendar.module.css';
 import type { CalendarView } from './CalendarViewToggle';
 import type { Contest } from '../../../lib/services/competitions';
 import { googleCalendarUrl } from '../../../lib/google-calendar';
+import { isoWeekNumber, startOfWeek } from './calendar-date-utils';
 
 type Props = {
   view: CalendarView;
   year: number;
   month: number;
+  focusDate: Date;
   contests: Record<string, Contest[]>;
   onPrev: () => void;
   onNext: () => void;
@@ -42,8 +44,6 @@ function chipClass(host: string): string {
       return styles.chipAc;
     case 'codechef':
       return styles.chipCc;
-    case 'vjudge':
-      return styles.chipVj;
     case 'ctftime':
       return styles.chipCtf;
     default:
@@ -176,24 +176,13 @@ function MonthView({
 }
 
 function WeekView({
-  year,
-  month,
+  focusDate,
   contests,
 }: {
-  year: number;
-  month: number;
+  focusDate: Date;
   contests: Record<string, Contest[]>;
 }) {
-  const weekStart = useMemo(() => {
-    const now = new Date();
-    const d = new Date(
-      year,
-      month - 1,
-      now.getMonth() + 1 === month && now.getFullYear() === year ? now.getDate() : 1
-    );
-    d.setDate(d.getDate() - d.getDay());
-    return d;
-  }, [year, month]);
+  const weekStart = useMemo(() => startOfWeek(focusDate), [focusDate]);
 
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
@@ -210,7 +199,7 @@ function WeekView({
       <div className={styles.weekCorner} />
       {weekDays.map((wd) => (
         <div key={wd.key} className={styles.weekHeaderCell}>
-          {WEEKDAYS[wd.date.getDay()]} {wd.date.getDate()}
+          {WEEKDAYS[wd.date.getDay()]} <strong>{wd.date.getDate()}</strong>
         </div>
       ))}
       {hours.map((h) => (
@@ -247,19 +236,13 @@ function WeekView({
 }
 
 function DayView({
-  year,
-  month,
+  focusDate,
   contests,
 }: {
-  year: number;
-  month: number;
+  focusDate: Date;
   contests: Record<string, Contest[]>;
 }) {
-  const today = new Date();
-  const current =
-    today.getFullYear() === year && today.getMonth() + 1 === month
-      ? today
-      : new Date(year, month - 1, 1);
+  const current = focusDate;
   const key = dateKey(current);
   const dayContests = contests[key] ?? [];
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -298,17 +281,20 @@ export default function ContestCalendar({
   view,
   year,
   month,
+  focusDate,
   contests,
   onPrev,
   onNext,
   onToday,
 }: Props) {
+  const weekNum = isoWeekNumber(focusDate);
+  const dayNum = focusDate.getDate();
   const title =
     view === 'month'
       ? `${MONTH_NAMES[month - 1]} ${year}`
       : view === 'week'
-        ? `${MONTH_NAMES[month - 1]} ${year} — Week`
-        : `${MONTH_NAMES[month - 1]} ${year} — Day`;
+        ? `${MONTH_NAMES[focusDate.getMonth()]} ${focusDate.getFullYear()} — Week ${weekNum}`
+        : `${MONTH_NAMES[focusDate.getMonth()]} ${dayNum}, ${focusDate.getFullYear()} — Day ${dayNum}`;
 
   return (
     <div className={styles.calendar}>
@@ -327,8 +313,8 @@ export default function ContestCalendar({
         <h2 className={styles.navTitle}>{title}</h2>
       </div>
       {view === 'month' && <MonthView year={year} month={month} contests={contests} />}
-      {view === 'week' && <WeekView year={year} month={month} contests={contests} />}
-      {view === 'day' && <DayView year={year} month={month} contests={contests} />}
+      {view === 'week' && <WeekView focusDate={focusDate} contests={contests} />}
+      {view === 'day' && <DayView focusDate={focusDate} contests={contests} />}
     </div>
   );
 }
