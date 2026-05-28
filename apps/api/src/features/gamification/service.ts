@@ -26,6 +26,7 @@ export type BadgeDto = {
   description?: string;
   iconUrl?: string;
   rarity?: 'common' | 'rare' | 'epic' | 'legendary';
+  category?: string;
   earnedAt?: string;
   progress?: number;
   threshold?: number;
@@ -133,6 +134,7 @@ export class GamificationService {
       contestBookmarks,
       earnedBadges,
       dailyConfig,
+      linkedAccounts,
     ] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: userId },
@@ -170,7 +172,22 @@ export class GamificationService {
         where: { userId },
         select: { currentStreak: true, longestStreak: true, totalCompleted: true },
       }),
+      this.prisma.linkedAccount.findMany({
+        where: { userId, verificationStatus: 'verified' },
+        select: { platform: true, platformMaxRating: true },
+      }),
     ]);
+
+    let codeforcesMaxRating = 0;
+    let leetcodeMaxRating = 0;
+    for (const account of linkedAccounts) {
+      const peak = account.platformMaxRating ?? 0;
+      if (account.platform === 'codeforces') {
+        codeforcesMaxRating = Math.max(codeforcesMaxRating, peak);
+      } else if (account.platform === 'leetcode') {
+        leetcodeMaxRating = Math.max(leetcodeMaxRating, peak);
+      }
+    }
 
     return {
       githubLinked: user?.githubLinked ?? false,
@@ -197,6 +214,8 @@ export class GamificationService {
       dailyStreakCurrent: dailyConfig?.currentStreak ?? 0,
       dailyStreakLongest: dailyConfig?.longestStreak ?? 0,
       dailyProblemsCompleted: dailyConfig?.totalCompleted ?? 0,
+      codeforcesMaxRating,
+      leetcodeMaxRating,
     };
   }
 
@@ -224,6 +243,7 @@ export class GamificationService {
         description: def.description || undefined,
         iconUrl: def.iconUrl ?? undefined,
         rarity: def.rarity,
+        category: def.category,
         earnedAt: earnedAt?.toISOString(),
         progress: earnedAt ? def.threshold : capped,
         threshold: def.threshold,
@@ -298,6 +318,7 @@ export class GamificationService {
           description: def.description || undefined,
           iconUrl: def.iconUrl ?? undefined,
           rarity: def.rarity,
+          category: def.category,
           earnedAt: earned.earnedAt.toISOString(),
         });
         changed = true;

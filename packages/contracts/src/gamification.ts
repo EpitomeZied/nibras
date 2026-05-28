@@ -2,6 +2,16 @@ import { z } from 'zod';
 
 export const BadgeRaritySchema = z.enum(['common', 'rare', 'epic', 'legendary']);
 
+export const BadgeCategorySchema = z.enum([
+  'onboarding',
+  'projects',
+  'community',
+  'practice',
+  'competitions',
+  'rating',
+  'meta',
+]);
+
 export const BadgeSchema = z.object({
   id: z.string().min(1),
   code: z.string().min(1),
@@ -9,6 +19,7 @@ export const BadgeSchema = z.object({
   description: z.string().optional(),
   iconUrl: z.string().optional(),
   rarity: BadgeRaritySchema.optional(),
+  category: BadgeCategorySchema.optional(),
   earnedAt: z.string().datetime().optional(),
   progress: z.number().int().nonnegative().optional(),
   threshold: z.number().int().positive().optional(),
@@ -67,3 +78,67 @@ export const LeaderboardConfigResponseSchema = z.object({
 export type Badge = z.infer<typeof BadgeSchema>;
 export type MyReputationResponse = z.infer<typeof MyReputationResponseSchema>;
 export type LeaderboardResponse = z.infer<typeof LeaderboardResponseSchema>;
+
+/** Reputation score thresholds for user levels 1–12. */
+export const REPUTATION_LEVEL_THRESHOLDS = [
+  0, 250, 750, 1500, 3000, 6000, 10000, 15000, 22000, 32000, 45000, 65000,
+] as const;
+
+export const REPUTATION_LEVEL_NAMES = [
+  'Spark',
+  'Ember',
+  'Flame',
+  'Blaze',
+  'Inferno',
+  'Nova',
+  'Comet',
+  'Pulsar',
+  'Quasar',
+  'Nebula',
+  'Galaxy',
+  'Supernova',
+] as const;
+
+export function computeReputationLevel(score: number): number {
+  let level = 1;
+  for (let i = REPUTATION_LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
+    if (score >= REPUTATION_LEVEL_THRESHOLDS[i]) {
+      level = i + 1;
+      break;
+    }
+  }
+  return level;
+}
+
+export function getReputationLevelName(level: number): string {
+  const idx = Math.min(Math.max(level, 1), REPUTATION_LEVEL_NAMES.length) - 1;
+  return REPUTATION_LEVEL_NAMES[idx] ?? `Level ${level}`;
+}
+
+export function getReputationLevelLabel(score: number): string {
+  const level = computeReputationLevel(score);
+  return `Level ${level} · ${getReputationLevelName(level)}`;
+}
+
+export function getReputationLevelProgress(score: number): {
+  level: number;
+  name: string;
+  currentThreshold: number;
+  nextThreshold: number | null;
+  progressInLevel: number;
+} {
+  const level = computeReputationLevel(score);
+  const currentThreshold = REPUTATION_LEVEL_THRESHOLDS[level - 1] ?? 0;
+  const nextThreshold =
+    level < REPUTATION_LEVEL_THRESHOLDS.length ? REPUTATION_LEVEL_THRESHOLDS[level] : null;
+  const span = nextThreshold != null ? nextThreshold - currentThreshold : 1;
+  const progressInLevel =
+    nextThreshold != null ? Math.min(1, Math.max(0, (score - currentThreshold) / span)) : 1;
+  return {
+    level,
+    name: getReputationLevelName(level),
+    currentThreshold,
+    nextThreshold,
+    progressInLevel,
+  };
+}

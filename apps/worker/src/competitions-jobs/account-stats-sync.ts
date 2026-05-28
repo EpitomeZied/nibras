@@ -40,19 +40,26 @@ function log(level: string, msg: string, extra?: Record<string, unknown>) {
 
 export async function syncSingleAccount(
   prisma: PrismaClient,
-  account: { id: string; userId: string; platform: CompPlatform; handle: string }
+  account: {
+    id: string;
+    userId: string;
+    platform: CompPlatform;
+    handle: string;
+    platformMaxRating?: number | null;
+  }
 ): Promise<void> {
   const { fetchers } = await loadFetchers();
   const fetcher = fetchers[account.platform];
   if (!fetcher) return;
 
   const stats = await fetcher.fetchUserStats(account.handle);
+  const peakRating = Math.max(account.platformMaxRating ?? 0, stats.maxRating, stats.rating);
 
   await prisma.linkedAccount.update({
     where: { id: account.id },
     data: {
       platformRating: stats.rating,
-      platformMaxRating: stats.maxRating,
+      platformMaxRating: peakRating > 0 ? peakRating : null,
       lastSyncAt: new Date(),
     },
   });
@@ -119,6 +126,21 @@ export async function syncSingleAccount(
 
   await syncLinkedAccountAura(prisma, account.userId, { platform: account.platform });
 
+  try {
+    const { GamificationService } = await import(
+      '../../../api/dist/features/gamification/service.js'
+    );
+    const gamification = new GamificationService(prisma);
+    await gamification.checkAndAwardBadges(account.userId);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log('warn', 'Badge award after stats sync failed', {
+      userId: account.userId,
+      platform: account.platform,
+      error: message,
+    });
+  }
+
   log('info', `Stats sync: ${account.platform}/${account.handle}`, {
     userId: account.userId,
     platform: account.platform,
@@ -130,6 +152,13 @@ export async function syncSingleAccount(
 export async function runAccountStatsSync(prisma: PrismaClient): Promise<void> {
   const accounts = await prisma.linkedAccount.findMany({
     where: { verificationStatus: 'verified' },
+    select: {
+      id: true,
+      userId: true,
+      platform: true,
+      handle: true,
+      platformMaxRating: true,
+    },
   });
 
   for (const account of accounts) {

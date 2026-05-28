@@ -1620,6 +1620,7 @@ enum BadgeCategory {
   community
   practice
   competitions
+  rating
   meta
 }
 

@@ -142,3 +142,41 @@
 .skeletonCard {
   animation: shimmer 1.6s ease-in-out infinite;
 }
+
+.tabRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tab {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--text);
+}
+
+.tabActive {
+  border-color: color-mix(in oklab, var(--primary, #22c55e) 50%, var(--border));
+  background: color-mix(in oklab, var(--primary, #22c55e) 12%, var(--surface));
+  color: var(--text);
+}
+
+.showMoreBtn {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: var(--primary, #22c55e);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
