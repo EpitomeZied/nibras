@@ -250,9 +250,11 @@ Implementation: `apps/api/src/features/gamification/` and `apps/api/src/features
 ### Community & Competition System
 
 **Community Features:**
-- **Q&A System**: Question posting, community answers, instructor-marked solutions
+- **Q&A System**: Question posting, community answers, instructor/TAs can accept solutions
 - **Tag Management**: Admin-restricted tag creation and curation for organizing discussions
-- **Moderation**: Flag system for inappropriate content, admin review queue
+- **Moderation**: Users can flag content; admins review via `/admin/community` (dismiss, hide, or remove)
+- **Discussions**: Course-scoped threads with search, tags, and cross-course feed
+- **Bookmarks**: Server-synced saved questions; Hassona can publish Q&A to the community
 
 **Competitions:**
 - Time-limited coding challenges with leaderboards

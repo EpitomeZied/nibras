@@ -58,6 +58,9 @@ export default function AdminPage() {
             <Link href="/admin/audit-logs" className={styles.btnSecondary}>
               Audit Logs
             </Link>
+            <Link href="/admin/community" className={styles.btnSecondary}>
+              Community moderation
+            </Link>
           </div>
         </>
       )}

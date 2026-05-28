@@ -7,6 +7,7 @@ export * from './programs';
 export * from './ide';
 export * from './gamification';
 export * from './notifications';
+export * from './community';
 
 export const BuildpackSchema = z.object({
   node: z.string().min(1),

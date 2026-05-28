@@ -21,6 +21,7 @@ import {
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
 import { useSession } from '../../../_components/session-context';
 import { renderMarkdown } from '../../../../lib/markdown';
+import ReportContentButton from '../../_components/report-content-button';
 
 function formatTimestamp(iso: string): string {
   try {
@@ -181,6 +182,11 @@ export default function QuestionPage() {
             <span>{question.author.reputation} rep</span>
           )}
           <div className={styles.questionActions}>
+            <ReportContentButton
+              targetType="question"
+              targetId={question.id}
+              className={styles.copyBtn}
+            />
             <button
               type="button"
               className={styles.copyBtn}

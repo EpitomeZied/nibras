@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { CommunityVoteTargetType, PrismaClient } from '@prisma/client';
+import { CommunityModerationStatus, CommunityVoteTargetType, PrismaClient } from '@prisma/client';
 import { optionalAuth, requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
 import { requestBaseUrl } from '../../lib/request-base-url';
@@ -21,6 +21,8 @@ import {
 } from './reputation';
 import { questionOrderBy } from './sort';
 import { attachMyVotes } from './votes';
+import { visibleContentFilter } from './moderation';
+import { registerCommunityV2Routes } from './v2-routes';
 
 export function registerCommunityRoutes(
   app: FastifyInstance,
@@ -47,7 +49,9 @@ export function registerCommunityRoutes(
       const limit = Math.min(100, Math.max(1, parseInt(query.limit || '30', 10) || 30));
       const skip = (page - 1) * limit;
 
-      const where: Record<string, unknown> = {};
+      const where: Record<string, unknown> = {
+        ...visibleContentFilter(auth, false),
+      };
       if (query.q) {
         where.OR = [
           { title: { contains: query.q, mode: 'insensitive' } },
@@ -108,7 +112,11 @@ export function registerCommunityRoutes(
           answers: { include: { author: { select: authorSelect } }, orderBy: { createdAt: 'asc' } },
         },
       });
-      if (!question) {
+      if (
+        !question ||
+        (question.moderationStatus !== CommunityModerationStatus.visible &&
+          auth?.user.systemRole !== 'admin')
+      ) {
         reply.code(404).send(Errors.notFound('Question'));
         return;
       }
@@ -129,11 +137,16 @@ export function registerCommunityRoutes(
         CommunityVoteTargetType.question,
         [question]
       );
+      const visibleAnswers = question.answers.filter(
+        (a) =>
+          a.moderationStatus === CommunityModerationStatus.visible ||
+          auth?.user.systemRole === 'admin'
+      );
       const answersWithVotes = await attachMyVotes(
         prisma,
         auth?.user.id,
         CommunityVoteTargetType.answer,
-        question.answers
+        visibleAnswers
       );
       return {
         question: presentQuestion(questionVote, reputationByUserId, questionVote.myVote),
@@ -197,7 +210,10 @@ export function registerCommunityRoutes(
         return;
       }
       const answers = await prisma.communityAnswer.findMany({
-        where: { questionId },
+        where: {
+          questionId,
+          moderationStatus: CommunityModerationStatus.visible,
+        },
         orderBy: { createdAt: 'asc' },
         include: { author: { select: authorSelect } },
       });
@@ -623,7 +639,10 @@ export function registerCommunityRoutes(
       const limit = Math.min(100, Math.max(1, parseInt(query.limit || '30', 10) || 30));
       const skip = (page - 1) * limit;
 
-      const where: Record<string, unknown> = { courseId };
+      const where: Record<string, unknown> = {
+        courseId,
+        ...visibleContentFilter(auth, false),
+      };
       if (query.q) {
         where.OR = [
           { title: { contains: query.q, mode: 'insensitive' } },
@@ -665,7 +684,11 @@ export function registerCommunityRoutes(
         where: { id: threadId },
         include: { author: { select: authorSelect } },
       });
-      if (!thread) {
+      if (
+        !thread ||
+        (thread.moderationStatus !== CommunityModerationStatus.visible &&
+          auth.user.systemRole !== 'admin')
+      ) {
         reply.code(404).send(Errors.notFound('Thread'));
         return;
       }
@@ -812,7 +835,10 @@ export function registerCommunityRoutes(
         return;
       }
       const posts = await prisma.communityPost.findMany({
-        where: { threadId },
+        where: {
+          threadId,
+          moderationStatus: CommunityModerationStatus.visible,
+        },
         orderBy: { createdAt: 'asc' },
         include: { author: { select: authorSelect } },
       });
@@ -1362,4 +1388,6 @@ export function registerCommunityRoutes(
       return { id: updated.id, title: updated.title };
     }
   );
+
+  registerCommunityV2Routes(app, store, prisma);
 }

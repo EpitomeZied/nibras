@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { listBookmarkIds, toggleQuestionBookmark } from '../services/community';
+import { useSession } from '../../(app)/_components/session-context';
 
 const STORAGE_KEY = 'nibras.community.bookmarks';
 
-function readBookmarks(): string[] {
+function readLocalBookmarks(): string[] {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -15,25 +17,66 @@ function readBookmarks(): string[] {
 }
 
 export function useBookmarks() {
-  const [bookmarks, setBookmarks] = useState<string[]>(readBookmarks);
+  const { user } = useSession();
+  const [bookmarks, setBookmarks] = useState<string[]>([]);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    function onStorage(e: StorageEvent) {
-      if (e.key === STORAGE_KEY) setBookmarks(readBookmarks());
+    if (!user) {
+      setBookmarks([]);
+      setReady(true);
+      return;
     }
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
+    let alive = true;
+    void (async () => {
+      try {
+        const serverIds = await listBookmarkIds();
+        const localIds = readLocalBookmarks();
+        const merged = [...new Set([...serverIds, ...localIds])];
+        if (!alive) return;
+        setBookmarks(merged);
+        for (const id of localIds) {
+          if (!serverIds.includes(id)) {
+            void toggleQuestionBookmark(id, true).catch(() => undefined);
+          }
+        }
+        localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        if (alive) setBookmarks(readLocalBookmarks());
+      } finally {
+        if (alive) setReady(true);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [user]);
 
-  const toggle = useCallback((id: string) => {
-    setBookmarks((prev) => {
-      const next = prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      return next;
-    });
-  }, []);
+  const toggle = useCallback(
+    async (id: string) => {
+      const nextOn = !bookmarks.includes(id);
+      setBookmarks((prev) =>
+        nextOn ? [...prev, id] : prev.filter((b) => b !== id)
+      );
+      if (user) {
+        try {
+          await toggleQuestionBookmark(id, nextOn);
+        } catch {
+          setBookmarks((prev) =>
+            nextOn ? prev.filter((b) => b !== id) : [...prev, id]
+          );
+        }
+      } else {
+        const next = nextOn
+          ? [...bookmarks, id]
+          : bookmarks.filter((b) => b !== id);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      }
+    },
+    [bookmarks, user]
+  );
 
   const isBookmarked = useCallback((id: string) => bookmarks.includes(id), [bookmarks]);
 
-  return { bookmarks, toggle, isBookmarked };
+  return { bookmarks, toggle, isBookmarked, ready };
 }

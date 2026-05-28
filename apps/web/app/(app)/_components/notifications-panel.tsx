@@ -23,6 +23,7 @@ const TYPE_COLOR: Record<string, string> = {
   community_answer_accepted: 'var(--success)',
   community_vote: 'var(--warning)',
   community_reply: 'var(--primary)',
+  community_moderation: 'var(--primary)',
 };
 
 function colorForType(type: string): string {
