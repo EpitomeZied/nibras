@@ -11,7 +11,7 @@ async function calcRankingForScope(
   scope: string,
   userIds: string[]
 ): Promise<void> {
-  const platforms = ['all', 'codeforces', 'leetcode', 'atcoder', 'codechef', 'vjudge'];
+  const platforms = ['all', 'codeforces', 'leetcode', 'atcoder', 'codechef'];
 
   for (const platform of platforms) {
     const accountFilter = platform === 'all' ? {} : { platform: platform as never };

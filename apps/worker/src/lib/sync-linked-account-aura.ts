@@ -10,7 +10,6 @@ const PLATFORM_LABELS: Record<string, string> = {
   leetcode: 'LeetCode',
   atcoder: 'AtCoder',
   codechef: 'CodeChef',
-  vjudge: 'VJudge',
   ctftime: 'CTFtime',
   kaggle: 'Kaggle',
   hackthebox: 'Hack The Box',
