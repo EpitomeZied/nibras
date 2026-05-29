@@ -57,7 +57,7 @@ export const changelogReleases: ChangelogRelease[] = [
             author: 'EpitomeZied',
           },
           {
-            text: 'GitHub sign-in — Continue with GitHub on the landing page, /sign-in, and /connect via Better Auth',
+            text: 'GitHub sign-in — Continue with GitHub on /sign-in and /connect via Better Auth',
             author: 'EpitomeZied',
           },
           {
@@ -69,6 +69,14 @@ export const changelogReleases: ChangelogRelease[] = [
       {
         type: 'improvements',
         items: [
+          {
+            text: 'Landing layout — tighter section spacing and aligned wide/terminal column widths on desktop',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Sign-in — web login consolidated to /sign-in with terminal-style GitHub and magic-link UI; landing uses sign-in CTAs only',
+            author: 'EpitomeZied',
+          },
           {
             text: 'Landing and global URLs — canonical web base URL across marketing and app surfaces',
             author: 'EpitomeZied',

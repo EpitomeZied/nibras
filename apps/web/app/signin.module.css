@@ -16,11 +16,22 @@
   font-weight: 500;
 }
 
+.authBannerLink {
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.authBannerLink:hover {
+  opacity: 0.9;
+}
+
 /* ── Page shell ──────────────────────────────────────────────────────────────── */
 
 .page {
   --landing-pad-x: clamp(24px, 4vw, 56px);
-  --landing-pad-section: clamp(72px, 9vh, 112px);
+  --landing-pad-section: clamp(48px, 6vh, 72px);
   --landing-wide: min(1120px, calc(100% - 48px));
   --landing-terminal: min(760px, calc(100% - 48px));
   --nav-height: 64px;
@@ -265,9 +276,18 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: clamp(88px, 12vh, 120px) clamp(20px, 4vw, 32px) clamp(48px, 6vh, 72px);
+  padding: clamp(64px, 8vh, 96px) clamp(20px, 4vw, 32px) clamp(40px, 5vh, 56px);
   width: 100%;
   max-width: var(--landing-terminal);
+}
+
+.heroSignInHint {
+  margin: 0;
+  padding-left: 2px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(161, 161, 170, 0.55);
 }
 
 .heroTerminal {
@@ -880,7 +900,7 @@
   flex-direction: column;
   align-items: center;
   width: var(--landing-wide);
-  margin-top: clamp(32px, 5vh, 48px);
+  margin-top: clamp(24px, 4vh, 36px);
   margin-bottom: var(--landing-pad-section);
   gap: 16px;
 }
@@ -955,7 +975,7 @@
   width: var(--landing-wide);
   margin-top: 0;
   min-height: 100svh;
-  padding: clamp(88px, 12vh, 120px) 0 clamp(48px, 6vh, 72px);
+  padding: clamp(64px, 8vh, 96px) 0 clamp(40px, 5vh, 56px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -2048,7 +2068,7 @@
   position: relative;
   z-index: 5;
   width: 100%;
-  margin-top: clamp(64px, 8vh, 96px);
+  margin-top: clamp(48px, 6vh, 72px);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -2272,7 +2292,7 @@
   position: relative;
   z-index: 1;
   width: 100%;
-  max-width: 520px;
+  max-width: var(--landing-terminal, min(760px, calc(100% - 48px)));
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -2358,11 +2378,18 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  text-decoration: none;
+  box-sizing: border-box;
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
     transform 0.1s ease;
   letter-spacing: 0.01em;
+}
+
+a.termAuthBtn:hover {
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.45);
 }
 
 .termAuthBtn:hover:not(:disabled) {

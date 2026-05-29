@@ -4,8 +4,6 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import NibrasLogo from './_components/nibras-logo';
-import AuthSignIn from './_components/auth-sign-in';
-import type { AuthProvidersConfig } from '@/lib/auth-providers-server';
 import AgentMissionControlSection from './_components/agent-mission-control';
 import FeatureTilesShowcase from './_components/feature-tiles-showcase';
 import CliShowcase from './_components/cli-showcase';
@@ -66,7 +64,11 @@ function AuthBanner() {
         <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
-      Authentication required. Please sign in to access the dashboard.
+      Authentication required. Please{' '}
+      <Link href="/sign-in" className={styles.authBannerLink}>
+        sign in
+      </Link>{' '}
+      to access the dashboard.
     </div>
   );
 }
@@ -94,11 +96,7 @@ function LandingNavAnchor({
   );
 }
 
-type HomePageProps = {
-  initialProviders: AuthProvidersConfig;
-};
-
-export default function HomePage({ initialProviders }: HomePageProps) {
+export default function HomePage() {
   return (
     <main className={styles.page}>
       <Suspense>
@@ -187,20 +185,13 @@ export default function HomePage({ initialProviders }: HomePageProps) {
               <span className={styles.termCmd}> login</span>
             </div>
 
-            <div className={styles.signInAuthPanel}>
-              <AuthSignIn
-                variant="terminal"
-                initialProviders={initialProviders}
-                githubClassName={styles.termAuthBtn}
-                magicLinkClassName={styles.termAuthBtnGhost}
-                emailInputClassName={styles.termEmailInput}
-                errorClassName={styles.termAuthError}
-                noticeClassName={styles.termAuthNotice}
-                unavailableClassName={styles.signInUnavailable}
-                githubLabel="Get started free with GitHub"
-                magicLinkLabel="Email me a sign-in link"
-              />
-            </div>
+            <Link href="/sign-in" className={styles.termAuthBtn}>
+              Get started free →
+            </Link>
+            <p className={styles.heroSignInHint}>
+              <span className={styles.termMuted}># </span>
+              GitHub and email magic link are on /sign-in only
+            </p>
 
             <div className={styles.termLine}>
               <span className={styles.termPrompt}>nibras</span>
@@ -427,20 +418,9 @@ export default function HomePage({ initialProviders }: HomePageProps) {
                 <span className={styles.termCmd}> login</span>
               </div>
 
-              <div className={styles.signInAuthPanel}>
-                <AuthSignIn
-                  variant="terminal"
-                  initialProviders={initialProviders}
-                  githubClassName={styles.termAuthBtn}
-                  magicLinkClassName={styles.termAuthBtnGhost}
-                  emailInputClassName={styles.termEmailInput}
-                  errorClassName={styles.termAuthError}
-                  noticeClassName={styles.termAuthNotice}
-                  unavailableClassName={styles.signInUnavailable}
-                  githubLabel="Continue with GitHub"
-                  magicLinkLabel="Email me a sign-in link"
-                />
-              </div>
+              <Link href="/sign-in" className={styles.termAuthBtn}>
+                Continue to sign-in →
+              </Link>
             </div>
           </div>
         </section>

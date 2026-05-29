@@ -4,7 +4,7 @@
   width: 100%;
   min-height: 100svh;
   margin-top: 0;
-  padding: clamp(88px, 12vh, 120px) clamp(24px, 4vw, 56px) clamp(48px, 6vh, 72px);
+  padding: clamp(64px, 8vh, 96px) clamp(24px, 4vw, 56px) clamp(40px, 5vh, 56px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -750,7 +750,7 @@
 @media (min-width: 1024px) {
   .section {
     min-height: auto;
-    padding-block: var(--landing-pad-section, clamp(72px, 9vh, 112px));
+    padding-block: var(--landing-pad-section, clamp(48px, 6vh, 72px));
   }
 
   .sectionInner {

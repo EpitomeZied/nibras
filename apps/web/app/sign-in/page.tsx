@@ -18,6 +18,7 @@ export default function SignInPage() {
       <div className={styles.grid} />
       <div className={`${styles.orb} ${styles.orb1}`} />
       <div className={`${styles.orb} ${styles.orb2}`} />
+      <div className={`${styles.orb} ${styles.orb3}`} />
 
       <div className={styles.signInShell}>
         <Link href="/" className={styles.signInHomeCmd} aria-label="Back to home">
@@ -48,12 +49,13 @@ export default function SignInPage() {
 
             <div className={styles.signInAuthPanel}>
               <AuthSignIn
+                variant="terminal"
                 initialProviders={initialProviders}
-                githubClassName={styles.btnHeroPrimary}
-                magicLinkClassName={styles.btnMagicLink}
-                emailInputClassName={styles.magicLinkEmail}
-                errorClassName={styles.errorMsg}
-                noticeClassName={styles.authNotice}
+                githubClassName={styles.termAuthBtn}
+                magicLinkClassName={styles.termAuthBtnGhost}
+                emailInputClassName={styles.termEmailInput}
+                errorClassName={styles.termAuthError}
+                noticeClassName={styles.termAuthNotice}
                 unavailableClassName={styles.signInUnavailable}
                 githubLabel="Continue with GitHub"
                 magicLinkLabel="Email me a sign-in link"
