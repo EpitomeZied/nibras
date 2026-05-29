@@ -201,11 +201,14 @@ chmod +x scripts/setup-azure-web-auth.sh
 | `RESEND_API_KEY` | Magic-link email — set via `setup-azure-email.sh` |
 | `NIBRAS_EMAIL_FROM` | Verified Resend sender (e.g. `Nibras <noreply@nibrasplatform.me>`) |
 
-In the GitHub App settings, add **User authorization callback URL** (Better Auth):
+In the GitHub App settings:
 
-`https://nibrasplatform.me/api/auth/callback/github`
+1. **User authorization callback URL** (Better Auth):  
+   `https://nibrasplatform.me/api/auth/callback/github`  
+   (Separate from the API device-flow callback at `…/v1/github/oauth/callback`.)
 
-(This is separate from the API device-flow callback at `…/v1/github/oauth/callback`.)
+2. **Permissions → Account permissions → Email addresses:** set to **Read-only**.  
+   Without this, GitHub OAuth may return `?error=email_not_found` for users with a private primary email.
 
 ### 5. Connect GitHub Actions to Azure (OIDC — recommended)
 

@@ -26,8 +26,24 @@ import {
 import { WEB_BASE_URL } from './lib/web-base-url';
 import styles from './signin.module.css';
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  email_not_found:
+    'GitHub did not share an email for this account. We now support private GitHub emails — please try signing in again. If it still fails, use “Email me a sign-in link” or make a primary email visible in GitHub → Settings → Emails.',
+};
+
 function AuthBanner() {
   const searchParams = useSearchParams();
+  const authError = searchParams.get('error');
+  if (authError) {
+    const message =
+      AUTH_ERROR_MESSAGES[authError] ??
+      `Sign-in failed (${authError}). Try again or use email magic link.`;
+    return (
+      <div className={styles.authBanner} role="alert">
+        {message}
+      </div>
+    );
+  }
   if (searchParams.get('auth') !== 'required') return null;
   return (
     <div className={styles.authBanner} role="alert">

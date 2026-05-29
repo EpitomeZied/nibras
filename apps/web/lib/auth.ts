@@ -6,6 +6,7 @@ import { Polar } from '@polar-sh/sdk';
 import { prisma } from './prisma';
 import { sendMagicLinkEmail, sendWelcomeEmail } from './email';
 import { allocateUniqueUsername, deriveUsernameBase } from './auth-user-helpers';
+import { githubOAuthGetUserInfo } from './github-oauth-user';
 
 function authBaseUrl(): string {
   return (
@@ -32,7 +33,12 @@ const githubClientSecret = process.env.GITHUB_APP_CLIENT_SECRET;
 function buildSocialProviders() {
   const providers: Record<string, { clientId: string; clientSecret: string }> = {};
   if (githubClientId && githubClientSecret) {
-    providers.github = { clientId: githubClientId, clientSecret: githubClientSecret };
+    providers.github = {
+      clientId: githubClientId,
+      clientSecret: githubClientSecret,
+      scope: ['read:user', 'user:email'],
+      getUserInfo: githubOAuthGetUserInfo,
+    };
   }
   return providers;
 }
