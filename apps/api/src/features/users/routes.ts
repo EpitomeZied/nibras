@@ -41,17 +41,32 @@ export function registerUserRoutes(
         return reply.code(403).send(Errors.forbidden());
       }
 
-      const payload = await profileService.buildProfileResponse(
-        store,
-        apiBaseUrl,
-        params.userId,
-        visibility.viewerRole
-      );
+      let payload;
+      try {
+        payload = await profileService.buildProfileResponse(
+          store,
+          apiBaseUrl,
+          params.userId,
+          visibility.viewerRole
+        );
+      } catch (err) {
+        request.log.error({ err, userId: params.userId }, 'Failed to build user profile');
+        return reply.code(500).send(Errors.internal());
+      }
       if (!payload) {
         return reply.code(404).send(Errors.notFound('User not found.'));
       }
 
-      return UserProfileResponseSchema.parse(payload);
+      const parsed = UserProfileResponseSchema.safeParse(payload);
+      if (!parsed.success) {
+        request.log.error(
+          { issues: parsed.error.issues, userId: params.userId },
+          'User profile response validation failed'
+        );
+        return reply.code(500).send(Errors.internal());
+      }
+
+      return parsed.data;
     }
   );
 }

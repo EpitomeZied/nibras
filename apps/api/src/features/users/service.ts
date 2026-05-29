@@ -25,10 +25,28 @@ type TargetUser = {
   createdAt: Date;
 };
 
+function normalizeDisplayName(value: string | null | undefined): string | null {
+  if (value == null) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function clampYearLevel(value: number | null | undefined): number {
+  const level = value ?? 1;
+  return Math.min(4, Math.max(1, level));
+}
+
 function githubAvatarUrl(login: string | null | undefined, size = 128): string | undefined {
   const trimmed = login?.trim();
   if (!trimmed) return undefined;
-  return `https://avatars.githubusercontent.com/${encodeURIComponent(trimmed)}?s=${size}`;
+  const url = `https://avatars.githubusercontent.com/${encodeURIComponent(trimmed)}?s=${size}`;
+  try {
+    return new URL(url).toString();
+  } catch {
+    return undefined;
+  }
 }
 
 function resolvePrimaryRole(
@@ -77,14 +95,15 @@ export class UserProfileService {
         include: { githubAccount: true },
       });
       if (!user) return null;
+      const githubLogin = user.githubAccount?.login?.trim() || user.username;
       return {
         id: user.id,
         username: user.username,
-        displayName: user.displayName,
+        displayName: normalizeDisplayName(user.displayName),
         bio: user.bio,
-        githubLogin: user.githubAccount?.login ?? user.username,
+        githubLogin,
         systemRole: user.systemRole === 'admin' ? 'admin' : 'user',
-        yearLevel: user.yearLevel ?? 1,
+        yearLevel: clampYearLevel(user.yearLevel),
         createdAt: user.createdAt,
       };
     }
@@ -92,14 +111,15 @@ export class UserProfileService {
     const users = await store.listUsers(apiBaseUrl);
     const user = users.find((entry) => entry.id === userId);
     if (!user) return null;
+    const githubLogin = user.githubLogin?.trim() || user.username;
     return {
       id: user.id,
       username: user.username,
-      displayName: user.displayName ?? null,
+      displayName: normalizeDisplayName(user.displayName),
       bio: null,
-      githubLogin: user.githubLogin,
+      githubLogin,
       systemRole: user.systemRole === 'admin' ? 'admin' : 'user',
-      yearLevel: user.yearLevel ?? 1,
+      yearLevel: clampYearLevel(user.yearLevel),
       createdAt: new Date(),
     };
   }
@@ -249,13 +269,17 @@ export class UserProfileService {
     return rows.map((row) => {
       const project = projectById.get(row.projectId);
       const review = latestReviewBySubmission.get(row.id);
-      const attemptNumber = row.milestoneId
-        ? (attemptsByMilestone.get(row.milestoneId) ?? 1)
+      const rawAttemptCount = row.milestoneId
+        ? attemptsByMilestone.get(row.milestoneId)
         : undefined;
+      const attemptNumber =
+        includeDetails && rawAttemptCount != null && rawAttemptCount > 0
+          ? rawAttemptCount
+          : undefined;
       return this.mapSubmission(row, includeDetails, {
         projectTitle: project?.name ?? project?.slug,
         score: includeDetails ? (review?.score ?? null) : undefined,
-        attemptNumber: includeDetails ? attemptNumber : undefined,
+        attemptNumber,
       });
     });
   }
@@ -322,7 +346,7 @@ export class UserProfileService {
         rarity: badge.rarity,
         earnedAt: badge.earnedAt,
         progress: badge.progress,
-        threshold: badge.threshold,
+        threshold: badge.threshold && badge.threshold > 0 ? badge.threshold : undefined,
       })),
       history: isDetailedViewer ? reputation.history : undefined,
     };

@@ -3,15 +3,25 @@ import { ReputationEventSchema } from './gamification';
 
 export const UserProfileViewerRoleSchema = z.enum(['self', 'instructor', 'admin']);
 
+const emptyStringToNull = (value: unknown): unknown =>
+  typeof value === 'string' && value.trim() === '' ? null : value;
+
+const clampProfileYearLevel = (value: unknown): unknown => {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return 1;
+  }
+  return Math.min(4, Math.max(1, Math.trunc(value)));
+};
+
 export const UserProfilePublicSchema = z.object({
   id: z.string().min(1),
   username: z.string().min(1),
-  displayName: z.string().nullable(),
-  githubLogin: z.string(),
+  displayName: z.preprocess(emptyStringToNull, z.string().nullable()),
+  githubLogin: z.string().min(1),
   avatarUrl: z.string().url().optional(),
   bio: z.string().nullable(),
   primaryRole: z.enum(['student', 'instructor', 'admin']),
-  yearLevel: z.number().int().min(1).max(4),
+  yearLevel: z.preprocess(clampProfileYearLevel, z.number().int().min(1).max(4)),
   memberSince: z.string(),
 });
 
@@ -33,7 +43,7 @@ export const UserProfileSubmissionSchema = z.object({
   updatedAt: z.string(),
   localTestExitCode: z.number().nullable(),
   score: z.number().nullable().optional(),
-  attemptNumber: z.number().int().positive().optional(),
+  attemptNumber: z.number().int().min(1).optional(),
 });
 
 export const UserProfileCourseProgressSchema = z.object({
