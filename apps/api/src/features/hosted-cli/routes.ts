@@ -121,10 +121,16 @@ export function registerHostedCliRoutes(
       if (!parsed.success) {
         return reply.code(400).send(Errors.validation(parsed.error.message));
       }
+      const profilePatch: { displayName?: string | null; bio?: string | null } = {
+        displayName: parsed.data.displayName,
+      };
+      if (parsed.data.bio !== undefined) {
+        profilePatch.bio = parsed.data.bio;
+      }
       const updated = await store.updateUserProfile(
         requestBaseUrl(request),
         auth.user.id,
-        parsed.data.displayName
+        profilePatch
       );
       if (!updated) {
         return reply.code(404).send(Errors.notFound('User not found.'));

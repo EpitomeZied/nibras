@@ -1029,7 +1029,7 @@ export interface AppStore {
   updateUserProfile(
     apiBaseUrl: string,
     userId: string,
-    displayName: string | null
+    patch: { displayName?: string | null; bio?: string | null }
   ): Promise<UserRecord | null>;
   upsertGitHubUserSession(args: {
     githubUserId: string;
@@ -2959,12 +2959,17 @@ export class FileStore implements AppStore {
   async updateUserProfile(
     apiBaseUrl: string,
     userId: string,
-    displayName: string | null
+    patch: { displayName?: string | null; bio?: string | null }
   ): Promise<UserRecord | null> {
     const data = this.read(apiBaseUrl);
     const user = data.users.find((u) => u.id === userId);
     if (!user) return null;
-    user.displayName = displayName;
+    if (patch.displayName !== undefined) {
+      user.displayName = patch.displayName;
+    }
+    if (patch.bio !== undefined) {
+      (user as UserRecord & { bio?: string | null }).bio = patch.bio;
+    }
     this.write(data);
     return user;
   }

@@ -203,6 +203,8 @@ model User {
   image             String?
   /// User-chosen display name shown in the UI (falls back to username when unset).
   displayName       String?
+  /// Short public bio shown on user profile pages.
+  bio               String?            @db.VarChar(500)
   /// Optional inbox for transactional email (e.g. Gmail). When set, used instead of account email.
   notificationEmail String?
   githubLinked      Boolean            @default(false)

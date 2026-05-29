@@ -14,6 +14,7 @@ import SelectField from '../_components/ui/select-field';
 import AiIntegrationTab from './_components/ai-integration-tab';
 import SecurityTab from './_components/security-tab';
 import UserAvatar from '../_components/widgets/UserAvatar';
+import { getUserProfile } from '../../lib/services/user-profile';
 import styles from './page.module.css';
 
 type Tab =
@@ -806,6 +807,7 @@ export default function SettingsPage() {
 
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [displayName, setDisplayName] = useState('');
+  const [bio, setBio] = useState('');
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileStatus, setProfileStatus] = useState('');
   const [compact, setCompact] = useState(false);
@@ -828,6 +830,9 @@ export default function SettingsPage() {
   useEffect(() => {
     if (user) {
       setDisplayName(user.displayName ?? user.username ?? '');
+      void getUserProfile(user.id)
+        .then((payload) => setBio(payload.profile.bio ?? ''))
+        .catch(() => setBio(''));
     }
   }, [user]);
 
@@ -974,7 +979,7 @@ export default function SettingsPage() {
         method: 'PATCH',
         auth: true,
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ displayName: trimmed }),
+        body: JSON.stringify({ displayName: trimmed, bio: bio.trim() || null }),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
@@ -1070,6 +1075,26 @@ export default function SettingsPage() {
                       disabled={sessionLoading || profileSaving}
                     />
                   </div>
+                  <div className={styles.formField}>
+                    <label htmlFor="profile-bio" className={styles.formLabel}>
+                      Bio
+                    </label>
+                    <textarea
+                      id="profile-bio"
+                      className={styles.formInput}
+                      rows={4}
+                      value={sessionLoading ? '' : bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      maxLength={500}
+                      placeholder="A short introduction for your profile page"
+                      disabled={sessionLoading || profileSaving}
+                    />
+                  </div>
+                  {user?.id ? (
+                    <p className={styles.sectionSub}>
+                      <Link href={`/users/${user.id}`}>View your profile</Link>
+                    </p>
+                  ) : null}
                   <button
                     type="button"
                     className={styles.profileSaveBtn}

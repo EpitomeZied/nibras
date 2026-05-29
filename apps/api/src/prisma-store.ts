@@ -2324,12 +2324,15 @@ export class PrismaStore implements AppStore {
   async updateUserProfile(
     _apiBaseUrl: string,
     userId: string,
-    displayName: string | null
+    patch: { displayName?: string | null; bio?: string | null }
   ): Promise<UserRecord | null> {
+    const data: { displayName?: string | null; bio?: string | null } = {};
+    if (patch.displayName !== undefined) data.displayName = patch.displayName;
+    if (patch.bio !== undefined) data.bio = patch.bio;
     const updated = await this.prisma.user
       .update({
         where: { id: userId },
-        data: { displayName },
+        data,
         include: { githubAccount: true },
       })
       .catch(() => null);

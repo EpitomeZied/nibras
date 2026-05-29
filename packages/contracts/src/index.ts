@@ -8,6 +8,7 @@ export * from './ide';
 export * from './gamification';
 export * from './notifications';
 export * from './community';
+export * from './user-profile';
 
 export const BuildpackSchema = z.object({
   node: z.string().min(1),
@@ -111,6 +112,7 @@ export const UserSchema = z.object({
 
 export const UpdateProfileBodySchema = z.object({
   displayName: z.union([z.string().trim().min(1).max(80), z.null()]),
+  bio: z.union([z.string().trim().max(500), z.null()]).optional(),
 });
 
 export const AiCredentialResponseSchema = z.object({
