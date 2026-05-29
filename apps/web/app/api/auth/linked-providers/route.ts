@@ -9,7 +9,7 @@ export async function GET() {
     return NextResponse.json({ providers: [] as string[] });
   }
 
-  const accounts = await prisma.authAccount.findMany({
+  const accounts: { providerId: string }[] = await prisma.authAccount.findMany({
     where: { userId: session.user.id },
     select: { providerId: true },
   });

@@ -7,6 +7,7 @@ COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/contracts/package.json ./packages/contracts/
 COPY packages/core/package.json ./packages/core/
+COPY prisma ./prisma
 RUN npm ci --workspace=@nibras/web --workspace=@nibras/contracts --workspace=@nibras/core --include-workspace-root
 
 # ── Build ──────────────────────────────────────────────────────────────────────
@@ -15,6 +16,8 @@ COPY packages/contracts ./packages/contracts
 COPY packages/core ./packages/core
 COPY apps/web ./apps/web
 COPY tsconfig.base.json ./
+COPY prisma ./prisma
+RUN npm run db:generate
 # Build-time public vars must be baked in at image build time for Next.js
 ARG NEXT_PUBLIC_NIBRAS_API_BASE_URL
 ARG NEXT_PUBLIC_NIBRAS_WEB_BASE_URL
