@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type CSSProperties, type FormEvent } from 'react';
+import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { googleAuthEnabled } from '@/lib/auth-providers';
 import { webSessionBridgePath } from '@/lib/web-session-cookie';
@@ -65,6 +65,21 @@ export default function AuthSignIn({
   const [githubSubmitting, setGithubSubmitting] = useState(false);
   const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [magicSubmitting, setMagicSubmitting] = useState(false);
+  const [googleEnabled, setGoogleEnabled] = useState(googleAuthEnabled);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch('/api/auth/providers-config')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body: { googleEnabled?: boolean } | null) => {
+        if (cancelled || !body) return;
+        if (body.googleEnabled) setGoogleEnabled(true);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const bridgeCallback =
     typeof window !== 'undefined'
@@ -139,7 +154,7 @@ export default function AuthSignIn({
         marginTop: isTerminal ? 4 : 0,
       }}
     >
-      {googleAuthEnabled ? (
+      {googleEnabled ? (
         <button
           type="button"
           className={googleClassName || githubClassName}

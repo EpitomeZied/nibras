@@ -103,6 +103,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_NIBRAS_API_BASE_URL=${{ vars.NIBRAS_API_BASE_URL }}
             NEXT_PUBLIC_NIBRAS_WEB_BASE_URL=${{ vars.NIBRAS_WEB_BASE_URL }}
+            NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=${{ vars.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED }}
             NIBRAS_API_INTERNAL_URL=${{ vars.NIBRAS_API_INTERNAL_URL }}
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
@@ -157,11 +158,30 @@ jobs:
             --image ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/worker:${{ github.sha }}
 
       - name: Update nibras-web
+        env:
+          WEB_BASE: ${{ vars.NIBRAS_WEB_BASE_URL }}
         run: |
+          set -euo pipefail
+          RG="${{ vars.AZURE_RESOURCE_GROUP }}"
+          IMG="${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/web:${{ github.sha }}"
+
+          # Optional Google OAuth — repo Secrets: GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+          ENV_VARS=("BETTER_AUTH_URL=${WEB_BASE}" "NIBRAS_WEB_BASE_URL=${WEB_BASE}")
+          if [ -n "${{ secrets.GOOGLE_CLIENT_ID }}" ] && [ -n "${{ secrets.GOOGLE_CLIENT_SECRET }}" ]; then
+            az containerapp secret set \
+              --name nibras-web --resource-group "$RG" \
+              --secrets \
+                "google-client-id=${{ secrets.GOOGLE_CLIENT_ID }}" \
+                "google-client-secret=${{ secrets.GOOGLE_CLIENT_SECRET }}"
+            ENV_VARS+=(
+              "GOOGLE_CLIENT_ID=secretref:google-client-id"
+              "GOOGLE_CLIENT_SECRET=secretref:google-client-secret"
+            )
+          fi
           az containerapp update \
-            --name nibras-web \
-            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
-            --image ${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/web:${{ github.sha }}
+            --name nibras-web --resource-group "$RG" \
+            --image "$IMG" \
+            --set-env-vars "${ENV_VARS[@]}"
 
       - name: Print live URLs
         run: |
