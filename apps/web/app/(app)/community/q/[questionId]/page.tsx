@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
-import Avatar from '../../../_components/widgets/Avatar';
+import CommunityAuthorLink from '../../_components/community-author-link';
 import EmptyState from '../../../_components/widgets/EmptyState';
 import Skeleton from '../../../_components/widgets/Skeleton';
 import MarkdownToolbar from '../../../_components/widgets/MarkdownToolbar';
@@ -170,13 +170,13 @@ export default function QuestionPage() {
           />
         </div>
         <div className={styles.authorCard}>
-          <Avatar
-            url={question.author.avatarUrl}
-            githubLogin={question.author.githubLogin}
-            name={question.author.username}
-            size={28}
+          <CommunityAuthorLink
+            author={question.author}
+            showAvatar
+            avatarSize={28}
+            stacked
+            className={styles.authorName}
           />
-          <span className={styles.authorName}>{question.author.username}</span>
           <span>{formatTimestamp(question.createdAt)}</span>
           {question.author.reputation !== undefined && (
             <span>{question.author.reputation} rep</span>
@@ -290,13 +290,13 @@ export default function QuestionPage() {
                 )}
               </div>
               <div className={styles.authorCard}>
-                <Avatar
-                  url={answer.author.avatarUrl}
-                  githubLogin={answer.author.githubLogin}
-                  name={answer.author.username}
-                  size={24}
+                <CommunityAuthorLink
+                  author={answer.author}
+                  showAvatar
+                  avatarSize={24}
+                  stacked
+                  className={styles.authorName}
                 />
-                <span className={styles.authorName}>{answer.author.username}</span>
                 <span>{formatTimestamp(answer.createdAt)}</span>
               </div>
             </article>

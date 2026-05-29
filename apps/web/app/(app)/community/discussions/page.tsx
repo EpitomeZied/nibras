@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
-import Avatar from '../../_components/widgets/Avatar';
+import CommunityAuthorLink from '../_components/community-author-link';
 import EmptyState from '../../_components/widgets/EmptyState';
 import Skeleton from '../../_components/widgets/Skeleton';
 import MarkdownToolbar from '../../_components/widgets/MarkdownToolbar';
@@ -441,28 +441,26 @@ export default function DiscussionsPage() {
       ) : (
         <div className={styles.threadList}>
           {sortedThreads.map((thread) => (
-            <Link
+            <div
               key={thread.id}
-              href={`/community/discussions/${thread.id}`}
               className={`${styles.thread} ${thread.pinned ? styles.threadPinned : ''} ${
                 thread.closed ? styles.threadClosed : ''
               }`}
             >
               <div className={styles.body}>
-                <div className={styles.threadTitleRow}>
-                  <h2 className={styles.threadTitle}>{thread.title}</h2>
-                  {thread.pinned && <span className={styles.pinnedTag}>Pinned</span>}
-                  {thread.closed && <span className={styles.closedTag}>Closed</span>}
-                </div>
-                {thread.body && <p className={styles.snippet}>{stripMarkdown(thread.body)}</p>}
+                <Link
+                  href={`/community/discussions/${thread.id}`}
+                  className={styles.threadMainLink}
+                >
+                  <div className={styles.threadTitleRow}>
+                    <h2 className={styles.threadTitle}>{thread.title}</h2>
+                    {thread.pinned && <span className={styles.pinnedTag}>Pinned</span>}
+                    {thread.closed && <span className={styles.closedTag}>Closed</span>}
+                  </div>
+                  {thread.body && <p className={styles.snippet}>{stripMarkdown(thread.body)}</p>}
+                </Link>
                 <div className={styles.threadMeta}>
-                  <Avatar
-                    url={thread.author.avatarUrl}
-                    githubLogin={thread.author.githubLogin}
-                    name={thread.author.username}
-                    size={18}
-                  />
-                  <span>{thread.author.username}</span>
+                  <CommunityAuthorLink author={thread.author} showAvatar avatarSize={18} />
                   <span>·</span>
                   <span>{formatRelative(thread.lastActivityAt ?? thread.createdAt)}</span>
                   {thread.tags.slice(0, 3).map((tag) => (
@@ -472,11 +470,14 @@ export default function DiscussionsPage() {
                   ))}
                 </div>
               </div>
-              <div className={styles.threadStats}>
+              <Link
+                href={`/community/discussions/${thread.id}`}
+                className={styles.threadStats}
+              >
                 <strong>{thread.replyCount}</strong>
                 <span>replies</span>
-              </div>
-            </Link>
+              </Link>
+            </div>
           ))}
         </div>
       )}

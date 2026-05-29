@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './page.module.css';
-import Avatar from '../../../_components/widgets/Avatar';
+import CommunityAuthorLink from '../../_components/community-author-link';
 import EmptyState from '../../../_components/widgets/EmptyState';
 import Skeleton from '../../../_components/widgets/Skeleton';
 import MarkdownToolbar from '../../../_components/widgets/MarkdownToolbar';
@@ -151,13 +151,7 @@ export default function ThreadPage() {
           )}
         </div>
         <div className={styles.metaRow}>
-          <Avatar
-            url={thread.author.avatarUrl}
-            githubLogin={thread.author.githubLogin}
-            name={thread.author.username}
-            size={20}
-          />
-          <span>{thread.author.username}</span>
+          <CommunityAuthorLink author={thread.author} showAvatar avatarSize={20} />
           <span>·</span>
           <span>{formatTimestamp(thread.createdAt)}</span>
           {thread.tags.map((tag) => (
@@ -220,13 +214,7 @@ export default function ThreadPage() {
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(post.body) }}
               />
               <div className={styles.postAuthor}>
-                <Avatar
-                  url={post.author.avatarUrl}
-                  githubLogin={post.author.githubLogin}
-                  name={post.author.username}
-                  size={20}
-                />
-                <strong>{post.author.username}</strong>
+                <CommunityAuthorLink author={post.author} showAvatar avatarSize={20} strong />
                 <span>{formatTimestamp(post.createdAt)}</span>
               </div>
             </article>

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
-import Avatar from '../_components/widgets/Avatar';
+import CommunityAuthorLink from './_components/community-author-link';
 import EmptyState from '../_components/widgets/EmptyState';
 import Skeleton from '../_components/widgets/Skeleton';
 import VoteButton from '../_components/widgets/VoteButton';
@@ -51,7 +51,7 @@ export default function CommunityPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useSession();
-  const { toggle: toggleBookmark, isBookmarked } = useBookmarks();
+  const { isBookmarked } = useBookmarks();
   const [questions, setQuestions] = useState<CommunityQuestion[]>([]);
   const [tags, setTags] = useState<CommunityTag[]>([]);
   const [sort, setSort] = useState<NonNullable<QuestionFilters['sort']>>('newest');
@@ -360,16 +360,8 @@ export default function CommunityPage() {
             type="button"
             className={`${styles.filterToggle} ${saved ? styles.filterToggleActive : ''}`}
             onClick={() => setSaved(!saved)}
-            title="Saved questions"
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-              <path
-                d="M3 2h8v10l-4-2.5L3 12V2z"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                fill={saved ? 'currentColor' : 'none'}
-              />
-            </svg>
+            Saved
           </button>
         </div>
       </div>
@@ -512,29 +504,13 @@ export default function CommunityPage() {
                 </div>
               </Link>
               <div className={styles.right}>
-                <Avatar
-                  url={question.author.avatarUrl}
-                  githubLogin={question.author.githubLogin}
-                  name={question.author.username}
-                  size={24}
+                <CommunityAuthorLink
+                  author={question.author}
+                  showAvatar
+                  avatarSize={24}
+                  className={styles.author}
                 />
-                <span className={styles.author}>{question.author.username}</span>
                 <span className={styles.timestamp}>{formatRelative(question.createdAt)}</span>
-                <button
-                  type="button"
-                  className={styles.bookmarkBtn}
-                  onClick={() => toggleBookmark(question.id)}
-                  aria-label={isBookmarked(question.id) ? 'Remove bookmark' : 'Bookmark'}
-                >
-                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-                    <path
-                      d="M3 2h8v10l-4-2.5L3 12V2z"
-                      stroke="currentColor"
-                      strokeWidth="1.3"
-                      fill={isBookmarked(question.id) ? 'currentColor' : 'none'}
-                    />
-                  </svg>
-                </button>
               </div>
             </div>
           ))}

@@ -288,7 +288,6 @@
 .author {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text);
 }
 
 .timestamp {
@@ -484,22 +483,6 @@
 .suggestionMeta {
   font-size: 11px;
   color: var(--text-muted);
-}
-
-.bookmarkBtn {
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  padding: 2px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s ease;
-}
-
-.bookmarkBtn:hover {
-  color: var(--primary, #22c55e);
 }
 
 .pagination {

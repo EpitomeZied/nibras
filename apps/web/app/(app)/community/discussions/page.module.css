@@ -91,11 +91,18 @@
   border: 1px solid var(--border);
   background: var(--surface);
   border-radius: 12px;
-  text-decoration: none;
   color: inherit;
   transition:
     border-color 0.15s ease,
     transform 0.15s ease;
+}
+
+.threadMainLink {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
 }
 
 .thread:hover {
@@ -185,6 +192,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  text-decoration: none;
+  color: inherit;
 }
 
 .threadStats strong {
