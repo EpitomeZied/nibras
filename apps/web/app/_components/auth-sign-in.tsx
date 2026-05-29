@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, type CSSProperties, type FormEvent } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { googleAuthEnabled } from '@/lib/auth-providers';
 import { webSessionBridgePath } from '@/lib/web-session-cookie';
 
 type AuthSignInProps = {
+  variant?: 'default' | 'terminal';
   githubClassName?: string;
   googleClassName?: string;
   magicLinkClassName?: string;
@@ -41,16 +42,23 @@ function GoogleIcon() {
 }
 
 export default function AuthSignIn({
+  variant = 'default',
   githubClassName = '',
   googleClassName = '',
   magicLinkClassName = '',
   emailInputClassName = '',
   errorClassName = '',
   noticeClassName = '',
-  githubLabel = 'Continue with GitHub',
-  googleLabel = 'Continue with Google',
+  githubLabel,
+  googleLabel,
   compact = false,
 }: AuthSignInProps) {
+  const isTerminal = variant === 'terminal';
+  const resolvedGithubLabel =
+    githubLabel ?? (isTerminal ? 'auth login --provider github' : 'Continue with GitHub');
+  const resolvedGoogleLabel =
+    googleLabel ?? (isTerminal ? 'auth login --provider google' : 'Continue with Google');
+  const resolvedMagicLabel = isTerminal ? 'auth magic-link --send' : 'Email me a sign-in link';
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -123,7 +131,13 @@ export default function AuthSignIn({
 
   return (
     <div
-      style={{ display: 'flex', flexDirection: 'column', gap: compact ? 12 : 14, width: '100%' }}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: compact ? 12 : isTerminal ? 10 : 14,
+        width: '100%',
+        marginTop: isTerminal ? 4 : 0,
+      }}
     >
       {googleAuthEnabled ? (
         <button
@@ -133,8 +147,12 @@ export default function AuthSignIn({
           onClick={() => void handleGoogle()}
         >
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-            <GoogleIcon />
-            {googleSubmitting ? 'Redirecting…' : googleLabel}
+            {!isTerminal ? <GoogleIcon /> : null}
+            {googleSubmitting
+              ? isTerminal
+                ? 'redirecting…'
+                : 'Redirecting…'
+              : resolvedGoogleLabel}
           </span>
         </button>
       ) : null}
@@ -145,47 +163,94 @@ export default function AuthSignIn({
         disabled={socialBusy}
         onClick={() => void handleGitHub()}
       >
-        {githubSubmitting ? 'Redirecting…' : githubLabel}
+        {githubSubmitting
+          ? isTerminal
+            ? 'redirecting…'
+            : 'Redirecting…'
+          : resolvedGithubLabel}
       </button>
 
       {!compact ? (
-        <p
-          style={{ margin: 0, fontSize: 12, color: 'rgba(161,161,170,0.85)', textAlign: 'center' }}
-        >
-          or sign in with email
-        </p>
+        isTerminal ? (
+          <p style={termCommentStyle}># or sign in with email</p>
+        ) : (
+          <p
+            style={{ margin: 0, fontSize: 12, color: 'rgba(161,161,170,0.85)', textAlign: 'center' }}
+          >
+            or sign in with email
+          </p>
+        )
       ) : null}
 
       <form
         onSubmit={(e) => void handleMagicLink(e)}
-        style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
+        style={{ display: 'flex', flexDirection: 'column', gap: isTerminal ? 8 : 10 }}
       >
-        <input
-          type="email"
-          name="email"
-          autoComplete="email"
-          placeholder="you@school.edu"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={emailInputClassName}
-          disabled={socialBusy}
-          required
-        />
+        {isTerminal ? (
+          <label style={termEmailRowStyle}>
+            <span style={termEmailPromptStyle}>$</span>
+            <input
+              type="email"
+              name="email"
+              autoComplete="email"
+              placeholder="you@school.edu"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className={emailInputClassName}
+              disabled={socialBusy}
+              required
+            />
+          </label>
+        ) : (
+          <input
+            type="email"
+            name="email"
+            autoComplete="email"
+            placeholder="you@school.edu"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className={emailInputClassName}
+            disabled={socialBusy}
+            required
+          />
+        )}
         <button type="submit" className={magicLinkClassName} disabled={socialBusy}>
-          {magicSubmitting ? 'Sending link…' : 'Email me a sign-in link'}
+          {magicSubmitting ? (isTerminal ? 'sending…' : 'Sending link…') : resolvedMagicLabel}
         </button>
       </form>
 
       {error ? (
         <p className={errorClassName} role="alert">
-          {error}
+          {isTerminal ? `error: ${error}` : error}
         </p>
       ) : null}
       {notice ? (
         <p className={noticeClassName} role="status">
-          {notice}
+          {isTerminal ? `ok: ${notice}` : notice}
         </p>
       ) : null}
     </div>
   );
 }
+
+const termCommentStyle: CSSProperties = {
+  margin: '4px 0 0',
+  fontFamily: 'var(--font-mono, monospace)',
+  fontSize: 12,
+  color: 'rgba(161, 161, 170, 0.55)',
+};
+
+const termEmailRowStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  width: '100%',
+};
+
+const termEmailPromptStyle: CSSProperties = {
+  fontFamily: 'var(--font-mono, monospace)',
+  fontSize: 14,
+  fontWeight: 700,
+  color: '#4ade80',
+  flexShrink: 0,
+};

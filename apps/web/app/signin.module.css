@@ -1797,6 +1797,195 @@
   }
 }
 
+/* ── Sign-in terminal page ───────────────────────────────────────────────────── */
+
+.signInPage {
+  justify-content: center;
+  padding: clamp(24px, 5vw, 48px) clamp(20px, 4vw, 32px) 56px;
+}
+
+.signInShell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.signInHomeCmd {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  text-decoration: none;
+  padding: 4px 0;
+  transition: opacity 0.15s ease;
+}
+
+.signInHomeCmd:hover {
+  opacity: 0.85;
+}
+
+.signInTerminal {
+  width: 100%;
+}
+
+.signInTerminalBody {
+  min-height: auto;
+  gap: 6px;
+  padding: 20px 22px 24px;
+}
+
+.signInTermHelp {
+  margin: 0 0 8px;
+  padding-left: 2px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  line-height: 1.65;
+  color: rgba(161, 161, 170, 0.55);
+  max-width: 46ch;
+}
+
+.termAuthBtn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 11px 14px;
+  border-radius: 6px;
+  border: 1px solid rgba(74, 222, 128, 0.28);
+  background: rgba(74, 222, 128, 0.07);
+  color: #86efac;
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.1s ease;
+  letter-spacing: 0.01em;
+}
+
+.termAuthBtn:hover:not(:disabled) {
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.45);
+}
+
+.termAuthBtn:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.termAuthBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.termAuthBtnGoogle {
+  color: #fafafa;
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.termAuthBtn.termAuthBtnGoogle:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.termAuthBtnGhost {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 6px;
+  border: 1px dashed rgba(161, 161, 170, 0.35);
+  background: transparent;
+  color: rgba(212, 212, 216, 0.9);
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.termAuthBtnGhost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(161, 161, 170, 0.55);
+  color: #fafafa;
+}
+
+.termAuthBtnGhost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.termEmailInput {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 0;
+  background: transparent;
+  color: #fafafa;
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.termEmailInput::placeholder {
+  color: rgba(113, 113, 122, 0.75);
+}
+
+.termEmailInput:focus {
+  border-bottom-color: rgba(74, 222, 128, 0.55);
+}
+
+.termEmailInput:disabled {
+  opacity: 0.5;
+}
+
+.termAuthError {
+  margin: 4px 0 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  line-height: 1.6;
+  color: #f87171;
+}
+
+.termAuthNotice {
+  margin: 4px 0 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  line-height: 1.6;
+  color: #4ade80;
+}
+
+.signInFootnote {
+  margin: 0;
+  padding-left: 2px;
+  font-family: var(--font-mono, monospace);
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: rgba(113, 113, 122, 0.85);
+}
+
+.signInFootnoteCode {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a3e635;
+  font-family: inherit;
+  font-size: inherit;
+}
+
 @media (max-width: 600px) {
   .featureGrid6 {
     grid-template-columns: 1fr;
