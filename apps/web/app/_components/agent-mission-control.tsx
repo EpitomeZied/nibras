@@ -116,7 +116,7 @@ function CommunityPanel({ className }: { className?: string }) {
       <div className={styles.communityHeader}>
         <div className={styles.communityHeaderText}>
           <TileTitle type="community" label="q&a" />
-          <p className={styles.communitySub}>Ask, answer, and learn from peers.</p>
+          <p className={styles.communitySub}>Vote, bookmark, and earn reputation.</p>
         </div>
         <Link href="/community" className={styles.askBtn}>
           Ask a question
@@ -229,8 +229,9 @@ export default function AgentMissionControlSection() {
             <span className={styles.titleItalic}>without the tab chaos.</span>
           </h2>
           <p className={styles.sub}>
-            My Courses, team projects, Hassona tutoring, competitive practice, and GitHub-native
-            submissions — connected on one dashboard instead of scattered LMS tabs and side tools.
+            My Courses, daily problem streaks, public profiles, Hassona tutoring, community v2, and
+            GitHub-native submissions — connected on one dashboard instead of scattered LMS tabs
+            and side tools.
           </p>
           <div className={styles.actions}>
             <a className={styles.primaryCta} href="/sign-in">
@@ -263,6 +264,7 @@ export default function AgentMissionControlSection() {
               { kind: 'prompt', text: 'nibras> deadlines --week' },
               { kind: 'muted', text: '3 due · 2 submissions pending review' },
               { kind: 'ok', text: '✓ HW2 — Sorting submitted' },
+              { kind: 'ok', text: '✓ Daily problem solved · streak 7' },
               { kind: 'ok', text: '✓ Nibras 75 — Two Sum accepted' },
               { kind: 'warn', text: '△ Capstone milestone due Sun' },
             ]}

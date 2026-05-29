@@ -13,15 +13,16 @@ export type LandingFeatureGroup = {
   features: LandingFeature[];
 };
 
-export const heroBadge = 'Early Access · My Courses, smart dashboard, IDE, badges & more';
+export const heroBadge =
+  'Early Access · Catalog LMS, daily practice, public profiles, community v2 & more';
 
 export const heroSub =
-  'One platform for courses, projects, planning, and delivery — with My Courses (lectures, assignments, grades), a Projects hub, upcoming deadlines on your dashboard, Hassona tutoring, Q&A and Discussions, competitive practice, in-browser IDE, levels and badges, and GitHub-native CLI submissions.';
+  'One platform for courses, projects, planning, and delivery — with My Courses (lectures, MCQ/quizzes, video progress, grades), dashboard deadlines, Hassona tutoring, community v2 (votes and bookmarks), daily problem streaks, competitions calendar, public profiles, in-browser IDE, and GitHub-native CLI submissions.';
 
 export const whatsNew = [
-  'My Courses — videos, assignments, and grades in one enrolled-course hub',
-  'Smart dashboard — overall stats, upcoming deadlines, and course snapshots',
-  'Expanded badges — richer catalog, reputation breakdown, and level tiers',
+  'Catalog LMS — lectures, MCQ/quizzes, and video watch progress in My Courses',
+  'Community v2 — votes, bookmarks, reputation hooks, and moderation',
+  'Daily problem + public profiles — streaks at /competitions/daily, shareable /users/[id]',
 ] as const;
 
 export const statsBar = [
@@ -48,7 +49,7 @@ export const mockupSidebar = [
 export const mockupStatCards = [
   { label: 'Deadlines', value: '3', sub: 'Due this week' },
   { label: 'Reputation', value: '1.2k', sub: 'Points this term' },
-  { label: 'Nibras 75', value: '42', sub: 'Problems solved' },
+  { label: 'Daily streak', value: '7', sub: 'Days in a row' },
 ] as const;
 
 export const mockupCommunityQuestions = [
@@ -233,7 +234,7 @@ export const howItWorksSteps = [
     title: 'Deliver work and level up',
     desc: "Submit from the terminal, practice in the IDE, earn badges, and see your progress across every course you're in.",
     cta: 'Sign in to begin →',
-    href: '/',
+    href: '/sign-in',
   },
 ] as const;
 
@@ -244,6 +245,7 @@ export const transformPains = [
   'LMS, practice sites, and tutoring spread across tabs with no shared deadlines view',
   'Submissions, planning, and review state living in disconnected tools',
   'AI tutoring, forums, contests, and gamification spread across separate apps',
+  'Daily practice and contest schedules tracked on external sites and spreadsheets',
 ] as const;
 
 export const transformGains = [
@@ -253,6 +255,7 @@ export const transformGains = [
   'My Courses, dashboard deadlines, and enrolled-course content live beside projects and planning',
   'Students submit with one CLI command and practice code in a built-in IDE',
   'Hassona, Q&A, Discussions, competitions, IDE, badges, and Levels share one reputation layer',
+  'Daily problem, Nibras 75, and a competitions calendar live in one compete hub',
 ] as const;
 
 export const transformSub =
@@ -292,7 +295,7 @@ export const featureGroups: LandingFeatureGroup[] = [
       {
         icon: 'courses',
         title: 'My Courses',
-        desc: 'Open enrolled courses for lecture videos, assignments, grades, and course-scoped content — no separate LMS tab.',
+        desc: 'Lecture player, assignments, MCQ/quiz types, video watch progress, and grades — enrolled-course hub without a separate LMS tab.',
       },
       {
         icon: 'course-ops',
@@ -366,17 +369,17 @@ export const featureGroups: LandingFeatureGroup[] = [
       {
         icon: 'community',
         title: 'Community Q&A',
-        desc: 'Ask questions with markdown, vote on answers, browse tags, and get course-scoped help from peers and instructors.',
+        desc: 'Ask with markdown, vote on answers, earn reputation, bookmark threads, and get course-scoped help with moderation built in.',
       },
       {
         icon: 'discussions',
         title: 'Course Discussions',
-        desc: 'Run long-form threads scoped to enrolled courses — study groups, clarifications, and async conversation beside Q&A.',
+        desc: 'Long-form threads scoped to enrolled courses — public read-only views, study groups, and async conversation beside Q&A.',
       },
       {
         icon: 'competitions',
         title: 'Competitions',
-        desc: 'Practice Nibras 75, Codeforces and Code Hunt problems, connect external platforms, contest calendars, and ranked history.',
+        desc: 'Nibras 75, Codeforces, Code Hunt, week/day contest calendar, daily problem with streaks and freezes, platforms, and ranked history.',
       },
       {
         icon: 'achievements',
@@ -389,20 +392,22 @@ export const featureGroups: LandingFeatureGroup[] = [
         desc: 'Climb tier progression based on reputation and real contributions — from helper badges to competitive milestones.',
       },
       {
-        icon: 'dashboard',
-        title: 'Activity Feed',
-        desc: 'See recent submissions, reviews, badges, and course events in one timeline so progress never feels invisible.',
+        icon: 'competitions',
+        title: 'Daily Problem',
+        desc: 'One curated problem per day — solve, skip, or pause, track streaks on a calendar, and earn daily badges at /competitions/daily.',
       },
       {
-        icon: 'submission-analytics',
-        title: 'Reputation Breakdown',
-        desc: 'Understand how points, badges, and contributions stack up across courses with a clear reputation profile.',
+        icon: 'community',
+        title: 'Public Profiles',
+        desc: 'Shareable /users/[id] pages with course progress, submissions, and badges — visibility scoped to viewer role.',
       },
     ],
   },
 ];
 
 export const landingNavLinks = [
+  { href: '#features', label: 'Features' },
+  { href: '#how-it-works', label: 'How it works' },
   { href: '/docs', label: 'Docs' },
   { href: '/changelog', label: 'Changelog' },
 ] as const;
@@ -440,7 +445,7 @@ export const landingFooterContactEmail = supportNotice.email;
 
 export const ctaFeatures = [
   'Free during early access',
-  'GitHub login — no passwords',
+  'GitHub or email magic link',
   'No credit card required',
 ] as const;
 

@@ -189,7 +189,7 @@ export default function HomePage() {
             </Link>
             <p className={styles.heroSignInHint}>
               <span className={styles.termMuted}># </span>
-              GitHub and email magic link are on /sign-in only
+              GitHub or email magic link on /sign-in only
             </p>
 
             <div className={styles.termLine}>
@@ -408,7 +408,7 @@ export default function HomePage() {
             <div className={styles.footerCol}>
               <span className={styles.footerColTitle}>Account</span>
               <Link href="/sign-in">Sign in</Link>
-              <a href="/dashboard">Dashboard</a>
+              <Link href="/sign-in">Dashboard</Link>
             </div>
             <div className={styles.footerCol}>
               <span className={styles.footerColTitle}>Contact</span>
