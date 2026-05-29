@@ -31,16 +31,17 @@ const githubClientId = process.env.GITHUB_APP_CLIENT_ID;
 const githubClientSecret = process.env.GITHUB_APP_CLIENT_SECRET;
 
 function buildSocialProviders() {
-  const providers: Record<string, { clientId: string; clientSecret: string }> = {};
-  if (githubClientId && githubClientSecret) {
-    providers.github = {
+  if (!githubClientId || !githubClientSecret) {
+    return {};
+  }
+  return {
+    github: {
       clientId: githubClientId,
       clientSecret: githubClientSecret,
       scope: ['read:user', 'user:email'],
       getUserInfo: githubOAuthGetUserInfo,
-    };
-  }
-  return providers;
+    },
+  };
 }
 
 const socialProviders = buildSocialProviders();
