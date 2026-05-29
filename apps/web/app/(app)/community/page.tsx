@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
 import Avatar from '../_components/widgets/Avatar';
@@ -49,6 +49,7 @@ function formatRelative(iso: string): string {
 
 export default function CommunityPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useSession();
   const { toggle: toggleBookmark, isBookmarked } = useBookmarks();
   const [questions, setQuestions] = useState<CommunityQuestion[]>([]);
@@ -154,6 +155,18 @@ export default function CommunityPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('tags');
+    if (fromUrl) {
+      setSelectedTags(
+        fromUrl
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean)
+      );
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     setPage(1);
@@ -486,9 +499,14 @@ export default function CommunityPage() {
                       </span>
                     )}
                     {question.tags.slice(0, 4).map((tagName) => (
-                      <span key={tagName} className={styles.tag}>
+                      <Link
+                        key={tagName}
+                        href={`/community?tags=${encodeURIComponent(tagName)}`}
+                        className={styles.tag}
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         {tagName}
-                      </span>
+                      </Link>
                     ))}
                   </div>
                 </div>

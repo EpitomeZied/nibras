@@ -13,12 +13,14 @@ import {
   createThread,
   listDiscussionCourses,
   listThreads,
+  listThreadsAcrossCourses,
   type CommunityThread,
 } from '../../../lib/services/community';
 import { useSession } from '../../_components/session-context';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 import { apiFetch } from '../../../lib/session';
 import { stripMarkdown } from '../../../lib/strip-markdown';
+import { useDebounce } from '../../../lib/hooks/use-debounce';
 
 type DiscussionCourse = { id: string; title: string; courseCode: string };
 
@@ -56,22 +58,37 @@ export default function DiscussionsPage() {
   const [threadOpen, setThreadOpen] = useState(false);
   const [threadTitle, setThreadTitle] = useState('');
   const [threadBody, setThreadBody] = useState('');
+  const [threadTags, setThreadTags] = useState('');
   const [threadSubmitting, setThreadSubmitting] = useState(false);
   const [threadError, setThreadError] = useState<string | null>(null);
+  const [feedScope, setFeedScope] = useState<'course' | 'all'>('course');
+  const [searchQ, setSearchQ] = useState('');
+  const debouncedSearchQ = useDebounce(searchQ, 300);
   const threadBodyRef = useRef<HTMLTextAreaElement>(null);
 
   async function handleThreadSubmit(event: React.FormEvent) {
     event.preventDefault();
     const title = threadTitle.trim();
     const body = threadBody.trim();
-    if (!title || !courseId) return;
+    if (!title || (feedScope === 'course' && !courseId)) return;
     setThreadSubmitting(true);
     setThreadError(null);
     try {
-      const created = await createThread(courseId, { title, body: body || undefined });
+      const parsedTags = threadTags
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean);
+      const targetCourseId = courseId ?? courses[0]?.id;
+      if (!targetCourseId) throw new Error('No course selected.');
+      const created = await createThread(targetCourseId, {
+        title,
+        body: body || undefined,
+        tags: parsedTags.length > 0 ? parsedTags : undefined,
+      });
       setThreadOpen(false);
       setThreadTitle('');
       setThreadBody('');
+      setThreadTags('');
       router.push(`/community/discussions/${created.id}`);
     } catch (err) {
       setThreadError(friendlyMessage(err));
@@ -129,7 +146,7 @@ export default function DiscussionsPage() {
   }, [user, sessionLoading]);
 
   const load = useCallback(async () => {
-    if (!courseId) {
+    if (feedScope === 'course' && !courseId) {
       setThreads([]);
       setLoading(false);
       return;
@@ -137,7 +154,13 @@ export default function DiscussionsPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await listThreads(courseId, { limit: 30 });
+      const response =
+        feedScope === 'all'
+          ? await listThreadsAcrossCourses({ limit: 30, q: debouncedSearchQ || undefined })
+          : await listThreads(courseId!, {
+              limit: 30,
+              q: debouncedSearchQ || undefined,
+            });
       setThreads(response.items ?? []);
     } catch (err) {
       setError(friendlyMessage(err));
@@ -145,7 +168,7 @@ export default function DiscussionsPage() {
     } finally {
       setLoading(false);
     }
-  }, [courseId]);
+  }, [courseId, feedScope, debouncedSearchQ]);
 
   useEffect(() => {
     const fromUrl = searchParams.get('courseId');
@@ -155,12 +178,16 @@ export default function DiscussionsPage() {
   }, [searchParams, courseId]);
 
   useEffect(() => {
+    if (feedScope === 'all') {
+      void load();
+      return;
+    }
     if (!courseId && courses.length > 0) {
       setCourseId(courses[0].id);
       return;
     }
     void load();
-  }, [load, courseId, courses]);
+  }, [load, courseId, courses, feedScope]);
 
   const sortedThreads = useMemo(() => {
     return [...threads].sort((a, b) => {
@@ -256,6 +283,18 @@ export default function DiscussionsPage() {
                 rows={6}
               />
             </div>
+            <div className={styles.formRow}>
+              <label className={styles.formLabel} htmlFor="thread-tags">
+                Tags (optional)
+              </label>
+              <input
+                id="thread-tags"
+                className={styles.formInput}
+                value={threadTags}
+                onChange={(e) => setThreadTags(e.target.value)}
+                placeholder="e.g. homework, midterm"
+              />
+            </div>
             {threadError && (
               <p style={{ color: 'var(--danger, #ef4444)', fontSize: 12, margin: 0 }}>
                 {threadError}
@@ -287,20 +326,50 @@ export default function DiscussionsPage() {
 
       {courses.length > 0 && (
         <div className={styles.filters}>
-          <div className={styles.coursePicker} role="tablist" aria-label="Course filter">
-            {courses.map((c) => (
-              <button
-                key={c.id}
-                type="button"
-                role="tab"
-                aria-selected={courseId === c.id}
-                className={`${styles.courseChip} ${courseId === c.id ? styles.courseChipActive : ''}`}
-                onClick={() => setCourseId(c.id)}
-              >
-                {courseNameMap.get(c.id) || c.id}
-              </button>
-            ))}
+          <div className={styles.coursePicker} role="tablist" aria-label="Feed scope">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={feedScope === 'all'}
+              className={`${styles.courseChip} ${feedScope === 'all' ? styles.courseChipActive : ''}`}
+              onClick={() => setFeedScope('all')}
+            >
+              All courses
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={feedScope === 'course'}
+              className={`${styles.courseChip} ${feedScope === 'course' ? styles.courseChipActive : ''}`}
+              onClick={() => setFeedScope('course')}
+            >
+              Per course
+            </button>
           </div>
+          <div className={styles.searchWrap} style={{ marginTop: 10 }}>
+            <input
+              className={styles.formInput}
+              placeholder="Search discussions"
+              value={searchQ}
+              onChange={(e) => setSearchQ(e.target.value)}
+            />
+          </div>
+          {feedScope === 'course' && (
+            <div className={styles.coursePicker} role="tablist" aria-label="Course filter">
+              {courses.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={courseId === c.id}
+                  className={`${styles.courseChip} ${courseId === c.id ? styles.courseChipActive : ''}`}
+                  onClick={() => setCourseId(c.id)}
+                >
+                  {courseNameMap.get(c.id) || c.id}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -335,7 +404,7 @@ export default function DiscussionsPage() {
             },
           }}
         />
-      ) : !courseId ? (
+      ) : !courseId && feedScope === 'course' ? (
         <EmptyState
           title={
             courses.length === 0 ? 'No discussion courses yet' : 'Pick a course to see threads'

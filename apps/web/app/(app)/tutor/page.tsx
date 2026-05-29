@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './page.module.css';
 import ChatPanel, { type ChatMessage } from '../_components/widgets/ChatPanel';
@@ -11,6 +12,7 @@ import {
   getConversation,
   deleteConversation,
   renameConversation,
+  publish,
   type ConversationSummary,
 } from '../../lib/services/chatbot';
 import { friendlyMessage } from '../../lib/api-clients/errors';
@@ -57,6 +59,7 @@ function groupByDate(conversations: ConversationSummary[]): Record<string, Conve
 }
 
 export default function TutorPage() {
+  const router = useRouter();
   const [serverConvs, setServerConvs] = useState<ConversationSummary[]>([]);
   const [activeConv, setActiveConv] = useState<LocalConversation | null>(null);
   const [busy, setBusy] = useState(false);
@@ -302,6 +305,23 @@ export default function TutorPage() {
     [activeConv, handleSend]
   );
 
+  const handlePublish = useCallback(
+    async (question: string, answer: string, tags?: string[]) => {
+      try {
+        const result = await publish({
+          question,
+          answer,
+          title: question.slice(0, 120),
+          tags,
+        });
+        router.push(result.url ?? `/community/q/${result.questionId}`);
+      } catch (err) {
+        setError(friendlyMessage(err));
+      }
+    },
+    [router]
+  );
+
   const grouped = groupByDate(serverConvs);
   const groupOrder = ['Today', 'Yesterday', 'Previous 7 days', 'Older'];
 
@@ -442,17 +462,33 @@ export default function TutorPage() {
             emptyTitle="Hassona"
             emptyDescription="Ask any question about your courses, projects, or concepts you're stuck on."
             suggestedPrompts={!activeConv ? SUGGESTED_PROMPTS : undefined}
-            renderContent={(message) =>
-              message.role === 'assistant' && !message.pending ? (
-                <div
-                  dangerouslySetInnerHTML={{
-                    __html: renderMarkdown(message.content),
-                  }}
-                />
-              ) : (
-                <p>{message.content}</p>
-              )
-            }
+            renderContent={(message) => {
+              if (message.role === 'assistant' && !message.pending) {
+                const idx = activeConv?.messages.findIndex((m) => m.id === message.id) ?? -1;
+                const userMsg = idx > 0 ? activeConv?.messages[idx - 1] : null;
+                return (
+                  <div>
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: renderMarkdown(message.content),
+                      }}
+                    />
+                    {userMsg?.role === 'user' && (
+                      <button
+                        type="button"
+                        style={{ marginTop: 10, fontSize: 12 }}
+                        onClick={() =>
+                          void handlePublish(userMsg.content, message.content, message.tags)
+                        }
+                      >
+                        Publish to Community
+                      </button>
+                    )}
+                  </div>
+                );
+              }
+              return <p>{message.content}</p>;
+            }}
           />
         </div>
       </div>

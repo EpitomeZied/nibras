@@ -35,10 +35,7 @@ export function assertCourseManage(
   return true;
 }
 
-export function canAcceptAnswer(
-  auth: AuthenticatedRequest,
-  questionAuthorId: string
-): boolean {
+export function canAcceptAnswer(auth: AuthenticatedRequest, questionAuthorId: string): boolean {
   if (auth.user.systemRole === 'admin') return true;
   if (questionAuthorId === auth.user.id) return true;
   return hasAnyInstructorAccess(auth);

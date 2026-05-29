@@ -237,6 +237,9 @@ model User {
   communityVotes           CommunityVote[]     @relation("CommunityVoteUser")
   communityThreads         CommunityThread[]   @relation("CommunityThreadAuthor")
   communityPosts           CommunityPost[]     @relation("CommunityPostAuthor")
+  communityReports         CommunityReport[]   @relation("CommunityReportReporter")
+  communityReportsReviewed CommunityReport[]   @relation("CommunityReportReviewer")
+  communityQuestionBookmarks CommunityQuestionBookmark[]
   contestBookmarks         ContestBookmark[]
   contestReminders         ContestReminder[]
   problemBookmarks         ProblemBookmark[]
@@ -1166,39 +1169,95 @@ enum CommunityVoteTargetType {
   post
 }
 
+enum CommunityModerationStatus {
+  visible
+  hidden
+  removed
+}
+
+enum CommunityReportStatus {
+  pending
+  dismissed
+  actioned
+}
+
+enum CommunityReportTargetType {
+  question
+  answer
+  post
+  thread
+}
+
 model CommunityQuestion {
-  id               String            @id @default(cuid())
-  authorId         String
-  title            String
-  body             String
-  tags             String[]
-  votesCount       Int               @default(0)
-  answersCount     Int               @default(0)
-  acceptedAnswerId String?
-  viewCount        Int               @default(0)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  author           User              @relation("CommunityQuestionAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  answers          CommunityAnswer[]
+  id                 String                    @id @default(cuid())
+  authorId           String
+  title              String
+  body               String
+  tags               String[]
+  votesCount         Int                       @default(0)
+  answersCount       Int                       @default(0)
+  acceptedAnswerId   String?
+  viewCount          Int                       @default(0)
+  moderationStatus   CommunityModerationStatus @default(visible)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  author             User                      @relation("CommunityQuestionAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  answers            CommunityAnswer[]
+  bookmarks          CommunityQuestionBookmark[]
 
   @@index([authorId])
   @@index([createdAt])
+  @@index([moderationStatus])
 }
 
 model CommunityAnswer {
-  id         String            @id @default(cuid())
-  questionId String
-  authorId   String
-  body       String
-  votesCount Int               @default(0)
-  accepted   Boolean           @default(false)
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
-  question   CommunityQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  author     User              @relation("CommunityAnswerAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  id               String                    @id @default(cuid())
+  questionId       String
+  authorId         String
+  body             String
+  votesCount       Int                       @default(0)
+  accepted         Boolean                   @default(false)
+  moderationStatus CommunityModerationStatus @default(visible)
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  question         CommunityQuestion         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  author           User                      @relation("CommunityAnswerAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([questionId])
   @@index([authorId])
+  @@index([moderationStatus])
+}
+
+model CommunityQuestionBookmark {
+  id         String            @id @default(cuid())
+  userId     String
+  questionId String
+  createdAt  DateTime          @default(now())
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   CommunityQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId])
+}
+
+model CommunityReport {
+  id           String                    @id @default(cuid())
+  reporterId   String
+  targetType   CommunityReportTargetType
+  targetId     String
+  reason       String
+  details      String?
+  status       CommunityReportStatus     @default(pending)
+  resolution   String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime                  @default(now())
+  reporter     User                      @relation("CommunityReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reviewedBy   User?                     @relation("CommunityReportReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@index([reporterId])
 }
 
 model CommunityVote {
@@ -1225,39 +1284,43 @@ model CommunityTag {
 }
 
 model CommunityThread {
-  id              String          @id @default(cuid())
-  courseId        String
-  authorId        String
-  title           String
-  body            String          @default("")
-  tags            String[]
-  pinned          Boolean         @default(false)
-  closed          Boolean         @default(false)
-  postsCount      Int             @default(0)
-  lastActivityAt  DateTime        @default(now())
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
-  course     Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  author     User            @relation("CommunityThreadAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-  posts      CommunityPost[]
+  id               String                    @id @default(cuid())
+  courseId         String
+  authorId         String
+  title            String
+  body             String                    @default("")
+  tags             String[]
+  pinned           Boolean                   @default(false)
+  closed           Boolean                   @default(false)
+  postsCount       Int                       @default(0)
+  lastActivityAt   DateTime                  @default(now())
+  moderationStatus CommunityModerationStatus @default(visible)
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  course           Course                    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  author           User                      @relation("CommunityThreadAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  posts            CommunityPost[]
 
   @@index([courseId, createdAt])
   @@index([authorId])
+  @@index([moderationStatus])
 }
 
 model CommunityPost {
-  id         String          @id @default(cuid())
-  threadId   String
-  authorId   String
-  body       String
-  votesCount Int             @default(0)
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
-  thread     CommunityThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  author     User            @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  id               String                    @id @default(cuid())
+  threadId         String
+  authorId         String
+  body             String
+  votesCount       Int                       @default(0)
+  moderationStatus CommunityModerationStatus @default(visible)
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  thread           CommunityThread           @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author           User                      @relation("CommunityPostAuthor", fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([threadId, createdAt])
   @@index([authorId])
+  @@index([moderationStatus])
 }
 
 // ── Competitions ────────────────────────────────────────────────────────────

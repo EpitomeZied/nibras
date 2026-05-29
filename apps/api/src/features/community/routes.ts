@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { CommunityVoteTargetType, PrismaClient } from '@prisma/client';
+import { CommunityModerationStatus, CommunityVoteTargetType, PrismaClient } from '@prisma/client';
 import { optionalAuth, requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
 import { requestBaseUrl } from '../../lib/request-base-url';
@@ -21,6 +21,8 @@ import {
 } from './reputation';
 import { questionOrderBy } from './sort';
 import { attachMyVotes } from './votes';
+import { visibleContentFilter } from './moderation';
+import { registerCommunityV2Routes } from './v2-routes';
 
 export function registerCommunityRoutes(
   app: FastifyInstance,
@@ -47,7 +49,9 @@ export function registerCommunityRoutes(
       const limit = Math.min(100, Math.max(1, parseInt(query.limit || '30', 10) || 30));
       const skip = (page - 1) * limit;
 
-      const where: Record<string, unknown> = {};
+      const where: Record<string, unknown> = {
+        ...visibleContentFilter(auth, false),
+      };
       if (query.q) {
         where.OR = [
           { title: { contains: query.q, mode: 'insensitive' } },
@@ -55,7 +59,10 @@ export function registerCommunityRoutes(
         ];
       }
       if (query.tags) {
-        const tagList = query.tags.split(',').map((t) => t.trim()).filter(Boolean);
+        const tagList = query.tags
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean);
         if (tagList.length > 0) where.tags = { hasSome: tagList };
       } else if (query.tag) {
         where.tags = { has: query.tag };
@@ -108,7 +115,11 @@ export function registerCommunityRoutes(
           answers: { include: { author: { select: authorSelect } }, orderBy: { createdAt: 'asc' } },
         },
       });
-      if (!question) {
+      if (
+        !question ||
+        (question.moderationStatus !== CommunityModerationStatus.visible &&
+          auth?.user.systemRole !== 'admin')
+      ) {
         reply.code(404).send(Errors.notFound('Question'));
         return;
       }
@@ -129,11 +140,16 @@ export function registerCommunityRoutes(
         CommunityVoteTargetType.question,
         [question]
       );
+      const visibleAnswers = question.answers.filter(
+        (a) =>
+          a.moderationStatus === CommunityModerationStatus.visible ||
+          auth?.user.systemRole === 'admin'
+      );
       const answersWithVotes = await attachMyVotes(
         prisma,
         auth?.user.id,
         CommunityVoteTargetType.answer,
-        question.answers
+        visibleAnswers
       );
       return {
         question: presentQuestion(questionVote, reputationByUserId, questionVote.myVote),
@@ -197,7 +213,10 @@ export function registerCommunityRoutes(
         return;
       }
       const answers = await prisma.communityAnswer.findMany({
-        where: { questionId },
+        where: {
+          questionId,
+          moderationStatus: CommunityModerationStatus.visible,
+        },
         orderBy: { createdAt: 'asc' },
         include: { author: { select: authorSelect } },
       });
@@ -305,12 +324,7 @@ export function registerCommunityRoutes(
           link: `/community/q/${answer.questionId}`,
         });
       }
-      void awardAnswerAccepted(
-        prisma,
-        answer.authorId,
-        answerId,
-        answer.question.title
-      );
+      void awardAnswerAccepted(prisma, answer.authorId, answerId, answer.question.title);
       return { accepted: true };
     }
   );
@@ -408,12 +422,7 @@ export function registerCommunityRoutes(
             contentAuthorId = q.authorId;
             contentTitle = q.title;
             contentLink = `/community/q/${body.targetId}`;
-            void awardQuestionUpvoteReceived(
-              prisma,
-              q.authorId,
-              body.targetId,
-              auth.user.id
-            );
+            void awardQuestionUpvoteReceived(prisma, q.authorId, body.targetId, auth.user.id);
           }
         } else if (targetType === CommunityVoteTargetType.answer) {
           const a = await prisma.communityAnswer.findUnique({
@@ -623,7 +632,10 @@ export function registerCommunityRoutes(
       const limit = Math.min(100, Math.max(1, parseInt(query.limit || '30', 10) || 30));
       const skip = (page - 1) * limit;
 
-      const where: Record<string, unknown> = { courseId };
+      const where: Record<string, unknown> = {
+        courseId,
+        ...visibleContentFilter(auth, false),
+      };
       if (query.q) {
         where.OR = [
           { title: { contains: query.q, mode: 'insensitive' } },
@@ -665,7 +677,11 @@ export function registerCommunityRoutes(
         where: { id: threadId },
         include: { author: { select: authorSelect } },
       });
-      if (!thread) {
+      if (
+        !thread ||
+        (thread.moderationStatus !== CommunityModerationStatus.visible &&
+          auth.user.systemRole !== 'admin')
+      ) {
         reply.code(404).send(Errors.notFound('Thread'));
         return;
       }
@@ -812,7 +828,10 @@ export function registerCommunityRoutes(
         return;
       }
       const posts = await prisma.communityPost.findMany({
-        where: { threadId },
+        where: {
+          threadId,
+          moderationStatus: CommunityModerationStatus.visible,
+        },
         orderBy: { createdAt: 'asc' },
         include: { author: { select: authorSelect } },
       });
@@ -958,8 +977,7 @@ export function registerCommunityRoutes(
           chatBotResponse = null;
         }
         if (!resp.ok || !chatBotResponse) {
-          const detail =
-            chatBotResponse?.message || rawBody || 'AI Tutor request failed.';
+          const detail = chatBotResponse?.message || rawBody || 'AI Tutor request failed.';
           reply
             .code(resp.status >= 500 ? resp.status : 502)
             .send(Errors.unavailable(detail.slice(0, 300)));
@@ -969,9 +987,7 @@ export function registerCommunityRoutes(
           reply
             .code(503)
             .send(
-              Errors.unavailable(
-                chatBotResponse.message || 'AI generation failed. Please retry.'
-              )
+              Errors.unavailable(chatBotResponse.message || 'AI generation failed. Please retry.')
             );
           return;
         }
@@ -1362,4 +1378,6 @@ export function registerCommunityRoutes(
       return { id: updated.id, title: updated.title };
     }
   );
+
+  registerCommunityV2Routes(app, store, prisma);
 }

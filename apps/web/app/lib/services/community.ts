@@ -485,3 +485,132 @@ export async function deleteTag(tagId: string) {
     body: {},
   });
 }
+
+// ── Bookmarks (server) ──────────────────────────────────────────────────────
+export async function listBookmarkIds(): Promise<string[]> {
+  const raw = await serviceFetch<{ questionIds?: string[] }>(
+    'community',
+    '/v1/community/bookmarks',
+    {
+      auth: true,
+    }
+  );
+  return raw.questionIds ?? [];
+}
+
+export async function toggleQuestionBookmark(
+  questionId: string,
+  on: boolean
+): Promise<{ bookmarked: boolean }> {
+  return serviceFetch<{ bookmarked: boolean }>(
+    'community',
+    `/v1/community/questions/${questionId}/bookmark`,
+    { method: on ? 'POST' : 'DELETE', auth: true, body: {} }
+  );
+}
+
+// ── Reports ─────────────────────────────────────────────────────────────────
+export type CommunityReportTarget = 'question' | 'answer' | 'post' | 'thread';
+
+export async function createReport(payload: {
+  targetType: CommunityReportTarget;
+  targetId: string;
+  reason: string;
+  details?: string;
+}) {
+  return serviceFetch<{ report: { id: string } }>('community', '/v1/community/reports', {
+    method: 'POST',
+    auth: true,
+    body: payload as Record<string, unknown>,
+  });
+}
+
+export type AdminReport = {
+  id: string;
+  targetType: CommunityReportTarget;
+  targetId: string;
+  reason: string;
+  details?: string | null;
+  status: string;
+  resolution?: string | null;
+  createdAt: string;
+  reporter: CommunityAuthor;
+};
+
+export async function listReportsAdmin(status = 'pending') {
+  const raw = await serviceFetch<{
+    reports?: Array<AdminReport & { _id?: string }>;
+  }>('community', '/v1/community/reports', { auth: true, query: { status } });
+  return (raw.reports ?? []).map((r) => ({ ...r, id: r._id ?? r.id }));
+}
+
+export async function reviewReport(reportId: string, action: 'dismiss' | 'hide' | 'remove') {
+  return serviceFetch<{ reviewed: boolean }>('community', `/v1/community/reports/${reportId}`, {
+    method: 'PATCH',
+    auth: true,
+    body: { action },
+  });
+}
+
+// ── Edit / delete ───────────────────────────────────────────────────────────
+export async function updateQuestion(
+  questionId: string,
+  payload: { title?: string; body?: string; tags?: string[] }
+) {
+  return serviceFetch<{ question: CommunityQuestion }>(
+    'community',
+    `/v1/community/questions/${questionId}`,
+    { method: 'PATCH', auth: true, body: payload as Record<string, unknown> }
+  );
+}
+
+export async function deleteQuestion(questionId: string) {
+  return serviceFetch<{ deleted: true }>('community', `/v1/community/questions/${questionId}`, {
+    method: 'DELETE',
+    auth: true,
+    body: {},
+  });
+}
+
+export async function updateAnswer(answerId: string, body: string) {
+  return serviceFetch<{ answer: CommunityAnswer }>(
+    'community',
+    `/v1/community/answers/${answerId}`,
+    {
+      method: 'PATCH',
+      auth: true,
+      body: { body },
+    }
+  );
+}
+
+export async function deleteAnswer(answerId: string) {
+  return serviceFetch<{ deleted: true }>('community', `/v1/community/answers/${answerId}`, {
+    method: 'DELETE',
+    auth: true,
+    body: {},
+  });
+}
+
+export async function updatePost(postId: string, body: string) {
+  return serviceFetch<{ post: CommunityPost }>('community', `/v1/community/posts/${postId}`, {
+    method: 'PATCH',
+    auth: true,
+    body: { body },
+  });
+}
+
+export async function deletePost(postId: string) {
+  return serviceFetch<{ deleted: true }>('community', `/v1/community/posts/${postId}`, {
+    method: 'DELETE',
+    auth: true,
+    body: {},
+  });
+}
+
+export async function listThreadsAcrossCourses(filters: ThreadFilters = {}) {
+  return serviceFetch<Paginated<CommunityThread>>('community', '/v1/community/threads/me', {
+    auth: true,
+    query: toQuery(filters),
+  });
+}

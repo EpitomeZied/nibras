@@ -148,6 +148,13 @@ export const appNavItems: AppNavItem[] = [
     placement: 'community',
   },
   {
+    href: '/admin/community',
+    label: 'Moderation',
+    description: 'Review flagged community content.',
+    visibility: 'admin',
+    placement: 'community',
+  },
+  {
     href: '/competitions',
     label: 'Contests',
     description: 'Upcoming contests, calendar, and linked accounts.',
@@ -420,6 +427,10 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
   '/community/tags': {
     title: 'Manage Tags',
     subtitle: 'Create, edit, or remove community tags.',
+  },
+  '/admin/community': {
+    title: 'Community moderation',
+    subtitle: 'Review flagged content and apply moderation actions.',
   },
   '/competitions': {
     title: 'Contests',
