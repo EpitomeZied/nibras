@@ -112,6 +112,16 @@
   color: var(--text);
 }
 
+.memberLink {
+  color: inherit;
+  text-decoration: none;
+}
+
+.memberLink:hover {
+  text-decoration: underline;
+  color: var(--primary, #22c55e);
+}
+
 .meta {
   font-size: 11px;
   color: var(--text-muted);

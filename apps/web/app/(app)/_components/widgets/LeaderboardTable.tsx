@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import styles from './LeaderboardTable.module.css';
 import UserAvatar from './UserAvatar';
 
@@ -72,7 +73,11 @@ export default function LeaderboardTable({
                   <div className={styles.member}>
                     <UserAvatar name={row.username} size={28} url={row.avatarUrl} />
                     <div className={styles.memberText}>
-                      <strong>{row.username}</strong>
+                      <strong>
+                        <Link href={`/users/${row.userId}`} className={styles.memberLink}>
+                          {row.username}
+                        </Link>
+                      </strong>
                       {row.meta && <span className={styles.meta}>{row.meta}</span>}
                     </div>
                   </div>
