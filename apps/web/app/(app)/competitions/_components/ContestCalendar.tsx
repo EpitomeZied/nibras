@@ -1,10 +1,17 @@
 'use client';
 
-import { Fragment, useMemo } from 'react';
+import { useMemo } from 'react';
 import styles from './ContestCalendar.module.css';
 import type { CalendarView } from './CalendarViewToggle';
 import type { Contest } from '../../../lib/services/competitions';
+import { formatContestDuration } from '../../../lib/contest-duration';
 import { googleCalendarUrl } from '../../../lib/google-calendar';
+import {
+  contestBlockStyle,
+  HOURS_IN_DAY,
+  PX_PER_HOUR,
+  TIME_GRID_HEIGHT_PX,
+} from './contest-calendar-layout';
 import { isoWeekNumber, startOfWeek } from './calendar-date-utils';
 
 type Props = {
@@ -59,11 +66,87 @@ function formatTime(iso: string): string {
   }
 }
 
+function formatHourLabel(h: number): string {
+  if (h === 0) return '12 AM';
+  if (h < 12) return `${h} AM`;
+  if (h === 12) return '12 PM';
+  return `${h - 12} PM`;
+}
+
 function dateKey(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+function ContestBlock({ contest }: { contest: Contest }) {
+  const layout = contestBlockStyle(contest);
+  return (
+    <a
+      href={contest.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`${styles.contestBlock} ${chipClass(contest.host)}`}
+      style={{ top: layout.top, height: layout.height }}
+      title={`${contest.name} — ${formatContestDuration(contest)}`}
+    >
+      <span className={styles.contestBlockTime}>{formatTime(contest.startsAt)}</span>
+      <span className={styles.contestBlockName}>{contest.name}</span>
+    </a>
+  );
+}
+
+function TimeGridBody({
+  days,
+  contests,
+  showHeader,
+}: {
+  days: Array<{ date: Date; key: string }>;
+  contests: Record<string, Contest[]>;
+  showHeader: boolean;
+}) {
+  const hours = useMemo(() => Array.from({ length: HOURS_IN_DAY }, (_, i) => i), []);
+  const columnTemplate = `56px repeat(${days.length}, minmax(0, 1fr))`;
+
+  return (
+    <div className={styles.timeGridScroll}>
+      {showHeader && (
+        <div className={styles.timeGridHeader} style={{ gridTemplateColumns: columnTemplate }}>
+          <div className={styles.weekCorner} />
+          {days.map((wd) => (
+            <div key={wd.key} className={styles.weekHeaderCell}>
+              {WEEKDAYS[wd.date.getDay()]} <strong>{wd.date.getDate()}</strong>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className={styles.timeGridWrapper} style={{ gridTemplateColumns: columnTemplate }}>
+        <div className={styles.timeLabelsColumn}>
+          {hours.map((h) => (
+            <div key={h} className={styles.timeLabelRow} style={{ height: PX_PER_HOUR }}>
+              {formatHourLabel(h)}
+            </div>
+          ))}
+        </div>
+        {days.map((day) => (
+          <div key={day.key} className={styles.dayColumn} style={{ height: TIME_GRID_HEIGHT_PX }}>
+            {hours.map((h) => (
+              <div
+                key={h}
+                className={styles.hourRow}
+                style={{ top: h * PX_PER_HOUR, height: PX_PER_HOUR }}
+                aria-hidden="true"
+              />
+            ))}
+            {(contests[day.key] ?? []).map((c) => (
+              <ContestBlock key={c.id} contest={c} />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function MonthView({
@@ -85,19 +168,16 @@ function MonthView({
 
     const result: Array<{ date: Date; key: string; outside: boolean }> = [];
 
-    // Previous month overflow
     for (let i = startOffset - 1; i >= 0; i--) {
       const d = new Date(year, month - 1, -i);
       result.push({ date: d, key: dateKey(d), outside: true });
     }
 
-    // Current month
     for (let day = 1; day <= daysInMonth; day++) {
       const d = new Date(year, month - 1, day);
       result.push({ date: d, key: dateKey(d), outside: false });
     }
 
-    // Next month overflow to fill grid
     const remaining = 7 - (result.length % 7);
     if (remaining < 7) {
       for (let i = 1; i <= remaining; i++) {
@@ -142,7 +222,7 @@ function MonthView({
                     target="_blank"
                     rel="noopener noreferrer"
                     className={`${styles.contestChip} ${chipClass(c.host)}`}
-                    title={`${c.name} — ${formatTime(c.startsAt)}`}
+                    title={`${c.name} — ${formatContestDuration(c)}`}
                   >
                     {c.name}
                   </a>
@@ -192,47 +272,7 @@ function WeekView({
     });
   }, [weekStart]);
 
-  const hours = Array.from({ length: 24 }, (_, i) => i);
-
-  return (
-    <div className={styles.weekGrid}>
-      <div className={styles.weekCorner} />
-      {weekDays.map((wd) => (
-        <div key={wd.key} className={styles.weekHeaderCell}>
-          {WEEKDAYS[wd.date.getDay()]} <strong>{wd.date.getDate()}</strong>
-        </div>
-      ))}
-      {hours.map((h) => (
-        <Fragment key={h}>
-          <div className={styles.weekTimeLabel}>
-            {h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}
-          </div>
-          {weekDays.map((wd) => {
-            const dayContests = (contests[wd.key] ?? []).filter((c) => {
-              const hour = new Date(c.startsAt).getHours();
-              return hour === h;
-            });
-            return (
-              <div key={`${wd.key}-${h}`} className={styles.weekSlot}>
-                {dayContests.map((c) => (
-                  <a
-                    key={c.id}
-                    href={c.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${styles.contestChip} ${chipClass(c.host)}`}
-                    title={c.name}
-                  >
-                    {c.name}
-                  </a>
-                ))}
-              </div>
-            );
-          })}
-        </Fragment>
-      ))}
-    </div>
-  );
+  return <TimeGridBody days={weekDays} contests={contests} showHeader />;
 }
 
 function DayView({
@@ -242,39 +282,8 @@ function DayView({
   focusDate: Date;
   contests: Record<string, Contest[]>;
 }) {
-  const current = focusDate;
-  const key = dateKey(current);
-  const dayContests = contests[key] ?? [];
-  const hours = Array.from({ length: 24 }, (_, i) => i);
-
-  return (
-    <div className={styles.dayGrid}>
-      {hours.map((h) => {
-        const hourContests = dayContests.filter((c) => new Date(c.startsAt).getHours() === h);
-        return (
-          <Fragment key={h}>
-            <div className={styles.dayTimeLabel}>
-              {h === 0 ? '12 AM' : h < 12 ? `${h} AM` : h === 12 ? '12 PM' : `${h - 12} PM`}
-            </div>
-            <div className={styles.daySlot}>
-              {hourContests.map((c) => (
-                <a
-                  key={c.id}
-                  href={c.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`${styles.contestChip} ${chipClass(c.host)}`}
-                  title={`${c.name} — ${c.durationMinutes} min`}
-                >
-                  {formatTime(c.startsAt)} {c.name}
-                </a>
-              ))}
-            </div>
-          </Fragment>
-        );
-      })}
-    </div>
-  );
+  const key = dateKey(focusDate);
+  return <TimeGridBody days={[{ date: focusDate, key }]} contests={contests} showHeader={false} />;
 }
 
 export default function ContestCalendar({
