@@ -31,9 +31,9 @@ export default function UserProfilePage({ params }: { params: Promise<{ id: stri
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<{ status?: number; message: string } | null>(null);
   const [copyStatus, setCopyStatus] = useState('');
-  const [selectedBadge, setSelectedBadge] = useState<UserProfileGamification['badges'][number] | null>(
-    null
-  );
+  const [selectedBadge, setSelectedBadge] = useState<
+    UserProfileGamification['badges'][number] | null
+  >(null);
 
   const load = useCallback(async () => {
     setLoading(true);

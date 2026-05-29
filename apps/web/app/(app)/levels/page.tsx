@@ -1,10 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  REPUTATION_TIERS,
-  getReputationLevelProgress,
-} from '@nibras/contracts';
+import { REPUTATION_TIERS, getReputationLevelProgress } from '@nibras/contracts';
 import styles from './page.module.css';
 import EmptyState from '../_components/widgets/EmptyState';
 import { getMyReputation, type MyReputation } from '../../lib/services/reputation';

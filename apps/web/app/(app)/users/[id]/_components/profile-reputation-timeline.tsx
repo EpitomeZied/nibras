@@ -24,9 +24,7 @@ export default function ProfileReputationTimeline({
                 <strong>{event.reason}</strong>
                 {event.detail ? <div className={styles.progressMeta}>{event.detail}</div> : null}
               </div>
-              <span className={styles.muted}>
-                {new Date(event.createdAt).toLocaleDateString()}
-              </span>
+              <span className={styles.muted}>{new Date(event.createdAt).toLocaleDateString()}</span>
             </li>
           ))}
         </ul>

@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import type {
   UserProfileActivity,
   UserProfileCourseProgress,
@@ -143,6 +142,7 @@ export default function AchievementsPage() {
   const [reputation, setReputation] = useState<MyReputation | null>(cached?.reputation ?? null);
   const [newlyAwarded, setNewlyAwarded] = useState<Badge[]>(cached?.newlyAwarded ?? []);
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const [copyStatus, setCopyStatus] = useState('');
   const [loading, setLoading] = useState(!cached);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -193,6 +193,18 @@ export default function AchievementsPage() {
   useEffect(() => {
     void load(false);
   }, [load]);
+
+  const handleCopyProfileLink = useCallback(async () => {
+    if (!profile) return;
+    try {
+      const url = `${window.location.origin}/users/${profile.id}`;
+      await navigator.clipboard.writeText(url);
+      setCopyStatus('Copied!');
+      window.setTimeout(() => setCopyStatus(''), 2000);
+    } catch {
+      setCopyStatus('Copy failed');
+    }
+  }, [profile]);
 
   const filtered = useMemo(
     () => badges.filter((b) => matchesCategory(b, activeTab)),
@@ -257,12 +269,12 @@ export default function AchievementsPage() {
   return (
     <div className={profileStyles.page}>
       {profile && (
-        <div className={profileStyles.headerActions}>
-          <ProfileHeader profile={profile} />
-          <Link href={`/users/${profile.id}`} className={profileStyles.profileLink}>
-            View public profile
-          </Link>
-        </div>
+        <ProfileHeader
+          profile={profile}
+          isSelf
+          onCopyLink={handleCopyProfileLink}
+          copyStatus={copyStatus}
+        />
       )}
 
       {refreshing && <p className={profileStyles.muted}>Refreshing…</p>}
@@ -481,9 +493,9 @@ export default function AchievementsPage() {
                 <li key={item.id} className={profileStyles.progressRow}>
                   <div>
                     <strong>{item.reason}</strong>
-                    {item.detail && (
+                    {item.detail ? (
                       <div className={profileStyles.progressMeta}>{item.detail}</div>
-                    )}
+                    ) : null}
                   </div>
                   <span className={profileStyles.muted}>
                     {item.delta >= 0 ? '+' : ''}

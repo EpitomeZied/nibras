@@ -806,9 +806,8 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
-  const [socialLinks, setSocialLinks] = useState<Record<SocialPlatform, string>>(
-    emptySocialLinkState
-  );
+  const [socialLinks, setSocialLinks] =
+    useState<Record<SocialPlatform, string>>(emptySocialLinkState);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileStatus, setProfileStatus] = useState('');
   const [compact, setCompact] = useState(false);
