@@ -113,6 +113,13 @@ export const auth = betterAuth({
       createdAt: 'createdAt',
       updatedAt: 'updatedAt',
     },
+    additionalFields: {
+      username: {
+        type: 'string',
+        required: true,
+        input: false,
+      },
+    },
   },
   session: {
     modelName: 'AuthSession',
@@ -169,7 +176,11 @@ export const auth = betterAuth({
             (typeof user.name === 'string' && user.name) ||
             email.split('@')[0] ||
             'there';
-          await sendWelcomeEmail({ email, name });
+          try {
+            await sendWelcomeEmail({ email, name });
+          } catch (err) {
+            console.error('[auth] welcome email failed (user was created):', err);
+          }
         },
       },
     },
