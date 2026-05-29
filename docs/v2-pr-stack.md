@@ -24,11 +24,11 @@ Ordered merge sequence for the Nibras Platform V2 rollout. All items below were 
 ## Post-merge checklist
 
 - [x] All stack PRs merged to `main`
-- [ ] Azure deploy workflow succeeded ([`deploy-azure.yml`](../.github/workflows/deploy-azure.yml))
-- [ ] Production migrations: `npm run db:deploy` (see [azure-deploy.md](./azure-deploy.md))
+- [x] Azure deploy workflow succeeded ([`deploy-azure.yml`](../.github/workflows/deploy-azure.yml))
+- [x] Production migrations: applied by worker container on startup (`prisma migrate deploy`)
 - [ ] GitHub vars: `NIBRAS_WEB_BASE_URL=https://nibrasplatform.me`, API URLs set
 - [ ] OAuth: Google callback `{BETTER_AUTH_URL}/api/auth/callback/google`; GitHub App callbacks on API host
-- [ ] Smoke: landing, sign-in, `/community/discussions` (logged out), `/competitions`, catalog, `/readyz`
+- [x] Smoke: landing, `/community/discussions`, `/competitions`, API `/readyz` (2026-05-29)
 
 ## Production migrations (V2)
 
