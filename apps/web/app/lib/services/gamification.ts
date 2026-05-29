@@ -1,4 +1,11 @@
 import { serviceFetch } from '../api-clients/service-fetch';
+import type {
+  UserProfileActivity,
+  UserProfileCourseProgress,
+  UserProfilePublic,
+  UserProfileStats,
+  UserProfileSubmission,
+} from '@nibras/contracts';
 
 export type Badge = {
   id: string;
@@ -54,9 +61,18 @@ export type MyRank = {
 };
 
 export type AchievementsDashboard = {
+  profile?: UserProfilePublic;
+  stats?: UserProfileStats;
+  courseProgress?: UserProfileCourseProgress[];
+  submissions?: UserProfileSubmission[];
+  activity?: UserProfileActivity[];
   badges: Badge[];
   reputation: import('./reputation').MyReputation;
   newlyAwarded: Badge[];
+};
+
+export type AchievementsDashboardOptions = {
+  sync?: boolean;
 };
 
 const DASHBOARD_CACHE_MS = 15_000;
@@ -66,14 +82,26 @@ export function clearAchievementsDashboardCache(): void {
   dashboardCache = null;
 }
 
-export async function getAchievementsDashboard(force = false): Promise<AchievementsDashboard> {
+export function peekAchievementsDashboardCache(): AchievementsDashboard | null {
+  if (dashboardCache && Date.now() - dashboardCache.at < DASHBOARD_CACHE_MS) {
+    return dashboardCache.data;
+  }
+  return null;
+}
+
+export async function getAchievementsDashboard(
+  force = false,
+  opts: AchievementsDashboardOptions = {}
+): Promise<AchievementsDashboard> {
   if (!force && dashboardCache && Date.now() - dashboardCache.at < DASHBOARD_CACHE_MS) {
     return dashboardCache.data;
   }
+  const query: Record<string, string> = {};
+  if (opts.sync) query.sync = 'true';
   const data = await serviceFetch<AchievementsDashboard>(
     'admin',
     '/v1/gamification/achievements-dashboard',
-    { auth: true }
+    { auth: true, query: Object.keys(query).length > 0 ? query : undefined }
   );
   dashboardCache = { data, at: Date.now() };
   return data;

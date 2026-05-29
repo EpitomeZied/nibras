@@ -3,6 +3,13 @@ import {
   PrismaClient,
   SubmissionStatus,
 } from '@prisma/client';
+import type {
+  UserProfileActivity,
+  UserProfileCourseProgress,
+  UserProfilePublic,
+  UserProfileStats,
+  UserProfileSubmission,
+} from '@nibras/contracts';
 import {
   BADGE_BY_CODE,
   BADGE_CATALOG,
@@ -14,10 +21,17 @@ import {
 import { ReputationService, type MyReputationDto } from '../reputation/service';
 
 export type AchievementsDashboardDto = {
+  profile?: UserProfilePublic;
+  stats?: UserProfileStats;
+  courseProgress?: UserProfileCourseProgress[];
+  submissions?: UserProfileSubmission[];
+  activity?: UserProfileActivity[];
   badges: BadgeDto[];
   reputation: MyReputationDto;
   newlyAwarded: BadgeDto[];
 };
+
+let catalogSynced = false;
 
 export type BadgeDto = {
   id: string;
@@ -98,6 +112,13 @@ export class GamificationService {
   }
 
   async ensureBadgeCatalog(): Promise<number> {
+    if (catalogSynced) {
+      const count = await this.prisma.badgeDefinition.count();
+      if (count >= BADGE_CATALOG.length) {
+        return count;
+      }
+    }
+
     await this.prisma.$transaction(
       BADGE_CATALOG.map((badge) => {
         const data = badgeSeedToDefinition(badge);
@@ -108,7 +129,16 @@ export class GamificationService {
         });
       })
     );
-    return this.prisma.badgeDefinition.count();
+    const count = await this.prisma.badgeDefinition.count();
+    if (count >= BADGE_CATALOG.length) {
+      catalogSynced = true;
+    }
+    return count;
+  }
+
+  /** Called from route startup hook after catalog sync. */
+  markCatalogSynced(): void {
+    catalogSynced = true;
   }
 
   private async getMetrics(userId: string): Promise<UserMetrics> {
@@ -219,17 +249,20 @@ export class GamificationService {
     };
   }
 
-  async listBadgesForUser(userId: string): Promise<BadgeDto[]> {
-    let definitionCount = await this.ensureBadgeCatalog();
-    if (definitionCount < BADGE_CATALOG.length) {
-      definitionCount = await this.ensureBadgeCatalog();
-    }
-
-    const [definitions, earned, metrics] = await Promise.all([
-      this.prisma.badgeDefinition.findMany({ orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }] }),
-      this.prisma.userBadge.findMany({ where: { userId } }),
-      this.getMetrics(userId),
-    ]);
+  private mapDefinitionsToBadges(
+    definitions: Array<{
+      id: string;
+      code: string;
+      name: string;
+      description: string | null;
+      iconUrl: string | null;
+      rarity: BadgeDto['rarity'];
+      category: string;
+      threshold: number;
+    }>,
+    earned: Array<{ badgeId: string; earnedAt: Date }>,
+    metrics: UserMetrics
+  ): BadgeDto[] {
     const earnedByBadgeId = new Map(earned.map((e) => [e.badgeId, e.earnedAt]));
 
     return definitions.map((def) => {
@@ -251,32 +284,84 @@ export class GamificationService {
     });
   }
 
-  async getAchievementsDashboard(userId: string): Promise<AchievementsDashboardDto> {
-    await this.ensureBadgeCatalog();
-    await this.reputation.syncReputationFromActivity(userId, { force: true });
-    const newlyAwarded = await this.checkAndAwardBadges(userId, { skipSync: true });
-    const [badges, reputation] = await Promise.all([
-      this.listBadgesForUser(userId),
-      this.reputation.getMyReputation(userId, { sync: false }),
+  async listBadgesForUser(
+    userId: string,
+    opts?: { metrics?: UserMetrics; skipCatalog?: boolean }
+  ): Promise<BadgeDto[]> {
+    if (!opts?.skipCatalog) {
+      await this.ensureBadgeCatalog();
+    }
+
+    const [definitions, earned, metrics] = await Promise.all([
+      this.prisma.badgeDefinition.findMany({ orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }] }),
+      this.prisma.userBadge.findMany({ where: { userId } }),
+      opts?.metrics ? Promise.resolve(opts.metrics) : this.getMetrics(userId),
     ]);
-    return { badges, reputation, newlyAwarded };
+
+    return this.mapDefinitionsToBadges(definitions, earned, metrics);
   }
 
-  async checkAndAwardBadges(
+  async getAchievementsDashboard(
     userId: string,
-    opts?: { skipSync?: boolean }
-  ): Promise<BadgeDto[]> {
+    opts?: { sync?: boolean }
+  ): Promise<AchievementsDashboardDto> {
     await this.ensureBadgeCatalog();
-    if (!opts?.skipSync) {
-      await this.reputation.syncReputationFromActivity(userId, { force: true });
-    }
+    await this.reputation.syncReputationFromActivity(userId, {
+      force: opts?.sync === true,
+    });
 
     const metrics = await this.getMetrics(userId);
     const definitions = await this.prisma.badgeDefinition.findMany({
       orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }],
     });
 
+    const newlyAwarded = await this.checkAndAwardBadges(userId, {
+      skipSync: true,
+      metrics,
+      definitions,
+    });
+
+    const [earnedRows, reputation] = await Promise.all([
+      this.prisma.userBadge.findMany({ where: { userId } }),
+      this.reputation.getMyReputation(userId, { sync: false }),
+    ]);
+
+    const badges = this.mapDefinitionsToBadges(definitions, earnedRows, metrics);
+
+    return { badges, reputation, newlyAwarded };
+  }
+
+  async checkAndAwardBadges(
+    userId: string,
+    opts?: {
+      skipSync?: boolean;
+      metrics?: UserMetrics;
+      definitions?: Array<{
+        id: string;
+        code: string;
+        name: string;
+        description: string | null;
+        iconUrl: string | null;
+        rarity: BadgeDto['rarity'];
+        category: string;
+        threshold: number;
+        points: number;
+      }>;
+    }
+  ): Promise<BadgeDto[]> {
+    if (!opts?.skipSync) {
+      await this.ensureBadgeCatalog();
+      await this.reputation.syncReputationFromActivity(userId, { force: true });
+    }
+
+    const definitions =
+      opts?.definitions ??
+      (await this.prisma.badgeDefinition.findMany({
+        orderBy: [{ category: 'asc' }, { sortOrder: 'asc' }],
+      }));
+
     const newlyAwarded: BadgeDto[] = [];
+    let currentMetrics = opts?.metrics ?? (await this.getMetrics(userId));
     let changed = true;
 
     while (changed) {
@@ -286,7 +371,6 @@ export class GamificationService {
         select: { badgeId: true },
       });
       const existingIds = new Set(existing.map((e) => e.badgeId));
-      const currentMetrics = await this.getMetrics(userId);
 
       for (const def of definitions) {
         if (existingIds.has(def.id)) continue;
@@ -322,6 +406,12 @@ export class GamificationService {
           earnedAt: earned.earnedAt.toISOString(),
         });
         changed = true;
+        const earnedCount =
+          typeof currentMetrics.earnedBadges === 'number' ? currentMetrics.earnedBadges : 0;
+        currentMetrics = {
+          ...currentMetrics,
+          earnedBadges: earnedCount + 1,
+        };
       }
     }
 

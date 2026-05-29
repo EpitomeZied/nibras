@@ -80,8 +80,14 @@
   justify-content: space-between;
 }
 
-.sectionTitle {
-  font-size: 14px;
+.badgeBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.badgeSectionTitle {
+  font-size: 13px;
   font-weight: 600;
   margin: 0;
   letter-spacing: 0.02em;
@@ -107,7 +113,14 @@
 }
 
 .skeletonHeader {
-  height: 48px;
+  height: 120px;
+  border-radius: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.skeletonStats {
+  height: 72px;
   border-radius: 10px;
   background: var(--surface);
   border: 1px solid var(--border);
@@ -139,6 +152,7 @@
 }
 
 .skeletonHeader,
+.skeletonStats,
 .skeletonCard {
   animation: shimmer 1.6s ease-in-out infinite;
 }

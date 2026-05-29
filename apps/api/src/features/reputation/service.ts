@@ -237,15 +237,11 @@ export class ReputationService {
     const weekStart = startOfWeek(now);
     const monthStart = startOfMonth(now);
 
-    const [historyEvents, allTotals, weekEvents, monthEvents, totalAgg] = await Promise.all([
+    const [historyEvents, weekEvents, monthEvents, totalAgg, rankInfo] = await Promise.all([
       this.prisma.reputationEvent.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
         take: 50,
-      }),
-      this.prisma.reputationEvent.groupBy({
-        by: ['userId'],
-        _sum: { delta: true },
       }),
       this.prisma.reputationEvent.aggregate({
         where: { userId, createdAt: { gte: weekStart } },
@@ -259,22 +255,13 @@ export class ReputationService {
         where: { userId },
         _sum: { delta: true },
       }),
+      this.computeRank(userId),
     ]);
 
     const fullTotal = totalAgg._sum.delta ?? 0;
     const weeklyDelta = weekEvents._sum.delta ?? 0;
     const monthlyDelta = monthEvents._sum.delta ?? 0;
-
-    const sortedTotals = allTotals
-      .map((row) => ({ userId: row.userId, total: row._sum.delta ?? 0 }))
-      .sort((a, b) => b.total - a.total);
-
-    const rankIndex = sortedTotals.findIndex((row) => row.userId === userId);
-    const rank = rankIndex >= 0 ? rankIndex + 1 : null;
-    const percentile =
-      sortedTotals.length > 0 && rank !== null
-        ? Math.round(((sortedTotals.length - rank) / sortedTotals.length) * 100)
-        : null;
+    const { rank, percentile } = rankInfo;
 
     const history = await presentReputationHistory(this.prisma, historyEvents);
 
@@ -294,6 +281,48 @@ export class ReputationService {
       _sum: { delta: true },
     });
     return agg._sum.delta ?? 0;
+  }
+
+  private async computeRank(
+    userId: string
+  ): Promise<{ rank: number | null; percentile: number | null }> {
+    const userAgg = await this.prisma.reputationEvent.aggregate({
+      where: { userId },
+      _sum: { delta: true },
+    });
+    const userTotal = userAgg._sum.delta ?? 0;
+    if (userTotal <= 0) {
+      return { rank: null, percentile: null };
+    }
+
+    const [higherRows, totalRows] = await Promise.all([
+      this.prisma.$queryRaw<Array<{ count: bigint }>>`
+        SELECT COUNT(*)::bigint AS count
+        FROM (
+          SELECT "userId"
+          FROM "ReputationEvent"
+          GROUP BY "userId"
+          HAVING SUM(delta) > ${userTotal}
+        ) AS ranked
+      `,
+      this.prisma.$queryRaw<Array<{ count: bigint }>>`
+        SELECT COUNT(*)::bigint AS count
+        FROM (
+          SELECT "userId"
+          FROM "ReputationEvent"
+          GROUP BY "userId"
+          HAVING SUM(delta) > 0
+        ) AS ranked
+      `,
+    ]);
+
+    const higherCount = Number(higherRows[0]?.count ?? 0);
+    const totalCount = Number(totalRows[0]?.count ?? 0);
+    const rank = higherCount + 1;
+    const percentile =
+      totalCount > 0 ? Math.round(((totalCount - rank) / totalCount) * 100) : null;
+
+    return { rank, percentile };
   }
 
   getLevelForScore(score: number): number {

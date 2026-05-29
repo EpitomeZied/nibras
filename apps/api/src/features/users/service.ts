@@ -172,6 +172,53 @@ export class UserProfileService {
     };
   }
 
+  async buildSelfSections(
+    store: AppStore,
+    apiBaseUrl: string,
+    targetUserId: string
+  ): Promise<{
+    profile: UserProfilePublic;
+    stats: UserProfileStats;
+    courseProgress: UserProfileCourseProgress[];
+    submissions: UserProfileSubmission[];
+    activity: UserProfileActivity[];
+  } | null> {
+    const target = await this.loadTargetUser(store, apiBaseUrl, targetUserId);
+    if (!target) return null;
+
+    const memberships = await store.listCourseMemberships(apiBaseUrl, targetUserId);
+    const socialLinks = await this.loadSocialLinks(targetUserId);
+    const profile: UserProfilePublic = {
+      id: target.id,
+      username: target.username,
+      displayName: target.displayName,
+      githubLogin: target.githubLogin,
+      avatarUrl: githubAvatarUrl(target.githubLogin),
+      bio: target.bio,
+      primaryRole: resolvePrimaryRole(target.systemRole, memberships),
+      yearLevel: target.yearLevel,
+      memberSince: target.createdAt.toISOString(),
+      socialLinks,
+    };
+
+    const viewerRole: UserProfileViewerRole = 'self';
+    const [courseProgress, submissions, activity] = await Promise.all([
+      this.buildCourseProgress(store, apiBaseUrl, targetUserId, viewerRole),
+      this.buildSubmissions(store, apiBaseUrl, targetUserId, false),
+      this.buildActivity(store, apiBaseUrl, targetUserId, viewerRole),
+    ]);
+
+    const stats = await this.buildStats(
+      store,
+      apiBaseUrl,
+      targetUserId,
+      viewerRole,
+      submissions
+    );
+
+    return { profile, stats, courseProgress, submissions, activity };
+  }
+
   async buildProfileResponse(
     store: AppStore,
     apiBaseUrl: string,
