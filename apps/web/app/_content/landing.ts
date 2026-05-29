@@ -70,15 +70,15 @@ export const canvasSurfaceChips = ['dashboard', 'cli', 'hassona', 'community'] a
 
 export const featuresShowcaseCopy = {
   eyebrow: 'Features',
-  titleBright: 'One platform.',
-  titleDim: ' Three surfaces.',
+  titleBright: 'One platform. ',
+  titleDim: 'Three\u00a0surfaces.',
   sub: 'Academic, delivery, and engagement — pick a surface on the left; the terminal lists every module inside at a glance.',
 } as const;
 
 export const cliShowcaseCopy = {
   eyebrow: 'CLI',
-  titleBright: 'GitHub-native delivery.',
-  titleDim: ' Terminal-native.',
+  titleBright: 'GitHub-native delivery. ',
+  titleDim: 'Terminal-native.',
   sub: 'The same session layout as the rest of the page — pick a workflow on the left and watch the CLI run it live on the right.',
 } as const;
 
@@ -87,7 +87,7 @@ export type CliShowcaseTile = {
   name: string;
   label: string;
   desc: string;
-  icon: string;
+  icon: LandingIconId;
   accent: string;
   command: string;
   lines: ReadonlyArray<{
@@ -102,7 +102,7 @@ export const cliShowcaseTiles: readonly CliShowcaseTile[] = [
     name: 'submit',
     label: 'Submit workflow',
     desc: 'Stage, push, and verify — with live feedback on every step.',
-    icon: '◉',
+    icon: 'cli-submit',
     accent: '#22c55e',
     command: 'nibras submit',
     lines: [
@@ -117,7 +117,7 @@ export const cliShowcaseTiles: readonly CliShowcaseTile[] = [
     name: 'status',
     label: 'Status & polling',
     desc: 'Visual verification polling with clear progress indicators.',
-    icon: '█',
+    icon: 'cli-status',
     accent: '#38bdf8',
     command: 'nibras status --watch',
     lines: [
@@ -132,7 +132,7 @@ export const cliShowcaseTiles: readonly CliShowcaseTile[] = [
     name: 'result',
     label: 'Pass / fail summary',
     desc: 'Boxed result cards with scores and colour-coded borders.',
-    icon: '╭',
+    icon: 'cli-result',
     accent: '#f97316',
     command: 'nibras status --last',
     lines: [
@@ -147,7 +147,7 @@ export const cliShowcaseTiles: readonly CliShowcaseTile[] = [
     name: 'workflow',
     label: 'Developer workflows',
     desc: 'Login, doctor, and config — native to your terminal.',
-    icon: '∿',
+    icon: 'cli-workflow',
     accent: '#a855f7',
     command: 'nibras doctor',
     lines: [
