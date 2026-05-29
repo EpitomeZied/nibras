@@ -7,6 +7,7 @@ export type Badge = {
   description?: string;
   iconUrl?: string;
   rarity?: 'common' | 'rare' | 'epic' | 'legendary';
+  category?: string;
   earnedAt?: string;
   progress?: number;
   threshold?: number;

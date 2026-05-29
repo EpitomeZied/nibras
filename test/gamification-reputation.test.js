@@ -17,11 +17,13 @@ const { FileStore } = require('../apps/api/dist/store');
 
 test('BADGE_CATALOG has unique codes and computeLevel tiers', () => {
   const codes = new Set(BADGE_CATALOG.map((b) => b.code));
+  assert.equal(BADGE_CATALOG.length, 200);
   assert.equal(codes.size, BADGE_CATALOG.length);
   assert.equal(computeLevel(0), 1);
   assert.equal(computeLevel(249), 1);
   assert.equal(computeLevel(250), 2);
   assert.equal(computeLevel(6000), 6);
+  assert.equal(computeLevel(65000), 12);
 });
 
 test('GamificationService awards github-connected badge when linked', async () => {

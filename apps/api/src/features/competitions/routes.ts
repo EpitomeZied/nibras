@@ -17,6 +17,7 @@ import {
   syncLinkedAccountAura,
 } from '../reputation/linked-account-aura';
 import { effectiveDurationMinutes } from './contest-duration';
+import { GamificationService } from '../gamification/service';
 
 export function registerCompetitionsRoutes(
   app: FastifyInstance,
@@ -588,19 +589,28 @@ export function registerCompetitionsRoutes(
 
       if (verified) {
         const handleInfo = await fetcher.verifyHandle(account.handle);
+        const peakRating = Math.max(
+          account.platformMaxRating ?? 0,
+          handleInfo.maxRating ?? 0,
+          handleInfo.rating ?? 0
+        );
+        const currentRating = handleInfo.rating ?? null;
         await prisma.linkedAccount.update({
           where: { id: account.id },
           data: {
             verificationStatus: 'verified',
             verifiedAt: new Date(),
-            platformRating: handleInfo.rating ?? null,
-            platformMaxRating: handleInfo.maxRating ?? null,
+            platformRating: currentRating,
+            platformMaxRating: peakRating > 0 ? peakRating : null,
           },
         });
 
         await syncLinkedAccountAura(prisma, auth.user.id, {
           platform: host as CompPlatform,
         });
+
+        const gamification = new GamificationService(prisma);
+        const newlyAwarded = await gamification.checkAndAwardBadges(auth.user.id);
 
         await enqueueCompetitionsJob({
           type: 'account-stats-sync',
@@ -610,9 +620,13 @@ export function registerCompetitionsRoutes(
           verified: true,
           host: account.platform,
           handle: account.handle,
-          rating: handleInfo.rating,
-          maxRating: handleInfo.maxRating,
-          auraEarned: computeAuraDelta(handleInfo.rating),
+          rating: currentRating,
+          maxRating: peakRating > 0 ? peakRating : handleInfo.maxRating,
+          auraEarned: computeAuraDelta(currentRating),
+          newlyAwardedBadges: newlyAwarded.map((b) => ({
+            code: b.code,
+            name: b.name,
+          })),
         };
       }
 

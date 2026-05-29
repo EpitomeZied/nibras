@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { getReputationLevelLabel } from '@nibras/contracts';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
 import LeaderboardTable, { type LeaderboardRow } from '../../_components/widgets/LeaderboardTable';
@@ -62,6 +63,7 @@ export default function LeaderboardPage() {
             delta: e.delta,
             badges: e.badges,
             level: e.level,
+            meta: getReputationLevelLabel(e.score),
           }))
         );
       } else {
@@ -122,7 +124,7 @@ export default function LeaderboardPage() {
             <div className={styles.myRowText}>
               <strong>Your rank</strong>
               <span>
-                {myRank.level !== undefined ? `Level ${myRank.level} · ` : ''}
+                {myRank.score != null ? `${getReputationLevelLabel(myRank.score)} · ` : ''}
                 {myRank.badges ?? 0} badges
               </span>
             </div>
@@ -163,7 +165,6 @@ export default function LeaderboardPage() {
           highlightUserId={myUserId}
           scoreLabel="Points"
           showBadges
-          showLevel
         />
       )}
     </div>

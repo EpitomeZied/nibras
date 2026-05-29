@@ -1,4 +1,12 @@
 import type { BadgeCategory, BadgeRarity } from '@prisma/client';
+import {
+  REPUTATION_LEVEL_NAMES,
+  REPUTATION_LEVEL_THRESHOLDS,
+  computeReputationLevel,
+  getReputationLevelName,
+  getReputationLevelProgress,
+} from '@nibras/contracts';
+import { assembleBadgeCatalog } from './badge-catalog-builder';
 
 export type BadgeMetric =
   | 'githubLinked'
@@ -24,7 +32,9 @@ export type BadgeMetric =
   | 'earnedBadges'
   | 'dailyStreakCurrent'
   | 'dailyStreakLongest'
-  | 'dailyProblemsCompleted';
+  | 'dailyProblemsCompleted'
+  | 'codeforcesMaxRating'
+  | 'leetcodeMaxRating';
 
 export type BadgeSeed = {
   code: string;
@@ -38,7 +48,8 @@ export type BadgeSeed = {
   sortOrder: number;
 };
 
-export const BADGE_CATALOG: BadgeSeed[] = [
+/** Original hand-authored catalog (includes legacy meta badges; replaced on assemble). */
+export const LEGACY_BADGES: BadgeSeed[] = [
   // ── Onboarding ──────────────────────────────────────────────────────────────
   {
     code: 'github-connected',
@@ -791,6 +802,8 @@ export const BADGE_CATALOG: BadgeSeed[] = [
   },
 ];
 
+export const BADGE_CATALOG: BadgeSeed[] = assembleBadgeCatalog(LEGACY_BADGES, 200);
+
 const BOOLEAN_METRICS = new Set<BadgeMetric>(['githubLinked', 'githubAppInstalled']);
 
 export const BADGE_BY_CODE = new Map(BADGE_CATALOG.map((b) => [b.code, b]));
@@ -817,15 +830,8 @@ export function progressForMetric(metric: BadgeMetric, metrics: UserMetrics): nu
 
 export type UserMetrics = Record<BadgeMetric, number | boolean>;
 
-export const LEVEL_THRESHOLDS = [0, 250, 750, 1500, 3000, 6000] as const;
-
-export function computeLevel(score: number): number {
-  let level = 1;
-  for (let i = LEVEL_THRESHOLDS.length - 1; i >= 0; i--) {
-    if (score >= LEVEL_THRESHOLDS[i]) {
-      level = i + 1;
-      break;
-    }
-  }
-  return level;
-}
+export const LEVEL_THRESHOLDS = REPUTATION_LEVEL_THRESHOLDS;
+export const LEVEL_NAMES = REPUTATION_LEVEL_NAMES;
+export const computeLevel = computeReputationLevel;
+export const getLevelName = getReputationLevelName;
+export const getLevelProgress = getReputationLevelProgress;

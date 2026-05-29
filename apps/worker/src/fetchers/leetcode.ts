@@ -98,18 +98,25 @@ export const leetcodeFetcher: PlatformFetcher = {
   async verifyHandle(handle: string) {
     try {
       const data = await gql<{
-        matchedUser: { username: string; profile: { ranking: number } } | null;
+        matchedUser: { username: string } | null;
+        userContestRanking: { rating: number } | null;
+        userContestRankingHistory: Array<{ rating: number }> | null;
       }>(
         `query($username: String!) {
-          matchedUser(username: $username) {
-            username
-            profile { ranking }
-          }
+          matchedUser(username: $username) { username }
+          userContestRanking(username: $username) { rating }
+          userContestRankingHistory(username: $username) { rating }
         }`,
         { username: handle }
       );
       if (!data.matchedUser) return { valid: false };
-      return { valid: true, rating: data.matchedUser.profile.ranking };
+      const current = Math.round(data.userContestRanking?.rating ?? 0);
+      const historyPeak = Math.max(
+        0,
+        ...(data.userContestRankingHistory ?? []).map((h) => Math.round(h.rating))
+      );
+      const peak = Math.max(current, historyPeak);
+      return { valid: true, rating: current, maxRating: peak };
     } catch {
       return { valid: false };
     }
@@ -143,6 +150,10 @@ export const leetcodeFetcher: PlatformFetcher = {
     );
 
     const rating = Math.round(data.userContestRanking?.rating ?? 0);
+    const historyPeak = Math.max(
+      rating,
+      ...(data.userContestRankingHistory ?? []).map((h) => Math.round(h.rating))
+    );
     const history = (data.userContestRankingHistory ?? [])
       .filter((h) => h.ranking > 0)
       .map((h, i, arr) => ({
@@ -171,7 +182,7 @@ export const leetcodeFetcher: PlatformFetcher = {
 
     return {
       rating,
-      maxRating: rating,
+      maxRating: historyPeak,
       contestHistory: history,
       solvedProblemIds,
     };
