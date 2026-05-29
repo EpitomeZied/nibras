@@ -89,6 +89,32 @@ export async function optionalUser(
   return user ?? null;
 }
 
+/** Like requireUser but returns null when unauthenticated (no 401). */
+export async function optionalAuth(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  store: AppStore
+): Promise<AuthenticatedRequest | null> {
+  const apiBaseUrl = requestBaseUrl(request);
+  const bearerToken = getBearerToken(request);
+  const webSessionToken = getWebSessionToken(request);
+  const authKind = bearerToken ? 'bearer' : webSessionToken ? 'web' : null;
+  const token = bearerToken || webSessionToken;
+  if (!authKind || !token) {
+    return null;
+  }
+  const user =
+    authKind === 'bearer'
+      ? ((await store.getUserByToken(apiBaseUrl, token)) ??
+        (await store.getUserByWebSession(apiBaseUrl, token)))
+      : await store.getUserByWebSession(apiBaseUrl, token);
+  if (!user) {
+    return null;
+  }
+  const memberships = await store.listCourseMemberships(apiBaseUrl, user.id);
+  return { authKind, token, user, memberships };
+}
+
 export function hasCourseRole(
   auth: AuthenticatedRequest,
   courseId: string,
