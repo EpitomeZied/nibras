@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type CSSProperties } from 'react';
 import { featureGroups, type LandingFeatureGroup } from '../_content/landing';
 import { LandingIcon, type LandingIconId } from '../_content/landing-icons';
 import styles from './feature-tiles-showcase.module.css';
@@ -106,7 +106,7 @@ export default function FeatureTilesShowcase() {
                 style={
                   {
                     '--tile-accent': tile.accent,
-                  } as React.CSSProperties
+                  } as CSSProperties
                 }
                 onClick={() => selectTile(tile.id)}
               >

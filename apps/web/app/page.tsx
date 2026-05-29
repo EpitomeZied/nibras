@@ -6,10 +6,10 @@ import { useSearchParams } from 'next/navigation';
 import NibrasLogo from './_components/nibras-logo';
 import AuthSignIn from './_components/auth-sign-in';
 import AgentMissionControlSection from './_components/agent-mission-control';
+import FeatureTilesShowcase from './_components/feature-tiles-showcase';
 import {
   cliFeatures,
   ctaFeatures,
-  featureGroups,
   landingFooterContactEmail,
   landingNavLinks,
   heroBadge,
@@ -321,57 +321,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section id="features" className={`${styles.section} ${styles.featuresSection}`}>
-        <div className={`${styles.terminalWindow} ${styles.featuresTerminal}`}>
-          <div className={styles.terminalTitleBar}>
-            <span className={styles.termDot} style={{ background: '#ff5f57' }} />
-            <span className={styles.termDot} style={{ background: '#febc2e' }} />
-            <span className={styles.termDot} style={{ background: '#28c840' }} />
-            <span className={styles.termTitle}>nibras — features</span>
-          </div>
-
-          <div className={`${styles.terminalBody} ${styles.featuresBody}`}>
-            <div className={styles.termLine}>
-              <span className={styles.termPrompt}>nibras</span>
-              <span className={styles.termCmd}> features --list</span>
-            </div>
-
-            <p className={styles.featuresIntro}>
-              Everything you need to run a modern academic system — templates, team formation,
-              planning, tutoring, community, competitions, IDE practice, achievements, and analytics
-              in one operating layer.
-            </p>
-
-            <div className={styles.featuresGroups}>
-              {featureGroups.map((group) => (
-                <div key={group.id} id={group.id} className={styles.featuresGroup}>
-                  <div className={styles.termLine}>
-                    <span className={styles.termMuted}>## </span>
-                    <span className={styles.termHighlight}>{group.label}</span>
-                  </div>
-                  <ul className={styles.featuresList}>
-                    {group.features.map((feature) => (
-                      <li key={feature.title} className={styles.featuresListItem}>
-                        <div className={styles.termLine}>
-                          <span className={styles.termSuccess}>{feature.title}</span>
-                        </div>
-                        <p className={styles.featuresItemDesc}>{feature.desc}</p>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-
-            <div className={styles.termLine}>
-              <span className={styles.termMuted}>
-                {featureGroups.reduce((n, g) => n + g.features.length, 0)} features ·{' '}
-              </span>
-              <span className={styles.termHighlight}>{featureGroups.length} groups</span>
-            </div>
-          </div>
-        </div>
-      </section>
+      <FeatureTilesShowcase />
 
       <section id="cli" className={styles.section}>
         <div className={styles.sectionHeader}>
