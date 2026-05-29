@@ -1,5 +1,11 @@
 import Link from 'next/link';
-import { canvasSurfaceChips, mockupCommunityQuestions, mockupStatCards } from '../_content/landing';
+import {
+  agentMissionControlCopy,
+  canvasSurfaceChips,
+  missionControlDeadlinesLines,
+  mockupCommunityQuestions,
+  mockupStatCards,
+} from '../_content/landing';
 import styles from './agent-mission-control.module.css';
 
 type MiniTerminalLine = { kind: 'prompt' | 'muted' | 'ok' | 'warn' | 'text'; text: string };
@@ -223,16 +229,12 @@ export default function AgentMissionControlSection() {
     <section className={styles.section} aria-label="Nibras platform preview">
       <div className={styles.sectionInner}>
         <div className={styles.copy}>
-          <p className={styles.eyebrow}>One platform for CS programs</p>
+          <p className={styles.eyebrow}>{agentMissionControlCopy.eyebrow}</p>
           <h2 className={styles.title}>
-            <span className={styles.titleBright}>Courses, projects, and CLI</span>
-            <span className={styles.titleItalic}>without the tab chaos.</span>
+            <span className={styles.titleBright}>{agentMissionControlCopy.titleBright}</span>
+            <span className={styles.titleItalic}>{agentMissionControlCopy.titleItalic}</span>
           </h2>
-          <p className={styles.sub}>
-            My Courses, daily problem streaks, public profiles, Hassona tutoring, community v2, and
-            GitHub-native submissions — connected on one dashboard instead of scattered LMS tabs and
-            side tools.
-          </p>
+          <p className={styles.sub}>{agentMissionControlCopy.sub}</p>
           <div className={styles.actions}>
             <a className={styles.primaryCta} href="/sign-in">
               Get started free
@@ -260,14 +262,7 @@ export default function AgentMissionControlSection() {
             className={styles.floatDeadlines}
             tileType="terminal"
             label="deadlines"
-            lines={[
-              { kind: 'prompt', text: 'nibras> deadlines --week' },
-              { kind: 'muted', text: '3 due · 2 submissions pending review' },
-              { kind: 'ok', text: '✓ HW2 — Sorting submitted' },
-              { kind: 'ok', text: '✓ Daily problem solved · streak 7' },
-              { kind: 'ok', text: '✓ Nibras 75 — Two Sum accepted' },
-              { kind: 'warn', text: '△ Capstone milestone due Sun' },
-            ]}
+            lines={[...missionControlDeadlinesLines]}
           />
 
           <MiniTerminal

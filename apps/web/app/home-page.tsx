@@ -8,12 +8,14 @@ import AgentMissionControlSection from './_components/agent-mission-control';
 import FeatureTilesShowcase from './_components/feature-tiles-showcase';
 import CliShowcase from './_components/cli-showcase';
 import {
+  footerTagline,
+  heroBadge,
+  heroSignInHint,
+  heroTitleLines,
+  howItWorksIntro,
+  howItWorksSteps,
   landingFooterContactEmail,
   landingNavLinks,
-  heroBadge,
-  heroSub,
-  howItWorksSteps,
-  statsBar,
   supportNotice,
   transformGains,
   transformPains,
@@ -168,16 +170,21 @@ export default function HomePage() {
             </div>
 
             <h1 className={styles.heroTerminalTitle}>
-              <span className={styles.heroTerminalTitleLine}>Run your academic system</span>
-              <span className={`${styles.heroTerminalTitleLine} ${styles.heroTerminalTitleAccent}`}>
-                like a real operating platform.
-              </span>
-              <span className={`${styles.heroTerminalTitleLine} ${styles.heroTerminalTitleMuted}`}>
-                Without the chaos.
-              </span>
+              {heroTitleLines.map((part) => (
+                <span
+                  key={part.line}
+                  className={`${styles.heroTerminalTitleLine} ${
+                    part.variant === 'accent'
+                      ? styles.heroTerminalTitleAccent
+                      : part.variant === 'muted'
+                        ? styles.heroTerminalTitleMuted
+                        : ''
+                  }`}
+                >
+                  {part.line}
+                </span>
+              ))}
             </h1>
-
-            <p className={styles.heroTermSub}>{heroSub}</p>
 
             <div className={styles.termLine}>
               <span className={styles.termPrompt}>nibras</span>
@@ -189,7 +196,7 @@ export default function HomePage() {
             </Link>
             <p className={styles.heroSignInHint}>
               <span className={styles.termMuted}># </span>
-              GitHub or email magic link on /sign-in only
+              {heroSignInHint}
             </p>
 
             <div className={styles.termLine}>
@@ -218,25 +225,6 @@ export default function HomePage() {
 
       <AgentMissionControlSection />
 
-      <div className={styles.landingMetrics}>
-        <p className={styles.trustedBar}>
-          Trusted by instructors and students running courses, teams, planning, and practice in one
-          system
-        </p>
-
-        <div className={styles.statsBar}>
-          {statsBar.map((stat, index) => (
-            <div key={stat.label} className={styles.statItemWrap}>
-              {index > 0 && <div className={styles.statDivider} />}
-              <div className={styles.statItem}>
-                <span className={styles.statNumber}>{stat.number}</span>
-                <span className={styles.statLabel}>{stat.label}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       <section id="how-it-works" className={`${styles.section} ${styles.howItWorksSection}`}>
         <div className={`${styles.terminalWindow} ${styles.howItWorksTerminal}`}>
           <div className={styles.terminalTitleBar}>
@@ -252,10 +240,7 @@ export default function HomePage() {
               <span className={styles.termCmd}> man how-it-works</span>
             </div>
 
-            <p className={styles.howItWorksIntro}>
-              From sign-in to submission in three steps. One GitHub login connects your identity,
-              workspace, and delivery history — no setup friction.
-            </p>
+            <p className={styles.howItWorksIntro}>{howItWorksIntro}</p>
 
             <div className={styles.howItWorksSteps} role="list">
               {howItWorksSteps.map((step) => (
@@ -385,9 +370,7 @@ export default function HomePage() {
                 <NibrasLogo variant="inverse" width={100} />
               </a>
             </div>
-            <p className={styles.footerTagline}>
-              The academic operations platform for serious instructors and students.
-            </p>
+            <p className={styles.footerTagline}>{footerTagline}</p>
           </div>
 
           <div className={styles.footerLinks}>

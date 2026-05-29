@@ -14,21 +14,43 @@ export type LandingFeatureGroup = {
 };
 
 export const heroBadge =
-  'Early Access · Catalog LMS, daily practice, public profiles, community v2 & more';
+  'Platform 2.0 · Early access — catalog LMS, profiles, gamification v2, community v2 & auth';
 
-export const heroSub =
-  'One platform for courses, projects, planning, and delivery — with My Courses (lectures, MCQ/quizzes, video progress, grades), dashboard deadlines, Hassona tutoring, community v2 (votes and bookmarks), daily problem streaks, competitions calendar, public profiles, in-browser IDE, and GitHub-native CLI submissions.';
-
-export const whatsNew = [
-  'Catalog LMS — lectures, MCQ/quizzes, and video watch progress in My Courses',
-  'Community v2 — votes, bookmarks, reputation hooks, and moderation',
-  'Daily problem + public profiles — streaks at /competitions/daily, shareable /users/[id]',
+export const heroTitleLines = [
+  { line: 'Run your academic system', variant: 'default' as const },
+  { line: 'like a real operating platform.', variant: 'accent' as const },
+  { line: 'Catalog, profiles, and CLI — without the chaos.', variant: 'muted' as const },
 ] as const;
 
-export const statsBar = [
-  { number: '20+', label: 'Connected workflows in one system' },
-  { number: '8+', label: 'Student surfaces beyond the LMS' },
-  { number: '24/7', label: 'Course operations visibility' },
+export const heroSignInHint = 'GitHub, magic link, or email/password on /sign-in';
+
+export const whatsNew = [
+  'Catalog — Courses and Projects tabs, enrollment, and instructor access requests',
+  'Community v2 — votes, bookmarks, author profile links, and moderation',
+  'Public profiles — social links, streaks, badges, and reputation timeline at /users/[id]',
+  'Gamification v2 — badge categories, rating titles, and Achievements page filters',
+  'CLI 2.0 + auth — TypeScript CLI with device login; GitHub, magic link, or password sign-in',
+] as const;
+
+export const howItWorksIntro =
+  'From sign-in to submission in three steps. GitHub-first identity with optional email sign-in — then Catalog, workspace, and delivery on one platform.';
+
+export const footerTagline =
+  'Catalog, community, and GitHub-native CLI — one academic operations platform for instructors and students.';
+
+export const agentMissionControlCopy = {
+  eyebrow: 'Platform 2.0 · Early access',
+  titleBright: 'Catalog, courses, and CLI',
+  titleItalic: 'without the tab chaos.',
+  sub: 'Browse and enroll from the Catalog, learn in My Courses, share public profiles, and submit with CLI 2.0 — Hassona tutoring and community v2 on the same dashboard.',
+} as const;
+
+export const missionControlDeadlinesLines = [
+  { kind: 'prompt' as const, text: 'nibras> deadlines --week' },
+  { kind: 'muted' as const, text: '3 due · catalog · 2 courses joined' },
+  { kind: 'ok' as const, text: '✓ HW2 — Sorting submitted' },
+  { kind: 'ok' as const, text: '✓ profile · streak 7 · daily problem solved' },
+  { kind: 'warn' as const, text: '△ Capstone milestone due Sun' },
 ] as const;
 
 export const mockupUrl = 'nibrasplatform.me/dashboard';
@@ -152,7 +174,7 @@ export const cliShowcaseTiles: readonly CliShowcaseTile[] = [
       { kind: 'ok', text: '✓ API reachable' },
       { kind: 'ok', text: '✓ GitHub token valid' },
       { kind: 'ok', text: '✓ project manifest found' },
-      { kind: 'highlight', text: 'ready · run nibras submit' },
+      { kind: 'highlight', text: 'CLI 2.0 · device login ready · run nibras submit' },
     ],
   },
 ] as const;
@@ -213,7 +235,7 @@ export const howItWorksSteps = [
     step: '01',
     icon: 'timeline-templates' as const,
     title: 'Connect your GitHub',
-    desc: 'Sign in once — your identity, submissions, and reputation are tracked automatically. No passwords, no forms.',
+    desc: 'GitHub-first sign-in links your identity, submissions, and reputation. Use magic link or email/password on /sign-in for web-only access.',
     cta: null,
     href: null,
   },
@@ -221,7 +243,7 @@ export const howItWorksSteps = [
     step: '02',
     icon: 'timeline-people' as const,
     title: 'Open your academic workspace',
-    desc: 'Enroll in courses, join or form project teams, plan your program, and ask questions — all from one dashboard.',
+    desc: 'Browse and enroll from the Catalog, join project teams, plan your program, and ask questions — all from one dashboard.',
     cta: 'View CLI guide →',
     href: '/instructor/onboarding',
   },
@@ -229,7 +251,7 @@ export const howItWorksSteps = [
     step: '03',
     icon: 'timeline-delivery' as const,
     title: 'Deliver work and level up',
-    desc: "Submit from the terminal, practice in the IDE, earn badges, and see your progress across every course you're in.",
+    desc: 'Submit with CLI 2.0, practice in the IDE, earn Achievements v2 badges, and share your public profile at /users/[id].',
     cta: 'Sign in to begin →',
     href: '/sign-in',
   },
@@ -242,7 +264,7 @@ export const transformPains = [
   'LMS, practice sites, and tutoring spread across tabs with no shared deadlines view',
   'Submissions, planning, and review state living in disconnected tools',
   'AI tutoring, forums, contests, and gamification spread across separate apps',
-  'Daily practice and contest schedules tracked on external sites and spreadsheets',
+  'Course and project discovery, enrollment, and public profiles scattered across tools',
 ] as const;
 
 export const transformGains = [
@@ -252,7 +274,7 @@ export const transformGains = [
   'My Courses, dashboard deadlines, and enrolled-course content live beside projects and planning',
   'Students submit with one CLI command and practice code in a built-in IDE',
   'Hassona, Q&A, Discussions, competitions, IDE, badges, and Levels share one reputation layer',
-  'Daily problem, Nibras 75, and a competitions calendar live in one compete hub',
+  'Catalog unifies courses, projects, and enrollment; shareable profiles with streaks, badges, and reputation timeline',
 ] as const;
 
 export const transformSub =
@@ -286,8 +308,8 @@ export const featureGroups: LandingFeatureGroup[] = [
       },
       {
         icon: 'catalog',
-        title: 'Project Catalog',
-        desc: 'Browse templates and apply to projects across all enrolled courses from one catalog.',
+        title: 'Catalog',
+        desc: 'Browse Courses and Projects on one page — course-scoped project filtering, public join, and private access requests.',
       },
       {
         icon: 'courses',
@@ -297,7 +319,7 @@ export const featureGroups: LandingFeatureGroup[] = [
       {
         icon: 'course-ops',
         title: 'Course Operations',
-        desc: 'Keep courses, projects, review queues, join links, and instructor actions visible in one system with less switching and less admin drag.',
+        desc: 'Instructors approve or reject enrollment on Members; join links, review queues, and course actions stay in one system.',
       },
       {
         icon: 'instructor-analytics',
@@ -318,8 +340,8 @@ export const featureGroups: LandingFeatureGroup[] = [
       },
       {
         icon: 'github-cli',
-        title: 'GitHub + CLI',
-        desc: 'Students submit through a clean developer workflow with GitHub history, live CLI feedback, device login, and verifiable delivery.',
+        title: 'GitHub + CLI 2.0',
+        desc: 'TypeScript CLI with device login — stage, push, and verify submissions with live terminal feedback and GitHub history.',
       },
       {
         icon: 'ide',
@@ -366,7 +388,7 @@ export const featureGroups: LandingFeatureGroup[] = [
       {
         icon: 'community',
         title: 'Community Q&A',
-        desc: 'Ask with markdown, vote on answers, earn reputation, bookmark threads, and get course-scoped help with moderation built in.',
+        desc: 'Ask with markdown, vote on answers, bookmark threads, link to author profiles, and get course-scoped help with moderation built in.',
       },
       {
         icon: 'discussions',
@@ -381,7 +403,7 @@ export const featureGroups: LandingFeatureGroup[] = [
       {
         icon: 'achievements',
         title: 'Achievements & Badges',
-        desc: 'Earn from an expanded badge catalog with retroactive awards, full progress visibility, leaderboards, and reputation tracking.',
+        desc: 'Category-filtered badge catalog, Codeforces/LeetCode rating groups, unlock banner, leaderboards, and reputation stats on /achievements.',
       },
       {
         icon: 'levels',
@@ -391,12 +413,12 @@ export const featureGroups: LandingFeatureGroup[] = [
       {
         icon: 'competitions',
         title: 'Daily Problem',
-        desc: 'One curated problem per day — solve, skip, or pause, track streaks on a calendar, and earn daily badges at /competitions/daily.',
+        desc: 'One curated problem per day at /competitions/daily — streaks, freezes, and calendar view beside Nibras 75 and contest schedules.',
       },
       {
         icon: 'community',
         title: 'Public Profiles',
-        desc: 'Shareable /users/[id] pages with course progress, submissions, and badges — visibility scoped to viewer role.',
+        desc: 'Shareable /users/[id] pages with social links, competition accounts, badge modal, reputation timeline, and role-scoped visibility.',
       },
     ],
   },
@@ -442,7 +464,7 @@ export const landingFooterContactEmail = supportNotice.email;
 
 export const ctaFeatures = [
   'Free during early access',
-  'GitHub or email magic link',
+  'GitHub, magic link, or email/password',
   'No credit card required',
 ] as const;
 
