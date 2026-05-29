@@ -51,6 +51,23 @@ export const mockupStatCards = [
   { label: 'Nibras 75', value: '42', sub: 'Problems solved' },
 ] as const;
 
+export const mockupCommunityQuestions = [
+  {
+    title: 'Why does merge sort need O(n) extra space?',
+    votes: 5,
+    answers: 2,
+    tag: 'cs161',
+  },
+  {
+    title: 'Capstone API design — REST vs RPC?',
+    votes: 3,
+    answers: 1,
+    tag: 'capstone',
+  },
+] as const;
+
+export const canvasSurfaceChips = ['dashboard', 'cli', 'hassona', 'community'] as const;
+
 export const mockupTableRows = [
   {
     student: 'Capstone Team Project',

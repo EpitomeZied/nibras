@@ -107,6 +107,8 @@
   transform: translateY(-1px);
 }
 
+/* ── Canvas shell ───────────────────────────────────────────────────────────── */
+
 .canvas {
   position: relative;
   width: 100%;
@@ -122,6 +124,16 @@
     0 0 0 1px rgba(0, 0, 0, 0.55) inset;
 }
 
+.canvasGrid {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.07) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.35;
+  pointer-events: none;
+  z-index: 0;
+}
+
 .glow {
   position: absolute;
   inset: -2px;
@@ -131,10 +143,126 @@
   filter: blur(10px);
   opacity: 0.85;
   pointer-events: none;
+  z-index: 0;
 }
+
+/* ── Canvas chrome (Nyx-style top/bottom bars) ──────────────────────────────── */
+
+.canvasChrome {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(10, 10, 10, 0.72);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chromeLive {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(74, 222, 128, 0.9);
+  flex-shrink: 0;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.chromeChips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  min-width: 0;
+}
+
+.chromeChip {
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: rgba(161, 161, 170, 0.55);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.chromeZoom {
+  flex-shrink: 0;
+  color: rgba(161, 161, 170, 0.45);
+}
+
+.canvasFooter {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 14px;
+  background: rgba(10, 10, 10, 0.72);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: var(--font-mono, monospace);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.footerMeta {
+  color: rgba(161, 161, 170, 0.55);
+}
+
+.footerStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.statusActive {
+  color: rgba(74, 222, 128, 0.85);
+}
+
+.statusReady {
+  color: rgba(161, 161, 170, 0.65);
+}
+
+/* ── Shared panel chrome ────────────────────────────────────────────────────── */
 
 .panel {
   position: absolute;
+  z-index: 5;
   border-radius: 16px;
   background: rgba(14, 14, 14, 0.68);
   border: 1px solid rgba(255, 255, 255, 0.12);
@@ -156,17 +284,33 @@
 }
 
 .panelTitle {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
   font-size: 12px;
   font-weight: 700;
-  color: rgba(161, 161, 170, 0.65);
   font-family: var(--font-mono, monospace);
   letter-spacing: 0.02em;
+}
+
+.tileType {
+  color: rgba(161, 161, 170, 0.5);
+  text-transform: lowercase;
+}
+
+.tileSep {
+  color: rgba(161, 161, 170, 0.35);
+}
+
+.tileLabel {
+  color: rgba(250, 250, 250, 0.82);
 }
 
 .dots {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .dot {
@@ -193,11 +337,48 @@
   border: 1px solid rgba(34, 197, 94, 0.22);
   padding: 3px 10px;
   border-radius: 999px;
+  flex-shrink: 0;
 }
 
-/* Terminal panels */
+/* ── Tutor (agent) tile ─────────────────────────────────────────────────────── */
+
+.tutor {
+  width: min(300px, 50%);
+}
+
+.tutorBody {
+  padding: 12px 14px 14px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.tutorLine {
+  white-space: pre-wrap;
+  margin-bottom: 2px;
+}
+
+.tutorWho {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(161, 161, 170, 0.5);
+}
+
+.tutorPrompt {
+  color: rgba(74, 222, 128, 0.92);
+  font-weight: 700;
+}
+
+.tutorMsg {
+  color: rgba(250, 250, 250, 0.88);
+}
+
+/* ── Terminal panels ────────────────────────────────────────────────────────── */
+
 .terminal {
-  width: min(320px, 54%);
+  width: min(300px, 52%);
 }
 
 .terminalBody {
@@ -229,9 +410,103 @@
   color: rgba(250, 250, 250, 0.85);
 }
 
-/* Orders panel */
+/* ── Community tile ─────────────────────────────────────────────────────────── */
+
+.community {
+  width: min(280px, 48%);
+}
+
+.communityHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.communityHeaderText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.communitySub {
+  margin: 0;
+  font-size: 10px;
+  color: rgba(161, 161, 170, 0.55);
+  line-height: 1.4;
+}
+
+.askBtn {
+  flex-shrink: 0;
+  background: #22c55e;
+  color: #052e16;
+  border: none;
+  padding: 7px 12px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 11px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.askBtn:hover {
+  opacity: 0.9;
+}
+
+.communityList {
+  list-style: none;
+  margin: 0;
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.communityRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.communityTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(250, 250, 250, 0.9);
+  line-height: 1.35;
+}
+
+.communityMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: rgba(161, 161, 170, 0.55);
+  font-family: var(--font-mono, monospace);
+}
+
+.communityTag {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  color: rgba(74, 222, 128, 0.85);
+  font-weight: 600;
+}
+
+/* ── Dashboard (browser) panel ──────────────────────────────────────────────── */
+
 .orders {
-  width: min(360px, 62%);
+  width: min(380px, 64%);
 }
 
 .ordersBody {
@@ -326,9 +601,10 @@
   opacity: 0.9;
 }
 
-/* Stat cards */
+/* ── Stat cards ─────────────────────────────────────────────────────────────── */
+
 .statCard {
-  width: 168px;
+  width: 148px;
   padding: 12px 12px 14px;
 }
 
@@ -376,47 +652,52 @@
   font-weight: 600;
 }
 
-/* Float positions + subtle motion */
-.floatLeft {
-  left: 7%;
-  top: 15%;
-  transform: rotate(-2.5deg);
+/* ── Float positions + subtle motion ─────────────────────────────────────────── */
+
+.floatTutor {
+  left: 5%;
+  top: 14%;
+  transform: rotate(-2deg);
   animation: bob1 8.5s ease-in-out infinite;
 }
 
+.floatDeadlines {
+  left: 8%;
+  top: 40%;
+  transform: rotate(-1.5deg);
+}
+
 .floatBottom {
-  left: 16%;
-  bottom: 10%;
+  left: 14%;
+  bottom: 12%;
   transform: rotate(1.8deg);
   animation: bob2 9.2s ease-in-out infinite;
 }
 
 .floatRight {
-  right: 7%;
-  top: 18%;
+  right: 5%;
+  top: 16%;
   transform: rotate(2.3deg);
   animation: bob3 10.5s ease-in-out infinite;
 }
 
-.statA {
-  left: 56%;
-  bottom: 18%;
-  transform: rotate(-1deg);
-  animation: bob2 8.8s ease-in-out infinite;
-}
-
-.statB {
-  right: 9%;
-  bottom: 26%;
+.floatCommunity {
+  right: 8%;
+  bottom: 22%;
   transform: rotate(1deg);
   animation: bob1 9.7s ease-in-out infinite;
 }
 
+.statA {
+  left: 52%;
+  bottom: 20%;
+  transform: rotate(-1deg);
+}
+
 .statC {
-  left: 40%;
-  top: 54%;
+  left: 36%;
+  top: 58%;
   transform: rotate(-0.6deg);
-  animation: bob3 9.9s ease-in-out infinite;
 }
 
 @keyframes bob1 {
@@ -449,6 +730,18 @@
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .floatTutor,
+  .floatBottom,
+  .floatRight,
+  .floatCommunity,
+  .liveDot {
+    animation: none;
+  }
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+
 @media (max-width: 980px) {
   .sectionInner {
     grid-template-columns: 1fr;
@@ -456,17 +749,33 @@
   .canvas {
     aspect-ratio: 1.25 / 1;
   }
+  .chromeChips {
+    display: none;
+  }
 }
 
 @media (max-width: 560px) {
-  .terminal {
+  .terminal,
+  .tutor {
     width: 86%;
   }
   .orders {
     width: 92%;
   }
+  .community {
+    width: 88%;
+  }
   .statCard {
-    width: 148px;
+    width: 132px;
+  }
+  .chromeZoom {
+    display: none;
+  }
+  .communityHeader {
+    flex-wrap: wrap;
+  }
+  .askBtn {
+    font-size: 10px;
+    padding: 6px 10px;
   }
 }
-
