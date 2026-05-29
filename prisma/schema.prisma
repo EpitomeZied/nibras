@@ -260,6 +260,7 @@ model User {
   authAccounts             AuthAccount[]
   dailyProblemConfig       DailyProblemConfig?
   dailyProblemAssignments  DailyProblemAssignment[]
+  socialLinks              UserSocialLink[]
 
   @@index([systemRole])
   @@index([yearLevel])
@@ -1529,6 +1530,30 @@ model CompSyncLog {
   createdAt    DateTime @default(now())
 
   @@index([jobType, createdAt])
+}
+
+// ── User social links (profile) ────────────────────────────────────────────
+
+enum SocialPlatform {
+  website
+  linkedin
+  x
+  instagram
+  youtube
+  discord
+}
+
+model UserSocialLink {
+  id        String         @id @default(cuid())
+  userId    String
+  platform  SocialPlatform
+  value     String         @db.VarChar(512)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, platform])
+  @@index([userId])
 }
 
 // ── Daily Problem System ───────────────────────────────────────────────────

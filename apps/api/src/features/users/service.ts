@@ -1,18 +1,22 @@
 import { PrismaClient } from '@prisma/client';
 import type {
   UserProfileActivity,
+  UserProfileCompetitionAccount,
   UserProfileCourseProgress,
+  UserProfileDailyStreak,
   UserProfileGamification,
   UserProfilePublic,
   UserProfileResponse,
   UserProfileStats,
   UserProfileSubmission,
   UserProfileViewerRole,
+  UserSocialLink,
 } from '@nibras/contracts';
-import { AppStore, SubmissionRecord } from '../../store';
+import { AppStore, ActivityRecord, SubmissionRecord } from '../../store';
 import { GamificationService } from '../gamification/service';
 import { computeLevel } from '../gamification/badges-catalog';
 import { ReputationService } from '../reputation/service';
+import { socialLinkDisplayUrl } from './social-links';
 
 type TargetUser = {
   id: string;
@@ -60,14 +64,42 @@ function resolvePrimaryRole(
   return 'student';
 }
 
+function isFullProfileViewer(viewerRole: UserProfileViewerRole): boolean {
+  return (
+    viewerRole === 'self' || viewerRole === 'instructor' || viewerRole === 'admin'
+  );
+}
+
+function isDetailedViewer(viewerRole: UserProfileViewerRole): boolean {
+  return viewerRole === 'instructor' || viewerRole === 'admin';
+}
+
+function activityHref(
+  entry: ActivityRecord,
+  viewerRole: UserProfileViewerRole
+): string | undefined {
+  if (entry.submissionId && entry.courseId && isDetailedViewer(viewerRole)) {
+    return `/instructor/courses/${entry.courseId}/submissions/${entry.submissionId}/review`;
+  }
+  if (entry.projectId && entry.courseId) {
+    return `/instructor/courses/${entry.courseId}/projects/${entry.projectId}`;
+  }
+  if (entry.courseId) {
+    return `/catalog/${entry.courseId}`;
+  }
+  return undefined;
+}
+
 function mapActivity(
-  entries: Array<{ id: string; action: string; summary: string; createdAt: string }>
+  entries: ActivityRecord[],
+  viewerRole: UserProfileViewerRole
 ): UserProfileActivity[] {
   return entries.map((entry) => ({
     id: entry.id,
     type: entry.action,
     title: entry.summary,
     occurredAt: entry.createdAt,
+    href: activityHref(entry, viewerRole),
   }));
 }
 
@@ -82,6 +114,22 @@ export class UserProfileService {
     this.reputation = prisma
       ? new ReputationService(prisma)
       : (null as unknown as ReputationService);
+  }
+
+  async loadSocialLinks(userId: string): Promise<UserSocialLink[]> {
+    if (!this.prisma) return [];
+    const rows = await this.prisma.userSocialLink.findMany({
+      where: { userId },
+      orderBy: { platform: 'asc' },
+    });
+    return rows.map((row) => ({
+      platform: row.platform as UserSocialLink['platform'],
+      value: row.value,
+      url: socialLinkDisplayUrl({
+        platform: row.platform as UserSocialLink['platform'],
+        value: row.value,
+      }),
+    }));
   }
 
   async loadTargetUser(
@@ -134,6 +182,7 @@ export class UserProfileService {
     if (!target) return null;
 
     const memberships = await store.listCourseMemberships(apiBaseUrl, targetUserId);
+    const socialLinks = await this.loadSocialLinks(targetUserId);
     const profile: UserProfilePublic = {
       id: target.id,
       username: target.username,
@@ -144,21 +193,42 @@ export class UserProfileService {
       primaryRole: resolvePrimaryRole(target.systemRole, memberships),
       yearLevel: target.yearLevel,
       memberSince: target.createdAt.toISOString(),
+      socialLinks,
     };
 
-    const isDetailedViewer = viewerRole === 'instructor' || viewerRole === 'admin';
+    const fullViewer = isFullProfileViewer(viewerRole);
+    const detailedViewer = isDetailedViewer(viewerRole);
+
+    const [dailyStreak, competitionAccounts] = await Promise.all([
+      this.buildDailyStreak(targetUserId),
+      this.buildCompetitionAccounts(targetUserId),
+    ]);
+
+    if (!fullViewer) {
+      const gamification = await this.buildGamification(targetUserId, viewerRole);
+      const stats = await this.buildLimitedStats(store, apiBaseUrl, targetUserId);
+      return {
+        viewerRole,
+        profile,
+        gamification,
+        stats,
+        dailyStreak,
+        competitionAccounts,
+      };
+    }
+
     const [courseProgress, submissions, gamification, activity] = await Promise.all([
       this.buildCourseProgress(store, apiBaseUrl, targetUserId, viewerRole),
-      this.buildSubmissions(store, apiBaseUrl, targetUserId, isDetailedViewer),
+      this.buildSubmissions(store, apiBaseUrl, targetUserId, detailedViewer),
       this.buildGamification(targetUserId, viewerRole),
-      this.buildActivity(store, apiBaseUrl, targetUserId, isDetailedViewer),
+      this.buildActivity(store, apiBaseUrl, targetUserId, viewerRole),
     ]);
 
     const stats = await this.buildStats(
       store,
       apiBaseUrl,
       targetUserId,
-      isDetailedViewer,
+      viewerRole,
       submissions
     );
 
@@ -170,6 +240,67 @@ export class UserProfileService {
       gamification,
       activity,
       stats,
+      dailyStreak,
+      competitionAccounts,
+    };
+  }
+
+  private async buildDailyStreak(userId: string): Promise<UserProfileDailyStreak | undefined> {
+    if (!this.prisma) return undefined;
+    const config = await this.prisma.dailyProblemConfig.findUnique({
+      where: { userId },
+      select: {
+        currentStreak: true,
+        longestStreak: true,
+        totalCompleted: true,
+      },
+    });
+    if (!config) {
+      return { current: 0, longest: 0, totalCompleted: 0 };
+    }
+    return {
+      current: config.currentStreak,
+      longest: config.longestStreak,
+      totalCompleted: config.totalCompleted,
+    };
+  }
+
+  private async buildCompetitionAccounts(
+    userId: string
+  ): Promise<UserProfileCompetitionAccount[] | undefined> {
+    if (!this.prisma) return undefined;
+    const accounts = await this.prisma.linkedAccount.findMany({
+      where: { userId, verificationStatus: 'verified' },
+      orderBy: { platform: 'asc' },
+    });
+    return accounts.map((account) => ({
+      platform: account.platform,
+      handle: account.handle,
+      rating: account.platformRating,
+      verified: true,
+    }));
+  }
+
+  private async buildLimitedStats(
+    store: AppStore,
+    apiBaseUrl: string,
+    targetUserId: string
+  ): Promise<UserProfileStats> {
+    const courses = await store.listTrackingCourses(apiBaseUrl, targetUserId);
+    let passedCount = 0;
+    if (this.prisma) {
+      passedCount = await this.prisma.submissionAttempt.count({
+        where: { userId: targetUserId, status: 'passed' },
+      });
+    } else {
+      const rows = await store.listUserSubmissions(apiBaseUrl, targetUserId, { limit: 200 });
+      passedCount = rows.filter((s) => s.status === 'passed').length;
+    }
+    return {
+      totalSubmissions: 0,
+      passedCount,
+      pendingCount: 0,
+      coursesEnrolled: courses.length,
     };
   }
 
@@ -327,17 +458,25 @@ export class UserProfileService {
 
     const badges = await this.gamification.listBadgesForUser(targetUserId);
     const earned = badges.filter((badge) => badge.earnedAt);
-    const isDetailedViewer = viewerRole === 'instructor' || viewerRole === 'admin';
+    const detailedViewer = isDetailedViewer(viewerRole);
+    const isSelf = viewerRole === 'self';
     const reputation = await this.reputation.getMyReputation(targetUserId, { sync: false });
     const level = computeLevel(reputation.total);
+
+    let badgeList = earned;
+    if (detailedViewer) {
+      badgeList = badges;
+    } else if (isSelf) {
+      badgeList = badges.filter((badge) => badge.earnedAt || (badge.progress ?? 0) > 0);
+    }
 
     return {
       reputationTotal: reputation.total,
       levelLabel: `Level ${level}`,
-      rank: isDetailedViewer ? reputation.rank : undefined,
-      percentile: isDetailedViewer ? reputation.percentile : undefined,
+      rank: detailedViewer ? reputation.rank : undefined,
+      percentile: detailedViewer ? reputation.percentile : undefined,
       earnedBadgeCount: earned.length,
-      badges: (isDetailedViewer ? badges : earned).map((badge) => ({
+      badges: badgeList.map((badge) => ({
         id: badge.id,
         code: badge.code,
         name: badge.name,
@@ -348,7 +487,8 @@ export class UserProfileService {
         progress: badge.progress,
         threshold: badge.threshold && badge.threshold > 0 ? badge.threshold : undefined,
       })),
-      history: isDetailedViewer ? reputation.history : undefined,
+      history:
+        detailedViewer || isSelf ? reputation.history.slice(0, 10) : undefined,
     };
   }
 
@@ -356,21 +496,22 @@ export class UserProfileService {
     store: AppStore,
     apiBaseUrl: string,
     targetUserId: string,
-    isDetailedViewer: boolean
+    viewerRole: UserProfileViewerRole
   ): Promise<UserProfileActivity[]> {
     const entries = await store.listTrackingActivity(apiBaseUrl, targetUserId);
     const filtered = entries.filter(
       (entry) => entry.actorUserId === targetUserId || !entry.actorUserId
     );
-    const slice = isDetailedViewer ? filtered : filtered.slice(0, 10);
-    return mapActivity(slice);
+    const detailedViewer = isDetailedViewer(viewerRole);
+    const slice = detailedViewer ? filtered : filtered.slice(0, 10);
+    return mapActivity(slice, viewerRole);
   }
 
   private async buildStats(
     store: AppStore,
     apiBaseUrl: string,
     targetUserId: string,
-    isDetailedViewer: boolean,
+    viewerRole: UserProfileViewerRole,
     submissions: UserProfileSubmission[]
   ): Promise<UserProfileStats> {
     const courses = await store.listTrackingCourses(apiBaseUrl, targetUserId);
@@ -389,12 +530,16 @@ export class UserProfileService {
         ? Math.round((scored.reduce((sum, s) => sum + s.score, 0) / scored.length) * 10) / 10
         : null;
 
+    const detailedViewer = isDetailedViewer(viewerRole);
+    const isSelf = viewerRole === 'self';
+
     return {
       totalSubmissions: submissions.length,
       passedCount,
       pendingCount,
       coursesEnrolled: courses.length,
-      ...(isDetailedViewer ? { failedCount, needsReviewCount, avgScore } : {}),
+      ...(detailedViewer || isSelf ? { failedCount, needsReviewCount } : {}),
+      ...(detailedViewer ? { avgScore } : {}),
     };
   }
 }

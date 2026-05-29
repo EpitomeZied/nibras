@@ -38,7 +38,7 @@ function seedSession(store, storePath, userId, token) {
   return buildApp(new FileStore(storePath));
 }
 
-test('self profile omits instructor-only stats fields', async () => {
+test('self profile includes queue stats but omits instructor rank fields', async () => {
   const storePath = makeStorePath();
   const store = new FileStore(storePath);
   const app = seedSession(store, storePath, 'user_demo', 'demo-token');
@@ -53,7 +53,10 @@ test('self profile omits instructor-only stats fields', async () => {
     const payload = response.json();
     assert.equal(payload.viewerRole, 'self');
     assert.equal(payload.profile.id, 'user_demo');
-    assert.equal(payload.stats.failedCount, undefined);
+    assert.ok(Array.isArray(payload.profile.socialLinks));
+    assert.equal(typeof payload.stats.pendingCount, 'number');
+    assert.equal(typeof payload.stats.needsReviewCount, 'number');
+    assert.equal(payload.stats.avgScore, undefined);
     assert.equal(payload.gamification?.rank, undefined);
     assert.equal(payload.gamification?.percentile, undefined);
     for (const submission of payload.submissions ?? []) {
@@ -92,7 +95,7 @@ test('instructor can view student profile with detailed stats', async () => {
   }
 });
 
-test('unrelated student cannot view another profile', async () => {
+test('unrelated student sees limited authenticated profile slice', async () => {
   const storePath = makeStorePath();
   const store = new FileStore(storePath);
   const data = store.read('http://127.0.0.1');
@@ -114,7 +117,12 @@ test('unrelated student cannot view another profile', async () => {
       url: '/v1/users/user_demo',
       headers: { authorization: 'Bearer peer-token' },
     });
-    assert.equal(response.statusCode, 403);
+    assert.equal(response.statusCode, 200);
+    const payload = response.json();
+    assert.equal(payload.viewerRole, 'authenticated');
+    assert.equal(payload.submissions, undefined);
+    assert.equal(payload.courseProgress, undefined);
+    assert.equal(payload.activity, undefined);
   } finally {
     await app.close();
   }

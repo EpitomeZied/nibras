@@ -1,7 +1,27 @@
 import { z } from 'zod';
 import { ReputationEventSchema } from './gamification';
 
-export const UserProfileViewerRoleSchema = z.enum(['self', 'instructor', 'admin']);
+export const UserProfileViewerRoleSchema = z.enum([
+  'self',
+  'instructor',
+  'admin',
+  'authenticated',
+]);
+
+export const SocialPlatformSchema = z.enum([
+  'website',
+  'linkedin',
+  'x',
+  'instagram',
+  'youtube',
+  'discord',
+]);
+
+export const UserSocialLinkSchema = z.object({
+  platform: SocialPlatformSchema,
+  value: z.string().min(1).max(512),
+  url: z.string().url(),
+});
 
 const emptyStringToNull = (value: unknown): unknown =>
   typeof value === 'string' && value.trim() === '' ? null : value;
@@ -23,6 +43,20 @@ export const UserProfilePublicSchema = z.object({
   primaryRole: z.enum(['student', 'instructor', 'admin']),
   yearLevel: z.preprocess(clampProfileYearLevel, z.number().int().min(1).max(4)),
   memberSince: z.string(),
+  socialLinks: z.array(UserSocialLinkSchema).default([]),
+});
+
+export const UserProfileDailyStreakSchema = z.object({
+  current: z.number().int().nonnegative(),
+  longest: z.number().int().nonnegative(),
+  totalCompleted: z.number().int().nonnegative(),
+});
+
+export const UserProfileCompetitionAccountSchema = z.object({
+  platform: z.string().min(1),
+  handle: z.string().min(1),
+  rating: z.number().int().nullable().optional(),
+  verified: z.boolean(),
 });
 
 export const UserProfileSubmissionSchema = z.object({
@@ -106,9 +140,17 @@ export const UserProfileResponseSchema = z.object({
   gamification: UserProfileGamificationSchema.optional(),
   activity: z.array(UserProfileActivitySchema).optional(),
   stats: UserProfileStatsSchema.optional(),
+  dailyStreak: UserProfileDailyStreakSchema.optional(),
+  competitionAccounts: z.array(UserProfileCompetitionAccountSchema).optional(),
 });
 
 export type UserProfileViewerRole = z.infer<typeof UserProfileViewerRoleSchema>;
+export type SocialPlatform = z.infer<typeof SocialPlatformSchema>;
+export type UserSocialLink = z.infer<typeof UserSocialLinkSchema>;
+export type UserProfileDailyStreak = z.infer<typeof UserProfileDailyStreakSchema>;
+export type UserProfileCompetitionAccount = z.infer<
+  typeof UserProfileCompetitionAccountSchema
+>;
 export type UserProfilePublic = z.infer<typeof UserProfilePublicSchema>;
 export type UserProfileSubmission = z.infer<typeof UserProfileSubmissionSchema>;
 export type UserProfileCourseProgress = z.infer<typeof UserProfileCourseProgressSchema>;

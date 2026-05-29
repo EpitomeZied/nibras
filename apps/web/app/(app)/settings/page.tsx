@@ -2,7 +2,14 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import type { SocialPlatform } from '@nibras/contracts';
+import {
+  emptySocialLinkState,
+  SOCIAL_PLATFORM_CONFIG,
+  socialLinksFromProfile,
+  socialLinksToPayload,
+} from '../../lib/social-platforms';
 import { apiFetch } from '../../lib/session';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import { getShellUserIdentity, useSession } from '../_components/session-context';
@@ -774,15 +781,34 @@ function NotificationsTab() {
 
 /* ── Page ────────────────────────────────────────────────────────────────── */
 
+const TAB_IDS: Tab[] = [
+  'profile',
+  'github',
+  'notifications',
+  'preferences',
+  'security',
+  'ai',
+  'danger',
+  'admin',
+];
+
+function isSettingsTab(value: string | null): value is Tab {
+  return value != null && TAB_IDS.includes(value as Tab);
+}
+
 export default function SettingsPage() {
   const { user, loading: sessionLoading, refreshSession } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const isAdmin = user?.systemRole === 'admin';
 
   const [activeTab, setActiveTab] = useState<Tab>('profile');
   const [displayName, setDisplayName] = useState('');
   const [bio, setBio] = useState('');
+  const [socialLinks, setSocialLinks] = useState<Record<SocialPlatform, string>>(
+    emptySocialLinkState
+  );
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileStatus, setProfileStatus] = useState('');
   const [compact, setCompact] = useState(false);
@@ -801,11 +827,24 @@ export default function SettingsPage() {
   const [deleteError, setDeleteError] = useState('');
 
   useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (isSettingsTab(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
     if (user) {
       setDisplayName(user.displayName ?? user.username ?? '');
       void getUserProfile(user.id)
-        .then((payload) => setBio(payload.profile.bio ?? ''))
-        .catch(() => setBio(''));
+        .then((payload) => {
+          setBio(payload.profile.bio ?? '');
+          setSocialLinks(socialLinksFromProfile(payload.profile.socialLinks ?? []));
+        })
+        .catch(() => {
+          setBio('');
+          setSocialLinks(emptySocialLinkState());
+        });
     }
   }, [user]);
 
@@ -912,7 +951,11 @@ export default function SettingsPage() {
         method: 'PATCH',
         auth: true,
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ displayName: trimmed, bio: bio.trim() || null }),
+        body: JSON.stringify({
+          displayName: trimmed,
+          bio: bio.trim() || null,
+          socialLinks: socialLinksToPayload(socialLinks),
+        }),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
@@ -1022,6 +1065,35 @@ export default function SettingsPage() {
                       placeholder="A short introduction for your profile page"
                       disabled={sessionLoading || profileSaving}
                     />
+                  </div>
+                  <div className={styles.formField}>
+                    <span className={styles.formLabel}>Social links</span>
+                    <p className={styles.sectionSub} style={{ marginTop: 0 }}>
+                      Shown on your public profile. GitHub login comes from your connected account.
+                    </p>
+                    <div className={styles.socialLinksGrid}>
+                      {SOCIAL_PLATFORM_CONFIG.map(({ platform, label, placeholder }) => (
+                        <div key={platform} className={styles.socialLinkRow}>
+                          <label htmlFor={`social-${platform}`} className={styles.socialLinkLabel}>
+                            {label}
+                          </label>
+                          <input
+                            id={`social-${platform}`}
+                            className={styles.formInput}
+                            type="text"
+                            value={sessionLoading ? '' : socialLinks[platform]}
+                            onChange={(e) =>
+                              setSocialLinks((prev) => ({
+                                ...prev,
+                                [platform]: e.target.value,
+                              }))
+                            }
+                            placeholder={placeholder}
+                            disabled={sessionLoading || profileSaving}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                   {user?.id ? (
                     <p className={styles.sectionSub}>

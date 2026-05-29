@@ -6,11 +6,16 @@ import styles from '../page.module.css';
 export default function GamificationSection({
   gamification,
   showDetailed,
+  onBadgeClick,
 }: {
   gamification: UserProfileGamification;
   showDetailed: boolean;
+  onBadgeClick?: (badge: UserProfileGamification['badges'][number]) => void;
 }) {
   const earned = gamification.badges.filter((badge) => badge.earnedAt);
+  const inProgress = !showDetailed
+    ? gamification.badges.filter((badge) => !badge.earnedAt && (badge.progress ?? 0) > 0)
+    : [];
   const locked = showDetailed ? gamification.badges.filter((badge) => !badge.earnedAt) : [];
 
   return (
@@ -39,15 +44,49 @@ export default function GamificationSection({
         <div className={styles.panel}>
           <div className={styles.grid}>
             {earned.map((badge) => (
-              <BadgeCard
+              <button
                 key={badge.id}
-                name={badge.name}
-                description={badge.description}
-                iconUrl={badge.iconUrl}
-                rarity={badge.rarity}
-                earned
-              />
+                type="button"
+                className={styles.badgeButton}
+                onClick={() => onBadgeClick?.(badge)}
+              >
+                <BadgeCard
+                  name={badge.name}
+                  description={badge.description}
+                  iconUrl={badge.iconUrl}
+                  rarity={badge.rarity}
+                  earned
+                />
+              </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {!showDetailed && inProgress.length > 0 && (
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>In progress</h3>
+          <div className={styles.panel}>
+            <div className={styles.grid}>
+              {inProgress.map((badge) => (
+                <button
+                  key={badge.id}
+                  type="button"
+                  className={styles.badgeButton}
+                  onClick={() => onBadgeClick?.(badge)}
+                >
+                  <BadgeCard
+                    name={badge.name}
+                    description={badge.description}
+                    iconUrl={badge.iconUrl}
+                    rarity={badge.rarity}
+                    earned={false}
+                    progress={badge.progress}
+                    threshold={badge.threshold}
+                  />
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -58,16 +97,22 @@ export default function GamificationSection({
           <div className={styles.panel}>
             <div className={styles.grid}>
               {locked.slice(0, 12).map((badge) => (
-                <BadgeCard
+                <button
                   key={badge.id}
-                  name={badge.name}
-                  description={badge.description}
-                  iconUrl={badge.iconUrl}
-                  rarity={badge.rarity}
-                  earned={false}
-                  progress={badge.progress}
-                  threshold={badge.threshold}
-                />
+                  type="button"
+                  className={styles.badgeButton}
+                  onClick={() => onBadgeClick?.(badge)}
+                >
+                  <BadgeCard
+                    name={badge.name}
+                    description={badge.description}
+                    iconUrl={badge.iconUrl}
+                    rarity={badge.rarity}
+                    earned={false}
+                    progress={badge.progress}
+                    threshold={badge.threshold}
+                  />
+                </button>
               ))}
             </div>
           </div>

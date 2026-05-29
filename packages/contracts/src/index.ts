@@ -116,9 +116,15 @@ export const UserSchema = z.object({
   yearLevel: z.number().int().min(1).max(4).default(1),
 });
 
+export const UpdateProfileSocialLinkSchema = z.object({
+  platform: z.enum(['website', 'linkedin', 'x', 'instagram', 'youtube', 'discord']),
+  value: z.string().trim().max(512),
+});
+
 export const UpdateProfileBodySchema = z.object({
   displayName: z.union([z.string().trim().min(1).max(80), z.null()]),
   bio: z.union([z.string().trim().max(500), z.null()]).optional(),
+  socialLinks: z.array(UpdateProfileSocialLinkSchema).optional(),
 });
 
 export const AiCredentialResponseSchema = z.object({

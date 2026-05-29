@@ -121,11 +121,25 @@ export function registerHostedCliRoutes(
       if (!parsed.success) {
         return reply.code(400).send(Errors.validation(parsed.error.message));
       }
-      const profilePatch: { displayName?: string | null; bio?: string | null } = {
+      const profilePatch: {
+        displayName?: string | null;
+        bio?: string | null;
+        socialLinks?: Array<{ platform: string; value: string }>;
+      } = {
         displayName: parsed.data.displayName,
       };
       if (parsed.data.bio !== undefined) {
         profilePatch.bio = parsed.data.bio;
+      }
+      if (parsed.data.socialLinks !== undefined) {
+        try {
+          const { normalizeSocialLinks } = await import('../users/social-links');
+          normalizeSocialLinks(parsed.data.socialLinks);
+          profilePatch.socialLinks = parsed.data.socialLinks;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Invalid social links.';
+          return reply.code(400).send(Errors.validation(message));
+        }
       }
       const updated = await store.updateUserProfile(
         requestBaseUrl(request),

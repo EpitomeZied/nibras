@@ -270,6 +270,25 @@
   gap: 6px;
 }
 
+.socialLinksGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 440px;
+}
+
+.socialLinkRow {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.socialLinkLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(161, 161, 170, 0.85);
+}
+
 .formLabel {
   font-size: 13px;
   font-weight: 600;

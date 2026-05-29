@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { UserProfileCourseProgress } from '@nibras/contracts';
 import styles from '../page.module.css';
 
@@ -14,23 +15,29 @@ export default function CourseProgressSection({
     <div className={styles.panel}>
       <div className={styles.progressList}>
         {courses.map((course) => (
-          <div key={course.courseId} className={styles.progressRow}>
-            <div>
-              <strong>{course.title}</strong>
-              <div className={styles.progressMeta}>
-                {course.role} · {course.completionPercent}% complete
-                {course.totalMilestones != null
-                  ? ` · ${course.passedMilestones ?? 0}/${course.totalMilestones} milestones`
-                  : ''}
+          <Link
+            key={course.courseId}
+            href={`/catalog/${course.courseId}`}
+            className={styles.progressRowLink}
+          >
+            <div className={styles.progressRow}>
+              <div>
+                <strong>{course.title}</strong>
+                <div className={styles.progressMeta}>
+                  {course.role} · {course.completionPercent}% complete
+                  {course.totalMilestones != null
+                    ? ` · ${course.passedMilestones ?? 0}/${course.totalMilestones} milestones`
+                    : ''}
+                </div>
+              </div>
+              <div className={styles.progressBar} aria-hidden="true">
+                <div
+                  className={styles.progressFill}
+                  style={{ width: `${course.completionPercent}%` }}
+                />
               </div>
             </div>
-            <div className={styles.progressBar} aria-hidden="true">
-              <div
-                className={styles.progressFill}
-                style={{ width: `${course.completionPercent}%` }}
-              />
-            </div>
-          </div>
+          </Link>
         ))}
       </div>
     </div>

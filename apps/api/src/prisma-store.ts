@@ -54,6 +54,8 @@ import {
   buildProgramSheet,
   buildStudentProgramPlan,
 } from './features/programs/domain';
+import { normalizeSocialLinks } from './features/users/social-links';
+import type { SocialPlatform } from '@nibras/contracts';
 import {
   ActivityRecord,
   AppStore,
@@ -2340,20 +2342,49 @@ export class PrismaStore implements AppStore {
   async updateUserProfile(
     _apiBaseUrl: string,
     userId: string,
-    patch: { displayName?: string | null; bio?: string | null }
+    patch: {
+      displayName?: string | null;
+      bio?: string | null;
+      socialLinks?: Array<{ platform: string; value: string }>;
+    }
   ): Promise<UserRecord | null> {
     const data: { displayName?: string | null; bio?: string | null } = {};
     if (patch.displayName !== undefined) data.displayName = patch.displayName;
     if (patch.bio !== undefined) data.bio = patch.bio;
-    const updated = await this.prisma.user
-      .update({
-        where: { id: userId },
-        data,
-        include: { githubAccount: true },
-      })
-      .catch(() => null);
-    if (!updated) return null;
-    return toUserRecord(updated);
+
+    try {
+      const updated = await this.prisma.$transaction(async (tx) => {
+        const user = await tx.user.update({
+          where: { id: userId },
+          data,
+          include: { githubAccount: true },
+        });
+
+        if (patch.socialLinks !== undefined) {
+          const normalized = normalizeSocialLinks(
+            patch.socialLinks.map((link) => ({
+              platform: link.platform as SocialPlatform,
+              value: link.value,
+            }))
+          );
+          await tx.userSocialLink.deleteMany({ where: { userId } });
+          if (normalized.length > 0) {
+            await tx.userSocialLink.createMany({
+              data: normalized.map((link) => ({
+                userId,
+                platform: link.platform,
+                value: link.value,
+              })),
+            });
+          }
+        }
+
+        return user;
+      });
+      return toUserRecord(updated);
+    } catch {
+      return null;
+    }
   }
 
   async deleteUserAccount(apiBaseUrl: string, userId: string): Promise<void> {
