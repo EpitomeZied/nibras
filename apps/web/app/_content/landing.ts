@@ -79,7 +79,7 @@ export const featuresShowcaseCopy = {
 export const cliShowcaseCopy = {
   eyebrow: 'CLI',
   titleBright: 'GitHub-native delivery. ',
-  titleDim: 'Terminal-native.',
+  titleDim: 'Terminal\u2011native.',
   sub: 'The same session layout as the rest of the page — pick a workflow on the left and watch the CLI run it live on the right.',
 } as const;
 

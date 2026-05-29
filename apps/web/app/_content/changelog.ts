@@ -26,6 +26,64 @@ export const changelogCategoryMeta: Record<ChangelogCategory, { label: string; i
 export const changelogReleases: ChangelogRelease[] = [
   {
     date: 'May 29, 2026',
+    version: 'v2.0.1',
+    title: 'Achievements profile view, auth improvements, and docs refresh',
+    categories: [
+      {
+        type: 'features',
+        items: [
+          {
+            text: 'Achievements page — full self-profile layout with course progress, submissions, badge catalog, and reputation history',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Public user profiles — social links, streak and competition sections, badge modal, and reputation timeline',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Email password sign-in — set password for magic-link accounts, reset password flow, and security settings tab',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Daily problem — streak tracking, assignments, and dedicated database tables for daily practice',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Documentation — Introduction, FAQ, and Getting Started as separate pages under /docs',
+            author: 'EpitomeZied',
+          },
+        ],
+      },
+      {
+        type: 'improvements',
+        items: [
+          {
+            text: 'Achievements dashboard API — faster load with throttled reputation sync, single metrics pass, and targeted rank queries',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Landing CLI section — headline keeps “Terminal-native” on one line',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'CLI showcase tiles — submit, status, workflow, and result previews on the marketing page',
+            author: 'EpitomeZied',
+          },
+        ],
+      },
+      {
+        type: 'bugFixes',
+        items: [
+          {
+            text: 'Web production build — Prettier and ProfileHeader type fixes for CI Docker image builds',
+            author: 'EpitomeZied',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    date: 'May 29, 2026',
     version: 'v2.0.0',
     title: 'Catalog LMS, community v2, gamification, and platform hardening',
     categories: [

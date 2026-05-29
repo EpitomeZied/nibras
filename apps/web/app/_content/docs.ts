@@ -15,10 +15,17 @@ export type DocsGettingStartedStep = {
 };
 
 export const docsNavSections = [
-  { id: 'introduction', label: 'Introduction' },
-  { id: 'faq', label: 'FAQ' },
-  { id: 'getting-started', label: 'Getting Started' },
+  { href: '/docs', label: 'Overview' },
+  { href: '/docs/introduction', label: 'Introduction' },
+  { href: '/docs/faq', label: 'FAQ' },
+  { href: '/docs/getting-started', label: 'Getting Started' },
 ] as const;
+
+export const docsHub = {
+  title: 'Documentation',
+  subtitle:
+    'Learn what Nibras is for, find answers to common questions, and follow the steps to get started on the web and CLI.',
+} as const;
 
 export const docsIntro = {
   whyUse: {

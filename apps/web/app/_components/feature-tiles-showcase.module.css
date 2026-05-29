@@ -40,6 +40,10 @@
   color: rgba(250, 250, 250, 0.28);
 }
 
+.sectionCli .titleDim {
+  white-space: nowrap;
+}
+
 .sub {
   margin: 16px 0 0;
   font-size: 15px;
