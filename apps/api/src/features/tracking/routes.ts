@@ -1,6 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import {
   AddCourseMemberRequestSchema,
+  CourseBrowseItemSchema,
+  CourseEnrollmentRequestSchema,
+  CreateCourseEnrollmentRequestSchema,
   CatalogTemplateSchema,
   CourseMemberSchema,
   CreateProjectInterestRequestSchema,
@@ -50,7 +53,7 @@ import {
 import {
   canManageCourse,
   canManageProject,
-  canViewCourse,
+  canViewCourseForRequest,
   canViewSubmission,
   hasAnyInstructorAccess,
 } from './policies/access';
@@ -92,6 +95,179 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
       ]);
       if (total !== undefined) void reply.header('X-Total-Count', String(total));
       return courses;
+    }
+  );
+
+  app.get(
+    '/v1/tracking/courses/browse',
+    { schema: { tags: ['tracking'], summary: 'Browse discoverable courses with enrollment status' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const items = await store.listBrowsableCourses(requestBaseUrl(request), auth.user.id);
+      return items.map((item) => CourseBrowseItemSchema.parse(item));
+    }
+  );
+
+  app.post(
+    '/v1/tracking/courses/:courseId/enroll',
+    { schema: { tags: ['tracking'], summary: 'Join a public course' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const params = request.params as { courseId: string };
+      if (!validateId(params.courseId, reply, 'courseId')) return;
+      try {
+        await store.enrollInPublicCourse(
+          requestBaseUrl(request),
+          auth.user.id,
+          params.courseId
+        );
+        return { ok: true, courseId: params.courseId };
+      } catch (err) {
+        const statusCode = (err as { statusCode?: number }).statusCode || 400;
+        reply
+          .code(statusCode)
+          .send(
+            apiError(
+              statusCode === 403 ? 'FORBIDDEN' : 'VALIDATION_ERROR',
+              err instanceof Error ? err.message : 'Enroll failed.'
+            )
+          );
+      }
+    }
+  );
+
+  app.post(
+    '/v1/tracking/courses/:courseId/enrollment-requests',
+    { schema: { tags: ['tracking'], summary: 'Request access to a private course' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const params = request.params as { courseId: string };
+      if (!validateId(params.courseId, reply, 'courseId')) return;
+      const payload = CreateCourseEnrollmentRequestSchema.parse(request.body ?? {});
+      try {
+        const record = await store.createCourseEnrollmentRequest(
+          requestBaseUrl(request),
+          auth.user.id,
+          params.courseId,
+          payload.message
+        );
+        reply.code(201);
+        return CourseEnrollmentRequestSchema.parse(record);
+      } catch (err) {
+        const statusCode = (err as { statusCode?: number }).statusCode || 400;
+        reply
+          .code(statusCode)
+          .send(
+            apiError(
+              statusCode === 403 ? 'FORBIDDEN' : statusCode === 409 ? 'CONFLICT' : 'VALIDATION_ERROR',
+              err instanceof Error ? err.message : 'Request failed.'
+            )
+          );
+      }
+    }
+  );
+
+  app.get(
+    '/v1/tracking/courses/:courseId/enrollment-requests/me',
+    { schema: { tags: ['tracking'], summary: 'Get my enrollment request for a course' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const params = request.params as { courseId: string };
+      if (!validateId(params.courseId, reply, 'courseId')) return;
+      const record = await store.getCourseEnrollmentRequestForUser(
+        requestBaseUrl(request),
+        auth.user.id,
+        params.courseId
+      );
+      if (!record) {
+        reply.code(404).send(Errors.notFound('Enrollment request'));
+        return;
+      }
+      return CourseEnrollmentRequestSchema.parse(record);
+    }
+  );
+
+  app.get(
+    '/v1/tracking/courses/:courseId/enrollment-requests',
+    { schema: { tags: ['tracking'], summary: 'List enrollment requests (instructor/TA)' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const params = request.params as { courseId: string };
+      if (!validateId(params.courseId, reply, 'courseId')) return;
+      if (!canManageCourse(auth, params.courseId)) {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const query = request.query as { status?: string };
+      const status =
+        query.status === 'pending' || query.status === 'approved' || query.status === 'rejected'
+          ? query.status
+          : 'pending';
+      const rows = await store.listCourseEnrollmentRequests(
+        requestBaseUrl(request),
+        params.courseId,
+        { status }
+      );
+      return rows.map((row) => CourseEnrollmentRequestSchema.parse(row));
+    }
+  );
+
+  app.post(
+    '/v1/tracking/courses/:courseId/enrollment-requests/:requestId/approve',
+    { schema: { tags: ['tracking'], summary: 'Approve enrollment request' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const params = request.params as { courseId: string; requestId: string };
+      if (!validateId(params.courseId, reply, 'courseId')) return;
+      if (!validateId(params.requestId, reply, 'requestId')) return;
+      if (!canManageCourse(auth, params.courseId)) {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const record = await store.approveCourseEnrollmentRequest(
+        requestBaseUrl(request),
+        params.courseId,
+        params.requestId,
+        auth.user.id
+      );
+      if (!record) {
+        reply.code(404).send(Errors.notFound('Enrollment request'));
+        return;
+      }
+      return CourseEnrollmentRequestSchema.parse(record);
+    }
+  );
+
+  app.post(
+    '/v1/tracking/courses/:courseId/enrollment-requests/:requestId/reject',
+    { schema: { tags: ['tracking'], summary: 'Reject enrollment request' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const params = request.params as { courseId: string; requestId: string };
+      if (!validateId(params.courseId, reply, 'courseId')) return;
+      if (!validateId(params.requestId, reply, 'requestId')) return;
+      if (!canManageCourse(auth, params.courseId)) {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const record = await store.rejectCourseEnrollmentRequest(
+        requestBaseUrl(request),
+        params.courseId,
+        params.requestId,
+        auth.user.id
+      );
+      if (!record) {
+        reply.code(404).send(Errors.notFound('Enrollment request'));
+        return;
+      }
+      return CourseEnrollmentRequestSchema.parse(record);
     }
   );
 
@@ -221,7 +397,14 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
       if (!auth) return;
       const params = request.params as { courseId: string };
       if (!validateId(params.courseId, reply, 'courseId')) return;
-      if (!canViewCourse(auth, params.courseId)) {
+      if (
+        !(await canViewCourseForRequest(
+          store,
+          requestBaseUrl(request),
+          auth,
+          params.courseId
+        ))
+      ) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -265,7 +448,14 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
       if (!auth) return;
       const params = request.params as { courseId: string };
       if (!validateId(params.courseId, reply, 'courseId')) return;
-      if (!canViewCourse(auth, params.courseId)) {
+      if (
+        !(await canViewCourseForRequest(
+          store,
+          requestBaseUrl(request),
+          auth,
+          params.courseId
+        ))
+      ) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -319,7 +509,14 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
         reply.code(404).send(Errors.notFound('Project template'));
         return;
       }
-      if (!canViewCourse(auth, template.courseId)) {
+      if (
+        !(await canViewCourseForRequest(
+          store,
+          requestBaseUrl(request),
+          auth,
+          template.courseId
+        ))
+      ) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -511,7 +708,15 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
         reply.code(404).send(Errors.notFound('Project'));
         return;
       }
-      if (!project.courseId || !canViewCourse(auth, project.courseId)) {
+      if (
+        !project.courseId ||
+        !(await canViewCourseForRequest(
+          store,
+          requestBaseUrl(request),
+          auth,
+          project.courseId
+        ))
+      ) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -616,7 +821,16 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
       const params = request.params as { projectId: string };
       if (!validateId(params.projectId, reply, 'projectId')) return;
       const project = await store.getTrackingProjectById(requestBaseUrl(request), params.projectId);
-      if (!project || !project.courseId || !canViewCourse(auth, project.courseId)) {
+      if (
+        !project ||
+        !project.courseId ||
+        !(await canViewCourseForRequest(
+          store,
+          requestBaseUrl(request),
+          auth,
+          project.courseId
+        ))
+      ) {
         reply
           .code(project ? 403 : 404)
           .send(project ? Errors.forbidden() : Errors.notFound('Project'));
@@ -679,7 +893,15 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
         requestBaseUrl(request),
         milestone.projectId
       );
-      if (!project?.courseId || !canViewCourse(auth, project.courseId)) {
+      if (
+        !project?.courseId ||
+        !(await canViewCourseForRequest(
+          store,
+          requestBaseUrl(request),
+          auth,
+          project.courseId
+        ))
+      ) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -782,7 +1004,15 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
         reply.code(404).send(Errors.notFound('Project'));
         return;
       }
-      if (!canViewCourse(auth, project.courseId) || !isStudentMember(auth, project.courseId)) {
+      if (
+        !(await canViewCourseForRequest(
+          store,
+          requestBaseUrl(request),
+          auth,
+          project.courseId
+        )) ||
+        !isStudentMember(auth, project.courseId)
+      ) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -839,7 +1069,16 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
       const params = request.params as { projectId: string };
       if (!validateId(params.projectId, reply, 'projectId')) return;
       const project = await store.getTrackingProjectById(requestBaseUrl(request), params.projectId);
-      if (!project || !project.courseId || !canViewCourse(auth, project.courseId)) {
+      if (
+        !project ||
+        !project.courseId ||
+        !(await canViewCourseForRequest(
+          store,
+          requestBaseUrl(request),
+          auth,
+          project.courseId
+        ))
+      ) {
         reply
           .code(project ? 403 : 404)
           .send(project ? Errors.forbidden() : Errors.notFound('Project'));
@@ -954,7 +1193,16 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
       const params = request.params as { projectId: string };
       if (!validateId(params.projectId, reply, 'projectId')) return;
       const project = await store.getTrackingProjectById(requestBaseUrl(request), params.projectId);
-      if (!project || !project.courseId || !canViewCourse(auth, project.courseId)) {
+      if (
+        !project ||
+        !project.courseId ||
+        !(await canViewCourseForRequest(
+          store,
+          requestBaseUrl(request),
+          auth,
+          project.courseId
+        ))
+      ) {
         reply
           .code(project ? 403 : 404)
           .send(project ? Errors.forbidden() : Errors.notFound('Project'));
@@ -1020,7 +1268,15 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
         requestBaseUrl(request),
         milestone.projectId
       );
-      if (!project?.courseId || !canViewCourse(auth, project.courseId)) {
+      if (
+        !project?.courseId ||
+        !(await canViewCourseForRequest(
+          store,
+          requestBaseUrl(request),
+          auth,
+          project.courseId
+        ))
+      ) {
         reply.code(403).send(Errors.forbidden());
         return;
       }
@@ -1067,7 +1323,15 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
         requestBaseUrl(request),
         milestone.projectId
       );
-      if (!project?.courseId || !canViewCourse(auth, project.courseId)) {
+      if (
+        !project?.courseId ||
+        !(await canViewCourseForRequest(
+          store,
+          requestBaseUrl(request),
+          auth,
+          project.courseId
+        ))
+      ) {
         reply.code(403).send(Errors.forbidden());
         return;
       }

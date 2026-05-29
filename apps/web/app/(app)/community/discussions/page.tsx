@@ -470,10 +470,7 @@ export default function DiscussionsPage() {
                   ))}
                 </div>
               </div>
-              <Link
-                href={`/community/discussions/${thread.id}`}
-                className={styles.threadStats}
-              >
+              <Link href={`/community/discussions/${thread.id}`} className={styles.threadStats}>
                 <strong>{thread.replyCount}</strong>
                 <span>replies</span>
               </Link>

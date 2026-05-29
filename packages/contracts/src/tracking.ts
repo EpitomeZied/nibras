@@ -51,6 +51,31 @@ export const TrackingCourseSummarySchema = z.object({
   isPublic: z.boolean().optional(),
 });
 
+export const CourseEnrollmentRequestStatusSchema = z.enum(['pending', 'approved', 'rejected']);
+
+export const CourseBrowseItemSchema = TrackingCourseSummarySchema.extend({
+  description: z.string().optional(),
+  thumbnailUrl: z.string().url().optional(),
+  isEnrolled: z.boolean(),
+  enrollmentRequestStatus: z.enum(['none', 'pending', 'rejected', 'approved']),
+});
+
+export const CourseEnrollmentRequestSchema = z.object({
+  id: z.string().min(1),
+  courseId: z.string().min(1),
+  userId: z.string().min(1),
+  status: CourseEnrollmentRequestStatusSchema,
+  message: z.string().nullable().optional(),
+  username: z.string().optional(),
+  githubLogin: z.string().optional(),
+  createdAt: z.string().datetime(),
+  reviewedAt: z.string().datetime().nullable().optional(),
+});
+
+export const CreateCourseEnrollmentRequestSchema = z.object({
+  message: z.string().max(500).optional(),
+});
+
 export const TrackingMembershipSchema = z.object({
   courseId: z.string().min(1),
   userId: z.string().min(1),
@@ -707,6 +732,9 @@ export type UpdateStudentLevelRequest = z.infer<typeof UpdateStudentLevelRequest
 export type CourseInvitePreview = z.infer<typeof CourseInvitePreviewSchema>;
 
 export type TrackingCourseSummary = z.infer<typeof TrackingCourseSummarySchema>;
+export type CourseBrowseItem = z.infer<typeof CourseBrowseItemSchema>;
+export type CourseEnrollmentRequest = z.infer<typeof CourseEnrollmentRequestSchema>;
+export type CreateCourseEnrollmentRequest = z.infer<typeof CreateCourseEnrollmentRequestSchema>;
 export type TrackingMembership = z.infer<typeof TrackingMembershipSchema>;
 export type ProjectTemplateRole = z.infer<typeof ProjectTemplateRoleSchema>;
 export type ProjectTemplateMilestone = z.infer<typeof ProjectTemplateMilestoneSchema>;

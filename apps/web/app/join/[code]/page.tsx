@@ -33,7 +33,7 @@ export default function JoinPage({ params }: { params: Promise<{ code: string }>
     submit: joinSubmit,
   } = useFormSubmit({
     url: `/v1/tracking/invites/${code}/join`,
-    onSuccess: () => router.push('/projects'),
+    onSuccess: () => router.push('/courses'),
   });
 
   // Animate loading dots while invite is fetching

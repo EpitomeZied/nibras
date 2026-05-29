@@ -2997,6 +2997,278 @@ export class PrismaStore implements AppStore {
     return (await this.listTrackingCourses(apiBaseUrl, userId)).length;
   }
 
+  private async discoverableCourseRows(userId: string) {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+    if (user.systemRole === SystemRole.admin) {
+      return this.prisma.course.findMany({
+        where: { isActive: true, deletedAt: null },
+        orderBy: { createdAt: 'desc' },
+      });
+    }
+    const studentLevel = user.yearLevel ?? 1;
+    const [yearCourses, publicCourses, membershipCourses] = await Promise.all([
+      this.prisma.course.findMany({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          termLabel: { startsWith: `Year ${studentLevel}` },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.course.findMany({
+        where: { isActive: true, deletedAt: null, isPublic: true },
+        orderBy: { createdAt: 'asc' },
+      }),
+      this.prisma.course.findMany({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          memberships: { some: { userId } },
+        },
+        orderBy: { createdAt: 'asc' },
+      }),
+    ]);
+    const merged = new Map<string, (typeof yearCourses)[number]>();
+    for (const course of [...yearCourses, ...publicCourses, ...membershipCourses]) {
+      merged.set(course.id, course);
+    }
+    return Array.from(merged.values());
+  }
+
+  async listBrowsableCourses(
+    apiBaseUrl: string,
+    userId: string
+  ): Promise<import('./store').CourseBrowseItemRecord[]> {
+    await this.seed(apiBaseUrl);
+    const courses = await this.discoverableCourseRows(userId);
+    const courseIds = courses.map((course) => course.id);
+    const [memberships, requests] = await Promise.all([
+      courseIds.length
+        ? this.prisma.courseMembership.findMany({ where: { userId, courseId: { in: courseIds } } })
+        : Promise.resolve([]),
+      courseIds.length
+        ? this.prisma.courseEnrollmentRequest.findMany({
+            where: { userId, courseId: { in: courseIds } },
+          })
+        : Promise.resolve([]),
+    ]);
+    const memberIds = new Set(memberships.map((entry) => entry.courseId));
+    const requestByCourse = new Map(requests.map((entry) => [entry.courseId, entry]));
+
+    return courses.map((course) => {
+      const request = requestByCourse.get(course.id);
+      let enrollmentRequestStatus: import('./store').CourseBrowseItemRecord['enrollmentRequestStatus'] =
+        'none';
+      if (request) {
+        enrollmentRequestStatus = request.status;
+      }
+      return {
+        id: course.id,
+        slug: course.slug,
+        title: course.title,
+        termLabel: course.termLabel,
+        courseCode: course.courseCode,
+        isActive: course.isActive,
+        isPublic: course.isPublic,
+        description: course.description || undefined,
+        thumbnailUrl: course.thumbnailUrl,
+        isEnrolled: memberIds.has(course.id),
+        enrollmentRequestStatus,
+      };
+    });
+  }
+
+  async enrollInPublicCourse(
+    apiBaseUrl: string,
+    userId: string,
+    courseId: string
+  ): Promise<void> {
+    await this.seed(apiBaseUrl);
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, isActive: true, isPublic: true, deletedAt: null },
+    });
+    if (!course) {
+      const err = new Error('Course is not public or not available.');
+      (err as { statusCode?: number }).statusCode = 403;
+      throw err;
+    }
+    await this.ensurePublicCourseStudentAccess(apiBaseUrl, userId, courseId);
+  }
+
+  async createCourseEnrollmentRequest(
+    apiBaseUrl: string,
+    userId: string,
+    courseId: string,
+    message?: string
+  ): Promise<import('./store').CourseEnrollmentRequestRecord> {
+    await this.seed(apiBaseUrl);
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, isActive: true, isPublic: false, deletedAt: null },
+    });
+    if (!course) {
+      const err = new Error('Course is not available for access requests.');
+      (err as { statusCode?: number }).statusCode = 404;
+      throw err;
+    }
+    const existingMember = await this.prisma.courseMembership.findUnique({
+      where: { courseId_userId: { courseId, userId } },
+    });
+    if (existingMember) {
+      const err = new Error('You are already enrolled in this course.');
+      (err as { statusCode?: number }).statusCode = 409;
+      throw err;
+    }
+    const trimmed = message?.trim() || null;
+    const record = await this.prisma.courseEnrollmentRequest.upsert({
+      where: { courseId_userId: { courseId, userId } },
+      create: {
+        courseId,
+        userId,
+        status: 'pending',
+        message: trimmed,
+      },
+      update: {
+        status: 'pending',
+        message: trimmed,
+        reviewedBy: null,
+        reviewedAt: null,
+      },
+    });
+    return {
+      id: record.id,
+      courseId: record.courseId,
+      userId: record.userId,
+      status: record.status,
+      message: record.message,
+      reviewedBy: record.reviewedBy,
+      reviewedAt: record.reviewedAt?.toISOString() ?? null,
+      createdAt: record.createdAt.toISOString(),
+      updatedAt: record.updatedAt.toISOString(),
+    };
+  }
+
+  async getCourseEnrollmentRequestForUser(
+    apiBaseUrl: string,
+    userId: string,
+    courseId: string
+  ): Promise<import('./store').CourseEnrollmentRequestRecord | null> {
+    await this.seed(apiBaseUrl);
+    const record = await this.prisma.courseEnrollmentRequest.findUnique({
+      where: { courseId_userId: { courseId, userId } },
+    });
+    if (!record) return null;
+    return {
+      id: record.id,
+      courseId: record.courseId,
+      userId: record.userId,
+      status: record.status,
+      message: record.message,
+      reviewedBy: record.reviewedBy,
+      reviewedAt: record.reviewedAt?.toISOString() ?? null,
+      createdAt: record.createdAt.toISOString(),
+      updatedAt: record.updatedAt.toISOString(),
+    };
+  }
+
+  async listCourseEnrollmentRequests(
+    apiBaseUrl: string,
+    courseId: string,
+    opts?: { status?: 'pending' | 'approved' | 'rejected' }
+  ): Promise<
+    Array<import('./store').CourseEnrollmentRequestRecord & { username: string; githubLogin: string }>
+  > {
+    await this.seed(apiBaseUrl);
+    const rows = await this.prisma.courseEnrollmentRequest.findMany({
+      where: {
+        courseId,
+        ...(opts?.status ? { status: opts.status } : {}),
+      },
+      include: {
+        user: { include: { githubAccount: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return rows.map((row) => ({
+      id: row.id,
+      courseId: row.courseId,
+      userId: row.userId,
+      status: row.status,
+      message: row.message,
+      reviewedBy: row.reviewedBy,
+      reviewedAt: row.reviewedAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+      updatedAt: row.updatedAt.toISOString(),
+      username: row.user.username,
+      githubLogin: row.user.githubAccount?.login?.trim() || row.user.username,
+    }));
+  }
+
+  async approveCourseEnrollmentRequest(
+    apiBaseUrl: string,
+    courseId: string,
+    requestId: string,
+    reviewerId: string
+  ): Promise<import('./store').CourseEnrollmentRequestRecord | null> {
+    await this.seed(apiBaseUrl);
+    const request = await this.prisma.courseEnrollmentRequest.findFirst({
+      where: { id: requestId, courseId, status: 'pending' },
+    });
+    if (!request) return null;
+    const now = new Date();
+    await this.prisma.$transaction([
+      this.prisma.courseMembership.upsert({
+        where: { courseId_userId: { courseId, userId: request.userId } },
+        create: { courseId, userId: request.userId, role: CourseRole.student },
+        update: {},
+      }),
+      this.prisma.courseEnrollmentRequest.update({
+        where: { id: requestId },
+        data: { status: 'approved', reviewedBy: reviewerId, reviewedAt: now },
+      }),
+    ]);
+    const updated = await this.prisma.courseEnrollmentRequest.findUnique({ where: { id: requestId } });
+    if (!updated) return null;
+    return {
+      id: updated.id,
+      courseId: updated.courseId,
+      userId: updated.userId,
+      status: updated.status,
+      message: updated.message,
+      reviewedBy: updated.reviewedBy,
+      reviewedAt: updated.reviewedAt?.toISOString() ?? null,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    };
+  }
+
+  async rejectCourseEnrollmentRequest(
+    apiBaseUrl: string,
+    courseId: string,
+    requestId: string,
+    reviewerId: string
+  ): Promise<import('./store').CourseEnrollmentRequestRecord | null> {
+    await this.seed(apiBaseUrl);
+    const request = await this.prisma.courseEnrollmentRequest.findFirst({
+      where: { id: requestId, courseId, status: 'pending' },
+    });
+    if (!request) return null;
+    const updated = await this.prisma.courseEnrollmentRequest.update({
+      where: { id: requestId },
+      data: { status: 'rejected', reviewedBy: reviewerId, reviewedAt: new Date() },
+    });
+    return {
+      id: updated.id,
+      courseId: updated.courseId,
+      userId: updated.userId,
+      status: updated.status,
+      message: updated.message,
+      reviewedBy: updated.reviewedBy,
+      reviewedAt: updated.reviewedAt?.toISOString() ?? null,
+      createdAt: updated.createdAt.toISOString(),
+      updatedAt: updated.updatedAt.toISOString(),
+    };
+  }
+
   async createTrackingCourse(
     apiBaseUrl: string,
     userId: string,

@@ -1,6 +1,9 @@
 import { serviceFetch } from '../api-clients/service-fetch';
 import type {
+  CourseBrowseItem,
+  CourseEnrollmentRequest,
   CourseGradesRollup,
+  CreateCourseEnrollmentRequest,
   TrackingCourseDetail,
   UpdateCourseProfileRequest,
   VideoAnalyticsResponse,
@@ -48,4 +51,53 @@ export async function listMyTrackingCourses() {
       isPublic?: boolean;
     }>
   >('tracking', '/v1/tracking/courses', { auth: true });
+}
+
+export async function browseCourses() {
+  return serviceFetch<CourseBrowseItem[]>('tracking', '/v1/tracking/courses/browse', {
+    auth: true,
+  });
+}
+
+export async function enrollInCourse(courseId: string) {
+  return serviceFetch<{ ok: true; courseId: string }>(
+    'tracking',
+    `/v1/tracking/courses/${courseId}/enroll`,
+    { method: 'POST', auth: true }
+  );
+}
+
+export async function requestCourseAccess(
+  courseId: string,
+  payload?: CreateCourseEnrollmentRequest
+) {
+  return serviceFetch<CourseEnrollmentRequest>(
+    'tracking',
+    `/v1/tracking/courses/${courseId}/enrollment-requests`,
+    { method: 'POST', auth: true, body: (payload ?? {}) as Record<string, unknown> }
+  );
+}
+
+export async function listCourseEnrollmentRequests(courseId: string, status = 'pending') {
+  return serviceFetch<CourseEnrollmentRequest[]>(
+    'tracking',
+    `/v1/tracking/courses/${courseId}/enrollment-requests?status=${status}`,
+    { auth: true }
+  );
+}
+
+export async function approveCourseEnrollmentRequest(courseId: string, requestId: string) {
+  return serviceFetch<CourseEnrollmentRequest>(
+    'tracking',
+    `/v1/tracking/courses/${courseId}/enrollment-requests/${requestId}/approve`,
+    { method: 'POST', auth: true }
+  );
+}
+
+export async function rejectCourseEnrollmentRequest(courseId: string, requestId: string) {
+  return serviceFetch<CourseEnrollmentRequest>(
+    'tracking',
+    `/v1/tracking/courses/${courseId}/enrollment-requests/${requestId}/reject`,
+    { method: 'POST', auth: true }
+  );
 }

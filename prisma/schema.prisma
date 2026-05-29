@@ -28,6 +28,12 @@ enum CourseRole {
   ta
 }
 
+enum CourseEnrollmentRequestStatus {
+  pending
+  approved
+  rejected
+}
+
 enum VideoProvider {
   youtube
   bilibili
@@ -216,6 +222,8 @@ model User {
   updatedAt         DateTime           @updatedAt
   githubAccount     GithubAccount?
   courseMemberships CourseMembership[]
+  courseEnrollmentRequests CourseEnrollmentRequest[]
+  reviewedCourseEnrollmentRequests CourseEnrollmentRequest[] @relation("EnrollmentRequestReviewer")
   deviceCodes       DeviceCode[]
   cliSessions       CliSession[]
   webSessions       WebSession[]
@@ -339,6 +347,7 @@ model Course {
   communityThreads CommunityThread[]
   sections         CourseSection[]
   assignments      CourseAssignment[]
+  enrollmentRequests CourseEnrollmentRequest[]
 }
 
 model CourseInvite {
@@ -366,6 +375,24 @@ model CourseMembership {
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([courseId, userId])
+}
+
+model CourseEnrollmentRequest {
+  id         String                        @id @default(cuid())
+  courseId   String
+  userId     String
+  status     CourseEnrollmentRequestStatus @default(pending)
+  message    String?                       @db.VarChar(500)
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt  DateTime                      @default(now())
+  updatedAt  DateTime                      @updatedAt
+  course     Course                        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user       User                          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewer   User?                         @relation("EnrollmentRequestReviewer", fields: [reviewedBy], references: [id])
+
+  @@unique([courseId, userId])
+  @@index([courseId, status])
 }
 
 model CourseSection {

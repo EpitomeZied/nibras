@@ -151,6 +151,6 @@ export const docsGettingStarted: DocsGettingStartedStep[] = [
     title: '6. Use course content on the web',
     description:
       'From a course hub you can watch embedded lectures, submit assignments, check grades, browse published projects, and join course discussions — without leaving the browser.',
-    link: { href: '/catalog', label: 'Course catalog' },
+    link: { href: '/catalog?tab=courses', label: 'Course catalog' },
   },
 ];

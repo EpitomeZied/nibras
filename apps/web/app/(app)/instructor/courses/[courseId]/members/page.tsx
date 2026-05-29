@@ -3,6 +3,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { use } from 'react';
+import {
+  approveCourseEnrollmentRequest,
+  listCourseEnrollmentRequests,
+  rejectCourseEnrollmentRequest,
+} from '../../../../../lib/services/course-profile';
 import { apiFetch } from '../../../../../lib/session';
 import { getLevelLabel, getLevelBadgeSuffix, MAX_LEVEL } from '../../../../../lib/levels';
 import SelectField from '../../../../_components/ui/select-field';
@@ -20,6 +25,17 @@ type Member = {
   githubLogin: string;
   role: 'student' | 'instructor' | 'ta';
   level: number;
+  createdAt: string;
+};
+
+type EnrollmentRequest = {
+  id: string;
+  courseId: string;
+  userId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  message?: string | null;
+  username?: string;
+  githubLogin?: string;
   createdAt: string;
 };
 
@@ -44,11 +60,28 @@ export default function CourseMembersPage({ params }: { params: Promise<{ course
   const [inviteUrl, setInviteUrl] = useState<string | null>(null);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState<EnrollmentRequest[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [requestsError, setRequestsError] = useState<string | null>(null);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
 
   useEffect(() => {
     void loadMembers();
+    void loadPendingRequests();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
+
+  async function loadPendingRequests() {
+    setRequestsLoading(true);
+    setRequestsError(null);
+    try {
+      setPendingRequests(await listCourseEnrollmentRequests(courseId, 'pending'));
+    } catch (err) {
+      setRequestsError(err instanceof Error ? err.message : 'Failed to load requests.');
+    } finally {
+      setRequestsLoading(false);
+    }
+  }
 
   async function loadMembers() {
     setLoading(true);
@@ -123,6 +156,31 @@ export default function CourseMembersPage({ params }: { params: Promise<{ course
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     });
+  }
+
+  async function handleApproveRequest(requestId: string) {
+    setReviewingId(requestId);
+    try {
+      await approveCourseEnrollmentRequest(courseId, requestId);
+      setPendingRequests((prev) => prev.filter((entry) => entry.id !== requestId));
+      await loadMembers();
+    } catch {
+      await loadPendingRequests();
+    } finally {
+      setReviewingId(null);
+    }
+  }
+
+  async function handleRejectRequest(requestId: string) {
+    setReviewingId(requestId);
+    try {
+      await rejectCourseEnrollmentRequest(courseId, requestId);
+      setPendingRequests((prev) => prev.filter((entry) => entry.id !== requestId));
+    } catch {
+      await loadPendingRequests();
+    } finally {
+      setReviewingId(null);
+    }
   }
 
   async function handleRemove(userId: string) {
@@ -336,6 +394,68 @@ export default function CourseMembersPage({ params }: { params: Promise<{ course
               {copied ? 'Copied!' : 'Copy'}
             </button>
           </div>
+        )}
+      </div>
+
+      {/* Pending enrollment requests */}
+      <div className={styles.panel}>
+        <div className={styles.panelHeader}>
+          <h2>Pending Access Requests</h2>
+        </div>
+        {requestsLoading && <p className={styles.muted}>Loading requests…</p>}
+        {requestsError && <p className={styles.errorText}>{requestsError}</p>}
+        {!requestsLoading && !requestsError && pendingRequests.length === 0 && (
+          <p className={styles.muted}>No pending enrollment requests.</p>
+        )}
+        {!requestsLoading && !requestsError && pendingRequests.length > 0 && (
+          <table className={styles.submissionTable}>
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Message</th>
+                <th>Requested</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {pendingRequests.map((request) => (
+                <tr key={request.id}>
+                  <td>
+                    <div>{request.username ?? request.userId}</div>
+                    {request.githubLogin && (
+                      <div className={styles.mono}>@{request.githubLogin}</div>
+                    )}
+                  </td>
+                  <td>{request.message?.trim() || '—'}</td>
+                  <td className={styles.mono}>
+                    {new Date(request.createdAt).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </td>
+                  <td style={{ display: 'flex', gap: 6 }}>
+                    <button
+                      type="button"
+                      className={styles.btnPrimary}
+                      disabled={reviewingId === request.id}
+                      onClick={() => void handleApproveRequest(request.id)}
+                    >
+                      {reviewingId === request.id ? '…' : 'Approve'}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.btnSecondary}
+                      disabled={reviewingId === request.id}
+                      onClick={() => void handleRejectRequest(request.id)}
+                    >
+                      Reject
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
 

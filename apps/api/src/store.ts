@@ -185,6 +185,32 @@ export type CourseMembershipRecord = {
   updatedAt: string;
 };
 
+export type CourseEnrollmentRequestRecord = {
+  id: string;
+  courseId: string;
+  userId: string;
+  status: 'pending' | 'approved' | 'rejected';
+  message: string | null;
+  reviewedBy: string | null;
+  reviewedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CourseBrowseItemRecord = {
+  id: string;
+  slug: string;
+  title: string;
+  termLabel: string;
+  courseCode: string;
+  isActive: boolean;
+  isPublic: boolean;
+  description?: string;
+  thumbnailUrl?: string | null;
+  isEnrolled: boolean;
+  enrollmentRequestStatus: 'none' | 'pending' | 'rejected' | 'approved';
+};
+
 export type ProgramRecord = {
   id: string;
   slug: string;
@@ -1000,6 +1026,7 @@ export type StoreData = {
   teams?: TeamRecord[];
   courseMemberships: CourseMembershipRecord[];
   courseInvites: CourseInviteRecord[];
+  courseEnrollmentRequests?: CourseEnrollmentRequestRecord[];
   deviceCodes: DeviceCodeRecord[];
   sessions: SessionRecord[];
   webSessions: WebSessionRecord[];
@@ -1104,6 +1131,36 @@ export interface AppStore {
     userId: string,
     courseId: string
   ): Promise<void>;
+  listBrowsableCourses(apiBaseUrl: string, userId: string): Promise<CourseBrowseItemRecord[]>;
+  enrollInPublicCourse(apiBaseUrl: string, userId: string, courseId: string): Promise<void>;
+  createCourseEnrollmentRequest(
+    apiBaseUrl: string,
+    userId: string,
+    courseId: string,
+    message?: string
+  ): Promise<CourseEnrollmentRequestRecord>;
+  getCourseEnrollmentRequestForUser(
+    apiBaseUrl: string,
+    userId: string,
+    courseId: string
+  ): Promise<CourseEnrollmentRequestRecord | null>;
+  listCourseEnrollmentRequests(
+    apiBaseUrl: string,
+    courseId: string,
+    opts?: { status?: 'pending' | 'approved' | 'rejected' }
+  ): Promise<Array<CourseEnrollmentRequestRecord & { username: string; githubLogin: string }>>;
+  approveCourseEnrollmentRequest(
+    apiBaseUrl: string,
+    courseId: string,
+    requestId: string,
+    reviewerId: string
+  ): Promise<CourseEnrollmentRequestRecord | null>;
+  rejectCourseEnrollmentRequest(
+    apiBaseUrl: string,
+    courseId: string,
+    requestId: string,
+    reviewerId: string
+  ): Promise<CourseEnrollmentRequestRecord | null>;
   createTrackingCourse(
     apiBaseUrl: string,
     userId: string,
@@ -3444,6 +3501,213 @@ export class FileStore implements AppStore {
       updatedAt: nowIso(),
     });
     this.write(data);
+  }
+
+  async listBrowsableCourses(
+    apiBaseUrl: string,
+    userId: string
+  ): Promise<CourseBrowseItemRecord[]> {
+    const data = this.read(apiBaseUrl);
+    const user = data.users.find((entry) => entry.id === userId);
+    const memberIds = new Set(
+      data.courseMemberships.filter((entry) => entry.userId === userId).map((entry) => entry.courseId)
+    );
+    const requests = (data.courseEnrollmentRequests ?? []).filter((entry) => entry.userId === userId);
+    const requestByCourse = new Map(requests.map((entry) => [entry.courseId, entry]));
+
+    let courses: CourseRecord[];
+    if (user?.systemRole === 'admin') {
+      courses = data.courses.filter((entry) => entry.isActive);
+    } else {
+      const studentLevel = user?.yearLevel ?? 1;
+      const merged = new Map<string, CourseRecord>();
+      for (const course of data.courses) {
+        if (!course.isActive) continue;
+        const inYear = course.termLabel.startsWith(`Year ${studentLevel}`);
+        if (course.isPublic || inYear || memberIds.has(course.id)) {
+          merged.set(course.id, course);
+        }
+      }
+      courses = Array.from(merged.values());
+    }
+
+    return courses.map((course) => {
+      const request = requestByCourse.get(course.id);
+      return {
+        id: course.id,
+        slug: course.slug,
+        title: course.title,
+        termLabel: course.termLabel,
+        courseCode: course.courseCode,
+        isActive: course.isActive,
+        isPublic: course.isPublic,
+        isEnrolled: memberIds.has(course.id),
+        enrollmentRequestStatus: request?.status ?? 'none',
+      };
+    });
+  }
+
+  async enrollInPublicCourse(
+    apiBaseUrl: string,
+    userId: string,
+    courseId: string
+  ): Promise<void> {
+    const data = this.read(apiBaseUrl);
+    const course = data.courses.find(
+      (entry) => entry.id === courseId && entry.isActive && entry.isPublic
+    );
+    if (!course) {
+      const err = new Error('Course is not public or not available.');
+      (err as { statusCode?: number }).statusCode = 403;
+      throw err;
+    }
+    await this.ensurePublicCourseStudentAccess(apiBaseUrl, userId, courseId);
+  }
+
+  async createCourseEnrollmentRequest(
+    apiBaseUrl: string,
+    userId: string,
+    courseId: string,
+    message?: string
+  ): Promise<CourseEnrollmentRequestRecord> {
+    const data = this.read(apiBaseUrl);
+    const course = data.courses.find(
+      (entry) => entry.id === courseId && entry.isActive && !entry.isPublic
+    );
+    if (!course) {
+      const err = new Error('Course is not available for access requests.');
+      (err as { statusCode?: number }).statusCode = 404;
+      throw err;
+    }
+    if (
+      data.courseMemberships.some(
+        (entry) => entry.courseId === courseId && entry.userId === userId
+      )
+    ) {
+      const err = new Error('You are already enrolled in this course.');
+      (err as { statusCode?: number }).statusCode = 409;
+      throw err;
+    }
+    if (!data.courseEnrollmentRequests) data.courseEnrollmentRequests = [];
+    const trimmed = message?.trim() || null;
+    const existing = data.courseEnrollmentRequests.find(
+      (entry) => entry.courseId === courseId && entry.userId === userId
+    );
+    const now = nowIso();
+    if (existing) {
+      existing.status = 'pending';
+      existing.message = trimmed;
+      existing.reviewedBy = null;
+      existing.reviewedAt = null;
+      existing.updatedAt = now;
+      this.write(data);
+      return existing;
+    }
+    const record: CourseEnrollmentRequestRecord = {
+      id: randomUUID(),
+      courseId,
+      userId,
+      status: 'pending',
+      message: trimmed,
+      reviewedBy: null,
+      reviewedAt: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    data.courseEnrollmentRequests.push(record);
+    this.write(data);
+    return record;
+  }
+
+  async getCourseEnrollmentRequestForUser(
+    apiBaseUrl: string,
+    userId: string,
+    courseId: string
+  ): Promise<CourseEnrollmentRequestRecord | null> {
+    const data = this.read(apiBaseUrl);
+    return (
+      (data.courseEnrollmentRequests ?? []).find(
+        (entry) => entry.courseId === courseId && entry.userId === userId
+      ) ?? null
+    );
+  }
+
+  async listCourseEnrollmentRequests(
+    apiBaseUrl: string,
+    courseId: string,
+    opts?: { status?: 'pending' | 'approved' | 'rejected' }
+  ): Promise<Array<CourseEnrollmentRequestRecord & { username: string; githubLogin: string }>> {
+    const data = this.read(apiBaseUrl);
+    return (data.courseEnrollmentRequests ?? [])
+      .filter(
+        (entry) =>
+          entry.courseId === courseId && (!opts?.status || entry.status === opts.status)
+      )
+      .map((entry) => {
+        const user = data.users.find((u) => u.id === entry.userId);
+        const github = data.githubAccounts.find((g) => g.userId === entry.userId);
+        return {
+          ...entry,
+          username: user?.username ?? 'unknown',
+          githubLogin: github?.login ?? user?.username ?? 'unknown',
+        };
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async approveCourseEnrollmentRequest(
+    apiBaseUrl: string,
+    courseId: string,
+    requestId: string,
+    reviewerId: string
+  ): Promise<CourseEnrollmentRequestRecord | null> {
+    const data = this.read(apiBaseUrl);
+    const request = (data.courseEnrollmentRequests ?? []).find(
+      (entry) => entry.id === requestId && entry.courseId === courseId && entry.status === 'pending'
+    );
+    if (!request) return null;
+    const now = nowIso();
+    if (
+      !data.courseMemberships.some(
+        (entry) => entry.courseId === courseId && entry.userId === request.userId
+      )
+    ) {
+      data.courseMemberships.push({
+        id: randomUUID(),
+        courseId,
+        userId: request.userId,
+        role: 'student',
+        level: 1,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+    request.status = 'approved';
+    request.reviewedBy = reviewerId;
+    request.reviewedAt = now;
+    request.updatedAt = now;
+    this.write(data);
+    return request;
+  }
+
+  async rejectCourseEnrollmentRequest(
+    apiBaseUrl: string,
+    courseId: string,
+    requestId: string,
+    reviewerId: string
+  ): Promise<CourseEnrollmentRequestRecord | null> {
+    const data = this.read(apiBaseUrl);
+    const request = (data.courseEnrollmentRequests ?? []).find(
+      (entry) => entry.id === requestId && entry.courseId === courseId && entry.status === 'pending'
+    );
+    if (!request) return null;
+    const now = nowIso();
+    request.status = 'rejected';
+    request.reviewedBy = reviewerId;
+    request.reviewedAt = now;
+    request.updatedAt = now;
+    this.write(data);
+    return request;
   }
 
   async listCourseMembersForInstructor(

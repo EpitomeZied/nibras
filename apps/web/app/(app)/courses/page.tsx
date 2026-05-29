@@ -108,8 +108,9 @@ export default function MyCoursesPage() {
 
       {!loading && !error && courses.length === 0 && (
         <p className={styles.muted}>
-          You are not enrolled in any courses yet. Ask your instructor for an invite link, or browse
-          public courses once they are published.
+          You are not enrolled in any courses yet.{' '}
+          <Link href="/catalog?tab=courses">Browse the catalog</Link> to join public courses, or ask
+          your instructor for an invite link.
         </p>
       )}
 

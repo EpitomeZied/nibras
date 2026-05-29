@@ -105,7 +105,7 @@ export const appNavItems: AppNavItem[] = [
   {
     href: '/catalog',
     label: 'Catalog',
-    description: 'Browse project templates and apply across all courses.',
+    description: 'Browse courses and project templates across all courses.',
     visibility: 'all',
     placement: 'learn',
   },
@@ -333,8 +333,8 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     subtitle: 'Review your submission history, statuses, and detailed feedback.',
   },
   '/catalog': {
-    title: 'Project Catalog',
-    subtitle: 'Discover projects, browse templates, and apply.',
+    title: 'Catalog',
+    subtitle: 'Browse courses, join or request access, and discover project templates.',
   },
   '/courses': {
     title: 'My Courses',
