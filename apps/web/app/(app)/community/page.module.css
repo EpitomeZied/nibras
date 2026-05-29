@@ -296,6 +296,33 @@
   font-variant-numeric: tabular-nums;
 }
 
+.saveBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  border-radius: 8px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  align-self: flex-end;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.saveBtn:hover {
+  border-color: var(--primary, #22c55e);
+  color: var(--text);
+}
+
+.saveBtnActive {
+  background: color-mix(in oklab, var(--primary, #22c55e) 18%, var(--surface));
+  border-color: var(--primary, #22c55e);
+  color: var(--primary, #22c55e);
+}
+
 .modalBackdrop {
   position: fixed;
   inset: 0;

@@ -173,6 +173,12 @@
   color: var(--text);
 }
 
+.saveBtnActive {
+  background: color-mix(in oklab, var(--primary, #22c55e) 18%, var(--surface));
+  border-color: var(--primary, #22c55e);
+  color: var(--primary, #22c55e);
+}
+
 .composer {
   border: 1px solid var(--border);
   background: var(--surface);

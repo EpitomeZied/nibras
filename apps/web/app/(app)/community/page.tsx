@@ -51,7 +51,7 @@ export default function CommunityPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useSession();
-  const { isBookmarked } = useBookmarks();
+  const { isBookmarked, toggle } = useBookmarks();
   const [questions, setQuestions] = useState<CommunityQuestion[]>([]);
   const [tags, setTags] = useState<CommunityTag[]>([]);
   const [sort, setSort] = useState<NonNullable<QuestionFilters['sort']>>('newest');
@@ -504,6 +504,19 @@ export default function CommunityPage() {
                 </div>
               </Link>
               <div className={styles.right}>
+                <button
+                  type="button"
+                  className={`${styles.saveBtn} ${isBookmarked(question.id) ? styles.saveBtnActive : ''}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void toggle(question.id);
+                  }}
+                  aria-pressed={isBookmarked(question.id)}
+                  aria-label={isBookmarked(question.id) ? 'Remove bookmark' : 'Save question'}
+                >
+                  {isBookmarked(question.id) ? 'Saved' : 'Save'}
+                </button>
                 <CommunityAuthorLink
                   author={question.author}
                   showAvatar

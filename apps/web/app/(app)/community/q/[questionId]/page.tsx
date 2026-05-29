@@ -20,6 +20,7 @@ import {
 } from '../../../../lib/services/community';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
 import { useSession } from '../../../_components/session-context';
+import { useBookmarks } from '../../../../lib/hooks/use-bookmarks';
 import { renderMarkdown } from '../../../../lib/markdown';
 import ReportContentButton from '../../_components/report-content-button';
 
@@ -36,6 +37,7 @@ export default function QuestionPage() {
   const questionId = params?.questionId ?? '';
   const router = useRouter();
   const { user } = useSession();
+  const { isBookmarked, toggle } = useBookmarks();
   const [question, setQuestion] = useState<CommunityQuestion | null>(null);
   const [answers, setAnswers] = useState<CommunityAnswer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -182,6 +184,15 @@ export default function QuestionPage() {
             <span>{question.author.reputation} rep</span>
           )}
           <div className={styles.questionActions}>
+            <button
+              type="button"
+              className={`${styles.copyBtn} ${isBookmarked(question.id) ? styles.saveBtnActive : ''}`}
+              onClick={() => void toggle(question.id)}
+              aria-pressed={isBookmarked(question.id)}
+              aria-label={isBookmarked(question.id) ? 'Remove bookmark' : 'Save question'}
+            >
+              {isBookmarked(question.id) ? 'Saved' : 'Save'}
+            </button>
             <ReportContentButton
               targetType="question"
               targetId={question.id}
