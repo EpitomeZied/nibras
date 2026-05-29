@@ -27,6 +27,15 @@ type ShellUser = ShellSessionPayload['user'] & {
   memberships?: ShellSessionPayload['memberships'];
 };
 
+function isPublicCommunityPath(pathname: string | null): boolean {
+  if (!pathname) return false;
+  if (pathname === '/community' || pathname.startsWith('/community/q/')) return true;
+  if (pathname === '/community/discussions' || pathname.startsWith('/community/discussions/')) {
+    return true;
+  }
+  return false;
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [session, setSession] = useState<ShellUser | null>(null);
@@ -64,8 +73,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let alive = true;
+    const publicCommunity = isPublicCommunityPath(pathname);
 
     void (async () => {
+      if (publicCommunity) {
+        try {
+          const response = await apiFetch('/v1/web/session', { auth: true });
+          if (response.ok) {
+            const payload = (await response.json()) as ShellSessionPayload;
+            if (alive) {
+              setSession({ ...payload.user, memberships: payload.memberships ?? [] });
+            }
+          } else if (alive) {
+            setSession(null);
+          }
+        } catch {
+          if (alive) setSession(null);
+        } finally {
+          if (alive) setLoading(false);
+        }
+        return;
+      }
+
       try {
         await loadSession();
       } catch {
@@ -83,7 +112,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [pathname]);
 
   return (
     <SessionProvider
