@@ -1,0 +1,68 @@
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.feedback {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 4px 0 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--primary, #22c55e) 10%, var(--surface));
+  border: 1px solid var(--border);
+}
+
+.statusBadge {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.statusNotStarted {
+  background: var(--surface-strong, color-mix(in oklab, var(--border) 60%, transparent));
+  color: var(--text-muted);
+}
+
+.statusInProgress {
+  background: color-mix(in oklab, #3b82f6 18%, var(--surface));
+  color: #2563eb;
+}
+
+.statusSubmitted {
+  background: color-mix(in oklab, #8b5cf6 18%, var(--surface));
+  color: #7c3aed;
+}
+
+.statusGraded {
+  background: color-mix(in oklab, var(--primary, #22c55e) 18%, var(--surface));
+  color: var(--primary, #16a34a);
+}
+
+.statusLate {
+  background: color-mix(in oklab, #ef4444 18%, var(--surface));
+  color: #dc2626;
+}

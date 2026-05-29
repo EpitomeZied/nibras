@@ -41,6 +41,12 @@ enum AssignmentSubmissionStatus {
   graded
 }
 
+enum CourseAssignmentType {
+  text
+  mcq
+  quiz
+}
+
 enum ProjectStatus {
   draft
   published
@@ -400,6 +406,8 @@ model CourseAssignment {
   title           String
   description     String                 @default("")
   content         String                 @default("")
+  assignmentType  CourseAssignmentType   @default(text)
+  configJson      Json                   @default("{}")
   dueAt           DateTime?
   pointsPossible  Int                    @default(100)
   sortOrder       Int                    @default(0)
@@ -417,6 +425,7 @@ model AssignmentSubmission {
   assignmentId  String
   userId        String
   content       String                     @default("")
+  answersJson   Json                       @default("{}")
   resourcesJson Json                       @default("[]")
   status        AssignmentSubmissionStatus @default(draft)
   score         Float?

@@ -7,8 +7,10 @@ import {
   CourseAssignmentSchema,
   CreateCourseAssignmentRequestSchema,
   GradeAssignmentRequestSchema,
+  McqAssignmentConfigInputSchema,
   SubmitAssignmentRequestSchema,
   UpdateCourseAssignmentRequestSchema,
+  type McqAssignmentConfig,
 } from '@nibras/contracts';
 import { AssignmentSubmissionStatus, PrismaClient } from '@prisma/client';
 import { requireUser } from '../../lib/auth';
@@ -19,6 +21,40 @@ import { AppStore } from '../../store';
 import { canManageCourse, canViewCourseForRequest } from './policies/access';
 
 type ResourceLink = { title: string; url: string };
+
+function parseAssignmentConfig(configJson: unknown): McqAssignmentConfig | undefined {
+  const parsed = McqAssignmentConfigInputSchema.safeParse(configJson);
+  return parsed.success ? parsed.data : undefined;
+}
+
+function configForRole(
+  config: McqAssignmentConfig | undefined,
+  revealAnswers: boolean
+): McqAssignmentConfig | undefined {
+  if (!config) return undefined;
+  if (revealAnswers) return config;
+  return {
+    questions: config.questions.map(({ correctOptionId: _omit, ...q }) => q),
+  };
+}
+
+function gradeMcqAnswers(
+  config: McqAssignmentConfig,
+  answers: Record<string, string> | undefined,
+  pointsPossible: number
+): { score: number; content: string } {
+  const questions = config.questions;
+  let correct = 0;
+  for (const q of questions) {
+    if (answers?.[q.id] === q.correctOptionId) correct += 1;
+  }
+  const score =
+    questions.length > 0 ? Math.round((correct / questions.length) * pointsPossible) : 0;
+  return {
+    score,
+    content: `MCQ submission: ${correct}/${questions.length} correct`,
+  };
+}
 
 function computeDisplayStatus(
   submission: { status: AssignmentSubmissionStatus; submittedAt: Date | null } | null,
@@ -45,6 +81,8 @@ function presentAssignment(
     title: string;
     description: string;
     content: string;
+    assignmentType: 'text' | 'mcq' | 'quiz';
+    configJson: unknown;
     dueAt: Date | null;
     pointsPossible: number;
     sortOrder: number;
@@ -58,15 +96,19 @@ function presentAssignment(
     content: string;
     resourcesJson: unknown;
   } | null,
-  includeDetail = false
+  includeDetail = false,
+  revealAnswers = false
 ) {
   const status = computeDisplayStatus(submission ?? null, row.dueAt);
+  const config = configForRole(parseAssignmentConfig(row.configJson), revealAnswers);
   const base = {
     id: row.id,
     courseId: row.courseId,
     title: row.title,
+    assignmentType: row.assignmentType,
     description: row.description || undefined,
     content: includeDetail ? row.content : undefined,
+    config: includeDetail ? config : undefined,
     dueAt: row.dueAt?.toISOString() ?? null,
     pointsPossible: row.pointsPossible,
     sortOrder: row.sortOrder,
@@ -168,12 +210,15 @@ export function registerCourseAssignmentRoutes(
         });
         sortOrder = (max._max.sortOrder ?? -1) + 1;
       }
+      const assignmentType = body.assignmentType ?? 'text';
       const row = await prisma.courseAssignment.create({
         data: {
           courseId: params.courseId,
           title: body.title,
           description: body.description ?? '',
           content: body.content ?? '',
+          assignmentType,
+          configJson: (body.config ?? {}) as object,
           dueAt: body.dueAt ? new Date(body.dueAt) : null,
           pointsPossible: body.pointsPossible ?? 100,
           sortOrder,
@@ -212,6 +257,8 @@ export function registerCourseAssignmentRoutes(
           title: body.title,
           description: body.description,
           content: body.content,
+          assignmentType: body.assignmentType,
+          configJson: body.config === undefined ? undefined : (body.config as object),
           dueAt: body.dueAt === null ? null : body.dueAt ? new Date(body.dueAt) : undefined,
           pointsPossible: body.pointsPossible,
           sortOrder: body.sortOrder,
@@ -279,7 +326,8 @@ export function registerCourseAssignmentRoutes(
           },
         },
       });
-      return presentAssignment(row, submission, true);
+      const revealAnswers = canManageCourse(auth, row.courseId);
+      return presentAssignment(row, submission, true, revealAnswers);
     }
   );
 
@@ -347,6 +395,23 @@ export function registerCourseAssignmentRoutes(
         return;
       }
       const now = new Date();
+      let content = body.content?.trim() ?? '';
+      let score: number | undefined;
+      let status: AssignmentSubmissionStatus = 'submitted';
+      const answersJson = body.answers ?? {};
+
+      if (row.assignmentType === 'mcq' || row.assignmentType === 'quiz') {
+        const config = parseAssignmentConfig(row.configJson);
+        if (!config) {
+          reply.code(400).send(Errors.validation('Assignment is missing question configuration.'));
+          return;
+        }
+        const graded = gradeMcqAnswers(config, body.answers, row.pointsPossible);
+        content = graded.content;
+        score = graded.score;
+        status = 'graded';
+      }
+
       const record = await prisma.assignmentSubmission.upsert({
         where: {
           assignmentId_userId: {
@@ -357,24 +422,28 @@ export function registerCourseAssignmentRoutes(
         create: {
           assignmentId: params.assignmentId,
           userId: auth.user.id,
-          content: body.content,
+          content,
+          answersJson,
           resourcesJson: body.resources ?? [],
-          status: 'submitted',
+          status,
+          score: score ?? null,
           submittedAt: now,
         },
         update: {
-          content: body.content,
+          content,
+          answersJson,
           resourcesJson: body.resources ?? [],
-          status: 'submitted',
+          status,
+          score: score ?? undefined,
           submittedAt: now,
         },
       });
-      const status = computeDisplayStatus(record, row.dueAt);
+      const displayStatus = computeDisplayStatus(record, row.dueAt);
       return AssignmentSubmissionResponseSchema.parse({
         id: record.id,
         assignmentId: record.assignmentId,
         submittedAt: record.submittedAt!.toISOString(),
-        status,
+        status: displayStatus,
         score: record.score ?? undefined,
         feedback: record.feedback ?? undefined,
       });

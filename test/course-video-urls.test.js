@@ -4,6 +4,7 @@ const {
   normalizeYouTubeExternalId,
   normalizeBilibiliExternalId,
   resolvePlaybackUrl,
+  isVideoPlayable,
 } = require('../apps/api/dist/features/tracking/course-videos');
 
 test('normalizeYouTubeExternalId accepts bare id', () => {
@@ -34,4 +35,31 @@ test('resolvePlaybackUrl builds youtube-nocookie embed for pasted URLs', () => {
     }),
     'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ'
   );
+});
+
+test('resolvePlaybackUrl falls back to embedUrl for mp4', () => {
+  assert.equal(
+    resolvePlaybackUrl({
+      provider: 'mp4',
+      externalId: null,
+      embedUrl: 'https://cdn.example.com/lecture.mp4',
+    }),
+    'https://cdn.example.com/lecture.mp4'
+  );
+});
+
+test('isVideoPlayable is false when no valid source', () => {
+  assert.equal(
+    isVideoPlayable({
+      provider: 'youtube',
+      externalId: 'not-a-valid-id',
+      embedUrl: null,
+    }),
+    false
+  );
+  assert.equal(resolvePlaybackUrl({
+    provider: 'youtube',
+    externalId: 'not-a-valid-id',
+    embedUrl: null,
+  }), '');
 });
