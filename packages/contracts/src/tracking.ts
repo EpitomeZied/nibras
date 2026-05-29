@@ -54,8 +54,8 @@ export const TrackingCourseSummarySchema = z.object({
 export const CourseEnrollmentRequestStatusSchema = z.enum(['pending', 'approved', 'rejected']);
 
 export const CourseBrowseItemSchema = TrackingCourseSummarySchema.extend({
-  description: z.string().optional(),
-  thumbnailUrl: z.string().url().optional(),
+  description: z.string().nullable().optional(),
+  thumbnailUrl: z.string().url().nullable().optional(),
   isEnrolled: z.boolean(),
   enrollmentRequestStatus: z.enum(['none', 'pending', 'rejected', 'approved']),
 });
