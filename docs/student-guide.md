@@ -222,7 +222,7 @@ git --version
 Install the pinned release from npm. Run this in your terminal (all platforms):
 
 ```bash
-npm install -g @nibras/cli@1.0.2
+npm install -g @nibras/cli@2.0.0
 ```
 
 If npm returns `404 Not Found`, ask your instructor or admin to confirm that this CLI release has been published to npm.
@@ -234,7 +234,7 @@ If npm returns `404 Not Found`, ask your instructor or admin to confirm that thi
 If you already have a different version installed:
 
 ```bash
-npm install -g @nibras/cli@1.0.2
+npm install -g @nibras/cli@2.0.0
 ```
 
 npm will overwrite the existing global link automatically.
@@ -249,7 +249,7 @@ npm uninstall -g nibras 2>/dev/null || true
 npm uninstall -g @nibras/cli 2>/dev/null || true
 
 # Then reinstall
-npm install -g @nibras/cli@1.0.2
+npm install -g @nibras/cli@2.0.0
 ```
 
 ### EACCES permission error (macOS / Linux — system npm)

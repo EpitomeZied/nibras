@@ -23,7 +23,7 @@ async function fetchFirstAvailable<T>(paths: string[], init: ServiceFetchInit = 
 export type Contest = {
   id: string;
   name: string;
-  host: 'codeforces' | 'leetcode' | 'atcoder' | 'codechef' | 'vjudge' | string;
+  host: 'codeforces' | 'leetcode' | 'atcoder' | 'codechef' | string;
   startsAt: string;
   endsAt: string;
   durationMinutes: number;
@@ -86,7 +86,7 @@ export type VerificationProblem = {
 };
 
 export type LinkedAccount = {
-  host: 'codeforces' | 'leetcode' | 'atcoder' | 'codechef' | 'vjudge' | string;
+  host: 'codeforces' | 'leetcode' | 'atcoder' | 'codechef' | string;
   handle: string;
   verified: boolean;
   verificationStatus?: string;

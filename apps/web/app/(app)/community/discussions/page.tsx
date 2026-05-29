@@ -9,7 +9,12 @@ import EmptyState from '../../_components/widgets/EmptyState';
 import Skeleton from '../../_components/widgets/Skeleton';
 import MarkdownToolbar from '../../_components/widgets/MarkdownToolbar';
 import type { TrackingCourseSummary } from '@nibras/contracts';
-import { createThread, listThreads, type CommunityThread } from '../../../lib/services/community';
+import {
+  createThread,
+  listDiscussionCourses,
+  listThreads,
+  type CommunityThread,
+} from '../../../lib/services/community';
 import { useSession } from '../../_components/session-context';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 import { apiFetch } from '../../../lib/session';
@@ -85,30 +90,31 @@ export default function DiscussionsPage() {
 
   useEffect(() => {
     if (sessionLoading) return;
-    if (!user) {
-      setCourses([]);
-      setCoursesLoading(false);
-      return;
-    }
     let alive = true;
     setCoursesLoading(true);
     setCoursesError(null);
     void (async () => {
       try {
-        const res = await apiFetch('/v1/tracking/courses', { auth: true });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as { error?: string };
-          throw new Error(body.error || `Failed to load courses (${res.status}).`);
+        if (user) {
+          const res = await apiFetch('/v1/tracking/courses', { auth: true });
+          if (!res.ok) {
+            const body = (await res.json().catch(() => ({}))) as { error?: string };
+            throw new Error(body.error || `Failed to load courses (${res.status}).`);
+          }
+          const list = (await res.json()) as TrackingCourseSummary[];
+          if (!alive) return;
+          setCourses(
+            list.map((c) => ({
+              id: c.id,
+              title: c.title,
+              courseCode: c.courseCode,
+            }))
+          );
+        } else {
+          const list = await listDiscussionCourses();
+          if (!alive) return;
+          setCourses(list);
         }
-        const list = (await res.json()) as TrackingCourseSummary[];
-        if (!alive) return;
-        setCourses(
-          list.map((c) => ({
-            id: c.id,
-            title: c.title,
-            courseCode: c.courseCode,
-          }))
-        );
       } catch (err) {
         if (!alive) return;
         setCourses([]);
@@ -302,12 +308,6 @@ export default function DiscussionsPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <Skeleton variant="card" height={72} count={4} />
         </div>
-      ) : !user ? (
-        <EmptyState
-          title="Sign in to view discussions"
-          description="Course threads are available after you sign in with GitHub."
-          action={{ label: 'Sign in', onClick: () => router.push('/connect') }}
-        />
       ) : coursesError ? (
         <EmptyState
           title="Could not load your courses"
@@ -337,11 +337,20 @@ export default function DiscussionsPage() {
         />
       ) : !courseId ? (
         <EmptyState
-          title={courses.length === 0 ? 'No courses to discuss' : 'Pick a course to see threads'}
+          title={
+            courses.length === 0 ? 'No discussion courses yet' : 'Pick a course to see threads'
+          }
           description={
             courses.length === 0
-              ? 'No active courses are assigned to your year level yet. Check Projects or ask your instructor.'
+              ? user
+                ? 'No active courses are assigned to your year level yet. Check Projects or ask your instructor.'
+                : 'No course discussions are available to browse yet. Sign in to post or start a thread.'
               : 'Discussion threads are scoped per course. Choose one above to load its threads.'
+          }
+          action={
+            !user && courses.length === 0
+              ? { label: 'Sign in', onClick: () => router.push('/connect') }
+              : undefined
           }
         />
       ) : loading ? (

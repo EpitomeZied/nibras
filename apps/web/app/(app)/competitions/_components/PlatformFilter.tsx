@@ -2,15 +2,7 @@
 
 import styles from './PlatformFilter.module.css';
 
-const PLATFORMS = [
-  'all',
-  'codeforces',
-  'leetcode',
-  'atcoder',
-  'codechef',
-  'vjudge',
-  'ctftime',
-] as const;
+const PLATFORMS = ['all', 'codeforces', 'leetcode', 'atcoder', 'codechef', 'ctftime'] as const;
 
 const LABELS: Record<string, string> = {
   all: 'All',
@@ -18,7 +10,6 @@ const LABELS: Record<string, string> = {
   leetcode: 'LeetCode',
   atcoder: 'AtCoder',
   codechef: 'CodeChef',
-  vjudge: 'VJudge',
   ctftime: 'CTFtime',
 };
 

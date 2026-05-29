@@ -10,6 +10,7 @@ import {
   cliFeatures,
   ctaFeatures,
   featureGroups,
+  landingFooterContactEmail,
   landingNavLinks,
   heroBadge,
   heroSub,
@@ -26,6 +27,7 @@ import {
   whatsNew,
 } from './_content/landing';
 import { LandingIcon } from './_content/landing-icons';
+import { WEB_BASE_URL } from './lib/web-base-url';
 import styles from './signin.module.css';
 
 function AuthBanner() {
@@ -99,11 +101,7 @@ export default function HomePage() {
 
       <nav className={styles.nav}>
         <div className={styles.navLogo}>
-          <a
-            href="https://nibrasplatform.me"
-            className={styles.siteLogoLink}
-            aria-label="nibrasplatform.me"
-          >
+          <a href={WEB_BASE_URL} className={styles.siteLogoLink} aria-label="nibrasplatform.me">
             <NibrasLogo variant="inverse" width={110} priority />
           </a>
           <span className={styles.navBadge}>Beta</span>
@@ -173,6 +171,7 @@ export default function HomePage() {
 
         <div className={styles.heroAuth}>
           <AuthSignIn
+            googleClassName={styles.btnGoogleSignIn}
             githubClassName={styles.btnHeroPrimary}
             magicLinkClassName={styles.btnMagicLink}
             emailInputClassName={styles.magicLinkEmail}
@@ -497,6 +496,7 @@ export default function HomePage() {
           </div>
 
           <AuthSignIn
+            googleClassName={styles.btnGoogleSignIn}
             githubClassName={styles.btnGitHub}
             magicLinkClassName={styles.btnMagicLink}
             emailInputClassName={styles.magicLinkEmail}
@@ -511,11 +511,7 @@ export default function HomePage() {
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
             <div className={styles.footerBrandRow}>
-              <a
-                href="https://nibrasplatform.me"
-                className={styles.siteLogoLink}
-                aria-label="nibrasplatform.me"
-              >
+              <a href={WEB_BASE_URL} className={styles.siteLogoLink} aria-label="nibrasplatform.me">
                 <NibrasLogo variant="inverse" width={100} />
               </a>
             </div>
@@ -543,6 +539,10 @@ export default function HomePage() {
               <span className={styles.footerColTitle}>Account</span>
               <Link href="/sign-in">Sign in</Link>
               <a href="/dashboard">Dashboard</a>
+            </div>
+            <div className={styles.footerCol}>
+              <span className={styles.footerColTitle}>Contact</span>
+              <a href={`mailto:${landingFooterContactEmail}`}>{landingFooterContactEmail}</a>
             </div>
           </div>
         </div>

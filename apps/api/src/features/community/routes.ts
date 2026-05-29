@@ -591,14 +591,33 @@ export function registerCommunityRoutes(
   // ── Threads ─────────────────────────────────────────────────────────────
 
   app.get(
+    '/v1/community/discussion-courses',
+    { schema: { tags: ['community'], summary: 'List courses with discussion threads (public read)' } },
+    async () => {
+      const courses = await prisma.course.findMany({
+        where: {
+          deletedAt: null,
+          isActive: true,
+          communityThreads: { some: {} },
+        },
+        select: { id: true, title: true, courseCode: true },
+        orderBy: { title: 'asc' },
+      });
+      return {
+        courses: courses.map((c) => ({
+          id: c.id,
+          title: c.title,
+          courseCode: c.courseCode,
+        })),
+      };
+    }
+  );
+
+  app.get(
     '/v1/community/threads/course/:courseId',
     { schema: { tags: ['community'], summary: 'List threads for a course' } },
     async (request, reply) => {
-      const auth = await requireUser(request, reply, store);
-      if (!auth) return;
-      const apiBaseUrl = requestBaseUrl(request);
       const { courseId } = request.params as { courseId: string };
-      if (!(await assertCourseView(store, apiBaseUrl, auth, courseId, reply))) return;
       const query = request.query as { q?: string; page?: string; limit?: string };
       const page = Math.max(1, parseInt(query.page || '1', 10) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(query.limit || '30', 10) || 30));
@@ -641,9 +660,6 @@ export function registerCommunityRoutes(
     '/v1/community/threads/:threadId',
     { schema: { tags: ['community'], summary: 'Get a thread' } },
     async (request, reply) => {
-      const auth = await requireUser(request, reply, store);
-      if (!auth) return;
-      const apiBaseUrl = requestBaseUrl(request);
       const { threadId } = request.params as { threadId: string };
       const thread = await prisma.communityThread.findUnique({
         where: { id: threadId },
@@ -653,7 +669,6 @@ export function registerCommunityRoutes(
         reply.code(404).send(Errors.notFound('Thread'));
         return;
       }
-      if (!(await assertCourseView(store, apiBaseUrl, auth, thread.courseId, reply))) return;
       const reputationByUserId = await loadReputationTotals(prisma, [thread.author.id]);
       return presentThread(thread, reputationByUserId);
     }
@@ -789,16 +804,13 @@ export function registerCommunityRoutes(
     '/v1/community/posts/thread/:threadId',
     { schema: { tags: ['community'], summary: 'List posts in a thread' } },
     async (request, reply) => {
-      const auth = await requireUser(request, reply, store);
-      if (!auth) return;
-      const apiBaseUrl = requestBaseUrl(request);
+      const auth = await optionalAuth(request, reply, store);
       const { threadId } = request.params as { threadId: string };
       const thread = await prisma.communityThread.findUnique({ where: { id: threadId } });
       if (!thread) {
         reply.code(404).send(Errors.notFound('Thread'));
         return;
       }
-      if (!(await assertCourseView(store, apiBaseUrl, auth, thread.courseId, reply))) return;
       const posts = await prisma.communityPost.findMany({
         where: { threadId },
         orderBy: { createdAt: 'asc' },
@@ -810,7 +822,7 @@ export function registerCommunityRoutes(
       );
       const withVotes = await attachMyVotes(
         prisma,
-        auth.user.id,
+        auth?.user.id,
         CommunityVoteTargetType.post,
         posts
       );

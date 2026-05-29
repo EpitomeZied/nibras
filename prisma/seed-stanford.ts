@@ -16,7 +16,7 @@ const STANFORD_COURSES = [
     title: 'CS106B — Programming Abstractions',
     termLabel: 'Spring 2025',
     description:
-      'The second course in Stanford\'s introductory sequence. Covers C++, recursion, algorithmic analysis, and classic data structures: stacks, queues, trees, and graphs.',
+      "The second course in Stanford's introductory sequence. Covers C++, recursion, algorithmic analysis, and classic data structures: stacks, queues, trees, and graphs.",
     sections: [
       { title: 'Welcome & C++ Basics', sortOrder: 0 },
       { title: 'Recursion', sortOrder: 1 },
@@ -55,7 +55,8 @@ Submit via \`nibras submit\`.`,
       },
       {
         title: 'A2: Recursion',
-        description: 'Solve problems using recursive thinking: towers of Hanoi, fractals, and backtracking.',
+        description:
+          'Solve problems using recursive thinking: towers of Hanoi, fractals, and backtracking.',
         content: `# Assignment 2: Recursion
 
 ## Overview
@@ -122,7 +123,7 @@ Build a Huffman encoding tree to compress a text file. Implement both encode and
       },
       {
         title: 'A5: Graphs',
-        description: 'Implement graph traversal algorithms BFS and Dijkstra\'s shortest path.',
+        description: "Implement graph traversal algorithms BFS and Dijkstra's shortest path.",
         content: `# Assignment 5: Graphs
 
 ## Overview
@@ -268,7 +269,8 @@ A "bomb" program has 6 phases. Each phase reads a string from stdin. Wrong input
     assignments: [
       {
         title: 'HW1: Foundations',
-        description: 'Math and probability warm-up: linear algebra, calculus, and probability review.',
+        description:
+          'Math and probability warm-up: linear algebra, calculus, and probability review.',
         content: `# Homework 1: Foundations
 
 ## Overview
@@ -295,7 +297,7 @@ Implement search algorithms in a Pac-Man environment.
 1. **Depth-First Search** — find any path to the goal
 2. **Breadth-First Search** — find shortest path by steps
 3. **Uniform-Cost Search** — find cheapest path
-4. **A\* Search** — implement an admissible heuristic
+4. **A* Search** — implement an admissible heuristic
 5. **Corners Problem** — formulate as a search problem
 
 ## Files to edit
@@ -372,7 +374,8 @@ Implement search algorithms in a Pac-Man environment.
     assignments: [
       {
         title: 'A1: Exploring Word Vectors',
-        description: 'Analyze co-occurrence matrices and train word2vec. Visualize embeddings with PCA.',
+        description:
+          'Analyze co-occurrence matrices and train word2vec. Visualize embeddings with PCA.',
         content: `# Assignment 1: Word Vectors
 
 ## Parts
@@ -386,7 +389,8 @@ Implement search algorithms in a Pac-Man environment.
       },
       {
         title: 'A2: Neural Transition-Based Dependency Parsing',
-        description: 'Implement a neural dependency parser using a feed-forward network in PyTorch.',
+        description:
+          'Implement a neural dependency parser using a feed-forward network in PyTorch.',
         content: `# Assignment 2: Dependency Parsing
 
 ## Parts
@@ -420,7 +424,8 @@ Implement search algorithms in a Pac-Man environment.
       },
       {
         title: 'A4: Self-Attention & Transformers',
-        description: 'Implement multi-head self-attention and pre-train a mini GPT on birth-place data.',
+        description:
+          'Implement multi-head self-attention and pre-train a mini GPT on birth-place data.',
         content: `# Assignment 4: Transformers
 
 ## Parts
@@ -471,7 +476,8 @@ Report test accuracy of each classifier in the Jupyter notebook.`,
       },
       {
         title: 'A2: Backprop, BatchNorm & Dropout',
-        description: 'Implement arbitrary-depth nets with batch normalization, dropout, and ConvNet layers.',
+        description:
+          'Implement arbitrary-depth nets with batch normalization, dropout, and ConvNet layers.',
         content: `# Assignment 2: Deeper Networks
 
 ## Parts
@@ -591,7 +597,9 @@ async function main() {
   console.log('');
   console.log('Courses added:');
   STANFORD_COURSES.forEach((c) =>
-    console.log(`  • ${c.courseCode}: ${c.assignments.length} assignments, ${c.sections.length} sections`)
+    console.log(
+      `  • ${c.courseCode}: ${c.assignments.length} assignments, ${c.sections.length} sections`
+    )
   );
 }
 

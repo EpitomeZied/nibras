@@ -22,6 +22,8 @@ import {
 } from '../../lib/services/competitions';
 import { friendlyMessage } from '../../lib/api-clients/errors';
 import { googleCalendarUrl } from '../../lib/google-calendar';
+import { formatContestDuration } from '../../lib/contest-duration';
+import { addDays, addWeeks } from './_components/calendar-date-utils';
 
 function formatRange(start: string, end: string): string {
   try {
@@ -47,7 +49,6 @@ const PLATFORM_LABELS: Record<string, string> = {
   leetcode: 'LeetCode',
   atcoder: 'AtCoder',
   codechef: 'CodeChef',
-  vjudge: 'VJudge',
   ctftime: 'CTFtime',
   kaggle: 'Kaggle',
   hackthebox: 'Hack The Box',
@@ -99,6 +100,7 @@ export default function CompetitionsPage() {
   const [calView, setCalView] = useState<CalendarView>('month');
   const [calMonth, setCalMonth] = useState(now.getMonth() + 1);
   const [calYear, setCalYear] = useState(now.getFullYear());
+  const [focusDate, setFocusDate] = useState(() => new Date());
   const [calContests, setCalContests] = useState<Record<string, Contest[]>>({});
   const [platformFilter, setPlatformFilter] = useState('all');
 
@@ -296,6 +298,20 @@ export default function CompetitionsPage() {
         );
 
   function handlePrev() {
+    if (calView === 'day') {
+      const next = addDays(focusDate, -1);
+      setFocusDate(next);
+      setCalMonth(next.getMonth() + 1);
+      setCalYear(next.getFullYear());
+      return;
+    }
+    if (calView === 'week') {
+      const next = addWeeks(focusDate, -1);
+      setFocusDate(next);
+      setCalMonth(next.getMonth() + 1);
+      setCalYear(next.getFullYear());
+      return;
+    }
     if (calMonth === 1) {
       setCalMonth(12);
       setCalYear((y) => y - 1);
@@ -303,6 +319,20 @@ export default function CompetitionsPage() {
   }
 
   function handleNext() {
+    if (calView === 'day') {
+      const next = addDays(focusDate, 1);
+      setFocusDate(next);
+      setCalMonth(next.getMonth() + 1);
+      setCalYear(next.getFullYear());
+      return;
+    }
+    if (calView === 'week') {
+      const next = addWeeks(focusDate, 1);
+      setFocusDate(next);
+      setCalMonth(next.getMonth() + 1);
+      setCalYear(next.getFullYear());
+      return;
+    }
     if (calMonth === 12) {
       setCalMonth(1);
       setCalYear((y) => y + 1);
@@ -311,6 +341,7 @@ export default function CompetitionsPage() {
 
   function handleToday() {
     const t = new Date();
+    setFocusDate(t);
     setCalMonth(t.getMonth() + 1);
     setCalYear(t.getFullYear());
   }
@@ -474,7 +505,6 @@ export default function CompetitionsPage() {
                       { value: 'leetcode', label: 'LeetCode' },
                       { value: 'atcoder', label: 'AtCoder' },
                       { value: 'codechef', label: 'CodeChef' },
-                      { value: 'vjudge', label: 'VJudge' },
                       { value: 'ctftime', label: 'CTFtime' },
                       { value: 'kaggle', label: 'Kaggle' },
                       { value: 'hackthebox', label: 'Hack The Box' },
@@ -704,6 +734,7 @@ export default function CompetitionsPage() {
             view={calView}
             year={calYear}
             month={calMonth}
+            focusDate={focusDate}
             contests={filteredCalContests}
             onPrev={handlePrev}
             onNext={handleNext}
@@ -736,7 +767,7 @@ export default function CompetitionsPage() {
                   <h2 className={styles.contestTitle}>{contest.name}</h2>
                 </div>
                 <p className={styles.contestMeta}>
-                  {formatRange(contest.startsAt, contest.endsAt)} · {contest.durationMinutes} min
+                  {formatRange(contest.startsAt, contest.endsAt)} · {formatContestDuration(contest)}
                 </p>
               </div>
               <div className={styles.contestActions}>

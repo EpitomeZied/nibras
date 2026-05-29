@@ -321,12 +321,22 @@ export async function acceptAnswer(answerId: string) {
 //
 // The legacy backend exposes threads only PER COURSE. There is no global
 // "all courses" list endpoint — the page must pick a course first.
+export async function listDiscussionCourses(): Promise<
+  Array<{ id: string; title: string; courseCode: string }>
+> {
+  const raw = await serviceFetch<unknown>('community', '/v1/community/discussion-courses', {
+    auth: false,
+  });
+  const wire = raw as { courses?: Array<{ id: string; title: string; courseCode: string }> };
+  return wire.courses ?? [];
+}
+
 export async function listThreads(courseId: string, filters: ThreadFilters = {}) {
   return serviceFetch<Paginated<CommunityThread>>(
     'community',
     `/v1/community/threads/course/${courseId}`,
     {
-      auth: true,
+      auth: false,
       query: toQuery(filters),
     }
   );
@@ -334,7 +344,7 @@ export async function listThreads(courseId: string, filters: ThreadFilters = {})
 
 export async function getThread(threadId: string) {
   return serviceFetch<CommunityThread>('community', `/v1/community/threads/${threadId}`, {
-    auth: true,
+    auth: false,
   });
 }
 
@@ -380,7 +390,7 @@ export async function setThreadClosed(threadId: string, closed: boolean) {
 // ── Posts ───────────────────────────────────────────────────────────────────
 export async function listPosts(threadId: string) {
   return serviceFetch<CommunityPost[]>('community', `/v1/community/posts/thread/${threadId}`, {
-    auth: true,
+    auth: false,
   });
 }
 

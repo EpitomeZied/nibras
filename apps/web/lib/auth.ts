@@ -28,6 +28,21 @@ function trustedOrigins(): string[] {
 
 const githubClientId = process.env.GITHUB_APP_CLIENT_ID;
 const githubClientSecret = process.env.GITHUB_APP_CLIENT_SECRET;
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+function buildSocialProviders() {
+  const providers: Record<string, { clientId: string; clientSecret: string }> = {};
+  if (githubClientId && githubClientSecret) {
+    providers.github = { clientId: githubClientId, clientSecret: githubClientSecret };
+  }
+  if (googleClientId && googleClientSecret) {
+    providers.google = { clientId: googleClientId, clientSecret: googleClientSecret };
+  }
+  return providers;
+}
+
+const socialProviders = buildSocialProviders();
 
 const polarAccessToken = process.env.POLAR_ACCESS_TOKEN;
 const polarClient = polarAccessToken
@@ -103,20 +118,15 @@ export const auth = betterAuth({
   },
   account: {
     modelName: 'AuthAccount',
+    accountLinking: {
+      enabled: true,
+      trustedProviders: ['github', 'google'],
+    },
   },
   verification: {
     modelName: 'AuthVerification',
   },
-  ...(githubClientId && githubClientSecret
-    ? {
-        socialProviders: {
-          github: {
-            clientId: githubClientId,
-            clientSecret: githubClientSecret,
-          },
-        },
-      }
-    : {}),
+  ...(Object.keys(socialProviders).length > 0 ? { socialProviders } : {}),
   plugins: [
     magicLink({
       expiresIn: 300,

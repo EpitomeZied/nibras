@@ -7,6 +7,7 @@ import { commandLogin } from './commands/login';
 import { commandLogout } from './commands/logout';
 import { commandWhoami } from './commands/whoami';
 import { commandPing } from './commands/ping';
+import { commandDoctor } from './commands/doctor';
 import { commandTask } from './commands/task';
 import { commandTest } from './commands/test';
 import { commandSetup } from './commands/setup';
@@ -16,10 +17,16 @@ import { commandUpdateBuildpack } from './commands/update-buildpack';
 import { commandSubmit } from './commands/submit';
 import { commandList } from './commands/list';
 import { commandStatus } from './commands/status';
+import { commandConfig } from './commands/config';
+import { commandMilestones } from './commands/milestones';
 import picocolors from 'picocolors';
 
 function isPlainMode(args: string[]): boolean {
   return args.includes('--plain') || process.env.NO_COLOR === '1' || !process.stdout.isTTY;
+}
+
+function wantsJson(args: string[]): boolean {
+  return args.includes('--json');
 }
 
 function parseError(err: unknown): string {
@@ -42,8 +49,9 @@ function printHelp(plain: boolean): void {
       { name: 'login', description: 'Start device login against the hosted API' },
       { name: 'logout', description: 'Clear the local CLI session' },
       { name: 'whoami', description: 'Show the signed-in user and linked GitHub account' },
-      { name: 'list', description: 'List your courses and projects' },
-      { name: 'status', description: 'Show recent submission statuses' },
+      { name: 'list', description: 'List your courses and projects (--verbose for milestones)' },
+      { name: 'status', description: 'Show recent submissions (status show <id> for detail)' },
+      { name: 'milestones', description: 'List milestones for the current or given project' },
       { name: 'test', description: 'Run project-local public tests' },
       {
         name: 'submit',
@@ -51,6 +59,8 @@ function printHelp(plain: boolean): void {
       },
       { name: 'task', description: 'View current task instructions' },
       { name: 'setup', description: 'Bootstrap a local project manifest from the API' },
+      { name: 'config', description: 'View or update CLI configuration' },
+      { name: 'doctor', description: 'Check local tooling, config, and API connectivity' },
       { name: 'update', description: 'Update the installed CLI to the latest release' },
       { name: 'uninstall', description: 'Remove the global CLI install from this machine' },
       { name: 'ping', description: 'Verify API, auth, GitHub linkage, and repo state' },
@@ -65,6 +75,7 @@ function printHelp(plain: boolean): void {
   printCommandTable(
     [
       { name: '--plain', description: 'Disable colours and spinners' },
+      { name: '--json', description: 'Print machine-readable JSON (supported commands)' },
       { name: '--help, -h', description: 'Show this help message' },
       { name: '--version, -v', description: 'Print version' },
     ],
@@ -89,6 +100,9 @@ function isLegacyInvocation(args: string[]): boolean {
     'update',
     'uninstall',
     'ping',
+    'doctor',
+    'config',
+    'milestones',
     'update-buildpack',
     'list',
     'status',
@@ -118,7 +132,8 @@ if (require.main === module) {
 export async function runCli(argv: string[]): Promise<void> {
   const args = argv.slice(2);
   const plain = isPlainMode(args);
-  const normalizedArgs = args.filter((arg) => arg !== '--plain');
+  const json = wantsJson(args);
+  const normalizedArgs = args.filter((arg) => arg !== '--plain' && arg !== '--json');
 
   if (
     normalizedArgs.length === 0 ||
@@ -162,11 +177,19 @@ export async function runCli(argv: string[]): Promise<void> {
       return;
     }
     if (command === 'whoami') {
-      await commandWhoami(plain);
+      await commandWhoami(plain, json);
       return;
     }
     if (command === 'ping') {
       await commandPing(plain);
+      return;
+    }
+    if (command === 'doctor') {
+      await commandDoctor(plain, json);
+      return;
+    }
+    if (command === 'config') {
+      await commandConfig(rest, plain);
       return;
     }
     if (command === 'task') {
@@ -198,11 +221,15 @@ export async function runCli(argv: string[]): Promise<void> {
       return;
     }
     if (command === 'list') {
-      await commandList(plain);
+      await commandList(rest, plain, json);
       return;
     }
     if (command === 'status') {
-      await commandStatus(plain);
+      await commandStatus(rest, plain, json);
+      return;
+    }
+    if (command === 'milestones') {
+      await commandMilestones(rest, plain, json);
       return;
     }
     throw new Error(`Unknown command "${command}". Run \`nibras --help\` for available commands.`);
