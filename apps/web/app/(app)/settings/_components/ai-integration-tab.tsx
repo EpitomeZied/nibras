@@ -66,7 +66,6 @@ type AiCredentialState = {
 
 function ProviderIcon({ id }: { id: ProviderId }) {
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- brand SVGs from /public/ai-providers
     <img
       src={`/ai-providers/${id}.svg`}
       alt=""

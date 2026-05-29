@@ -2,10 +2,7 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const {
-  normalizeNotificationEmail,
-  resolveOutboundEmail,
-} = require('@nibras/contracts');
+const { normalizeNotificationEmail, resolveOutboundEmail } = require('@nibras/contracts');
 
 test('normalizeNotificationEmail accepts Gmail-style addresses', () => {
   assert.equal(normalizeNotificationEmail('  Student@Gmail.COM '), 'student@gmail.com');
