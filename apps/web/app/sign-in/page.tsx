@@ -6,7 +6,7 @@ import styles from '../signin.module.css';
 
 export const metadata: Metadata = {
   title: 'Sign in · Nibras',
-  description: 'Sign in to Nibras with GitHub or a magic link sent to your email.',
+  description: 'Sign in to Nibras with Google, GitHub, or a magic link sent to your email.',
 };
 
 export default function SignInPage() {
@@ -51,11 +51,12 @@ export default function SignInPage() {
             Sign in
           </h1>
           <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'rgba(161,161,170,0.9)' }}>
-            Use GitHub or a one-time email link. Magic-link sign-in works for the web dashboard;
-            connect GitHub later for CLI submissions.
+            Use Google, GitHub, or a one-time email link. Magic-link sign-in works for the web
+            dashboard; connect GitHub later for CLI submissions.
           </p>
         </div>
         <AuthSignIn
+          googleClassName={styles.btnGoogleSignIn}
           githubClassName={styles.btnHeroPrimary}
           magicLinkClassName={styles.btnMagicLink}
           emailInputClassName={styles.magicLinkEmail}
