@@ -35,3 +35,9 @@ export function clearCliSession(): CliConfig {
   writeCliConfig(nextConfig);
   return nextConfig;
 }
+
+export function patchCliConfig(patch: Partial<CliConfig>): CliConfig {
+  const nextConfig = CliConfigSchema.parse({ ...readCliConfig(), ...patch });
+  writeCliConfig(nextConfig);
+  return nextConfig;
+}

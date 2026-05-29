@@ -20,6 +20,7 @@ import {
 import { createSpinner } from '../ui/spinner';
 import { createPollProgress } from '../ui/progress';
 import { printBox } from '../ui/box';
+import { debugLog } from '../util/debug';
 
 function runTests(command: string, cwd: string): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -55,6 +56,11 @@ export async function commandSubmit(plain: boolean, args: string[] = []): Promis
   const repoUrl = await getOriginUrl(projectRoot);
   const branch = await getCurrentBranch(projectRoot);
   const testCommand = buildProjectTestCommand(manifest.test, process.platform);
+  debugLog('submit', 'loaded project context', {
+    projectKey: manifest.projectKey,
+    branch,
+    milestoneSlug: milestoneSlug ?? null,
+  });
 
   // ── Step 2: Run local tests ───────────────────────────────────────────────
   if (!plain && process.stdout.isTTY) {
@@ -125,6 +131,7 @@ export async function commandSubmit(plain: boolean, args: string[] = []): Promis
     }),
   });
   prepSpinner.succeed('Submission registered');
+  debugLog('submit', 'submission prepared', { submissionId: prepared.submissionId });
 
   // ── Step 6: Poll for verification ─────────────────────────────────────────
   const pollProgress = createPollProgress(manifest.submission.waitForVerificationSeconds, plain);
