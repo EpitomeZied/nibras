@@ -93,10 +93,19 @@ export default function AuthSignIn({
     setNotice('');
     setGithubSubmitting(true);
     try {
-      await authClient.signIn.social({
+      const { data, error: socialError } = await authClient.signIn.social({
         provider: 'github',
         callbackURL: buildBridgeCallback(),
       });
+      if (socialError) {
+        throw new Error(socialError.message ?? 'GitHub sign-in failed.');
+      }
+      const redirectUrl = data && typeof data === 'object' && 'url' in data ? data.url : null;
+      if (typeof redirectUrl === 'string' && redirectUrl.length > 0) {
+        window.location.assign(redirectUrl);
+        return;
+      }
+      throw new Error('GitHub sign-in did not return a redirect URL.');
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setGithubSubmitting(false);
@@ -114,12 +123,15 @@ export default function AuthSignIn({
     }
     setMagicSubmitting(true);
     try {
-      const { error: magicError } = await authClient.signIn.magicLink({
+      const { data, error: magicError } = await authClient.signIn.magicLink({
         email: trimmed,
         callbackURL: buildBridgeCallback(),
       });
       if (magicError) {
         throw new Error(magicError.message ?? 'Could not send magic link.');
+      }
+      if (data && typeof data === 'object' && 'status' in data && data.status !== true) {
+        throw new Error('Could not send magic link.');
       }
       setNotice('Check your email for a sign-in link. It expires in a few minutes.');
     } catch (err) {

@@ -1,14 +1,11 @@
 #!/usr/bin/env bash
 # Wire Better Auth sign-in env vars on nibras-web (Azure Container Apps).
 #
-# Web sign-in needs GitHub OAuth credentials and BETTER_AUTH_SECRET on the **web**
-# container (not only nibras-api). Magic-link email also needs RESEND_API_KEY on web.
+# Web sign-in needs: GitHub OAuth, BETTER_AUTH_SECRET, DATABASE_URL (Prisma),
+# RESEND_API_KEY + NIBRAS_EMAIL_FROM (magic link). Copies from nibras-api when .env is empty.
 #
 # Usage:
 #   ./scripts/setup-azure-web-auth.sh
-#     Uses .env when present, otherwise copies GitHub + Resend secrets from nibras-api.
-#
-#   BETTER_AUTH_SECRET="$(openssl rand -base64 32)" ./scripts/setup-azure-web-auth.sh
 #
 # Optional:
 #   RG=nibras-rg
@@ -39,6 +36,15 @@ read_api_secret() {
     -o tsv 2>/dev/null || true
 }
 
+read_web_secret() {
+  az containerapp secret show \
+    -n "$APP" \
+    -g "$RG" \
+    --secret-name "$1" \
+    --query value \
+    -o tsv 2>/dev/null || true
+}
+
 if [ -z "${GITHUB_APP_CLIENT_ID:-}" ] || [ -z "${GITHUB_APP_CLIENT_SECRET:-}" ]; then
   echo "GITHUB_APP_CLIENT_* not in .env — copying from $API_APP secrets…"
   GITHUB_APP_CLIENT_ID="$(read_api_secret github-app-client-id)"
@@ -50,12 +56,20 @@ if [ -z "${GITHUB_APP_CLIENT_ID:-}" ] || [ -z "${GITHUB_APP_CLIENT_SECRET:-}" ];
   exit 1
 fi
 
+if [ -z "${DATABASE_URL:-}" ]; then
+  DATABASE_URL="$(read_api_secret database-url)"
+fi
+if [ -z "${DATABASE_URL:-}" ]; then
+  echo "error: could not resolve DATABASE_URL (required for Better Auth on web)." >&2
+  exit 1
+fi
+
 if [ -z "${RESEND_API_KEY:-}" ]; then
   RESEND_API_KEY="$(read_api_secret resend-api-key)"
 fi
 
 if [ -z "${BETTER_AUTH_SECRET:-}" ]; then
-  existing="$(read_api_secret better-auth-secret)"
+  existing="$(read_web_secret better-auth-secret)"
   if [ -n "$existing" ]; then
     BETTER_AUTH_SECRET="$existing"
     echo "Reusing existing better-auth-secret on $APP."
@@ -66,11 +80,16 @@ if [ -z "${BETTER_AUTH_SECRET:-}" ]; then
   fi
 fi
 
+EMAIL_FROM="$(az containerapp show -n "$API_APP" -g "$RG" \
+  --query "properties.template.containers[0].env[?name=='NIBRAS_EMAIL_FROM'].value | [0]" -o tsv 2>/dev/null || true)"
+EMAIL_FROM="${EMAIL_FROM:-${NIBRAS_EMAIL_FROM:-Nibras <noreply@nibrasplatform.me>}}"
+
 echo "→ $APP"
 SECRET_ARGS=(
   "github-app-client-id=$GITHUB_APP_CLIENT_ID"
   "github-app-client-secret=$GITHUB_APP_CLIENT_SECRET"
   "better-auth-secret=$BETTER_AUTH_SECRET"
+  "database-url=$DATABASE_URL"
 )
 if [ -n "${RESEND_API_KEY:-}" ]; then
   SECRET_ARGS+=("resend-api-key=$RESEND_API_KEY")
@@ -86,8 +105,10 @@ ENV_VARS=(
   "GITHUB_APP_CLIENT_ID=secretref:github-app-client-id"
   "GITHUB_APP_CLIENT_SECRET=secretref:github-app-client-secret"
   "BETTER_AUTH_SECRET=secretref:better-auth-secret"
+  "DATABASE_URL=secretref:database-url"
   "BETTER_AUTH_URL=$NIBRAS_WEB_BASE_URL"
   "NIBRAS_WEB_BASE_URL=$NIBRAS_WEB_BASE_URL"
+  "NIBRAS_EMAIL_FROM=$EMAIL_FROM"
 )
 if [ -n "${RESEND_API_KEY:-}" ]; then
   ENV_VARS+=("RESEND_API_KEY=secretref:resend-api-key")
@@ -101,14 +122,21 @@ az containerapp update \
 
 echo
 echo "Done. Web auth env on $APP:"
+echo "  DATABASE_URL (secretref) — required for sign-in"
 echo "  GITHUB_APP_CLIENT_ID / GITHUB_APP_CLIENT_SECRET (secretref)"
 echo "  BETTER_AUTH_SECRET (secretref)"
 echo "  BETTER_AUTH_URL=$NIBRAS_WEB_BASE_URL"
+echo "  NIBRAS_EMAIL_FROM=$EMAIL_FROM"
 if [ -n "${RESEND_API_KEY:-}" ]; then
-  echo "  RESEND_API_KEY (secretref, magic link enabled)"
+  echo "  RESEND_API_KEY (secretref)"
 else
   echo "  RESEND_API_KEY not set — run ./scripts/setup-azure-email.sh for magic link"
 fi
 echo
-echo "Wait ~30s for the new revision, then verify:"
-echo "  curl -sS \"${NIBRAS_WEB_BASE_URL}/api/auth/providers-config\""
+echo "GitHub App → add OAuth callback (if missing):"
+echo "  ${NIBRAS_WEB_BASE_URL}/api/auth/callback/github"
+echo
+echo "Wait ~30s, then verify:"
+echo "  curl -sS -X POST \"${NIBRAS_WEB_BASE_URL}/api/auth/sign-in/magic-link\" \\"
+echo "    -H 'Content-Type: application/json' \\"
+echo "    -d '{\"email\":\"you@example.com\",\"callbackURL\":\"${NIBRAS_WEB_BASE_URL}/api/nibras/session-bridge\"}'"

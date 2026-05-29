@@ -1629,7 +1629,104 @@
   color: rgba(161, 161, 170, 0.65);
 }
 
-/* ── Support notice ─────────────────────────────────────────────────────────── */
+/* ── Bottom terminals (support + onboard) ───────────────────────────────────── */
+
+.bottomTerminals {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: 680px;
+  margin-top: 80px;
+  padding: 0 clamp(20px, 4vw, 32px);
+}
+
+.bottomTerminalSection {
+  width: 100%;
+}
+
+.bottomTerminal {
+  width: 100%;
+}
+
+.bottomTerminalBody {
+  min-height: auto;
+  gap: 12px;
+  padding: 22px 24px 26px;
+  text-align: left;
+}
+
+.bottomTerminalMuted {
+  margin: 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(161, 161, 170, 0.55);
+}
+
+.bottomTerminalHeadline {
+  margin: 4px 0 0;
+  font-family: var(--font-mono, 'Geist Mono', monospace);
+  font-size: clamp(1.1rem, 2.8vw, 1.35rem);
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  color: #fafafa;
+}
+
+.bottomTerminalText {
+  margin: 0;
+  padding-left: 2px;
+  font-family: var(--font-mono, monospace);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: rgba(161, 161, 170, 0.7);
+  max-width: 58ch;
+}
+
+.bottomTerminalChecks {
+  margin: 0;
+  padding: 8px 0 8px 2px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.bottomTerminalChecks li {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(161, 161, 170, 0.8);
+}
+
+.bottomTerminalLink {
+  color: #4ade80;
+  font-weight: 600;
+  text-decoration: none;
+  transition:
+    color 0.15s ease,
+    text-decoration 0.15s ease;
+}
+
+.bottomTerminalLink:hover {
+  color: #86efac;
+  text-decoration: underline;
+}
+
+.bottomTerminalLink:focus-visible {
+  outline: 2px solid rgba(34, 197, 94, 0.6);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* ── Support notice (legacy) ─────────────────────────────────────────────────── */
 
 .supportCard {
   display: flex;
@@ -1817,6 +1914,10 @@
   z-index: 5;
   width: min(720px, calc(100% - 48px));
   margin-top: 120px;
+}
+
+.bottomTerminals + .footer {
+  margin-top: 80px;
 }
 
 .ctaCard {

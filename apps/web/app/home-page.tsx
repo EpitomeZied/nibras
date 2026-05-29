@@ -406,48 +406,98 @@ export default function HomePage({ initialProviders }: HomePageProps) {
         </div>
       </section>
 
-      <section className={styles.section}>
-        <div className={styles.supportCard}>
-          <span className={styles.sectionEyebrow}>{supportNotice.eyebrow}</span>
-          <p className={styles.supportBody}>{supportNotice.body}</p>
-          <a className={styles.supportEmail} href={`mailto:${supportNotice.email}`}>
-            {supportNotice.email}
-          </a>
-        </div>
-      </section>
+      <div className={styles.bottomTerminals}>
+        <section className={styles.bottomTerminalSection} aria-labelledby="support-heading">
+          <div className={`${styles.terminalWindow} ${styles.bottomTerminal}`}>
+            <div className={styles.terminalTitleBar}>
+              <span className={styles.termDot} style={{ background: '#ff5f57' }} />
+              <span className={styles.termDot} style={{ background: '#febc2e' }} />
+              <span className={styles.termDot} style={{ background: '#28c840' }} />
+              <span className={styles.termTitle}>nibras — support</span>
+            </div>
 
-      <section className={styles.ctaSection}>
-        <div className={styles.ctaCard}>
-          <h2 className={styles.ctaTitle}>
-            Ready to run courses, teams, and planning in one place?
-          </h2>
-          <p className={styles.ctaSub}>
-            Sign in with GitHub, open the full Nibras system, and start using templates, team
-            formation, planner workflows, Hassona, community, competitions, IDE, achievements,
-            reputation, and GitHub-native submissions together.
-          </p>
+            <div className={`${styles.terminalBody} ${styles.bottomTerminalBody}`}>
+              <div className={styles.termLine}>
+                <span className={styles.termPrompt}>nibras</span>
+                <span className={styles.termCmd}> support --info</span>
+              </div>
 
-          <div className={styles.ctaFeatures}>
-            {ctaFeatures.map((feat) => (
-              <span key={feat} className={styles.ctaFeatureItem}>
-                <span className={styles.ctaFeatureCheck}>✓</span>
-                {feat}
-              </span>
-            ))}
+              <p id="support-heading" className={styles.bottomTerminalMuted}>
+                <span className={styles.termMuted}># </span>
+                {supportNotice.eyebrow}
+              </p>
+
+              <p className={styles.bottomTerminalText}>{supportNotice.body}</p>
+
+              <div className={styles.termLine}>
+                <span className={styles.termMuted}>$ mail </span>
+                <a className={styles.bottomTerminalLink} href={`mailto:${supportNotice.email}`}>
+                  {supportNotice.email}
+                </a>
+              </div>
+            </div>
           </div>
+        </section>
 
-          <AuthSignIn
-            initialProviders={initialProviders}
-            githubClassName={styles.btnGitHub}
-            magicLinkClassName={styles.btnMagicLink}
-            emailInputClassName={styles.magicLinkEmail}
-            errorClassName={styles.errorMsg}
-            noticeClassName={styles.authNotice}
-            unavailableClassName={styles.signInUnavailable}
-            githubLabel="Continue with GitHub"
-          />
-        </div>
-      </section>
+        <section className={styles.bottomTerminalSection} aria-labelledby="cta-heading">
+          <div className={`${styles.terminalWindow} ${styles.bottomTerminal}`}>
+            <div className={styles.terminalTitleBar}>
+              <span className={styles.termDot} style={{ background: '#ff5f57' }} />
+              <span className={styles.termDot} style={{ background: '#febc2e' }} />
+              <span className={styles.termDot} style={{ background: '#28c840' }} />
+              <span className={styles.termTitle}>nibras — onboard</span>
+            </div>
+
+            <div className={`${styles.terminalBody} ${styles.bottomTerminalBody}`}>
+              <div className={styles.termLine}>
+                <span className={styles.termPrompt}>nibras</span>
+                <span className={styles.termCmd}> onboard</span>
+              </div>
+
+              <h2 id="cta-heading" className={styles.bottomTerminalHeadline}>
+                Ready to run courses, teams, and planning in one place?
+              </h2>
+
+              <p className={styles.bottomTerminalText}>
+                Sign in with GitHub, open the full Nibras system, and start using templates, team
+                formation, planner workflows, Hassona, community, competitions, IDE, achievements,
+                reputation, and GitHub-native submissions together.
+              </p>
+
+              <ul className={styles.bottomTerminalChecks} aria-label="Included with sign-up">
+                {ctaFeatures.map((feat) => (
+                  <li key={feat}>
+                    <span className={styles.termSuccess} aria-hidden="true">
+                      ✓{' '}
+                    </span>
+                    {feat}
+                  </li>
+                ))}
+              </ul>
+
+              <div className={styles.termLine}>
+                <span className={styles.termPrompt}>nibras</span>
+                <span className={styles.termCmd}> login</span>
+              </div>
+
+              <div className={styles.signInAuthPanel}>
+                <AuthSignIn
+                  variant="terminal"
+                  initialProviders={initialProviders}
+                  githubClassName={styles.termAuthBtn}
+                  magicLinkClassName={styles.termAuthBtnGhost}
+                  emailInputClassName={styles.termEmailInput}
+                  errorClassName={styles.termAuthError}
+                  noticeClassName={styles.termAuthNotice}
+                  unavailableClassName={styles.signInUnavailable}
+                  githubLabel="Continue with GitHub"
+                  magicLinkLabel="Email me a sign-in link"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <footer className={styles.footer}>
         <div className={styles.footerInner}>

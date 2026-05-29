@@ -193,11 +193,19 @@ chmod +x scripts/setup-azure-web-auth.sh
 
 | Variable | Purpose on `nibras-web` |
 | -------- | ------------------------ |
+| `DATABASE_URL` | **Required** — Better Auth uses Prisma (same DB as API) |
 | `GITHUB_APP_CLIENT_ID` | GitHub OAuth for dashboard sign-in |
 | `GITHUB_APP_CLIENT_SECRET` | GitHub OAuth for dashboard sign-in |
 | `BETTER_AUTH_SECRET` | Session signing (`openssl rand -base64 32`) |
 | `BETTER_AUTH_URL` | Public web origin (e.g. `https://nibrasplatform.me`) |
 | `RESEND_API_KEY` | Magic-link email — set via `setup-azure-email.sh` |
+| `NIBRAS_EMAIL_FROM` | Verified Resend sender (e.g. `Nibras <noreply@nibrasplatform.me>`) |
+
+In the GitHub App settings, add **User authorization callback URL** (Better Auth):
+
+`https://nibrasplatform.me/api/auth/callback/github`
+
+(This is separate from the API device-flow callback at `…/v1/github/oauth/callback`.)
 
 ### 5. Connect GitHub Actions to Azure (OIDC — recommended)
 
