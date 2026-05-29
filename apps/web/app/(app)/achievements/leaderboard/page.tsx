@@ -160,12 +160,7 @@ export default function LeaderboardPage() {
           description="Check back after the cohort earns its first points."
         />
       ) : (
-        <LeaderboardTable
-          rows={rows}
-          highlightUserId={myUserId}
-          scoreLabel="Points"
-          showBadges
-        />
+        <LeaderboardTable rows={rows} highlightUserId={myUserId} scoreLabel="Points" showBadges />
       )}
     </div>
   );

@@ -145,8 +145,7 @@ export default function AchievementsPage() {
     !showAllLockedRating &&
     cfLocked.length + lcLocked.length > visibleCfLocked.length + visibleLcLocked.length;
 
-  const levelLabel =
-    reputation?.total != null ? getReputationLevelLabel(reputation.total) : null;
+  const levelLabel = reputation?.total != null ? getReputationLevelLabel(reputation.total) : null;
 
   if (loading) {
     return (
@@ -228,7 +227,7 @@ export default function AchievementsPage() {
           delta={
             reputation?.weeklyDelta
               ? `${reputation.weeklyDelta >= 0 ? '+' : ''}${reputation.weeklyDelta} this week`
-              : levelLabel ?? undefined
+              : (levelLabel ?? undefined)
           }
           trend={
             reputation?.weeklyDelta && reputation.weeklyDelta > 0
