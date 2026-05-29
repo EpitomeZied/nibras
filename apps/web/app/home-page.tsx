@@ -31,6 +31,8 @@ const AUTH_ERROR_MESSAGES: Record<string, string> = {
     'GitHub did not share an email for this account. We now support private GitHub emails — please try signing in again. If it still fails, use “Email me a sign-in link” or make a primary email visible in GitHub → Settings → Emails.',
   unable_to_create_user:
     'We could not finish creating your account (usually a temporary server issue). Please try GitHub sign-in again in a minute, or use “Email me a sign-in link”.',
+  session_bridge_failed:
+    'Sign-in almost worked, but linking your GitHub account to Nibras failed. Please try again, or use “Email me a sign-in link”.',
 };
 
 function AuthBanner() {

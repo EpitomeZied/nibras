@@ -32,21 +32,82 @@ async function autoEnrollDemoCourses(userId: string): Promise<void> {
   );
 }
 
-export async function ensureNibrasUserProfile(userId: string): Promise<void> {
-  const user = await prisma.user.findUnique({ where: { id: userId } });
+type GithubLinkInput = {
+  userId: string;
+  githubUserId: string;
+  login: string;
+  userAccessToken: string | null;
+  userRefreshToken: string | null;
+  userAccessTokenExpiresAt: Date | null;
+  userRefreshTokenExpiresAt: Date | null;
+};
+
+/** Returns the Nibras user id that should own the web session (may differ from Better Auth user). */
+async function syncGithubAccount(input: GithubLinkInput): Promise<string> {
+  const tokenData = {
+    login: input.login,
+    userAccessToken: maybeEncrypt(input.userAccessToken),
+    userRefreshToken: maybeEncrypt(input.userRefreshToken),
+    userAccessTokenExpiresAt: input.userAccessTokenExpiresAt,
+    userRefreshTokenExpiresAt: input.userRefreshTokenExpiresAt,
+  };
+
+  const existingByGithubId = await prisma.githubAccount.findUnique({
+    where: { githubUserId: input.githubUserId },
+  });
+  if (existingByGithubId) {
+    await prisma.githubAccount.update({
+      where: { githubUserId: input.githubUserId },
+      data: tokenData,
+    });
+    return existingByGithubId.userId;
+  }
+
+  const existingByUserId = await prisma.githubAccount.findUnique({
+    where: { userId: input.userId },
+  });
+  if (existingByUserId) {
+    await prisma.githubAccount.update({
+      where: { userId: input.userId },
+      data: {
+        githubUserId: input.githubUserId,
+        ...tokenData,
+      },
+    });
+    return input.userId;
+  }
+
+  await prisma.githubAccount.create({
+    data: {
+      userId: input.userId,
+      githubUserId: input.githubUserId,
+      ...tokenData,
+    },
+  });
+  return input.userId;
+}
+
+/**
+ * Ensures Nibras profile + GitHub link for a Better Auth user.
+ * @returns User id to use for WebSession (existing GitHub-linked user wins on conflict).
+ */
+export async function ensureNibrasUserProfile(authUserId: string): Promise<string> {
+  const user = await prisma.user.findUnique({ where: { id: authUserId } });
   if (!user) {
     throw new Error('User not found for session bridge.');
   }
 
+  let effectiveUserId = authUserId;
+
   if (!user.username || user.username.length < 2) {
     const username = await allocateUniqueUsername(deriveUsernameBase(user.displayName, user.email));
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: authUserId },
       data: { username },
     });
   }
 
-  const accounts = await prisma.authAccount.findMany({ where: { userId } });
+  const accounts = await prisma.authAccount.findMany({ where: { userId: authUserId } });
   const github = accounts.find((a) => a.providerId === 'github');
   if (github) {
     let login = user.displayName ?? user.username;
@@ -69,37 +130,28 @@ export async function ensureNibrasUserProfile(userId: string): Promise<void> {
         /* use fallbacks */
       }
     }
+
+    effectiveUserId = await syncGithubAccount({
+      userId: authUserId,
+      githubUserId,
+      login,
+      userAccessToken: github.accessToken,
+      userRefreshToken: github.refreshToken,
+      userAccessTokenExpiresAt: github.accessTokenExpiresAt,
+      userRefreshTokenExpiresAt: github.refreshTokenExpiresAt,
+    });
+
     await prisma.user.update({
-      where: { id: userId },
+      where: { id: effectiveUserId },
       data: {
         githubLinked: true,
         displayName: user.displayName ?? login,
       },
     });
-
-    await prisma.githubAccount.upsert({
-      where: { userId },
-      update: {
-        githubUserId,
-        login,
-        userAccessToken: maybeEncrypt(github.accessToken),
-        userRefreshToken: maybeEncrypt(github.refreshToken),
-        userAccessTokenExpiresAt: github.accessTokenExpiresAt,
-        userRefreshTokenExpiresAt: github.refreshTokenExpiresAt,
-      },
-      create: {
-        userId,
-        githubUserId,
-        login,
-        userAccessToken: maybeEncrypt(github.accessToken),
-        userRefreshToken: maybeEncrypt(github.refreshToken),
-        userAccessTokenExpiresAt: github.accessTokenExpiresAt,
-        userRefreshTokenExpiresAt: github.refreshTokenExpiresAt,
-      },
-    });
   }
 
-  await autoEnrollDemoCourses(userId);
+  await autoEnrollDemoCourses(effectiveUserId);
+  return effectiveUserId;
 }
 
 export async function createNibrasWebSession(userId: string): Promise<string> {
