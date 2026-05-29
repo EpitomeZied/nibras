@@ -1,7 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { getAuthProvidersConfig } = require('../apps/web/lib/auth-providers-server.ts');
+const {
+  getAuthProvidersConfig,
+  getUnavailableSignInMessage,
+  hasAnyAuthProvider,
+} = require('../apps/web/lib/auth-providers-server.ts');
 
 function withEnv(overrides, fn) {
   const saved = {};
@@ -61,4 +65,18 @@ test('magic link requires Resend API key', () => {
       assert.equal(config.magicLink, true);
     }
   );
+});
+
+test('hasAnyAuthProvider is false when both providers are disabled', () => {
+  assert.equal(hasAnyAuthProvider({ github: false, magicLink: false }), false);
+  assert.equal(hasAnyAuthProvider({ github: true, magicLink: false }), true);
+  assert.equal(hasAnyAuthProvider({ github: false, magicLink: true }), true);
+});
+
+test('getUnavailableSignInMessage differs for production vs development', () => {
+  const prod = getUnavailableSignInMessage(true);
+  const dev = getUnavailableSignInMessage(false);
+  assert.match(prod, /administrator/i);
+  assert.match(dev, /GITHUB_APP_CLIENT_ID/);
+  assert.notEqual(prod, dev);
 });

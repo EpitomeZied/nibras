@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import AuthSignIn from '../_components/auth-sign-in';
+import { getAuthProvidersConfig, hasAnyAuthProvider } from '@/lib/auth-providers-server';
 import styles from '../signin.module.css';
 
 export const metadata: Metadata = {
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default function SignInPage() {
+  const initialProviders = getAuthProvidersConfig();
+
   return (
     <main className={`${styles.page} ${styles.signInPage}`}>
       <div className={styles.grid} />
@@ -36,18 +39,22 @@ export default function SignInPage() {
               <span className={styles.termPrompt}>nibras</span>
               <span className={styles.termCmd}> login</span>
             </div>
-            <p className={styles.signInTermHelp}>
-              Use GitHub or a one-time email link. Magic-link sign-in works for the web dashboard;
-              connect GitHub later for CLI submissions.
-            </p>
+            {hasAnyAuthProvider(initialProviders) ? (
+              <p className={styles.signInTermHelp}>
+                Use GitHub or a one-time email link. Magic-link sign-in works for the web dashboard;
+                connect GitHub later for CLI submissions.
+              </p>
+            ) : null}
 
             <div className={styles.signInAuthPanel}>
               <AuthSignIn
+                initialProviders={initialProviders}
                 githubClassName={styles.btnHeroPrimary}
                 magicLinkClassName={styles.btnMagicLink}
                 emailInputClassName={styles.magicLinkEmail}
                 errorClassName={styles.errorMsg}
                 noticeClassName={styles.authNotice}
+                unavailableClassName={styles.signInUnavailable}
                 githubLabel="Continue with GitHub"
                 magicLinkLabel="Email me a sign-in link"
               />

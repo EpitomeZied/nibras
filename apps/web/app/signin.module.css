@@ -2192,6 +2192,14 @@
   text-align: left;
 }
 
+.signInUnavailable {
+  margin: 0;
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  line-height: 1.65;
+  color: rgba(251, 191, 36, 0.9);
+}
+
 .termAuthBtn {
   width: 100%;
   display: inline-flex;

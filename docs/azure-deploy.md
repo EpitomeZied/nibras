@@ -182,6 +182,23 @@ az containerapp update \
     NIBRAS_API_INTERNAL_URL="https://nibras-api.$ENV_DOMAIN"
 ```
 
+After the API GitHub App secrets exist, wire **web sign-in** (Better Auth needs these on
+`nibras-web`, not only on `nibras-api`):
+
+```bash
+chmod +x scripts/setup-azure-web-auth.sh
+# Uses GITHUB_APP_CLIENT_* and BETTER_AUTH_SECRET from .env (generates secret if missing)
+./scripts/setup-azure-web-auth.sh
+```
+
+| Variable | Purpose on `nibras-web` |
+| -------- | ------------------------ |
+| `GITHUB_APP_CLIENT_ID` | GitHub OAuth for dashboard sign-in |
+| `GITHUB_APP_CLIENT_SECRET` | GitHub OAuth for dashboard sign-in |
+| `BETTER_AUTH_SECRET` | Session signing (`openssl rand -base64 32`) |
+| `BETTER_AUTH_URL` | Public web origin (e.g. `https://nibrasplatform.me`) |
+| `RESEND_API_KEY` | Magic-link email — set via `setup-azure-email.sh` |
+
 ### 5. Connect GitHub Actions to Azure (OIDC — recommended)
 
 Run this once from [Azure Cloud Shell](https://shell.azure.com) (or any machine
@@ -382,8 +399,8 @@ After this, sign-in and email links use the custom domain. Always open
 Nibras sends mail through [Resend](https://resend.com). Without `RESEND_API_KEY`,
 emails are silently skipped.
 
-**Both `nibras-api` and `nibras-worker` need the key** (API = review emails;
-worker = submission + instructor queue emails). `nibras-web` does not send mail.
+**`nibras-api`, `nibras-worker`, and `nibras-web` need the key** (API = review emails;
+worker = submission + instructor queue emails; **web** = magic-link sign-in emails).
 
 1. Resend → API Keys → create `re_...` key.
 2. Resend → Domains → verify `nibrasplatform.me` (SPF/DKIM at your DNS host).
@@ -397,13 +414,18 @@ RESEND_API_KEY='re_...' ./scripts/setup-azure-email.sh
 
 Or put `RESEND_API_KEY=re_...` in `nibras/.env` and run `./scripts/setup-azure-email.sh`.
 
-The script sets on **api + worker**:
+The script sets on **api + worker + web**:
 
 | Variable | Value |
 | -------- | ----- |
 | `RESEND_API_KEY` | secret `resend-api-key` |
 | `NIBRAS_EMAIL_FROM` | `Nibras <noreply@nibrasplatform.me>` |
 | `NIBRAS_WEB_BASE_URL` | `https://nibrasplatform.me` |
+| `BETTER_AUTH_URL` | `https://nibrasplatform.me` (web only) |
+
+If sign-in buttons are missing on `/sign-in`, run `./scripts/setup-azure-web-auth.sh`
+and ensure `curl …/api/auth/providers-config` returns `"github":true` and/or
+`"magicLink":true`.
 
 Keep **worker** `min-replicas` at **1** so background jobs (including email) run.
 

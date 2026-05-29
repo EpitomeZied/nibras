@@ -1,21 +1,22 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
+import type { AuthProvidersConfig } from '@/lib/auth-providers-server';
+import { getUnavailableSignInMessage } from '@/lib/auth-providers-server';
 import { authClient } from '@/lib/auth-client';
 import { webSessionBridgePath } from '@/lib/web-session-cookie';
 
-type AuthProviders = {
-  github: boolean;
-  magicLink: boolean;
-};
+export type AuthProviders = AuthProvidersConfig;
 
 type AuthSignInProps = {
   variant?: 'default' | 'terminal';
+  initialProviders?: AuthProviders;
   githubClassName?: string;
   magicLinkClassName?: string;
   emailInputClassName?: string;
   errorClassName?: string;
   noticeClassName?: string;
+  unavailableClassName?: string;
   githubLabel?: string;
   magicLinkLabel?: string;
   compact?: boolean;
@@ -27,13 +28,22 @@ const DEFAULT_PROVIDERS: AuthProviders = {
   magicLink: true,
 };
 
+function normalizeProviders(body: Partial<AuthProviders> | null | undefined): AuthProviders {
+  return {
+    github: body?.github ?? false,
+    magicLink: body?.magicLink ?? false,
+  };
+}
+
 export default function AuthSignIn({
   variant = 'default',
+  initialProviders,
   githubClassName = '',
   magicLinkClassName = '',
   emailInputClassName = '',
   errorClassName = '',
   noticeClassName = '',
+  unavailableClassName = '',
   githubLabel,
   magicLinkLabel,
   compact = false,
@@ -47,7 +57,9 @@ export default function AuthSignIn({
   const [notice, setNotice] = useState('');
   const [githubSubmitting, setGithubSubmitting] = useState(false);
   const [magicSubmitting, setMagicSubmitting] = useState(false);
-  const [providers, setProviders] = useState<AuthProviders>(DEFAULT_PROVIDERS);
+  const [providers, setProviders] = useState<AuthProviders>(
+    () => initialProviders ?? DEFAULT_PROVIDERS
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -55,10 +67,7 @@ export default function AuthSignIn({
       .then((res) => (res.ok ? res.json() : null))
       .then((body: AuthProviders | null) => {
         if (cancelled || !body) return;
-        setProviders({
-          github: body.github ?? DEFAULT_PROVIDERS.github,
-          magicLink: body.magicLink ?? true,
-        });
+        setProviders(normalizeProviders(body));
       })
       .catch(() => {});
     return () => {
@@ -77,6 +86,7 @@ export default function AuthSignIn({
   }
 
   const socialBusy = githubSubmitting || magicSubmitting;
+  const noProviders = !providers.github && !providers.magicLink;
 
   async function handleGitHub() {
     setError('');
@@ -119,6 +129,8 @@ export default function AuthSignIn({
     }
   }
 
+  const unavailableMessage = getUnavailableSignInMessage(process.env.NODE_ENV === 'production');
+
   return (
     <div
       style={{
@@ -129,6 +141,26 @@ export default function AuthSignIn({
         marginTop: isTerminal ? 4 : 0,
       }}
     >
+      {noProviders ? (
+        <p
+          className={unavailableClassName}
+          role="status"
+          style={
+            unavailableClassName
+              ? undefined
+              : {
+                  margin: 0,
+                  fontSize: isTerminal ? 12 : 14,
+                  lineHeight: 1.6,
+                  color: isTerminal ? 'rgba(161, 161, 170, 0.85)' : 'rgba(161, 161, 170, 0.9)',
+                  fontFamily: isTerminal ? 'var(--font-mono, monospace)' : undefined,
+                }
+          }
+        >
+          {isTerminal ? `# ${unavailableMessage}` : unavailableMessage}
+        </p>
+      ) : null}
+
       {providers.github ? (
         <button
           type="button"
