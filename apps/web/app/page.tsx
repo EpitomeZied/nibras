@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, type ReactNode } from 'react';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import NibrasLogo from './_components/nibras-logo';
@@ -15,10 +15,6 @@ import {
   heroBadge,
   heroSub,
   howItWorksSteps,
-  mockupSidebar,
-  mockupStatCards,
-  mockupTableRows,
-  mockupUrl,
   statsBar,
   supportNotice,
   transformGains,
@@ -26,7 +22,6 @@ import {
   transformSub,
   whatsNew,
 } from './_content/landing';
-import { LandingIcon } from './_content/landing-icons';
 import { WEB_BASE_URL } from './lib/web-base-url';
 import styles from './signin.module.css';
 
@@ -50,16 +45,6 @@ function AuthBanner() {
         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </svg>
       Authentication required. Please sign in to access the dashboard.
-    </div>
-  );
-}
-
-function FeatureCard({ icon, title, desc }: { icon: ReactNode; title: string; desc: string }) {
-  return (
-    <div className={styles.featureCard6}>
-      <span className={styles.featureIcon}>{icon}</span>
-      <strong>{title}</strong>
-      <p>{desc}</p>
     </div>
   );
 }
@@ -145,124 +130,77 @@ export default function HomePage() {
       </nav>
 
       <div className={styles.hero}>
-        <div className={styles.heroBadge}>
-          <span className={styles.badgeDot} />
-          {heroBadge}
-        </div>
+        <div className={`${styles.terminalWindow} ${styles.heroTerminal}`}>
+          <div className={styles.terminalTitleBar}>
+            <span className={styles.termDot} style={{ background: '#ff5f57' }} />
+            <span className={styles.termDot} style={{ background: '#febc2e' }} />
+            <span className={styles.termDot} style={{ background: '#28c840' }} />
+            <span className={styles.termTitle}>nibras — welcome</span>
+          </div>
 
-        <h1 className={styles.headline}>
-          <span className={styles.headlineBright}>Run your academic system</span>
-          <span className={styles.headlineGrad}>like a real operating platform.</span>
-          <span className={styles.headlineMuted}>Without the chaos.</span>
-        </h1>
+          <div className={`${styles.terminalBody} ${styles.heroTerminalBody}`}>
+            <div className={styles.termLine}>
+              <span className={styles.termMuted}># </span>
+              <span className={styles.heroTermBadge}>{heroBadge}</span>
+            </div>
 
-        <p className={styles.sub}>{heroSub}</p>
+            <h1 className={styles.heroTerminalTitle}>
+              <span className={styles.heroTerminalTitleLine}>Run your academic system</span>
+              <span className={`${styles.heroTerminalTitleLine} ${styles.heroTerminalTitleAccent}`}>
+                like a real operating platform.
+              </span>
+              <span
+                className={`${styles.heroTerminalTitleLine} ${styles.heroTerminalTitleMuted}`}
+              >
+                Without the chaos.
+              </span>
+            </h1>
 
-        <ul className={styles.whatsNew} aria-label="What's new">
-          {whatsNew.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-        <p className={styles.whatsNewLinkWrap}>
-          <Link href="/changelog" className={styles.whatsNewLink}>
-            View full changelog →
-          </Link>
-        </p>
+            <p className={styles.heroTermSub}>{heroSub}</p>
 
-        <div className={styles.heroAuth}>
-          <AuthSignIn
-            githubClassName={styles.btnHeroPrimary}
-            magicLinkClassName={styles.btnMagicLink}
-            emailInputClassName={styles.magicLinkEmail}
-            errorClassName={styles.errorMsg}
-            noticeClassName={styles.authNotice}
-            githubLabel="Get started free with GitHub"
-          />
-        </div>
-        <div className={styles.heroCtas}>
-          <a href="#how-it-works" className={styles.btnHeroGhost}>
-            See how it works →
-          </a>
+            <div className={styles.termLine}>
+              <span className={styles.termPrompt}>nibras</span>
+              <span className={styles.termCmd}> login</span>
+            </div>
+
+            <div className={styles.signInAuthPanel}>
+              <AuthSignIn
+                variant="terminal"
+                githubClassName={styles.termAuthBtn}
+                magicLinkClassName={styles.termAuthBtnGhost}
+                emailInputClassName={styles.termEmailInput}
+                errorClassName={styles.termAuthError}
+                noticeClassName={styles.termAuthNotice}
+                githubLabel="Get started free with GitHub"
+                magicLinkLabel="Email me a sign-in link"
+              />
+            </div>
+
+            <div className={styles.termLine}>
+              <span className={styles.termPrompt}>nibras</span>
+              <span className={styles.termCmd}> whats-new</span>
+            </div>
+
+            <ul className={styles.heroWhatsNew} aria-label="What's new">
+              {whatsNew.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+            <p className={styles.heroWhatsNewLinkWrap}>
+              <Link href="/changelog" className={styles.whatsNewLink}>
+                View full changelog →
+              </Link>
+            </p>
+
+            <a href="#how-it-works" className={styles.heroTermHelpLink}>
+              <span className={styles.termPrompt}>nibras</span>
+              <span className={styles.termCmd}> help --how-it-works</span>
+            </a>
+          </div>
         </div>
       </div>
 
       <AgentMissionControlSection />
-
-      <div className={styles.productMockupWrap}>
-        <div className={styles.productMockup}>
-          <div className={styles.mockupBar}>
-            <span className={styles.mockupDot} style={{ background: '#ff5f57' }} />
-            <span className={styles.mockupDot} style={{ background: '#febc2e' }} />
-            <span className={styles.mockupDot} style={{ background: '#28c840' }} />
-            <span className={styles.mockupUrl}>{mockupUrl}</span>
-          </div>
-
-          <div className={styles.mockupBody}>
-            <div className={styles.mockupSidebar}>
-              {mockupSidebar.map((item) => (
-                <div
-                  key={item.label}
-                  className={`${styles.mockupSidebarItem}${item.active ? ` ${styles.active}` : ''}`}
-                >
-                  <span className={styles.mockupSidebarDot} />
-                  {item.label}
-                </div>
-              ))}
-            </div>
-
-            <div className={styles.mockupContent}>
-              <div className={styles.mockupHeader}>
-                <h3 className={styles.mockupTitle}>Dashboard — Workflow Overview</h3>
-                <span className={styles.mockupBadge}>Live</span>
-              </div>
-
-              <div className={styles.mockupCards}>
-                {mockupStatCards.map((card) => (
-                  <div key={card.label} className={styles.mockupCard}>
-                    <span className={styles.mockupCardLabel}>{card.label}</span>
-                    <span className={styles.mockupCardValue}>{card.value}</span>
-                    <span className={styles.mockupCardSub}>{card.sub}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className={styles.mockupTable}>
-                <div className={`${styles.mockupTableRow} ${styles.head}`}>
-                  <span>Workflow</span>
-                  <span>Surface</span>
-                  <span>Status</span>
-                  <span>State</span>
-                </div>
-                {mockupTableRows.map((row) => (
-                  <div key={row.student} className={styles.mockupTableRow}>
-                    <span style={{ color: '#fafafa', fontWeight: 600 }}>{row.student}</span>
-                    <span style={{ color: 'rgba(161,161,170,0.6)', fontSize: '12px' }}>
-                      {row.project}
-                    </span>
-                    <span
-                      className={`${styles.mockupStatus} ${styles[row.status as keyof typeof styles]}`}
-                    >
-                      <svg
-                        width="6"
-                        height="6"
-                        viewBox="0 0 6 6"
-                        fill="currentColor"
-                        aria-hidden="true"
-                      >
-                        <circle cx="3" cy="3" r="3" />
-                      </svg>
-                      {row.status}
-                    </span>
-                    <span style={{ color: 'rgba(161,161,170,0.7)', fontSize: '12px' }}>
-                      {row.score}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <p className={styles.trustedBar}>
         Trusted by instructors and students running courses, teams, planning, and practice in one
@@ -281,108 +219,157 @@ export default function HomePage() {
         ))}
       </div>
 
-      <section id="how-it-works" className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <span className={styles.sectionEyebrow}>How it works</span>
-          <h2 className={styles.sectionTitle}>From sign-in to submission in three steps</h2>
-          <p className={styles.sectionSub}>
-            One GitHub login connects your identity, workspace, and delivery history — no setup
-            friction.
-          </p>
-        </div>
-
-        <div className={styles.timeline}>
-          {howItWorksSteps.map((step) => (
-            <div key={step.step} className={styles.timelineStep}>
-              <div className={styles.timelineNumber}>{step.step}</div>
-              <div className={styles.timelineContent}>
-                <LandingIcon id={step.icon} size="timeline" />
-                <h3>{step.title}</h3>
-                <p>{step.desc}</p>
-                {step.cta && step.href && (
-                  <Link href={step.href} className={styles.timelineCta}>
-                    {step.cta}
-                  </Link>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className={styles.transformSection}>
-        <div className={styles.sectionHeader}>
-          <span className={styles.sectionEyebrow}>The Nibras Difference</span>
-          <h2 className={styles.sectionTitle}>
-            From scattered academic operations to one clean system
-          </h2>
-          <p className={styles.sectionSub}>{transformSub}</p>
-        </div>
-
-        <div className={styles.transformGrid}>
-          <div className={styles.transformPanel}>
-            <div className={`${styles.transformPanelHeader} ${styles.before}`}>
-              <span className={`${styles.transformPanelDot} ${styles.before}`} />
-              Before Nibras
-            </div>
-            <div className={styles.transformPanelBody}>
-              {transformPains.map((pain) => (
-                <div key={pain} className={styles.transformPainPoint}>
-                  <span className={styles.transformPainIcon}>✕</span>
-                  <span className={styles.transformPainText}>{pain}</span>
-                </div>
-              ))}
-            </div>
+      <section id="how-it-works" className={`${styles.section} ${styles.howItWorksSection}`}>
+        <div className={`${styles.terminalWindow} ${styles.howItWorksTerminal}`}>
+          <div className={styles.terminalTitleBar}>
+            <span className={styles.termDot} style={{ background: '#ff5f57' }} />
+            <span className={styles.termDot} style={{ background: '#febc2e' }} />
+            <span className={styles.termDot} style={{ background: '#28c840' }} />
+            <span className={styles.termTitle}>nibras — how-it-works</span>
           </div>
 
-          <div className={styles.transformArrow}>→</div>
-
-          <div className={styles.transformPanel}>
-            <div className={`${styles.transformPanelHeader} ${styles.after}`}>
-              <span className={`${styles.transformPanelDot} ${styles.after}`} />
-              After Nibras
+          <div className={`${styles.terminalBody} ${styles.howItWorksBody}`}>
+            <div className={styles.termLine}>
+              <span className={styles.termPrompt}>nibras</span>
+              <span className={styles.termCmd}> man how-it-works</span>
             </div>
-            <div className={styles.transformPanelBody}>
-              {transformGains.map((gain) => (
-                <div key={gain} className={styles.transformGainPoint}>
-                  <span className={styles.transformGainIcon}>✓</span>
-                  <span className={styles.transformGainText}>{gain}</span>
-                </div>
+
+            <p className={styles.howItWorksIntro}>
+              From sign-in to submission in three steps. One GitHub login connects your identity,
+              workspace, and delivery history — no setup friction.
+            </p>
+
+            <div className={styles.howItWorksSteps} role="list">
+              {howItWorksSteps.map((step) => (
+                <article key={step.step} className={styles.howItWorksStep} role="listitem">
+                  <div className={styles.termLine}>
+                    <span className={styles.termMuted}>[{step.step}] </span>
+                    <span className={styles.termSuccess}>{step.title}</span>
+                  </div>
+                  <p className={styles.howItWorksStepDesc}>{step.desc}</p>
+                  {step.cta && step.href ? (
+                    <Link href={step.href} className={styles.howItWorksStepLink}>
+                      <span className={styles.termMuted}>→ </span>
+                      <span className={styles.termCmd}>{step.cta}</span>
+                    </Link>
+                  ) : null}
+                </article>
               ))}
+            </div>
+
+            <div className={styles.termLine}>
+              <span className={styles.termMuted}>3 steps · </span>
+              <span className={styles.termHighlight}>ready to begin</span>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="features" className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <span className={styles.sectionEyebrow}>Features</span>
-          <h2 className={styles.sectionTitle}>
-            Everything you need to run a modern academic system
-          </h2>
-          <p className={styles.sectionSub}>
-            From templates and team formation to program planning, tutoring, community,
-            competitions, IDE practice, achievements, and analytics — Nibras turns scattered tools
-            and manual work into one clean operating layer.
-          </p>
-        </div>
+      <section className={`${styles.section} ${styles.diffSection}`}>
+        <div className={`${styles.terminalWindow} ${styles.diffTerminal}`}>
+          <div className={styles.terminalTitleBar}>
+            <span className={styles.termDot} style={{ background: '#ff5f57' }} />
+            <span className={styles.termDot} style={{ background: '#febc2e' }} />
+            <span className={styles.termDot} style={{ background: '#28c840' }} />
+            <span className={styles.termTitle}>nibras — diff</span>
+          </div>
 
-        <div className={styles.featureGroups}>
-          {featureGroups.map((group) => (
-            <div key={group.id} id={group.id} className={styles.featureGroup}>
-              <h3 className={styles.featureGroupLabel}>{group.label}</h3>
-              <div className={`${styles.featureGrid} ${styles.featureGrid8}`}>
-                {group.features.map((f) => (
-                  <FeatureCard
-                    key={f.title}
-                    icon={<LandingIcon id={f.icon} />}
-                    title={f.title}
-                    desc={f.desc}
-                  />
-                ))}
+          <div className={`${styles.terminalBody} ${styles.diffBody}`}>
+            <div className={styles.termLine}>
+              <span className={styles.termPrompt}>nibras</span>
+              <span className={styles.termCmd}> diff before after</span>
+            </div>
+
+            <p className={styles.diffIntro}>
+              From scattered academic operations to one clean system. {transformSub}
+            </p>
+
+            <div className={styles.diffColumns}>
+              <div className={styles.diffPane}>
+                <div className={styles.termLine}>
+                  <span className={styles.termFail}>--- before ---</span>
+                </div>
+                <ul className={styles.diffList}>
+                  {transformPains.map((pain) => (
+                    <li key={pain} className={styles.diffListItem}>
+                      <span className={styles.termFail} aria-hidden="true">
+                        ✕{' '}
+                      </span>
+                      {pain}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className={styles.diffPane}>
+                <div className={styles.termLine}>
+                  <span className={styles.termSuccess}>+++ after +++</span>
+                </div>
+                <ul className={styles.diffList}>
+                  {transformGains.map((gain) => (
+                    <li key={gain} className={styles.diffListItem}>
+                      <span className={styles.termSuccess} aria-hidden="true">
+                        ✓{' '}
+                      </span>
+                      {gain}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
-          ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="features" className={`${styles.section} ${styles.featuresSection}`}>
+        <div className={`${styles.terminalWindow} ${styles.featuresTerminal}`}>
+          <div className={styles.terminalTitleBar}>
+            <span className={styles.termDot} style={{ background: '#ff5f57' }} />
+            <span className={styles.termDot} style={{ background: '#febc2e' }} />
+            <span className={styles.termDot} style={{ background: '#28c840' }} />
+            <span className={styles.termTitle}>nibras — features</span>
+          </div>
+
+          <div className={`${styles.terminalBody} ${styles.featuresBody}`}>
+            <div className={styles.termLine}>
+              <span className={styles.termPrompt}>nibras</span>
+              <span className={styles.termCmd}> features --list</span>
+            </div>
+
+            <p className={styles.featuresIntro}>
+              Everything you need to run a modern academic system — templates, team formation,
+              planning, tutoring, community, competitions, IDE practice, achievements, and analytics
+              in one operating layer.
+            </p>
+
+            <div className={styles.featuresGroups}>
+              {featureGroups.map((group) => (
+                <div key={group.id} id={group.id} className={styles.featuresGroup}>
+                  <div className={styles.termLine}>
+                    <span className={styles.termMuted}>## </span>
+                    <span className={styles.termHighlight}>{group.label}</span>
+                  </div>
+                  <ul className={styles.featuresList}>
+                    {group.features.map((feature) => (
+                      <li key={feature.title} className={styles.featuresListItem}>
+                        <div className={styles.termLine}>
+                          <span className={styles.termSuccess}>{feature.title}</span>
+                        </div>
+                        <p className={styles.featuresItemDesc}>{feature.desc}</p>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+
+            <div className={styles.termLine}>
+              <span className={styles.termMuted}>
+                {featureGroups.reduce((n, g) => n + g.features.length, 0)} features ·{' '}
+              </span>
+              <span className={styles.termHighlight}>{featureGroups.length} groups</span>
+            </div>
+          </div>
         </div>
       </section>
 

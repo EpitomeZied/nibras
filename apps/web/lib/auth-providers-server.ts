@@ -4,8 +4,9 @@ export function getAuthProvidersConfig(): {
   magicLink: boolean;
 } {
   const github = Boolean(process.env.GITHUB_APP_CLIENT_ID && process.env.GITHUB_APP_CLIENT_SECRET);
+  const magicLink = Boolean(process.env.RESEND_API_KEY);
   return {
     github,
-    magicLink: true,
+    magicLink,
   };
 }

@@ -26,11 +26,12 @@ test('github requires GitHub app client credentials', () => {
     {
       GITHUB_APP_CLIENT_ID: undefined,
       GITHUB_APP_CLIENT_SECRET: undefined,
+      RESEND_API_KEY: undefined,
     },
     () => {
       const config = getAuthProvidersConfig();
       assert.equal(config.github, false);
-      assert.equal(config.magicLink, true);
+      assert.equal(config.magicLink, false);
     }
   );
 
@@ -38,10 +39,26 @@ test('github requires GitHub app client credentials', () => {
     {
       GITHUB_APP_CLIENT_ID: 'gh-id',
       GITHUB_APP_CLIENT_SECRET: 'gh-secret',
+      RESEND_API_KEY: undefined,
     },
     () => {
       const config = getAuthProvidersConfig();
       assert.equal(config.github, true);
+      assert.equal(config.magicLink, false);
+    }
+  );
+});
+
+test('magic link requires Resend API key', () => {
+  withEnv(
+    {
+      GITHUB_APP_CLIENT_ID: undefined,
+      GITHUB_APP_CLIENT_SECRET: undefined,
+      RESEND_API_KEY: 're_test',
+    },
+    () => {
+      const config = getAuthProvidersConfig();
+      assert.equal(config.magicLink, true);
     }
   );
 });

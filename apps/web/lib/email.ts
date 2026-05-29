@@ -24,17 +24,24 @@ function webBaseUrl(): string {
 
 export async function sendMagicLinkEmail(args: { email: string; url: string }): Promise<void> {
   const resend = getResend();
-  if (!resend) return;
+  if (!resend) {
+    throw new Error(
+      'Email sign-in is not configured on this server. Ask an admin to set RESEND_API_KEY, or use GitHub sign-in.'
+    );
+  }
 
   const html = await render(MagicLinkEmail({ url: args.url }));
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: emailFrom(),
     to: args.email,
     subject: 'Your Nibras sign-in link',
     html,
     text: `Sign in to Nibras: ${args.url}\n\nThis link expires in a few minutes.`,
   });
+  if (error) {
+    throw new Error(error.message || 'Failed to send sign-in email.');
+  }
 }
 
 export async function sendWelcomeEmail(args: { email: string; name: string }): Promise<void> {
