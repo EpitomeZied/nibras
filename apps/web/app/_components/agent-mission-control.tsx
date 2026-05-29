@@ -1,3 +1,4 @@
+import { mockupStatCards } from '../_content/landing';
 import styles from './agent-mission-control.module.css';
 
 type MiniTerminalLine = { kind: 'prompt' | 'muted' | 'ok' | 'warn' | 'text'; text: string };
@@ -63,37 +64,39 @@ function StatCard({
   );
 }
 
-function OrdersPanel({ className }: { className?: string }) {
+function DashboardPanel({ className }: { className?: string }) {
+  const [deadlines, reputation, practice] = mockupStatCards;
+
   return (
     <div className={`${styles.panel} ${styles.orders} ${className ?? ''}`}>
       <div className={styles.panelHeader}>
-        <span className={styles.panelTitle}>Orders</span>
-        <span className={styles.pill}>Last 24h</span>
+        <span className={styles.panelTitle}>Dashboard</span>
+        <span className={styles.pill}>This term</span>
       </div>
       <div className={styles.ordersBody}>
         <div className={styles.ordersGrid}>
           <div className={styles.ordersKpi}>
-            <div className={styles.ordersKpiLabel}>Revenue</div>
-            <div className={styles.ordersKpiValue}>$18,420</div>
-            <div className={styles.ordersKpiSub}>+12.3%</div>
+            <div className={styles.ordersKpiLabel}>{deadlines.label}</div>
+            <div className={styles.ordersKpiValue}>{deadlines.value}</div>
+            <div className={styles.ordersKpiSub}>{deadlines.sub}</div>
           </div>
           <div className={styles.ordersKpi}>
-            <div className={styles.ordersKpiLabel}>Orders</div>
-            <div className={styles.ordersKpiValue}>2,847</div>
-            <div className={styles.ordersKpiSub}>+4.8%</div>
+            <div className={styles.ordersKpiLabel}>{reputation.label}</div>
+            <div className={styles.ordersKpiValue}>{reputation.value}</div>
+            <div className={styles.ordersKpiSub}>{reputation.sub}</div>
           </div>
           <div className={styles.ordersKpi}>
-            <div className={styles.ordersKpiLabel}>AOV</div>
-            <div className={styles.ordersKpiValue}>$6.47</div>
-            <div className={styles.ordersKpiSub}>-1.1%</div>
+            <div className={styles.ordersKpiLabel}>{practice.label}</div>
+            <div className={styles.ordersKpiValue}>{practice.value}</div>
+            <div className={styles.ordersKpiSub}>{practice.sub}</div>
           </div>
         </div>
         <div className={styles.ordersChart}>
           <div className={styles.chartHeader}>
-            <span className={styles.chartLabel}>Last 7 days</span>
+            <span className={styles.chartLabel}>Course activity</span>
             <span className={styles.chartLegend}>
               <span className={styles.legendDot} />
-              Revenue
+              Submissions
             </span>
           </div>
           <div className={styles.chartBars} aria-hidden="true">
@@ -113,40 +116,44 @@ function OrdersPanel({ className }: { className?: string }) {
 
 export default function AgentMissionControlSection() {
   return (
-    <section className={styles.section} aria-label="Agent mission control">
+    <section className={styles.section} aria-label="Nibras platform preview">
       <div className={styles.sectionInner}>
         <div className={styles.copy}>
-          <p className={styles.eyebrow}>Infinite canvas for developers</p>
+          <p className={styles.eyebrow}>One platform for CS programs</p>
           <h2 className={styles.title}>
-            <span className={styles.titleBright}>The mission control</span>
-            <span className={styles.titleItalic}>for AI coding agents.</span>
+            <span className={styles.titleBright}>Courses, projects, and CLI</span>
+            <span className={styles.titleItalic}>without the tab chaos.</span>
           </h2>
           <p className={styles.sub}>
-            Keep terminals, dashboards, and context in one place. No constant tab switching — just a
-            clean surface that stays out of the way until you need it.
+            My Courses, team projects, Hassona tutoring, competitive practice, and GitHub-native
+            submissions — connected on one dashboard instead of scattered LMS tabs and side tools.
           </p>
           <div className={styles.actions}>
             <a className={styles.primaryCta} href="/sign-in">
-              Choose platform
+              Get started free
             </a>
             <a className={styles.secondaryCta} href="#features">
-              See features →
+              Explore features →
             </a>
           </div>
         </div>
 
-        <div className={styles.canvas} role="img" aria-label="Floating panels canvas preview">
+        <div
+          className={styles.canvas}
+          role="img"
+          aria-label="Nibras dashboard, CLI submit, and course activity preview"
+        >
           <div className={styles.glow} aria-hidden="true" />
 
           <MiniTerminal
             className={styles.floatLeft}
-            title="agent — tasks"
+            title="dashboard — today"
             lines={[
-              { kind: 'prompt', text: 'agent> add route limit + audit' },
-              { kind: 'muted', text: 'writing task…' },
-              { kind: 'ok', text: '✓ updated api limiter rules' },
-              { kind: 'ok', text: '✓ added audit metadata' },
-              { kind: 'warn', text: '△ running tests…' },
+              { kind: 'prompt', text: 'nibras> deadlines --week' },
+              { kind: 'muted', text: '3 due · 2 submissions pending review' },
+              { kind: 'ok', text: '✓ HW2 — Sorting submitted' },
+              { kind: 'ok', text: '✓ Nibras 75 — Two Sum accepted' },
+              { kind: 'warn', text: '△ Capstone milestone due Sun' },
             ]}
           />
 
@@ -162,17 +169,23 @@ export default function AgentMissionControlSection() {
             ]}
           />
 
-          <OrdersPanel className={styles.floatRight} />
+          <DashboardPanel className={styles.floatRight} />
 
           <StatCard
             className={styles.statA}
-            label="Tokens"
-            value="1.1M"
-            sub="This week"
+            label="Badges"
+            value="8"
+            sub="Earned this term"
             trend="up"
           />
-          <StatCard className={styles.statB} label="Latency" value="620ms" sub="p95" trend="down" />
-          <StatCard className={styles.statC} label="Runs" value="428" sub="Today" trend="up" />
+          <StatCard className={styles.statB} label="Q&A" value="12" sub="Answers given" trend="up" />
+          <StatCard
+            className={styles.statC}
+            label="Submissions"
+            value="24"
+            sub="This semester"
+            trend="up"
+          />
         </div>
       </div>
     </section>

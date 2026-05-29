@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import AuthSignIn from '../_components/auth-sign-in';
-import NibrasLogo from '../_components/nibras-logo';
 import styles from '../signin.module.css';
 
 export const metadata: Metadata = {
@@ -11,59 +10,67 @@ export const metadata: Metadata = {
 
 export default function SignInPage() {
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page} ${styles.signInPage}`}>
+      <div className={styles.grid} />
       <div className={`${styles.orb} ${styles.orb1}`} />
       <div className={`${styles.orb} ${styles.orb2}`} />
 
-      <header
-        style={{
-          width: '100%',
-          maxWidth: 440,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '28px 0 32px',
-        }}
-      >
-        <Link href="/" aria-label="Back to home">
-          <NibrasLogo variant="inverse" width={100} />
+      <div className={styles.signInShell}>
+        <Link href="/" className={styles.signInHomeCmd} aria-label="Back to home">
+          <span className={styles.termPrompt}>~</span>
+          <span className={styles.termCmd}> cd /</span>
+          <span className={styles.termMuted}> — return home</span>
         </Link>
-        <Link href="/" className={styles.whatsNewLink}>
-          ← Home
-        </Link>
-      </header>
 
-      <div
-        style={{
-          width: '100%',
-          maxWidth: 440,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 20,
-          padding: '28px',
-          borderRadius: 16,
-          border: '1px solid rgba(255,255,255,0.1)',
-          background: 'rgba(255,255,255,0.03)',
-        }}
-      >
-        <div>
-          <h1 style={{ margin: '0 0 8px', fontSize: 24, fontWeight: 700, color: '#fafafa' }}>
-            Sign in
-          </h1>
-          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.6, color: 'rgba(161,161,170,0.9)' }}>
-            Use Google, GitHub, or a one-time email link. Magic-link sign-in works for the web
-            dashboard; connect GitHub later for CLI submissions.
-          </p>
+        <div className={`${styles.terminalWindow} ${styles.signInTerminal}`}>
+          <div className={styles.terminalTitleBar}>
+            <span className={styles.termDot} style={{ background: '#ff5f57' }} />
+            <span className={styles.termDot} style={{ background: '#febc2e' }} />
+            <span className={styles.termDot} style={{ background: '#28c840' }} />
+            <span className={styles.termTitle}>nibras — auth</span>
+          </div>
+
+          <div className={`${styles.terminalBody} ${styles.signInTerminalBody}`}>
+            <div className={styles.termLine}>
+              <span className={styles.termMuted}>Nibras session manager v2.0</span>
+            </div>
+            <div className={styles.termLine}>
+              <span className={styles.termSuccess}>✓</span>
+              <span className={styles.termMuted}> API reachable</span>
+            </div>
+            <div className={styles.termLine}>
+              <span className={styles.termHighlight}>→</span>
+              <span className={styles.termCmd}> authenticate to continue</span>
+            </div>
+            <div className={styles.termLine} aria-hidden="true">
+              <span className={styles.termMuted}> </span>
+            </div>
+            <div className={styles.termLine}>
+              <span className={styles.termPrompt}>login</span>
+              <span className={styles.termCmd}> --help</span>
+            </div>
+            <p className={styles.signInTermHelp}>
+              Providers: google, github. Magic link for web dashboard; link GitHub later for CLI
+              submissions.
+            </p>
+
+            <AuthSignIn
+              variant="terminal"
+              googleClassName={`${styles.termAuthBtn} ${styles.termAuthBtnGoogle}`}
+              githubClassName={styles.termAuthBtn}
+              magicLinkClassName={styles.termAuthBtnGhost}
+              emailInputClassName={styles.termEmailInput}
+              errorClassName={styles.termAuthError}
+              noticeClassName={styles.termAuthNotice}
+            />
+          </div>
         </div>
-        <AuthSignIn
-          googleClassName={styles.btnGoogleSignIn}
-          githubClassName={styles.btnHeroPrimary}
-          magicLinkClassName={styles.btnMagicLink}
-          emailInputClassName={styles.magicLinkEmail}
-          errorClassName={styles.errorMsg}
-          noticeClassName={styles.authNotice}
-          githubLabel="Continue with GitHub"
-        />
+
+        <p className={styles.signInFootnote}>
+          <span className={styles.termMuted}>hint:</span> run{' '}
+          <code className={styles.signInFootnoteCode}>nibras login</code> from your project for CLI
+          device flow
+        </p>
       </div>
     </main>
   );
