@@ -25,6 +25,76 @@ export const changelogCategoryMeta: Record<ChangelogCategory, { label: string; i
 
 export const changelogReleases: ChangelogRelease[] = [
   {
+    date: 'May 29, 2026',
+    version: 'v2.0.0',
+    title: 'Catalog LMS, community v2, gamification, and platform hardening',
+    categories: [
+      {
+        type: 'features',
+        items: [
+          {
+            text: 'Catalog LMS — lecture player, assignments, MCQ and quiz types, and course video tracking',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Community v2 — voting, reputation hooks, moderation, bookmarks, and public read-only discussions',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Competitions calendar — week and day views with contest duration helpers',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Gamification v2 — badge categories, rating titles, and reputation level tiers',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'User profiles — scoped public profile pages with course progress and submissions',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'CLI 2.0 — modern TypeScript CLI with device login and improved project workflows',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Better Auth sign-in — GitHub OAuth and email magic links with API session bridge',
+            author: 'EpitomeZied',
+          },
+        ],
+      },
+      {
+        type: 'improvements',
+        items: [
+          {
+            text: 'Landing and global URLs — canonical web base URL across marketing and app surfaces',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Azure Container Apps deploy — automated builds and OIDC-based production rollout',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Removed VJudge integration — competitions use native calendar and platform fetchers',
+            author: 'EpitomeZied',
+          },
+        ],
+      },
+      {
+        type: 'bugFixes',
+        items: [
+          {
+            text: 'Web auth — production redirect origins, session bridge via /auth/complete, and real sign-out',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'CLI device flow — verification links point to /device instead of legacy /dev/approve',
+            author: 'EpitomeZied',
+          },
+        ],
+      },
+    ],
+  },
+  {
     date: 'May 27, 2026',
     version: 'Early access',
     title: 'My Courses hub, smart dashboard, and expanded badges',
