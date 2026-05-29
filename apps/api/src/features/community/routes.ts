@@ -626,6 +626,7 @@ export function registerCommunityRoutes(
     '/v1/community/threads/course/:courseId',
     { schema: { tags: ['community'], summary: 'List threads for a course' } },
     async (request, reply) => {
+      const auth = await optionalAuth(request, reply, store);
       const { courseId } = request.params as { courseId: string };
       const query = request.query as { q?: string; page?: string; limit?: string };
       const page = Math.max(1, parseInt(query.page || '1', 10) || 1);
@@ -672,6 +673,7 @@ export function registerCommunityRoutes(
     '/v1/community/threads/:threadId',
     { schema: { tags: ['community'], summary: 'Get a thread' } },
     async (request, reply) => {
+      const auth = await optionalAuth(request, reply, store);
       const { threadId } = request.params as { threadId: string };
       const thread = await prisma.communityThread.findUnique({
         where: { id: threadId },
@@ -680,7 +682,7 @@ export function registerCommunityRoutes(
       if (
         !thread ||
         (thread.moderationStatus !== CommunityModerationStatus.visible &&
-          auth.user.systemRole !== 'admin')
+          auth?.user.systemRole !== 'admin')
       ) {
         reply.code(404).send(Errors.notFound('Thread'));
         return;
