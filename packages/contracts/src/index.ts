@@ -98,11 +98,17 @@ export const DevicePollPendingSchema = z.object({
   status: z.literal('pending'),
 });
 
+const emptyStringToNull = (value: unknown): unknown =>
+  typeof value === 'string' && value.trim() === '' ? null : value;
+
 export const UserSchema = z.object({
   id: z.string().min(1),
   username: z.string().min(1),
   email: z.string().email(),
-  displayName: z.string().min(1).max(80).nullable().optional(),
+  displayName: z.preprocess(
+    emptyStringToNull,
+    z.string().min(1).max(80).nullable().optional()
+  ),
   githubLogin: z.string().min(1),
   githubLinked: z.boolean(),
   githubAppInstalled: z.boolean(),

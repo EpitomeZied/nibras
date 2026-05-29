@@ -165,6 +165,22 @@ function parseGitHubRepoUrl(value: string): { owner: string; name: string } | nu
   }
 }
 
+function normalizeDisplayName(value: string | null | undefined): string | null {
+  if (value == null) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function resolveGithubLogin(user: {
+  username: string;
+  githubAccount: { login: string } | null;
+}): string {
+  const login = user.githubAccount?.login?.trim();
+  return login && login.length > 0 ? login : user.username;
+}
+
 function toUserRecord(user: {
   id: string;
   username: string;
@@ -180,8 +196,8 @@ function toUserRecord(user: {
     id: user.id,
     username: user.username,
     email: user.email,
-    displayName: user.displayName ?? null,
-    githubLogin: user.githubAccount?.login || '',
+    displayName: normalizeDisplayName(user.displayName),
+    githubLogin: resolveGithubLogin(user),
     githubLinked: user.githubLinked,
     githubAppInstalled: user.githubAppInstalled,
     systemRole: user.systemRole === SystemRole.admin ? 'admin' : 'user',

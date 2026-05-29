@@ -9,7 +9,7 @@ type LogLine = { text: string; type: 'cmd' | 'info' | 'success' | 'error' | 'mut
 
 export default function AuthCompletePage() {
   const [lines, setLines] = useState<LogLine[]>([
-    { text: 'nibras auth --provider github', type: 'cmd' },
+    { text: 'nibras login', type: 'cmd' },
     { text: 'Verifying session…', type: 'info' },
   ]);
   const [done, setDone] = useState(false);

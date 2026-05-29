@@ -99,8 +99,9 @@ export async function ensureNibrasUserProfile(authUserId: string): Promise<strin
 
   let effectiveUserId = authUserId;
 
-  if (!user.username || user.username.length < 2) {
-    const username = await allocateUniqueUsername(deriveUsernameBase(user.displayName, user.email));
+  let username = user.username;
+  if (!username || username.length < 2) {
+    username = await allocateUniqueUsername(deriveUsernameBase(user.displayName, user.email));
     await prisma.user.update({
       where: { id: authUserId },
       data: { username },
@@ -145,8 +146,15 @@ export async function ensureNibrasUserProfile(authUserId: string): Promise<strin
       where: { id: effectiveUserId },
       data: {
         githubLinked: true,
-        displayName: user.displayName ?? login,
+        displayName: user.displayName?.trim() || login,
       },
+    });
+  } else if (!user.displayName?.trim()) {
+    const displayName =
+      username || deriveUsernameBase(null, user.email) || user.email.split('@')[0] || 'User';
+    await prisma.user.update({
+      where: { id: authUserId },
+      data: { displayName },
     });
   }
 
