@@ -6,11 +6,13 @@ FROM base AS deps
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/contracts/package.json ./packages/contracts/
-RUN npm ci --workspace=@nibras/web --workspace=@nibras/contracts --include-workspace-root
+COPY packages/core/package.json ./packages/core/
+RUN npm ci --workspace=@nibras/web --workspace=@nibras/contracts --workspace=@nibras/core --include-workspace-root
 
 # ── Build ──────────────────────────────────────────────────────────────────────
 FROM deps AS build
 COPY packages/contracts ./packages/contracts
+COPY packages/core ./packages/core
 COPY apps/web ./apps/web
 COPY tsconfig.base.json ./
 # Build-time public vars must be baked in at image build time for Next.js
@@ -24,6 +26,7 @@ ENV NIBRAS_API_INTERNAL_URL=$NIBRAS_API_INTERNAL_URL
 RUN touch apps/web/.env.local
 # Build only the packages needed for web (don't build CLI)
 RUN npm run build -w @nibras/contracts && \
+    npm run build -w @nibras/core && \
     npm run build -w @nibras/web
 
 # ── Runtime ────────────────────────────────────────────────────────────────────
