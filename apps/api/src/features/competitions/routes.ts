@@ -16,6 +16,7 @@ import {
   computeAuraDelta,
   syncLinkedAccountAura,
 } from '../reputation/linked-account-aura';
+import { effectiveDurationMinutes } from './contest-duration';
 
 export function registerCompetitionsRoutes(
   app: FastifyInstance,
@@ -93,7 +94,7 @@ export function registerCompetitionsRoutes(
         host: c.platform,
         startsAt: c.startsAt.toISOString(),
         endsAt: c.endsAt.toISOString(),
-        durationMinutes: c.durationMinutes,
+        durationMinutes: effectiveDurationMinutes(c.startsAt, c.endsAt, c.durationMinutes),
         url: c.url,
         phase: c.phase,
         tags: c.tags,
@@ -158,7 +159,7 @@ export function registerCompetitionsRoutes(
           host: c.platform,
           startsAt: c.startsAt.toISOString(),
           endsAt: c.endsAt.toISOString(),
-          durationMinutes: c.durationMinutes,
+          durationMinutes: effectiveDurationMinutes(c.startsAt, c.endsAt, c.durationMinutes),
           url: c.url,
           phase: c.phase,
           bookmarked: bookmarkedIds.has(c.id),
