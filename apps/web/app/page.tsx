@@ -10,6 +10,7 @@ import {
   cliFeatures,
   ctaFeatures,
   featureGroups,
+  landingFooterContactEmail,
   landingNavLinks,
   heroBadge,
   heroSub,
@@ -99,11 +100,7 @@ export default function HomePage() {
 
       <nav className={styles.nav}>
         <div className={styles.navLogo}>
-          <a
-            href="https://nibrasplatform.me"
-            className={styles.siteLogoLink}
-            aria-label="nibrasplatform.me"
-          >
+          <a href="https://nibrasplatform.me" className={styles.siteLogoLink} aria-label="nibrasplatform.me">
             <NibrasLogo variant="inverse" width={110} priority />
           </a>
           <span className={styles.navBadge}>Beta</span>
@@ -511,11 +508,7 @@ export default function HomePage() {
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
             <div className={styles.footerBrandRow}>
-              <a
-                href="https://nibrasplatform.me"
-                className={styles.siteLogoLink}
-                aria-label="nibrasplatform.me"
-              >
+              <a href="https://nibrasplatform.me" className={styles.siteLogoLink} aria-label="nibrasplatform.me">
                 <NibrasLogo variant="inverse" width={100} />
               </a>
             </div>
@@ -543,6 +536,10 @@ export default function HomePage() {
               <span className={styles.footerColTitle}>Account</span>
               <Link href="/sign-in">Sign in</Link>
               <a href="/dashboard">Dashboard</a>
+            </div>
+            <div className={styles.footerCol}>
+              <span className={styles.footerColTitle}>Contact</span>
+              <a href={`mailto:${landingFooterContactEmail}`}>{landingFooterContactEmail}</a>
             </div>
           </div>
         </div>

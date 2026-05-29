@@ -295,10 +295,6 @@ export const featureGroups: LandingFeatureGroup[] = [
 ];
 
 export const landingNavLinks = [
-  { href: '#features', label: 'Features' },
-  ...featureGroups.map((g) => ({ href: `#${g.id}`, label: g.navLabel })),
-  { href: '#how-it-works', label: 'How it works' },
-  { href: '#cli', label: 'CLI' },
   { href: '/docs', label: 'Docs' },
   { href: '/changelog', label: 'Changelog' },
 ] as const;
@@ -331,6 +327,8 @@ export const supportNotice = {
   body: 'Help us keep nibrasplatform.me free and actively maintained. If you or your company find it useful, consider supporting the project.',
   email: 'support@nibrasplatform.me',
 } as const;
+
+export const landingFooterContactEmail = supportNotice.email;
 
 export const ctaFeatures = [
   'Free during early access',
