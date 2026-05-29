@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import AuthSignIn from '../_components/auth-sign-in';
 import { apiFetch } from '../lib/session';
 import styles from './page.module.css';
 
@@ -58,12 +59,8 @@ function DeviceApprovalContent() {
     }
   }
 
-  // Build sign-in URL that returns back here after OAuth
-  const returnTo =
-    typeof window !== 'undefined'
-      ? `/device${userCode ? `?user_code=${encodeURIComponent(userCode)}` : ''}`
-      : '/device';
-  const signInUrl = `/v1/github/oauth/start?return_to=${encodeURIComponent(returnTo)}`;
+  const returnTo = `/device${userCode ? `?user_code=${encodeURIComponent(userCode)}` : ''}`;
+  const legacySignInUrl = `/v1/github/oauth/start?return_to=${encodeURIComponent(returnTo)}`;
 
   if (checking) {
     return (
@@ -98,10 +95,25 @@ function DeviceApprovalContent() {
 
         {!sessionUser ? (
           <div className={styles.section}>
-            <p className={styles.muted}>Sign in with GitHub to approve this login request.</p>
-            <a href={signInUrl} className={`buttonPrimary ${styles.signInBtn}`}>
-              Sign in with GitHub →
-            </a>
+            <p className={styles.muted}>Sign in to approve this login request.</p>
+            <div className={styles.signInOptions}>
+              <AuthSignIn
+                compact
+                bridgeNext={returnTo}
+                githubClassName={`buttonPrimary ${styles.signInBtn}`}
+                magicLinkClassName={`buttonSecondary ${styles.signInBtn}`}
+                emailInputClassName={styles.emailInput}
+                errorClassName={styles.error}
+                noticeClassName={styles.muted}
+                githubLabel="Sign in with GitHub"
+              />
+            </div>
+            <p className={styles.muted} style={{ marginTop: 12, fontSize: 12 }}>
+              Or use{' '}
+              <a href={legacySignInUrl} className={styles.legacyLink}>
+                legacy GitHub App OAuth
+              </a>
+            </p>
           </div>
         ) : approved ? (
           <div className={styles.success}>

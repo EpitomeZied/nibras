@@ -494,11 +494,14 @@ main {
   align-items: center;
   justify-content: center;
   min-height: 40px;
+  width: 100%;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-soft);
   font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
   transition:
     background 0.15s,
     color 0.15s;

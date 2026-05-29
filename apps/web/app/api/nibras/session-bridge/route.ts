@@ -2,20 +2,18 @@ import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
 import { createNibrasWebSession, ensureNibrasUserProfile } from '@/lib/nibras-session-bridge';
+import { getPublicWebOrigin, sanitizeNextPath } from '@/lib/public-origin';
 import { buildNibrasWebSessionCookie } from '@/lib/web-session-cookie';
 
-function resolveNextUrl(request: NextRequest): string {
-  const next = request.nextUrl.searchParams.get('next');
-  if (!next || !next.startsWith('/') || next.startsWith('//')) {
-    return '/auth/complete';
-  }
-  return next;
+function resolveNextPath(request: NextRequest): string {
+  return sanitizeNextPath(request.nextUrl.searchParams.get('next'), '/dashboard');
 }
 
 export async function GET(request: NextRequest) {
+  const publicOrigin = getPublicWebOrigin(request);
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) {
-    const signIn = new URL('/', request.url);
+    const signIn = new URL('/', publicOrigin);
     signIn.searchParams.set('auth', 'required');
     return NextResponse.redirect(signIn);
   }
@@ -24,9 +22,10 @@ export async function GET(request: NextRequest) {
   await ensureNibrasUserProfile(userId);
   const webSessionToken = await createNibrasWebSession(userId);
 
-  const nextPath = resolveNextUrl(request);
-  const redirectUrl = new URL(nextPath, request.url);
+  const nextPath = resolveNextPath(request);
+  const redirectUrl = new URL('/auth/complete', publicOrigin);
   redirectUrl.searchParams.set('st', webSessionToken);
+  redirectUrl.searchParams.set('next', nextPath);
 
   const response = NextResponse.redirect(redirectUrl);
   const secure = process.env.NODE_ENV === 'production';

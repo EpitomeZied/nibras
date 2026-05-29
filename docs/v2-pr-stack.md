@@ -27,7 +27,7 @@ Ordered merge sequence for the Nibras Platform V2 rollout. All items below were 
 - [x] Azure deploy workflow succeeded ([`deploy-azure.yml`](../.github/workflows/deploy-azure.yml))
 - [x] Production migrations: applied by worker container on startup (`prisma migrate deploy`)
 - [ ] GitHub vars: `NIBRAS_WEB_BASE_URL=https://nibrasplatform.me`, API URLs set
-- [ ] OAuth: Google callback `{BETTER_AUTH_URL}/api/auth/callback/google`; GitHub App callbacks on API host
+- [x] OAuth: GitHub (Better Auth + GitHub App callbacks on API host)
 - [x] Smoke: landing, `/community/discussions`, `/competitions`, API `/readyz` (2026-05-29)
 
 ## Production migrations (V2)

@@ -5,7 +5,7 @@ import styles from '../signin.module.css';
 
 export const metadata: Metadata = {
   title: 'Sign in · Nibras',
-  description: 'Sign in to Nibras with Google, GitHub, or a magic link sent to your email.',
+  description: 'Sign in to Nibras with GitHub or a magic link sent to your email.',
 };
 
 export default function SignInPage() {
@@ -50,13 +50,11 @@ export default function SignInPage() {
               <span className={styles.termCmd}> --help</span>
             </div>
             <p className={styles.signInTermHelp}>
-              Providers: google, github. Magic link for web dashboard; link GitHub later for CLI
-              submissions.
+              Providers: github. Magic link for web dashboard; link GitHub later for CLI submissions.
             </p>
 
             <AuthSignIn
               variant="terminal"
-              googleClassName={`${styles.termAuthBtn} ${styles.termAuthBtnGoogle}`}
               githubClassName={styles.termAuthBtn}
               magicLinkClassName={styles.termAuthBtnGhost}
               emailInputClassName={styles.termEmailInput}

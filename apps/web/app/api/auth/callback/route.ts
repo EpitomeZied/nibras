@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getPublicWebOrigin } from '@/lib/public-origin';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,26 +9,18 @@ export const dynamic = 'force-dynamic';
  * GitHub redirects here after the user authorises the app. We forward the
  * code + state to the real API backend (server-to-server, no browser cookies
  * involved), receive the session token via Set-Cookie, and re-issue that
- * cookie on the web domain (nibras-web.fly.dev) so all subsequent same-origin
- * API calls (via the /v1/* Next.js rewrite) can include it automatically.
+ * cookie on the web domain so all subsequent same-origin API calls (via the
+ * /v1/* Next.js rewrite) can include it automatically.
  *
  * GitHub App callback URL should be:
- *   https://nibras-web.fly.dev/api/auth/callback
+ *   https://<web-host>/api/auth/callback
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get('code');
   const state = searchParams.get('state');
 
-  // Derive the public web origin from headers set by the Fly.io proxy,
-  // falling back to the build-time configured web base URL.
-  // Never use request.url directly — it contains the internal container address.
-  const forwardedProto = request.headers.get('x-forwarded-proto') ?? 'https';
-  const forwardedHost =
-    request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? '';
-  const publicOrigin = forwardedHost
-    ? `${forwardedProto}://${forwardedHost}`
-    : (process.env.NEXT_PUBLIC_NIBRAS_WEB_BASE_URL ?? 'https://nibras-web.fly.dev');
+  const publicOrigin = getPublicWebOrigin(request);
 
   if (!code || !state) {
     return NextResponse.redirect(`${publicOrigin}/?auth=required`);
@@ -42,27 +35,21 @@ export async function GET(request: NextRequest) {
   let apiResponse: Response;
   try {
     apiResponse = await fetch(callbackUrl, {
-      redirect: 'manual', // Don't follow — we need to capture Set-Cookie + Location
+      redirect: 'manual',
     });
   } catch {
     return NextResponse.redirect(`${publicOrigin}/?auth=required`);
   }
 
-  // Expect a 302 redirect from the API with a Set-Cookie header
   const setCookie = apiResponse.headers.get('set-cookie');
   const location = apiResponse.headers.get('location');
 
-  // Always land the user at /auth/complete on the public web origin.
-  // Extract the ?st= session token from whatever URL the API redirected to
-  // so it always arrives at /auth/complete — regardless of origin comparison.
-  // The previous origin check was fragile: if x-forwarded-host is absent
-  // during the server-to-server call, publicOrigin mismatches and ?st= gets dropped.
   let sessionToken: string | null = null;
   if (location) {
     try {
       sessionToken = new URL(location).searchParams.get('st');
     } catch {
-      // malformed URL — no token
+      /* malformed URL */
     }
   }
 
@@ -71,9 +58,6 @@ export async function GET(request: NextRequest) {
 
   const response = NextResponse.redirect(redirectTo);
 
-  // Forward the session cookie from the API response onto the web domain.
-  // Because this response comes from nibras-web.fly.dev, the browser stores
-  // the cookie for that domain — making all /v1/* proxy calls send it automatically.
   if (setCookie) {
     response.headers.set('set-cookie', setCookie);
   }

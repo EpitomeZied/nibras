@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch } from '../../lib/session';
+import { sanitizeNextPath } from '@/lib/public-origin';
 import styles from './page.module.css';
 
 type LogLine = { text: string; type: 'cmd' | 'info' | 'success' | 'error' | 'muted' };
@@ -20,31 +21,31 @@ export default function AuthCompletePage() {
   useEffect(() => {
     void (async () => {
       try {
-        // Read the session token from the ?st= redirect param — provided by the
-        // API for browsers that block cross-domain cookies (Chrome 3P restrictions).
-        const st = new URLSearchParams(window.location.search).get('st');
+        const params = new URLSearchParams(window.location.search);
+        const st = params.get('st');
+        const next = sanitizeNextPath(params.get('next'), '/dashboard');
 
         const response = await apiFetch('/v1/web/session', {
           auth: true,
-          // Pass token explicitly as accessToken so apiFetchWith sends it as
-          // Authorization: Bearer — bypasses cross-domain cookie restrictions.
           ...(st ? { accessToken: st } : {}),
         });
         if (!response.ok) {
           throw new Error('Web session was not established.');
         }
 
-        // Persist the web session token in localStorage so subsequent apiFetch
-        // calls can include it as a bearer token without relying on cookies.
         if (st) {
           window.localStorage.setItem('nibras.webSession', st);
         }
 
         addLine({ text: '✓ Session established', type: 'success' });
-        addLine({ text: 'Redirecting to dashboard…', type: 'muted' });
+        addLine({ text: 'Redirecting…', type: 'muted' });
         setDone(true);
+
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState(null, '', cleanUrl);
+
         window.setTimeout(() => {
-          window.location.href = '/dashboard';
+          window.location.href = next;
         }, 900);
       } catch (err) {
         addLine({

@@ -97,8 +97,30 @@
 }
 
 .signInBtn {
-  align-self: flex-start;
+  align-self: stretch;
   text-decoration: none;
+  width: 100%;
+}
+
+.signInOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.emailInput {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.legacyLink {
+  color: var(--primary);
+  text-decoration: underline;
 }
 
 .actions {

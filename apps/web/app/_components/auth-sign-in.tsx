@@ -2,78 +2,62 @@
 
 import { useEffect, useState, type CSSProperties, type FormEvent } from 'react';
 import { authClient } from '@/lib/auth-client';
-import { googleAuthEnabled } from '@/lib/auth-providers';
 import { webSessionBridgePath } from '@/lib/web-session-cookie';
+
+type AuthProviders = {
+  github: boolean;
+  magicLink: boolean;
+};
 
 type AuthSignInProps = {
   variant?: 'default' | 'terminal';
   githubClassName?: string;
-  googleClassName?: string;
   magicLinkClassName?: string;
   emailInputClassName?: string;
   errorClassName?: string;
   noticeClassName?: string;
   githubLabel?: string;
-  googleLabel?: string;
   compact?: boolean;
+  bridgeNext?: string;
 };
 
-function GoogleIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-        fill="#4285F4"
-      />
-      <path
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-        fill="#34A853"
-      />
-      <path
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-        fill="#FBBC05"
-      />
-      <path
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-        fill="#EA4335"
-      />
-    </svg>
-  );
-}
+const DEFAULT_PROVIDERS: AuthProviders = {
+  github: true,
+  magicLink: true,
+};
 
 export default function AuthSignIn({
   variant = 'default',
   githubClassName = '',
-  googleClassName = '',
   magicLinkClassName = '',
   emailInputClassName = '',
   errorClassName = '',
   noticeClassName = '',
   githubLabel,
-  googleLabel,
   compact = false,
+  bridgeNext,
 }: AuthSignInProps) {
   const isTerminal = variant === 'terminal';
   const resolvedGithubLabel =
     githubLabel ?? (isTerminal ? 'auth login --provider github' : 'Continue with GitHub');
-  const resolvedGoogleLabel =
-    googleLabel ?? (isTerminal ? 'auth login --provider google' : 'Continue with Google');
   const resolvedMagicLabel = isTerminal ? 'auth magic-link --send' : 'Email me a sign-in link';
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [githubSubmitting, setGithubSubmitting] = useState(false);
-  const [googleSubmitting, setGoogleSubmitting] = useState(false);
   const [magicSubmitting, setMagicSubmitting] = useState(false);
-  const [googleEnabled, setGoogleEnabled] = useState(googleAuthEnabled);
+  const [providers, setProviders] = useState<AuthProviders>(DEFAULT_PROVIDERS);
 
   useEffect(() => {
     let cancelled = false;
     void fetch('/api/auth/providers-config')
       .then((res) => (res.ok ? res.json() : null))
-      .then((body: { googleEnabled?: boolean } | null) => {
+      .then((body: AuthProviders | null) => {
         if (cancelled || !body) return;
-        if (body.googleEnabled) setGoogleEnabled(true);
+        setProviders({
+          github: body.github ?? DEFAULT_PROVIDERS.github,
+          magicLink: body.magicLink ?? true,
+        });
       })
       .catch(() => {});
     return () => {
@@ -81,12 +65,17 @@ export default function AuthSignIn({
     };
   }, []);
 
-  const bridgeCallback =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}${webSessionBridgePath()}`
-      : webSessionBridgePath();
+  function buildBridgeCallback(): string {
+    const base =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}${webSessionBridgePath()}`
+        : webSessionBridgePath();
+    if (!bridgeNext) return base;
+    const sep = base.includes('?') ? '&' : '?';
+    return `${base}${sep}next=${encodeURIComponent(bridgeNext)}`;
+  }
 
-  const socialBusy = githubSubmitting || googleSubmitting || magicSubmitting;
+  const socialBusy = githubSubmitting || magicSubmitting;
 
   async function handleGitHub() {
     setError('');
@@ -95,26 +84,11 @@ export default function AuthSignIn({
     try {
       await authClient.signIn.social({
         provider: 'github',
-        callbackURL: bridgeCallback,
+        callbackURL: buildBridgeCallback(),
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setGithubSubmitting(false);
-    }
-  }
-
-  async function handleGoogle() {
-    setError('');
-    setNotice('');
-    setGoogleSubmitting(true);
-    try {
-      await authClient.signIn.social({
-        provider: 'google',
-        callbackURL: bridgeCallback,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-      setGoogleSubmitting(false);
     }
   }
 
@@ -131,7 +105,7 @@ export default function AuthSignIn({
     try {
       const { error: magicError } = await authClient.signIn.magicLink({
         email: trimmed,
-        callbackURL: bridgeCallback,
+        callbackURL: buildBridgeCallback(),
       });
       if (magicError) {
         throw new Error(magicError.message ?? 'Could not send magic link.');
@@ -154,56 +128,55 @@ export default function AuthSignIn({
         marginTop: isTerminal ? 4 : 0,
       }}
     >
-      {googleEnabled ? (
+      {providers.github ? (
         <button
           type="button"
-          className={googleClassName || githubClassName}
+          className={githubClassName}
           disabled={socialBusy}
-          onClick={() => void handleGoogle()}
+          onClick={() => void handleGitHub()}
         >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-            {!isTerminal ? <GoogleIcon /> : null}
-            {googleSubmitting
-              ? isTerminal
-                ? 'redirecting…'
-                : 'Redirecting…'
-              : resolvedGoogleLabel}
-          </span>
+          {githubSubmitting ? (isTerminal ? 'redirecting…' : 'Redirecting…') : resolvedGithubLabel}
         </button>
       ) : null}
 
-      <button
-        type="button"
-        className={githubClassName}
-        disabled={socialBusy}
-        onClick={() => void handleGitHub()}
-      >
-        {githubSubmitting
-          ? isTerminal
-            ? 'redirecting…'
-            : 'Redirecting…'
-          : resolvedGithubLabel}
-      </button>
-
-      {!compact ? (
+      {!compact && providers.magicLink ? (
         isTerminal ? (
           <p style={termCommentStyle}># or sign in with email</p>
         ) : (
           <p
-            style={{ margin: 0, fontSize: 12, color: 'rgba(161,161,170,0.85)', textAlign: 'center' }}
+            style={{
+              margin: 0,
+              fontSize: 12,
+              color: 'rgba(161,161,170,0.85)',
+              textAlign: 'center',
+            }}
           >
             or sign in with email
           </p>
         )
       ) : null}
 
-      <form
-        onSubmit={(e) => void handleMagicLink(e)}
-        style={{ display: 'flex', flexDirection: 'column', gap: isTerminal ? 8 : 10 }}
-      >
-        {isTerminal ? (
-          <label style={termEmailRowStyle}>
-            <span style={termEmailPromptStyle}>$</span>
+      {providers.magicLink ? (
+        <form
+          onSubmit={(e) => void handleMagicLink(e)}
+          style={{ display: 'flex', flexDirection: 'column', gap: isTerminal ? 8 : 10 }}
+        >
+          {isTerminal ? (
+            <label style={termEmailRowStyle}>
+              <span style={termEmailPromptStyle}>$</span>
+              <input
+                type="email"
+                name="email"
+                autoComplete="email"
+                placeholder="you@school.edu"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className={emailInputClassName}
+                disabled={socialBusy}
+                required
+              />
+            </label>
+          ) : (
             <input
               type="email"
               name="email"
@@ -215,24 +188,12 @@ export default function AuthSignIn({
               disabled={socialBusy}
               required
             />
-          </label>
-        ) : (
-          <input
-            type="email"
-            name="email"
-            autoComplete="email"
-            placeholder="you@school.edu"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={emailInputClassName}
-            disabled={socialBusy}
-            required
-          />
-        )}
-        <button type="submit" className={magicLinkClassName} disabled={socialBusy}>
-          {magicSubmitting ? (isTerminal ? 'sending…' : 'Sending link…') : resolvedMagicLabel}
-        </button>
-      </form>
+          )}
+          <button type="submit" className={magicLinkClassName} disabled={socialBusy}>
+            {magicSubmitting ? (isTerminal ? 'sending…' : 'Sending link…') : resolvedMagicLabel}
+          </button>
+        </form>
+      ) : null}
 
       {error ? (
         <p className={errorClassName} role="alert">

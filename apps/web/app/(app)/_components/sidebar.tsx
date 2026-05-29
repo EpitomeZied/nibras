@@ -13,6 +13,7 @@ import {
   isNavItemActive,
   type ShellSessionUser as NavShellUser,
 } from './nav-config';
+import { signOutWebSession } from '../../lib/sign-out';
 
 type ShellSessionUser = {
   username: string;
@@ -382,9 +383,9 @@ export default function Sidebar({
               <span>{user?.email || 'GitHub-linked account'}</span>
             </div>
           </div>
-          <Link className="logoutLink" href="/">
+          <button type="button" className="logoutLink" onClick={() => void signOutWebSession()}>
             Sign out
-          </Link>
+          </button>
         </div>
       )}
 

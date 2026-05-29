@@ -28,16 +28,11 @@ function trustedOrigins(): string[] {
 
 const githubClientId = process.env.GITHUB_APP_CLIENT_ID;
 const githubClientSecret = process.env.GITHUB_APP_CLIENT_SECRET;
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
-const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
 function buildSocialProviders() {
   const providers: Record<string, { clientId: string; clientSecret: string }> = {};
   if (githubClientId && githubClientSecret) {
     providers.github = { clientId: githubClientId, clientSecret: githubClientSecret };
-  }
-  if (googleClientId && googleClientSecret) {
-    providers.google = { clientId: googleClientId, clientSecret: googleClientSecret };
   }
   return providers;
 }
@@ -120,7 +115,7 @@ export const auth = betterAuth({
     modelName: 'AuthAccount',
     accountLinking: {
       enabled: true,
-      trustedProviders: ['github', 'google'],
+      trustedProviders: ['github'],
     },
   },
   verification: {

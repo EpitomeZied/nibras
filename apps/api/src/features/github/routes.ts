@@ -112,8 +112,8 @@ export function registerGitHubRoutes(
       return DeviceStartResponseSchema.parse({
         deviceCode: device.deviceCode,
         userCode: device.userCode,
-        verificationUri: `${webBaseUrl}/dev/approve`,
-        verificationUriComplete: `${webBaseUrl}/dev/approve?user_code=${encodeURIComponent(device.userCode)}`,
+        verificationUri: `${webBaseUrl}/device`,
+        verificationUriComplete: `${webBaseUrl}/device?user_code=${encodeURIComponent(device.userCode)}`,
         intervalSeconds: device.intervalSeconds,
         expiresInSeconds: 600,
       });

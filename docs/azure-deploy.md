@@ -377,51 +377,6 @@ az containerapp update \
 After this, sign-in and email links use the custom domain. Always open
 `https://nibrasplatform.me/dashboard` — the Azure FQDN is only a fallback.
 
-## Google sign-in (Better Auth on `nibras-web`)
-
-Google OAuth runs on the **web** Container App (not the API). The callback URL
-must match exactly:
-
-```text
-https://nibrasplatform.me/api/auth/callback/google
-```
-
-**Google Cloud Console** → APIs & Services → Credentials → OAuth 2.0 Client:
-
-| Field | Value |
-| ----- | ----- |
-| Authorized JavaScript origins | `https://nibrasplatform.me` |
-| Authorized redirect URIs | `https://nibrasplatform.me/api/auth/callback/google` |
-
-**GitHub** (repo → Settings → Secrets and variables → Actions):
-
-| Secret | Purpose |
-| ------ | ------- |
-| `GOOGLE_CLIENT_ID` | OAuth client ID |
-| `GOOGLE_CLIENT_SECRET` | OAuth client secret |
-
-Optional variable: `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED` = `true` (build-time hint;
-the sign-in UI also probes `/api/auth/providers-config` at runtime).
-
-Each deploy syncs Google secrets to `nibras-web` when those GitHub secrets exist,
-and sets `BETTER_AUTH_URL` / `NIBRAS_WEB_BASE_URL` from `NIBRAS_WEB_BASE_URL`.
-
-**Manual Azure** (if not using GitHub secrets):
-
-```bash
-RG=nibras-rg
-az containerapp secret set --name nibras-web --resource-group $RG \
-  --secrets google-client-id='YOUR_ID' google-client-secret='YOUR_SECRET'
-az containerapp update --name nibras-web --resource-group $RG \
-  --set-env-vars \
-    GOOGLE_CLIENT_ID=secretref:google-client-id \
-    GOOGLE_CLIENT_SECRET=secretref:google-client-secret \
-    BETTER_AUTH_URL=https://nibrasplatform.me \
-    NIBRAS_WEB_BASE_URL=https://nibrasplatform.me
-```
-
-Then redeploy web (push to `main` or re-run **Deploy to Azure Container Apps**).
-
 ## Email (Resend)
 
 Nibras sends mail through [Resend](https://resend.com). Without `RESEND_API_KEY`,
