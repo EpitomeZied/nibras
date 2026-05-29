@@ -1,11 +1,4 @@
 import { serviceFetch } from '../api-clients/service-fetch';
-import type {
-  UserProfileActivity,
-  UserProfileCourseProgress,
-  UserProfilePublic,
-  UserProfileStats,
-  UserProfileSubmission,
-} from '@nibras/contracts';
 
 export type Badge = {
   id: string;
@@ -61,11 +54,6 @@ export type MyRank = {
 };
 
 export type AchievementsDashboard = {
-  profile?: UserProfilePublic;
-  stats?: UserProfileStats;
-  courseProgress?: UserProfileCourseProgress[];
-  submissions?: UserProfileSubmission[];
-  activity?: UserProfileActivity[];
   badges: Badge[];
   reputation: import('./reputation').MyReputation;
   newlyAwarded: Badge[];

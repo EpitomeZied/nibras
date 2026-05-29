@@ -1096,7 +1096,7 @@ export default function SettingsPage() {
                   </div>
                   {user?.id ? (
                     <p className={styles.sectionSub}>
-                      <Link href={`/users/${user.id}`}>View your profile</Link>
+                      <Link href="/users">View your profile</Link>
                     </p>
                   ) : null}
                   <button

@@ -384,6 +384,10 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     title: 'Settings',
     subtitle: 'Manage your account preferences and connected services.',
   },
+  '/users': {
+    title: 'Profile',
+    subtitle: 'Your public profile on Nibras.',
+  },
   '/achievements': {
     title: 'Badges',
     subtitle: 'Track the badges you have earned and the milestones still ahead.',

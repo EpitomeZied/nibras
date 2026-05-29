@@ -1,9 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { requireUser } from '../../lib/auth';
-import { requestBaseUrl } from '../../lib/request-base-url';
 import { AppStore } from '../../store';
-import { UserProfileService } from '../users/service';
 import { BADGE_CATALOG } from './badges-catalog';
 import { GamificationService } from './service';
 
@@ -13,7 +11,6 @@ export function registerGamificationRoutes(
   prisma: PrismaClient
 ): void {
   const gamification = new GamificationService(prisma);
-  const profileService = new UserProfileService(prisma);
 
   app.addHook('onReady', async () => {
     try {
@@ -39,17 +36,8 @@ export function registerGamificationRoutes(
       if (!auth) return;
       const query = request.query as { sync?: string };
       const forceSync = query.sync === 'true' || query.sync === '1';
-      const apiBaseUrl = requestBaseUrl(request);
 
-      const [dashboard, sections] = await Promise.all([
-        gamification.getAchievementsDashboard(auth.user.id, { sync: forceSync }),
-        profileService.buildSelfSections(store, apiBaseUrl, auth.user.id),
-      ]);
-
-      return {
-        ...dashboard,
-        ...(sections ?? {}),
-      };
+      return gamification.getAchievementsDashboard(auth.user.id, { sync: forceSync });
     }
   );
 

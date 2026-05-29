@@ -1,22 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type {
-  UserProfileActivity,
-  UserProfileCourseProgress,
-  UserProfilePublic,
-  UserProfileStats,
-  UserProfileSubmission,
-} from '@nibras/contracts';
 import { getReputationLevelLabel } from '@nibras/contracts';
 import styles from './page.module.css';
 import profileStyles from '../_components/profile-layout.module.css';
 import EmptyState from '../_components/widgets/EmptyState';
 import BadgeCard from '../_components/widgets/BadgeCard';
 import StatTile from '../_components/widgets/StatTile';
-import ProfileHeader from '../users/[id]/_components/profile-header';
-import CourseProgressSection from '../users/[id]/_components/course-progress-section';
-import SubmissionsSection from '../users/[id]/_components/submissions-section';
 import {
   getAchievementsDashboard,
   clearAchievementsDashboardCache,
@@ -103,22 +93,12 @@ function BadgeGrid({ items, earned }: { items: Badge[]; earned: boolean }) {
 function applyDashboard(
   dashboard: AchievementsDashboard,
   setters: {
-    setProfile: (v: UserProfilePublic | null) => void;
-    setStats: (v: UserProfileStats | null) => void;
-    setCourseProgress: (v: UserProfileCourseProgress[]) => void;
-    setSubmissions: (v: UserProfileSubmission[]) => void;
-    setActivity: (v: UserProfileActivity[]) => void;
     setBadges: (v: Badge[]) => void;
     setReputation: (v: MyReputation | null) => void;
     setNewlyAwarded: (v: Badge[]) => void;
     setBannerDismissed: (v: boolean) => void;
   }
 ) {
-  setters.setProfile(dashboard.profile ?? null);
-  setters.setStats(dashboard.stats ?? null);
-  setters.setCourseProgress(dashboard.courseProgress ?? []);
-  setters.setSubmissions(dashboard.submissions ?? []);
-  setters.setActivity(dashboard.activity ?? []);
   setters.setBadges(dashboard.badges ?? []);
   setters.setReputation(dashboard.reputation ?? null);
   if ((dashboard.newlyAwarded ?? []).length > 0) {
@@ -129,20 +109,10 @@ function applyDashboard(
 
 export default function AchievementsPage() {
   const cached = peekAchievementsDashboardCache();
-  const [profile, setProfile] = useState<UserProfilePublic | null>(cached?.profile ?? null);
-  const [stats, setStats] = useState<UserProfileStats | null>(cached?.stats ?? null);
-  const [courseProgress, setCourseProgress] = useState<UserProfileCourseProgress[]>(
-    cached?.courseProgress ?? []
-  );
-  const [submissions, setSubmissions] = useState<UserProfileSubmission[]>(
-    cached?.submissions ?? []
-  );
-  const [activity, setActivity] = useState<UserProfileActivity[]>(cached?.activity ?? []);
   const [badges, setBadges] = useState<Badge[]>(cached?.badges ?? []);
   const [reputation, setReputation] = useState<MyReputation | null>(cached?.reputation ?? null);
   const [newlyAwarded, setNewlyAwarded] = useState<Badge[]>(cached?.newlyAwarded ?? []);
   const [bannerDismissed, setBannerDismissed] = useState(false);
-  const [copyStatus, setCopyStatus] = useState('');
   const [loading, setLoading] = useState(!cached);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,11 +121,6 @@ export default function AchievementsPage() {
 
   const setters = useMemo(
     () => ({
-      setProfile,
-      setStats,
-      setCourseProgress,
-      setSubmissions,
-      setActivity,
       setBadges,
       setReputation,
       setNewlyAwarded,
@@ -194,18 +159,6 @@ export default function AchievementsPage() {
     void load(false);
   }, [load]);
 
-  const handleCopyProfileLink = useCallback(async () => {
-    if (!profile) return;
-    try {
-      const url = `${window.location.origin}/users/${profile.id}`;
-      await navigator.clipboard.writeText(url);
-      setCopyStatus('Copied!');
-      window.setTimeout(() => setCopyStatus(''), 2000);
-    } catch {
-      setCopyStatus('Copy failed');
-    }
-  }, [profile]);
-
   const filtered = useMemo(
     () => badges.filter((b) => matchesCategory(b, activeTab)),
     [badges, activeTab]
@@ -236,7 +189,6 @@ export default function AchievementsPage() {
     return (
       <div className={profileStyles.page}>
         <div className={styles.skeleton} aria-hidden="true">
-          <div className={styles.skeletonHeader} />
           <div className={styles.skeletonStats} />
           <div className={styles.skeletonGrid}>
             {Array.from({ length: 8 }).map((_, i) => (
@@ -268,38 +220,7 @@ export default function AchievementsPage() {
 
   return (
     <div className={profileStyles.page}>
-      {profile && (
-        <ProfileHeader
-          profile={profile}
-          isSelf
-          onCopyLink={handleCopyProfileLink}
-          copyStatus={copyStatus}
-        />
-      )}
-
       {refreshing && <p className={profileStyles.muted}>Refreshing…</p>}
-
-      {stats && (
-        <div className={profileStyles.summary}>
-          <StatTile label="Passed" value={stats.passedCount} />
-          <StatTile label="Courses" value={stats.coursesEnrolled} />
-          <StatTile label="Submissions" value={stats.totalSubmissions} />
-        </div>
-      )}
-
-      {courseProgress.length > 0 && (
-        <section className={profileStyles.section}>
-          <h2 className={profileStyles.sectionTitle}>Course progress</h2>
-          <CourseProgressSection courses={courseProgress} />
-        </section>
-      )}
-
-      {submissions.length > 0 && (
-        <section className={profileStyles.section}>
-          <h2 className={profileStyles.sectionTitle}>Recent submissions</h2>
-          <SubmissionsSection submissions={submissions} showScores={false} />
-        </section>
-      )}
 
       {newlyAwarded.length > 0 && !bannerDismissed && (
         <div className={styles.newBadgeBanner} role="status">
@@ -454,59 +375,6 @@ export default function AchievementsPage() {
           </>
         )}
       </section>
-
-      {activity.length > 0 && (
-        <section className={profileStyles.section}>
-          <h2 className={profileStyles.sectionTitle}>Recent activity</h2>
-          <div className={profileStyles.panel}>
-            <ul
-              className={profileStyles.progressList}
-              style={{ listStyle: 'none', margin: 0, padding: 0 }}
-            >
-              {activity.map((item) => (
-                <li key={item.id} className={profileStyles.progressRow}>
-                  <div>
-                    <strong>{item.title}</strong>
-                    {item.subtitle && (
-                      <div className={profileStyles.progressMeta}>{item.subtitle}</div>
-                    )}
-                  </div>
-                  <span className={profileStyles.muted}>
-                    {new Date(item.occurredAt).toLocaleDateString()}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
-
-      {reputation?.history && reputation.history.length > 0 && (
-        <section className={profileStyles.section}>
-          <h2 className={profileStyles.sectionTitle}>Reputation history</h2>
-          <div className={profileStyles.panel}>
-            <ul
-              className={profileStyles.progressList}
-              style={{ listStyle: 'none', margin: 0, padding: 0 }}
-            >
-              {reputation.history.slice(0, 10).map((item) => (
-                <li key={item.id} className={profileStyles.progressRow}>
-                  <div>
-                    <strong>{item.reason}</strong>
-                    {item.detail ? (
-                      <div className={profileStyles.progressMeta}>{item.detail}</div>
-                    ) : null}
-                  </div>
-                  <span className={profileStyles.muted}>
-                    {item.delta >= 0 ? '+' : ''}
-                    {item.delta} · {new Date(item.createdAt).toLocaleDateString()}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-      )}
     </div>
   );
 }

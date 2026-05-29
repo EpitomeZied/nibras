@@ -138,7 +138,7 @@ function UserDropdown({
   const isAdmin = user?.systemRole === 'admin';
   const menuItems = [
     ...(isAdmin ? [{ label: 'Builder', icon: <IconBuilder />, href: '/instructor' }] : []),
-    { label: 'Profile', icon: <IconProfile />, href: '/settings' },
+    { label: 'Profile', icon: <IconProfile />, href: '/users' },
     { label: 'Settings', icon: <IconSettings />, href: '/settings' },
     {
       label: 'Send Feedback',
