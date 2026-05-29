@@ -47,3 +47,10 @@ export function SessionProvider({
 export function useSession(): SessionContextValue {
   return useContext(SessionContext);
 }
+
+export function getShellUserIdentity(
+  user: Pick<ShellUser, 'displayName' | 'username' | 'githubLogin'> | null,
+  fallback = 'Nibras'
+): string {
+  return user?.displayName?.trim() || user?.username || user?.githubLogin || fallback;
+}

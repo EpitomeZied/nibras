@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '../../lib/session';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
-import { useSession } from '../_components/session-context';
+import { getShellUserIdentity, useSession } from '../_components/session-context';
 import { signOutWebSession } from '../../lib/sign-out';
 import { getLevelLabel, MAX_LEVEL } from '../../lib/levels';
 import SelectField from '../_components/ui/select-field';
@@ -897,7 +897,7 @@ export default function SettingsPage() {
     }
   }
 
-  const identity = user?.displayName?.trim() || user?.username || user?.githubLogin || '—';
+  const identity = getShellUserIdentity(user, '—');
 
   async function handleSaveProfile() {
     const trimmed = displayName.trim();

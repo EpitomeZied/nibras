@@ -20,10 +20,12 @@ import {
   type AppNavItem,
   type NavDropdownGroup,
 } from './nav-config';
+import { getShellUserIdentity } from './session-context';
 
 type ShellSessionUser = {
   username: string;
   email: string;
+  displayName?: string | null;
   githubLogin: string;
   githubLinked: boolean;
   githubAppInstalled: boolean;
@@ -520,7 +522,7 @@ export default function TopHeader({
   loading: boolean;
 }) {
   const pathname = usePathname();
-  const identity = user?.username || user?.githubLogin || 'Nibras';
+  const identity = getShellUserIdentity(user);
   const [compact, setCompact] = useState(false);
 
   useEffect(() => {

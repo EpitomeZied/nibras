@@ -14,10 +14,12 @@ import {
   type ShellSessionUser as NavShellUser,
 } from './nav-config';
 import { signOutWebSession } from '../../lib/sign-out';
+import { getShellUserIdentity } from './session-context';
 
 type ShellSessionUser = {
   username: string;
   email: string;
+  displayName?: string | null;
   githubLogin: string;
   githubLinked: boolean;
   githubAppInstalled: boolean;
@@ -223,7 +225,7 @@ export default function Sidebar({
   loading: boolean;
 }) {
   const pathname = usePathname();
-  const displayName = user?.username || user?.githubLogin || 'Nibras User';
+  const displayName = getShellUserIdentity(user, 'Nibras User');
 
   const [collapsed, setCollapsed] = useState(false);
 
