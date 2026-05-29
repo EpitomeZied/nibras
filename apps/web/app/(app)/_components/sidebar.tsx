@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import NibrasLogo from '@/app/_components/nibras-logo';
+import { WEB_BASE_URL } from '@/app/lib/web-base-url';
 import UserAvatar from './widgets/UserAvatar';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import {
@@ -254,7 +255,7 @@ export default function Sidebar({
       {/* Brand */}
       <div className="brandBlock" style={{ justifyContent: collapsed ? 'center' : undefined }}>
         <a
-          href="https://nibrasplatform.me"
+          href={WEB_BASE_URL}
           target="_blank"
           rel="noopener noreferrer"
           title="Visit NibrasPlaftorm.me"
