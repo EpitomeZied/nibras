@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type CSSProperties } from 'react';
-import { featureGroups, type LandingFeatureGroup } from '../_content/landing';
+import { featureGroups, featuresShowcaseCopy, type LandingFeatureGroup } from '../_content/landing';
 import { LandingIcon, type LandingIconId } from '../_content/landing-icons';
 import styles from './feature-tiles-showcase.module.css';
 
@@ -79,15 +79,12 @@ export default function FeatureTilesShowcase() {
   return (
     <section id="features" className={styles.section} aria-labelledby="features-heading">
       <header className={styles.header}>
-        <p className={styles.eyebrow}>Features</p>
+        <p className={styles.eyebrow}>{featuresShowcaseCopy.eyebrow}</p>
         <h2 id="features-heading" className={styles.title}>
-          Three terminals.
-          <span className={styles.titleDim}> One platform.</span>
+          {featuresShowcaseCopy.titleBright}
+          <span className={styles.titleDim}>{featuresShowcaseCopy.titleDim}</span>
         </h2>
-        <p className={styles.sub}>
-          Pick a surface on the left — each opens as its own live terminal with the modules
-          inside.
-        </p>
+        <p className={styles.sub}>{featuresShowcaseCopy.sub}</p>
       </header>
 
       <div className={styles.layout}>
@@ -132,9 +129,7 @@ export default function FeatureTilesShowcase() {
               <span className={styles.dot} style={{ background: '#ff5f57' }} />
               <span className={styles.dot} style={{ background: '#febc2e' }} />
               <span className={styles.dot} style={{ background: '#28c840' }} />
-              <span className={styles.previewTitle}>
-                {active.name} — live preview
-              </span>
+              <span className={styles.previewTitle}>{active.name} — live preview</span>
             </div>
 
             <div className={styles.previewBody}>
@@ -143,10 +138,7 @@ export default function FeatureTilesShowcase() {
               </div>
               <div className={styles.previewLine}>
                 <span className={styles.previewPrompt}>{'>'}</span>
-                <span className={styles.previewCmd}>
-                  {' '}
-                  nibras features --group {active.slug}
-                </span>
+                <span className={styles.previewCmd}> nibras features --group {active.slug}</span>
               </div>
 
               <div className={styles.previewAgent}>
@@ -188,12 +180,12 @@ export default function FeatureTilesShowcase() {
       </div>
 
       <p className={styles.footer}>
-        <span className={styles.footerIndex}>
-          {String(active.index).padStart(2, '0')}
-        </span>
+        <span className={styles.footerIndex}>{String(active.index).padStart(2, '0')}</span>
         <span className={styles.footerDot}>·</span>
         <span className={styles.footerName}>{active.name.toUpperCase()}</span>
-        <span className={styles.footerDesc}>{active.group.label} — {active.desc}</span>
+        <span className={styles.footerDesc}>
+          {active.group.label} — {active.desc}
+        </span>
       </p>
     </section>
   );

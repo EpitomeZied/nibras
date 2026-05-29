@@ -68,6 +68,97 @@ export const mockupCommunityQuestions = [
 
 export const canvasSurfaceChips = ['dashboard', 'cli', 'hassona', 'community'] as const;
 
+export const featuresShowcaseCopy = {
+  eyebrow: 'Features',
+  titleBright: 'One platform.',
+  titleDim: ' Three surfaces.',
+  sub: 'Academic, delivery, and engagement — pick a surface on the left; the terminal lists every module inside at a glance.',
+} as const;
+
+export const cliShowcaseCopy = {
+  eyebrow: 'CLI',
+  titleBright: 'GitHub-native delivery.',
+  titleDim: ' Terminal-native.',
+  sub: 'The same session layout as the rest of the page — pick a workflow on the left and watch the CLI run it live on the right.',
+} as const;
+
+export type CliShowcaseTile = {
+  slug: string;
+  name: string;
+  label: string;
+  desc: string;
+  icon: string;
+  accent: string;
+  command: string;
+  lines: ReadonlyArray<{
+    kind: 'muted' | 'ok' | 'warn' | 'text' | 'highlight' | 'progress';
+    text: string;
+  }>;
+};
+
+export const cliShowcaseTiles: readonly CliShowcaseTile[] = [
+  {
+    slug: 'submit',
+    name: 'submit',
+    label: 'Submit workflow',
+    desc: 'Stage, push, and verify — with live feedback on every step.',
+    icon: '◉',
+    accent: '#22c55e',
+    command: 'nibras submit',
+    lines: [
+      { kind: 'muted', text: 'Staging allowed files…' },
+      { kind: 'ok', text: '✓ Staged 3 files' },
+      { kind: 'ok', text: '✓ Pushed commit a3f7c1d' },
+      { kind: 'progress', text: 'Verifying ██████████░░░░░░░░ 70%' },
+    ],
+  },
+  {
+    slug: 'status',
+    name: 'status',
+    label: 'Status & polling',
+    desc: 'Visual verification polling with clear progress indicators.',
+    icon: '█',
+    accent: '#38bdf8',
+    command: 'nibras status --watch',
+    lines: [
+      { kind: 'muted', text: 'submission hw2-sorting · verifying' },
+      { kind: 'progress', text: '████████████░░░░░░░░ 62%' },
+      { kind: 'text', text: 'last event: test suite running' },
+      { kind: 'muted', text: 'poll interval 2s · ctrl+c to exit' },
+    ],
+  },
+  {
+    slug: 'result',
+    name: 'result',
+    label: 'Pass / fail summary',
+    desc: 'Boxed result cards with scores and colour-coded borders.',
+    icon: '╭',
+    accent: '#f97316',
+    command: 'nibras status --last',
+    lines: [
+      { kind: 'ok', text: '╭──────────────────────────────────╮' },
+      { kind: 'ok', text: '│ ✓ Submission passed              │' },
+      { kind: 'text', text: '│ Score: 94 / 100                  │' },
+      { kind: 'ok', text: '╰──────────────────────────────────╯' },
+    ],
+  },
+  {
+    slug: 'workflow',
+    name: 'workflow',
+    label: 'Developer workflows',
+    desc: 'Login, doctor, and config — native to your terminal.',
+    icon: '∿',
+    accent: '#a855f7',
+    command: 'nibras doctor',
+    lines: [
+      { kind: 'ok', text: '✓ API reachable' },
+      { kind: 'ok', text: '✓ GitHub token valid' },
+      { kind: 'ok', text: '✓ project manifest found' },
+      { kind: 'highlight', text: 'ready · run nibras submit' },
+    ],
+  },
+] as const;
+
 export const mockupTableRows = [
   {
     student: 'Capstone Team Project',

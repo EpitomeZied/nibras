@@ -2,8 +2,13 @@
   position: relative;
   z-index: 6;
   width: 100%;
-  margin-top: 110px;
-  padding: 0 clamp(24px, 4vw, 56px);
+  min-height: 100svh;
+  margin-top: 0;
+  padding: clamp(88px, 12vh, 120px) clamp(24px, 4vw, 56px) clamp(48px, 6vh, 72px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
 .sectionInner {

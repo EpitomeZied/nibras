@@ -8,8 +8,8 @@ import AuthSignIn from './_components/auth-sign-in';
 import type { AuthProvidersConfig } from '@/lib/auth-providers-server';
 import AgentMissionControlSection from './_components/agent-mission-control';
 import FeatureTilesShowcase from './_components/feature-tiles-showcase';
+import CliShowcase from './_components/cli-showcase';
 import {
-  cliFeatures,
   ctaFeatures,
   landingFooterContactEmail,
   landingNavLinks,
@@ -152,7 +152,7 @@ export default function HomePage({ initialProviders }: HomePageProps) {
         </div>
       </nav>
 
-      <div className={styles.hero}>
+      <div className={`${styles.landingFill} ${styles.hero}`}>
         <div className={`${styles.terminalWindow} ${styles.heroTerminal}`}>
           <div className={styles.terminalTitleBar}>
             <span className={styles.termDot} style={{ background: '#ff5f57' }} />
@@ -346,83 +346,7 @@ export default function HomePage({ initialProviders }: HomePageProps) {
 
       <FeatureTilesShowcase />
 
-      <section id="cli" className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <span className={styles.sectionEyebrow}>CLI</span>
-          <h2 className={styles.sectionTitle}>
-            A developer workflow that still fits the full system
-          </h2>
-          <p className={styles.sectionSub}>
-            Nibras still gives students a clean submission CLI, but now it plugs into templates,
-            team projects, the IDE, achievements, review queues, and academic planning instead of
-            standing alone.
-          </p>
-        </div>
-
-        <div className={styles.cliShowcase}>
-          <div className={styles.terminalWindow}>
-            <div className={styles.terminalTitleBar}>
-              <span className={styles.termDot} style={{ background: '#ff5f57' }} />
-              <span className={styles.termDot} style={{ background: '#febc2e' }} />
-              <span className={styles.termDot} style={{ background: '#28c840' }} />
-              <span className={styles.termTitle}>nibras — terminal</span>
-            </div>
-            <div className={styles.terminalBody}>
-              <div className={styles.termLine}>
-                <span className={styles.termPrompt}>~/cs101/project-2</span>
-                <span className={styles.termCmd}> $ nibras submit</span>
-              </div>
-              <div className={styles.termLine}>
-                <span className={styles.termSpinner} aria-hidden="true" />
-                <span className={styles.termMuted}> Staging allowed files…</span>
-              </div>
-              <div className={styles.termLine}>
-                <span className={styles.termSuccess}>✓</span>
-                <span className={styles.termMuted}> Staged </span>
-                <span className={styles.termHighlight}>3 files</span>
-              </div>
-              <div className={styles.termLine}>
-                <span className={styles.termSuccess}>✓</span>
-                <span className={styles.termMuted}> Pushed commit </span>
-                <span className={styles.termHighlight}>a3f7c1d</span>
-              </div>
-              <div className={styles.termLine}>
-                <span className={styles.termProgress}> Verifying </span>
-                <span className={styles.termBar}>██████████████░░░░░░</span>
-                <span className={styles.termMuted}> 70%</span>
-              </div>
-              <div className={styles.termLine} style={{ marginTop: 8 }}>
-                <span className={styles.termBoxTop}>╭──────────────────────────────────╮</span>
-              </div>
-              <div className={styles.termLine}>
-                <span className={styles.termBoxSide}>│</span>
-                <span className={styles.termSuccess}> ✓ Submission passed </span>
-                <span className={styles.termBoxSide}>│</span>
-              </div>
-              <div className={styles.termLine}>
-                <span className={styles.termBoxSide}>│</span>
-                <span className={styles.termDimText}> Score: 94 / 100 </span>
-                <span className={styles.termBoxSide}>│</span>
-              </div>
-              <div className={styles.termLine}>
-                <span className={styles.termBoxBottom}>╰──────────────────────────────────╯</span>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.cliFeatures}>
-            {cliFeatures.map((f) => (
-              <div key={f.label} className={styles.cliFeat}>
-                <span className={styles.cliFeatIcon}>{f.icon}</span>
-                <div>
-                  <strong>{f.label}</strong>
-                  <p>{f.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      <CliShowcase />
 
       <div className={styles.bottomTerminals}>
         <section className={styles.bottomTerminalSection} aria-labelledby="support-heading">
