@@ -31,12 +31,11 @@ function validateEnv(): void {
 async function syncBadgeCatalogOnStartup(): Promise<void> {
   if (!process.env.DATABASE_URL) return;
 
-  const { PrismaClient } = await import('@prisma/client');
   const { BADGE_CATALOG } = await import('./features/gamification/badges-catalog');
   const { GamificationService } = await import('./features/gamification/service');
-  const prisma = new PrismaClient();
+  const { getSharedPrisma } = await import('./lib/prisma');
   try {
-    const gamification = new GamificationService(prisma);
+    const gamification = new GamificationService(getSharedPrisma());
     const count = await gamification.ensureBadgeCatalog();
     console.log(
       JSON.stringify({
@@ -54,8 +53,6 @@ async function syncBadgeCatalogOnStartup(): Promise<void> {
         error: err instanceof Error ? err.message : String(err),
       })
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 

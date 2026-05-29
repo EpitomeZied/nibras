@@ -1159,10 +1159,17 @@ function toProjectRecord(project: {
 
 export class PrismaStore implements AppStore {
   private readonly prisma: PrismaClient;
+  private readonly ownsPrisma: boolean;
   private seeded = false;
 
   constructor(prismaClient?: PrismaClient) {
-    this.prisma = prismaClient || new PrismaClient();
+    if (prismaClient) {
+      this.prisma = prismaClient;
+      this.ownsPrisma = false;
+    } else {
+      this.prisma = new PrismaClient();
+      this.ownsPrisma = true;
+    }
   }
 
   async seed(apiBaseUrl: string): Promise<void> {
@@ -3055,7 +3062,7 @@ export class PrismaStore implements AppStore {
     const memberIds = new Set(memberships.map((entry) => entry.courseId));
     const requestByCourse = new Map(requests.map((entry) => [entry.courseId, entry]));
 
-    return courses.map((course) => {
+      return courses.map((course) => {
       const request = requestByCourse.get(course.id);
       let enrollmentRequestStatus: import('./store').CourseBrowseItemRecord['enrollmentRequestStatus'] =
         'none';
@@ -3071,7 +3078,7 @@ export class PrismaStore implements AppStore {
         isActive: course.isActive,
         isPublic: course.isPublic,
         description: course.description || undefined,
-        thumbnailUrl: course.thumbnailUrl,
+        thumbnailUrl: course.thumbnailUrl ?? undefined,
         isEnrolled: memberIds.has(course.id),
         enrollmentRequestStatus,
       };
@@ -6484,6 +6491,8 @@ export class PrismaStore implements AppStore {
   }
 
   async close(): Promise<void> {
-    await this.prisma.$disconnect();
+    if (this.ownsPrisma) {
+      await this.prisma.$disconnect();
+    }
   }
 }

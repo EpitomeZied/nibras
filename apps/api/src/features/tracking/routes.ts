@@ -42,7 +42,7 @@ import { sendReviewSubmittedEmail } from '../../lib/email';
 import { Errors, apiError } from '../../lib/errors';
 import { requestBaseUrl } from '../../lib/request-base-url';
 import { validateId } from '../../lib/validate';
-import { AppStore, PaginationOpts } from '../../store';
+import { AppStore, PaginationOpts, type CourseBrowseItemRecord } from '../../store';
 import {
   presentInstructorDashboard,
   presentHomeDashboard,
@@ -78,6 +78,14 @@ function parsePaginationOpts(query: {
   return { limit, offset };
 }
 
+function presentCourseBrowseItem(item: CourseBrowseItemRecord) {
+  return CourseBrowseItemSchema.parse({
+    ...item,
+    description: item.description ?? undefined,
+    thumbnailUrl: item.thumbnailUrl ?? undefined,
+  });
+}
+
 export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): void {
   app.get(
     '/v1/tracking/courses',
@@ -105,7 +113,7 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
       const items = await store.listBrowsableCourses(requestBaseUrl(request), auth.user.id);
-      return items.map((item) => CourseBrowseItemSchema.parse(item));
+      return items.map((item) => presentCourseBrowseItem(item));
     }
   );
 

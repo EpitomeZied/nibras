@@ -7,8 +7,8 @@ import swaggerUi from '@fastify/swagger-ui';
 import * as Sentry from '@sentry/node';
 import rawBodyPlugin from 'fastify-raw-body';
 import { Counter, Registry, collectDefaultMetrics } from 'prom-client';
-import { PrismaClient } from '@prisma/client';
 import { getEncryptionKeyStatus } from '@nibras/core';
+import { disconnectSharedPrisma, getSharedPrisma } from './lib/prisma';
 import { loadGitHubAppConfig } from '@nibras/github';
 import { PrismaStore } from './prisma-store';
 import {
@@ -71,19 +71,9 @@ function getAllowedCorsOrigins(): string[] {
   return Array.from(origins);
 }
 
-// Singleton Prisma client for health/metrics handlers so we never create a
-// new connection on every probe request.
-let _sharedPrisma: PrismaClient | null = null;
-function getSharedPrisma(): PrismaClient {
-  if (!_sharedPrisma) {
-    _sharedPrisma = new PrismaClient();
-  }
-  return _sharedPrisma;
-}
-
 function createDefaultStore(): AppStore {
   if (process.env.DATABASE_URL) {
-    return new PrismaStore();
+    return new PrismaStore(getSharedPrisma());
   }
   return new FileStore(getStorePath());
 }
@@ -340,10 +330,7 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
     await closeQueue();
     const { closeCompetitionsQueue } = await import('./lib/competitions-queue');
     await closeCompetitionsQueue();
-    if (_sharedPrisma) {
-      await _sharedPrisma.$disconnect();
-      _sharedPrisma = null;
-    }
+    await disconnectSharedPrisma();
   });
 
   registerGitHubRoutes(app, store, githubConfig);
