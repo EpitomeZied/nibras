@@ -171,17 +171,10 @@ export default function AgentMissionControlSection() {
             sub="This week"
             trend="up"
           />
-          <StatCard
-            className={styles.statB}
-            label="Latency"
-            value="620ms"
-            sub="p95"
-            trend="down"
-          />
+          <StatCard className={styles.statB} label="Latency" value="620ms" sub="p95" trend="down" />
           <StatCard className={styles.statC} label="Runs" value="428" sub="Today" trend="up" />
         </div>
       </div>
     </section>
   );
 }
-

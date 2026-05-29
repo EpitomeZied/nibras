@@ -79,7 +79,8 @@ Implement a lossless file compressor using Huffman coding.
     {
       key: 'cs106b/boggle',
       name: 'Boggle',
-      description: 'Recursive backtracking search for all valid English words on a 4×4 Boggle board.',
+      description:
+        'Recursive backtracking search for all valid English words on a 4×4 Boggle board.',
       task: `# Project: Boggle
 
 ## Overview
@@ -104,7 +105,8 @@ Find **all words** on a 4×4 Boggle board using recursive backtracking.
     {
       key: 'cs106b/trailblazer',
       name: 'Trailblazer (Graph Algorithms)',
-      description: 'Implement Dijkstra, A*, and Kruskal on a terrain map to find paths and spanning trees.',
+      description:
+        'Implement Dijkstra, A*, and Kruskal on a terrain map to find paths and spanning trees.',
       task: `# Project: Trailblazer
 
 ## Overview
@@ -113,7 +115,7 @@ Navigate a 2D terrain grid as a weighted graph. Implement four classic graph alg
 ## Algorithms to implement
 1. **BFS** — shortest path by number of steps
 2. **Dijkstra's** — shortest path by elevation cost
-3. **A\*** — shortest path with a heuristic
+3. **A*** — shortest path with a heuristic
 4. **Kruskal's** — minimum spanning tree (for road network)
 
 ## Files
@@ -157,7 +159,8 @@ Build \`MyVector<T>\` — a resizable array backed by a singly-linked list of no
     {
       key: 'cs107/reassemble',
       name: 'Reassemble (File Recovery)',
-      description: 'Recover a shredded document by reassembling character fragments using string algorithms.',
+      description:
+        'Recover a shredded document by reassembling character fragments using string algorithms.',
       task: `# Project: Reassemble
 
 ## Overview
@@ -219,7 +222,8 @@ void  myfree(void *ptr);
     {
       key: 'cs107/mysh',
       name: 'Custom Unix Shell (mysh)',
-      description: 'Build a mini Unix shell that supports pipelines, redirection, and built-in commands.',
+      description:
+        'Build a mini Unix shell that supports pipelines, redirection, and built-in commands.',
       task: `# Project: mysh — Custom Unix Shell
 
 ## Overview
@@ -246,7 +250,8 @@ Implement a simplified Unix shell in C.
     {
       key: 'cs107/vector-hashset',
       name: 'Generic Vector & Hashset',
-      description: 'Implement type-generic vector and hash set in C using void* and function pointers.',
+      description:
+        'Implement type-generic vector and hash set in C using void* and function pointers.',
       task: `# Project: Generic Vector & Hashset
 
 ## Overview
@@ -280,7 +285,8 @@ void  hashset_dispose(hashset *hs);
     {
       key: 'cs221/pacman-search',
       name: 'Pac-Man Search',
-      description: 'Implement DFS, BFS, UCS, and A* to navigate Pac-Man through various maze configurations.',
+      description:
+        'Implement DFS, BFS, UCS, and A* to navigate Pac-Man through various maze configurations.',
       task: `# Project: Pac-Man Search
 
 ## Overview
@@ -290,7 +296,7 @@ Agent must find paths through a Pac-Man maze using classic search algorithms.
 1. **DFS** — \`depthFirstSearch(problem)\`
 2. **BFS** — \`breadthFirstSearch(problem)\`
 3. **UCS** — \`uniformCostSearch(problem)\`
-4. **A\*** — \`aStarSearch(problem, heuristic)\`
+4. **A*** — \`aStarSearch(problem, heuristic)\`
 5. **Corners heuristic** — admissible heuristic for visiting all 4 corners
 6. **Food heuristic** — admissible heuristic for eating all food
 
@@ -336,7 +342,8 @@ Target: 25/25 points`,
     {
       key: 'cs221/pacman-rl',
       name: 'Pac-Man Reinforcement Learning',
-      description: 'Train a Pac-Man agent with Q-learning and approximate Q-learning using feature-based Q-functions.',
+      description:
+        'Train a Pac-Man agent with Q-learning and approximate Q-learning using feature-based Q-functions.',
       task: `# Project: Reinforcement Learning
 
 ## Overview
@@ -359,7 +366,8 @@ Train Pac-Man to play without knowing the rules — only through rewards.
     {
       key: 'cs221/sentiment',
       name: 'Sentiment Analysis (ML)',
-      description: 'Build a sentiment classifier for movie reviews using stochastic gradient descent.',
+      description:
+        'Build a sentiment classifier for movie reviews using stochastic gradient descent.',
       task: `# Project: Sentiment Analysis
 
 ## Overview
@@ -382,7 +390,8 @@ Classify movie reviews as positive or negative using a linear classifier trained
     {
       key: 'cs221/scheduling-csp',
       name: 'Course Scheduling (CSP)',
-      description: 'Model university course scheduling as a CSP and solve with backtracking + AC-3.',
+      description:
+        'Model university course scheduling as a CSP and solve with backtracking + AC-3.',
       task: `# Project: Course Scheduling CSP
 
 ## Overview
@@ -432,7 +441,8 @@ Report cosine similarity for 10 analogy pairs (king - man + woman ≈ queen)`,
     {
       key: 'cs224n/dep-parser',
       name: 'Neural Dependency Parser',
-      description: 'Train a transition-based dependency parser with a feed-forward neural network in PyTorch.',
+      description:
+        'Train a transition-based dependency parser with a feed-forward neural network in PyTorch.',
       task: `# Project: Neural Dependency Parser
 
 ## Overview
@@ -457,7 +467,8 @@ UAS ≥ 88% on PTB dev set`,
     {
       key: 'cs224n/nmt',
       name: 'Neural Machine Translation',
-      description: 'Implement a seq2seq NMT system with multiplicative attention for Cherokee→English.',
+      description:
+        'Implement a seq2seq NMT system with multiplicative attention for Cherokee→English.',
       task: `# Project: Neural Machine Translation
 
 ## Architecture
@@ -484,7 +495,8 @@ BLEU ≥ 10 on Cherokee→English test set`,
     {
       key: 'cs224n/minbert',
       name: 'minBERT Fine-tuning',
-      description: 'Fine-tune a minimal BERT implementation on sentiment, paraphrase, and STS tasks.',
+      description:
+        'Fine-tune a minimal BERT implementation on sentiment, paraphrase, and STS tasks.',
       task: `# Project: minBERT Fine-tuning
 
 ## Overview
@@ -501,7 +513,8 @@ You are given a minimal BERT implementation. Fine-tune it on three downstream ta
 - \`bert.py\`
 - \`classifier.py\`
 - \`multitask_classifier.py\``,
-      milestone: 'All three tasks meet target metrics. Multi-task model improves average over single-task.',
+      milestone:
+        'All three tasks meet target metrics. Multi-task model improves average over single-task.',
       dueAt: '2025-03-13T23:59:59Z',
     },
   ],
@@ -541,7 +554,8 @@ Build and compare four classifiers on CIFAR-10 (60k 32×32 RGB images, 10 classe
     {
       key: 'cs231n/fully-connected-cnn',
       name: 'Fully-Connected Nets & ConvNets',
-      description: 'Build a modular deep learning library from scratch: BatchNorm, Dropout, Conv, Pool.',
+      description:
+        'Build a modular deep learning library from scratch: BatchNorm, Dropout, Conv, Pool.',
       task: `# Project: Deeper Networks
 
 ## Overview
@@ -725,7 +739,9 @@ async function main() {
     console.log('');
   }
 
-  console.log(`🎉 Done! ${totalProjects} projects seeded across ${Object.keys(PROJECTS).length} courses.`);
+  console.log(
+    `🎉 Done! ${totalProjects} projects seeded across ${Object.keys(PROJECTS).length} courses.`
+  );
 }
 
 main()

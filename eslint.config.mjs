@@ -66,7 +66,13 @@ export default tseslint.config(
 
   // ── Legacy CommonJS src/, bin/, scripts/, test/ — Node.js globals ─────────────
   {
-    files: ['src/**/*.js', 'bin/**/*.js', 'scripts/**/*.js', 'test/**/*.js'],
+    files: [
+      'src/**/*.js',
+      'bin/**/*.js',
+      'scripts/**/*.js',
+      'scripts/**/*.mjs',
+      'test/**/*.js',
+    ],
     languageOptions: {
       globals: {
         ...globals.node,
