@@ -336,16 +336,6 @@
   font-weight: 600;
 }
 
-.heroTermSub {
-  margin: 0;
-  padding-left: 2px;
-  font-family: var(--font-mono, monospace);
-  font-size: 12.5px;
-  line-height: 1.7;
-  color: rgba(161, 161, 170, 0.7);
-  max-width: 54ch;
-}
-
 .heroWhatsNew {
   margin: 0;
   padding: 0 0 0 2px;

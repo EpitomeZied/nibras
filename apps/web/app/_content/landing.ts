@@ -19,7 +19,7 @@ export const heroBadge =
 export const heroTitleLines = [
   { line: 'Run your academic system', variant: 'default' as const },
   { line: 'like a real operating platform.', variant: 'accent' as const },
-  { line: 'Catalog, profiles, and CLI — without the chaos.', variant: 'muted' as const },
+  { line: 'Without the chaos.', variant: 'muted' as const },
 ] as const;
 
 export const heroSignInHint = 'GitHub, magic link, or email/password on /sign-in';
