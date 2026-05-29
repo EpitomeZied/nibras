@@ -1836,18 +1836,40 @@
 
 .signInTerminalBody {
   min-height: auto;
-  gap: 6px;
+  gap: 10px;
   padding: 20px 22px 24px;
 }
 
 .signInTermHelp {
-  margin: 0 0 8px;
+  margin: 0;
   padding-left: 2px;
   font-family: var(--font-mono, monospace);
   font-size: 12px;
   line-height: 1.65;
-  color: rgba(161, 161, 170, 0.55);
-  max-width: 46ch;
+  color: rgba(161, 161, 170, 0.65);
+}
+
+.signInAuthPanel {
+  margin-top: 4px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-sans);
+  width: 100%;
+}
+
+.signInAuthPanel button,
+.signInAuthPanel input {
+  font-family: var(--font-sans);
+}
+
+.signInAuthPanel .btnHeroPrimary {
+  width: 100%;
+  justify-content: center;
+}
+
+.signInAuthPanel .errorMsg,
+.signInAuthPanel .authNotice {
+  text-align: left;
 }
 
 .termAuthBtn {

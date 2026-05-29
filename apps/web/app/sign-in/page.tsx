@@ -33,45 +33,31 @@ export default function SignInPage() {
 
           <div className={`${styles.terminalBody} ${styles.signInTerminalBody}`}>
             <div className={styles.termLine}>
-              <span className={styles.termMuted}>Nibras session manager v2.0</span>
-            </div>
-            <div className={styles.termLine}>
-              <span className={styles.termSuccess}>✓</span>
-              <span className={styles.termMuted}> API reachable</span>
-            </div>
-            <div className={styles.termLine}>
-              <span className={styles.termHighlight}>→</span>
-              <span className={styles.termCmd}> authenticate to continue</span>
-            </div>
-            <div className={styles.termLine} aria-hidden="true">
-              <span className={styles.termMuted}> </span>
-            </div>
-            <div className={styles.termLine}>
-              <span className={styles.termPrompt}>login</span>
-              <span className={styles.termCmd}> --help</span>
+              <span className={styles.termPrompt}>nibras</span>
+              <span className={styles.termCmd}> login</span>
             </div>
             <p className={styles.signInTermHelp}>
               Use GitHub or a one-time email link. Magic-link sign-in works for the web dashboard;
               connect GitHub later for CLI submissions.
             </p>
 
-            <AuthSignIn
-              variant="terminal"
-              githubClassName={styles.termAuthBtn}
-              magicLinkClassName={styles.termAuthBtnGhost}
-              emailInputClassName={styles.termEmailInput}
-              errorClassName={styles.termAuthError}
-              noticeClassName={styles.termAuthNotice}
-              githubLabel="Continue with GitHub"
-              magicLinkLabel="Email me a sign-in link"
-            />
+            <div className={styles.signInAuthPanel}>
+              <AuthSignIn
+                githubClassName={styles.btnHeroPrimary}
+                magicLinkClassName={styles.btnMagicLink}
+                emailInputClassName={styles.magicLinkEmail}
+                errorClassName={styles.errorMsg}
+                noticeClassName={styles.authNotice}
+                githubLabel="Continue with GitHub"
+                magicLinkLabel="Email me a sign-in link"
+              />
+            </div>
           </div>
         </div>
 
         <p className={styles.signInFootnote}>
           <span className={styles.termMuted}>hint:</span> run{' '}
-          <code className={styles.signInFootnoteCode}>nibras login</code> from your project for CLI
-          device flow
+          <code className={styles.signInFootnoteCode}>nibras login</code> for CLI device flow
         </p>
       </div>
     </main>
