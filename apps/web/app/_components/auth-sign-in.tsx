@@ -17,6 +17,7 @@ type AuthSignInProps = {
   errorClassName?: string;
   noticeClassName?: string;
   githubLabel?: string;
+  magicLinkLabel?: string;
   compact?: boolean;
   bridgeNext?: string;
 };
@@ -34,13 +35,13 @@ export default function AuthSignIn({
   errorClassName = '',
   noticeClassName = '',
   githubLabel,
+  magicLinkLabel,
   compact = false,
   bridgeNext,
 }: AuthSignInProps) {
   const isTerminal = variant === 'terminal';
-  const resolvedGithubLabel =
-    githubLabel ?? (isTerminal ? 'auth login --provider github' : 'Continue with GitHub');
-  const resolvedMagicLabel = isTerminal ? 'auth magic-link --send' : 'Email me a sign-in link';
+  const resolvedGithubLabel = githubLabel ?? 'Continue with GitHub';
+  const resolvedMagicLabel = magicLinkLabel ?? 'Email me a sign-in link';
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');

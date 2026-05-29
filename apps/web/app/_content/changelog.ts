@@ -57,7 +57,11 @@ export const changelogReleases: ChangelogRelease[] = [
             author: 'EpitomeZied',
           },
           {
-            text: 'Better Auth sign-in — GitHub OAuth and email magic links with API session bridge',
+            text: 'GitHub sign-in — Continue with GitHub on the landing page, /sign-in, and /connect via Better Auth',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Email magic link sign-in — passwordless dashboard access with session bridge to the API',
             author: 'EpitomeZied',
           },
         ],
