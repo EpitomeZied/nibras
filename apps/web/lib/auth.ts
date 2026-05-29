@@ -4,7 +4,7 @@ import { magicLink } from 'better-auth/plugins';
 import { checkout, polar, portal, webhooks } from '@polar-sh/better-auth';
 import { Polar } from '@polar-sh/sdk';
 import { prisma } from './prisma';
-import { sendMagicLinkEmail, sendWelcomeEmail } from './email';
+import { sendMagicLinkEmail, sendResetPasswordEmail, sendWelcomeEmail } from './email';
 import { allocateUniqueUsername, deriveUsernameBase } from './auth-user-helpers';
 import { githubOAuthGetUserInfo } from './github-oauth-user';
 
@@ -134,6 +134,14 @@ export const auth = betterAuth({
   },
   verification: {
     modelName: 'AuthVerification',
+  },
+  emailAndPassword: {
+    enabled: true,
+    disableSignUp: true,
+    minPasswordLength: 8,
+    sendResetPassword: async ({ user, url }) => {
+      void sendResetPasswordEmail({ email: user.email, url });
+    },
   },
   ...(Object.keys(socialProviders).length > 0 ? { socialProviders } : {}),
   plugins: [

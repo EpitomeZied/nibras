@@ -230,8 +230,8 @@ export default function AgentMissionControlSection() {
           </h2>
           <p className={styles.sub}>
             My Courses, daily problem streaks, public profiles, Hassona tutoring, community v2, and
-            GitHub-native submissions — connected on one dashboard instead of scattered LMS tabs
-            and side tools.
+            GitHub-native submissions — connected on one dashboard instead of scattered LMS tabs and
+            side tools.
           </p>
           <div className={styles.actions}>
             <a className={styles.primaryCta} href="/sign-in">

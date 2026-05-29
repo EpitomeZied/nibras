@@ -36,6 +36,7 @@ test('github requires GitHub app client credentials', () => {
       const config = getAuthProvidersConfig();
       assert.equal(config.github, false);
       assert.equal(config.magicLink, false);
+      assert.equal(config.emailPassword, true);
     }
   );
 
@@ -49,6 +50,7 @@ test('github requires GitHub app client credentials', () => {
       const config = getAuthProvidersConfig();
       assert.equal(config.github, true);
       assert.equal(config.magicLink, false);
+      assert.equal(config.emailPassword, true);
     }
   );
 });
@@ -67,10 +69,17 @@ test('magic link requires Resend API key', () => {
   );
 });
 
-test('hasAnyAuthProvider is false when both providers are disabled', () => {
-  assert.equal(hasAnyAuthProvider({ github: false, magicLink: false }), false);
-  assert.equal(hasAnyAuthProvider({ github: true, magicLink: false }), true);
-  assert.equal(hasAnyAuthProvider({ github: false, magicLink: true }), true);
+test('hasAnyAuthProvider is false when all providers are disabled', () => {
+  assert.equal(
+    hasAnyAuthProvider({ github: false, magicLink: false, emailPassword: false }),
+    false
+  );
+  assert.equal(hasAnyAuthProvider({ github: true, magicLink: false, emailPassword: false }), true);
+  assert.equal(hasAnyAuthProvider({ github: false, magicLink: true, emailPassword: false }), true);
+  assert.equal(
+    hasAnyAuthProvider({ github: false, magicLink: false, emailPassword: true }),
+    true
+  );
 });
 
 test('getUnavailableSignInMessage differs for production vs development', () => {

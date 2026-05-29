@@ -1,6 +1,7 @@
 export type AuthProvidersConfig = {
   github: boolean;
   magicLink: boolean;
+  emailPassword: boolean;
 };
 
 /** Server-side auth provider availability. Used by /api/auth/providers-config. */
@@ -10,11 +11,12 @@ export function getAuthProvidersConfig(): AuthProvidersConfig {
   return {
     github,
     magicLink,
+    emailPassword: true,
   };
 }
 
 export function hasAnyAuthProvider(config: AuthProvidersConfig): boolean {
-  return config.github || config.magicLink;
+  return config.github || config.magicLink || config.emailPassword;
 }
 
 /** Message when no sign-in providers are configured (web UI empty state). */

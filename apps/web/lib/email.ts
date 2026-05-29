@@ -1,6 +1,7 @@
 import { render } from '@react-email/components';
 import { Resend } from 'resend';
 import { MagicLinkEmail } from '../emails/magic-link';
+import { ResetPasswordEmail } from '../emails/reset-password';
 import { WelcomeEmail } from '../emails/welcome';
 
 function getResend(): Resend | null {
@@ -41,6 +42,28 @@ export async function sendMagicLinkEmail(args: { email: string; url: string }): 
   });
   if (error) {
     throw new Error(error.message || 'Failed to send sign-in email.');
+  }
+}
+
+export async function sendResetPasswordEmail(args: { email: string; url: string }): Promise<void> {
+  const resend = getResend();
+  if (!resend) {
+    throw new Error(
+      'Password reset is not configured on this server. Ask an admin to set RESEND_API_KEY.'
+    );
+  }
+
+  const html = await render(ResetPasswordEmail({ url: args.url }));
+
+  const { error } = await resend.emails.send({
+    from: emailFrom(),
+    to: args.email,
+    subject: 'Reset your Nibras password',
+    html,
+    text: `Reset your Nibras password: ${args.url}\n\nThis link expires in one hour.`,
+  });
+  if (error) {
+    throw new Error(error.message || 'Failed to send password reset email.');
   }
 }
 

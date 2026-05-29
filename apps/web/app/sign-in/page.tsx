@@ -42,8 +42,8 @@ export default function SignInPage() {
             </div>
             {hasAnyAuthProvider(initialProviders) ? (
               <p className={styles.signInTermHelp}>
-                Use GitHub or a one-time email link. Magic-link sign-in works for the web dashboard;
-                connect GitHub later for CLI submissions.
+                Use GitHub, a one-time email link, or email and password. Magic-link sign-in works
+                for the web dashboard; connect GitHub later for CLI submissions.
               </p>
             ) : null}
 

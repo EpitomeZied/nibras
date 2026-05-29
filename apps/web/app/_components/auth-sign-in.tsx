@@ -26,13 +26,28 @@ type AuthSignInProps = {
 const DEFAULT_PROVIDERS: AuthProviders = {
   github: true,
   magicLink: true,
+  emailPassword: true,
 };
 
 function normalizeProviders(body: Partial<AuthProviders> | null | undefined): AuthProviders {
   return {
     github: body?.github ?? false,
     magicLink: body?.magicLink ?? false,
+    emailPassword: body?.emailPassword ?? true,
   };
+}
+
+function passwordSignInErrorMessage(message: string): string {
+  const lower = message.toLowerCase();
+  if (
+    lower.includes('invalid') ||
+    lower.includes('incorrect') ||
+    lower.includes('not found') ||
+    lower.includes('credential')
+  ) {
+    return 'Invalid email or password. If you signed in with a magic link, set a password in Settings first.';
+  }
+  return message;
 }
 
 export default function AuthSignIn({
@@ -53,10 +68,14 @@ export default function AuthSignIn({
   const resolvedGithubLabel = githubLabel ?? 'Continue with GitHub';
   const resolvedMagicLabel = magicLinkLabel ?? 'Email me a sign-in link';
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailMode, setEmailMode] = useState<'magic' | 'password'>('magic');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [githubSubmitting, setGithubSubmitting] = useState(false);
   const [magicSubmitting, setMagicSubmitting] = useState(false);
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false);
+  const [forgotSubmitting, setForgotSubmitting] = useState(false);
   const [providers, setProviders] = useState<AuthProviders>(
     () => initialProviders ?? DEFAULT_PROVIDERS
   );
@@ -85,8 +104,9 @@ export default function AuthSignIn({
     return `${base}${sep}next=${encodeURIComponent(bridgeNext)}`;
   }
 
-  const socialBusy = githubSubmitting || magicSubmitting;
-  const noProviders = !providers.github && !providers.magicLink;
+  const socialBusy = githubSubmitting || magicSubmitting || passwordSubmitting || forgotSubmitting;
+  const noProviders = !providers.github && !providers.magicLink && !providers.emailPassword;
+  const showEmailSection = providers.magicLink || providers.emailPassword;
 
   async function handleGitHub() {
     setError('');
@@ -141,6 +161,71 @@ export default function AuthSignIn({
     }
   }
 
+  async function handlePasswordSignIn(event: FormEvent) {
+    event.preventDefault();
+    setError('');
+    setNotice('');
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError('Enter your email address.');
+      return;
+    }
+    if (!password) {
+      setError('Enter your password.');
+      return;
+    }
+    setPasswordSubmitting(true);
+    try {
+      const callbackURL = buildBridgeCallback();
+      const { data, error: signInError } = await authClient.signIn.email({
+        email: trimmed,
+        password,
+        callbackURL,
+      });
+      if (signInError) {
+        throw new Error(passwordSignInErrorMessage(signInError.message ?? 'Sign-in failed.'));
+      }
+      const redirectUrl = data && typeof data === 'object' && 'url' in data ? data.url : null;
+      if (typeof redirectUrl === 'string' && redirectUrl.length > 0) {
+        window.location.assign(redirectUrl);
+        return;
+      }
+      window.location.assign(callbackURL);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setPasswordSubmitting(false);
+    }
+  }
+
+  async function handleForgotPassword() {
+    setError('');
+    setNotice('');
+    const trimmed = email.trim();
+    if (!trimmed) {
+      setError('Enter your email address first.');
+      return;
+    }
+    setForgotSubmitting(true);
+    try {
+      const redirectTo =
+        typeof window !== 'undefined'
+          ? `${window.location.origin}/reset-password`
+          : '/reset-password';
+      const { error: resetError } = await authClient.requestPasswordReset({
+        email: trimmed,
+        redirectTo,
+      });
+      if (resetError) {
+        throw new Error(resetError.message ?? 'Could not send reset email.');
+      }
+      setNotice('If an account exists for that email, a password reset link has been sent.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setForgotSubmitting(false);
+    }
+  }
+
   const unavailableMessage = getUnavailableSignInMessage(process.env.NODE_ENV === 'production');
 
   return (
@@ -184,7 +269,7 @@ export default function AuthSignIn({
         </button>
       ) : null}
 
-      {!compact && providers.magicLink ? (
+      {!compact && showEmailSection ? (
         isTerminal ? (
           <p style={termCommentStyle}># or sign in with email</p>
         ) : (
@@ -201,42 +286,81 @@ export default function AuthSignIn({
         )
       ) : null}
 
-      {providers.magicLink ? (
+      {showEmailSection && providers.magicLink && providers.emailPassword ? (
+        <div style={modeToggleStyle(isTerminal)}>
+          <button
+            type="button"
+            style={modeButtonStyle(emailMode === 'magic', isTerminal)}
+            disabled={socialBusy}
+            onClick={() => setEmailMode('magic')}
+          >
+            Magic link
+          </button>
+          <button
+            type="button"
+            style={modeButtonStyle(emailMode === 'password', isTerminal)}
+            disabled={socialBusy}
+            onClick={() => setEmailMode('password')}
+          >
+            Password
+          </button>
+        </div>
+      ) : null}
+
+      {providers.magicLink && (!providers.emailPassword || emailMode === 'magic') ? (
         <form
           onSubmit={(e) => void handleMagicLink(e)}
           style={{ display: 'flex', flexDirection: 'column', gap: isTerminal ? 8 : 10 }}
         >
-          {isTerminal ? (
-            <label style={termEmailRowStyle}>
-              <span style={termEmailPromptStyle}>$</span>
-              <input
-                type="email"
-                name="email"
-                autoComplete="email"
-                placeholder="you@school.edu"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={emailInputClassName}
-                disabled={socialBusy}
-                required
-              />
-            </label>
-          ) : (
-            <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              placeholder="you@school.edu"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={emailInputClassName}
-              disabled={socialBusy}
-              required
-            />
-          )}
+          {renderEmailInput({
+            isTerminal,
+            email,
+            setEmail,
+            emailInputClassName,
+            socialBusy,
+          })}
           <button type="submit" className={magicLinkClassName} disabled={socialBusy}>
             {magicSubmitting ? (isTerminal ? 'sending…' : 'Sending link…') : resolvedMagicLabel}
           </button>
+        </form>
+      ) : null}
+
+      {providers.emailPassword && (!providers.magicLink || emailMode === 'password') ? (
+        <form
+          onSubmit={(e) => void handlePasswordSignIn(e)}
+          style={{ display: 'flex', flexDirection: 'column', gap: isTerminal ? 8 : 10 }}
+        >
+          {renderEmailInput({
+            isTerminal,
+            email,
+            setEmail,
+            emailInputClassName,
+            socialBusy,
+          })}
+          {renderPasswordInput({
+            isTerminal,
+            password,
+            setPassword,
+            emailInputClassName,
+            socialBusy,
+          })}
+          <button type="submit" className={magicLinkClassName} disabled={socialBusy}>
+            {passwordSubmitting
+              ? isTerminal
+                ? 'signing in…'
+                : 'Signing in…'
+              : 'Sign in with password'}
+          </button>
+          {providers.magicLink ? (
+            <button
+              type="button"
+              style={forgotLinkStyle(isTerminal)}
+              disabled={socialBusy}
+              onClick={() => void handleForgotPassword()}
+            >
+              {forgotSubmitting ? 'Sending reset link…' : 'Forgot password?'}
+            </button>
+          ) : null}
         </form>
       ) : null}
 
@@ -252,6 +376,136 @@ export default function AuthSignIn({
       ) : null}
     </div>
   );
+}
+
+function renderEmailInput({
+  isTerminal,
+  email,
+  setEmail,
+  emailInputClassName,
+  socialBusy,
+}: {
+  isTerminal: boolean;
+  email: string;
+  setEmail: (value: string) => void;
+  emailInputClassName: string;
+  socialBusy: boolean;
+}) {
+  if (isTerminal) {
+    return (
+      <label style={termEmailRowStyle}>
+        <span style={termEmailPromptStyle}>$</span>
+        <input
+          type="email"
+          name="email"
+          autoComplete="email"
+          placeholder="you@school.edu"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={emailInputClassName}
+          disabled={socialBusy}
+          required
+        />
+      </label>
+    );
+  }
+  return (
+    <input
+      type="email"
+      name="email"
+      autoComplete="email"
+      placeholder="you@school.edu"
+      value={email}
+      onChange={(e) => setEmail(e.target.value)}
+      className={emailInputClassName}
+      disabled={socialBusy}
+      required
+    />
+  );
+}
+
+function renderPasswordInput({
+  isTerminal,
+  password,
+  setPassword,
+  emailInputClassName,
+  socialBusy,
+}: {
+  isTerminal: boolean;
+  password: string;
+  setPassword: (value: string) => void;
+  emailInputClassName: string;
+  socialBusy: boolean;
+}) {
+  if (isTerminal) {
+    return (
+      <label style={termEmailRowStyle}>
+        <span style={termEmailPromptStyle}>#</span>
+        <input
+          type="password"
+          name="password"
+          autoComplete="current-password"
+          placeholder="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className={emailInputClassName}
+          disabled={socialBusy}
+          required
+        />
+      </label>
+    );
+  }
+  return (
+    <input
+      type="password"
+      name="password"
+      autoComplete="current-password"
+      placeholder="Password"
+      value={password}
+      onChange={(e) => setPassword(e.target.value)}
+      className={emailInputClassName}
+      disabled={socialBusy}
+      required
+    />
+  );
+}
+
+function modeToggleStyle(isTerminal: boolean): CSSProperties {
+  return {
+    display: 'flex',
+    gap: 8,
+    fontFamily: isTerminal ? 'var(--font-mono, monospace)' : undefined,
+  };
+}
+
+function modeButtonStyle(active: boolean, isTerminal: boolean): CSSProperties {
+  return {
+    flex: 1,
+    padding: isTerminal ? '6px 10px' : '8px 12px',
+    borderRadius: 8,
+    border: active ? '1px solid rgba(74, 222, 128, 0.5)' : '1px solid rgba(255,255,255,0.12)',
+    background: active ? 'rgba(74, 222, 128, 0.12)' : 'rgba(255,255,255,0.04)',
+    color: active ? '#4ade80' : 'rgba(161,161,170,0.9)',
+    fontSize: isTerminal ? 12 : 13,
+    fontWeight: 600,
+    cursor: 'pointer',
+    fontFamily: isTerminal ? 'var(--font-mono, monospace)' : undefined,
+  };
+}
+
+function forgotLinkStyle(isTerminal: boolean): CSSProperties {
+  return {
+    margin: 0,
+    padding: 0,
+    border: 'none',
+    background: 'none',
+    color: 'rgba(161,161,170,0.85)',
+    fontSize: isTerminal ? 12 : 13,
+    textAlign: 'left' as const,
+    cursor: 'pointer',
+    textDecoration: 'underline',
+    fontFamily: isTerminal ? 'var(--font-mono, monospace)' : undefined,
+  };
 }
 
 const termCommentStyle: CSSProperties = {

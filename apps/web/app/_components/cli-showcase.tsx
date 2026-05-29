@@ -2,7 +2,7 @@
 
 import { useCallback, useState, type CSSProperties } from 'react';
 import { cliShowcaseCopy, cliShowcaseTiles, type CliShowcaseTile } from '../_content/landing';
-import { LandingIcon } from '../_content/landing-icons';
+import CliTileIcon from './cli-tile-icon';
 import styles from './feature-tiles-showcase.module.css';
 
 function lineClass(kind: CliShowcaseTile['lines'][number]['kind']): string {
@@ -68,7 +68,7 @@ export default function CliShowcase() {
               >
                 <span className={styles.tileIndex}>{index + 1}</span>
                 <span className={styles.tileIcon} aria-hidden="true">
-                  <LandingIcon id={tile.icon} />
+                  <CliTileIcon iconFile={tile.iconFile ?? tile.slug} />
                 </span>
                 <span className={styles.tileName}>{tile.name}</span>
                 <span className={styles.tileDesc}>{tile.desc}</span>
