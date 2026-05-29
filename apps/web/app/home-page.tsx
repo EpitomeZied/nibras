@@ -8,7 +8,6 @@ import AgentMissionControlSection from './_components/agent-mission-control';
 import FeatureTilesShowcase from './_components/feature-tiles-showcase';
 import CliShowcase from './_components/cli-showcase';
 import {
-  ctaFeatures,
   landingFooterContactEmail,
   landingNavLinks,
   heroBadge,
@@ -373,54 +372,6 @@ export default function HomePage() {
                   {supportNotice.email}
                 </a>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.bottomTerminalSection} aria-labelledby="cta-heading">
-          <div className={`${styles.terminalWindow} ${styles.bottomTerminal}`}>
-            <div className={styles.terminalTitleBar}>
-              <span className={styles.termDot} style={{ background: '#ff5f57' }} />
-              <span className={styles.termDot} style={{ background: '#febc2e' }} />
-              <span className={styles.termDot} style={{ background: '#28c840' }} />
-              <span className={styles.termTitle}>nibras — onboard</span>
-            </div>
-
-            <div className={`${styles.terminalBody} ${styles.bottomTerminalBody}`}>
-              <div className={styles.termLine}>
-                <span className={styles.termPrompt}>nibras</span>
-                <span className={styles.termCmd}> onboard</span>
-              </div>
-
-              <h2 id="cta-heading" className={styles.bottomTerminalHeadline}>
-                Ready to run courses, teams, and planning in one place?
-              </h2>
-
-              <p className={styles.bottomTerminalText}>
-                Sign in with GitHub, open the full Nibras system, and start using templates, team
-                formation, planner workflows, Hassona, community, competitions, IDE, achievements,
-                reputation, and GitHub-native submissions together.
-              </p>
-
-              <ul className={styles.bottomTerminalChecks} aria-label="Included with sign-up">
-                {ctaFeatures.map((feat) => (
-                  <li key={feat}>
-                    <span className={styles.termSuccess} aria-hidden="true">
-                      ✓{' '}
-                    </span>
-                    {feat}
-                  </li>
-                ))}
-              </ul>
-
-              <div className={styles.termLine}>
-                <span className={styles.termPrompt}>nibras</span>
-                <span className={styles.termCmd}> login</span>
-              </div>
-
-              <Link href="/sign-in" className={styles.termAuthBtn}>
-                Continue to sign-in →
-              </Link>
             </div>
           </div>
         </section>

@@ -77,7 +77,11 @@ export default function FeatureTilesShowcase() {
   const active = TILES.find((t) => t.id === activeId) ?? TILES[0];
 
   return (
-    <section id="features" className={styles.section} aria-labelledby="features-heading">
+    <section
+      id="features"
+      className={`${styles.section} ${styles.sectionFeatures}`}
+      aria-labelledby="features-heading"
+    >
       <header className={styles.header}>
         <p className={styles.eyebrow}>{featuresShowcaseCopy.eyebrow}</p>
         <h2 id="features-heading" className={styles.title}>

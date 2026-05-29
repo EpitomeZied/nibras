@@ -35,7 +35,11 @@ export default function CliShowcase() {
   const activeIndex = cliShowcaseTiles.findIndex((t) => t.slug === active.slug) + 1;
 
   return (
-    <section id="cli" className={styles.section} aria-labelledby="cli-heading">
+    <section
+      id="cli"
+      className={`${styles.section} ${styles.sectionCli}`}
+      aria-labelledby="cli-heading"
+    >
       <header className={styles.header}>
         <p className={styles.eyebrow}>{cliShowcaseCopy.eyebrow}</p>
         <h2 id="cli-heading" className={styles.title}>

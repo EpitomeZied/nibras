@@ -31,7 +31,7 @@
 
 .page {
   --landing-pad-x: clamp(24px, 4vw, 56px);
-  --landing-pad-section: clamp(48px, 6vh, 72px);
+  --landing-pad-section: clamp(36px, 4vh, 56px);
   --landing-wide: min(1120px, calc(100% - 48px));
   --landing-terminal: min(760px, calc(100% - 48px));
   --nav-height: 64px;
@@ -1683,7 +1683,7 @@
   color: rgba(161, 161, 170, 0.65);
 }
 
-/* ── Bottom terminals (support + onboard) ───────────────────────────────────── */
+/* ── Bottom terminal (support) ──────────────────────────────────────────────── */
 
 .bottomTerminals {
   position: relative;
@@ -1693,7 +1693,7 @@
   gap: 20px;
   width: 100%;
   max-width: var(--landing-terminal);
-  margin-top: var(--landing-pad-section);
+  margin-top: clamp(32px, 4vh, 48px);
   padding: 0 clamp(20px, 4vw, 32px);
 }
 
