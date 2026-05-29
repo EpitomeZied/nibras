@@ -10,6 +10,7 @@ import {
   cliFeatures,
   ctaFeatures,
   featureGroups,
+  landingFooterContactEmail,
   landingNavLinks,
   heroBadge,
   heroSub,
@@ -538,6 +539,9 @@ export default function HomePage() {
               <a href="/dashboard">Dashboard</a>
             </div>
             <div className={styles.footerCol}>
+              <span className={styles.footerColTitle}>Contact</span>
+              <a href={`mailto:${landingFooterContactEmail}`}>{landingFooterContactEmail}</a>
+            </div>
           </div>
         </div>
 

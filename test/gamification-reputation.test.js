@@ -6,7 +6,10 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { BADGE_CATALOG, computeLevel } = require('../apps/api/dist/features/gamification/badges-catalog');
+const {
+  BADGE_CATALOG,
+  computeLevel,
+} = require('../apps/api/dist/features/gamification/badges-catalog');
 const { GamificationService } = require('../apps/api/dist/features/gamification/service');
 const { ReputationService } = require('../apps/api/dist/features/reputation/service');
 const { buildApp } = require('../apps/api/dist/app');
@@ -49,12 +52,20 @@ test('GamificationService awards github-connected badge when linked', async () =
       count: async () => BADGE_CATALOG.length,
     },
     user: {
-      findUnique: async () => ({ githubLinked: true, githubAppInstalled: false, lastReputationSyncAt: null }),
+      findUnique: async () => ({
+        githubLinked: true,
+        githubAppInstalled: false,
+        lastReputationSyncAt: null,
+      }),
       findMany: async () => [],
       update: async () => ({}),
     },
     submissionAttempt: { count: async () => 0, findMany: async () => [] },
-    communityQuestion: { count: async () => 0, findMany: async () => [], aggregate: async () => ({ _sum: { votesCount: 0 } }) },
+    communityQuestion: {
+      count: async () => 0,
+      findMany: async () => [],
+      aggregate: async () => ({ _sum: { votesCount: 0 } }),
+    },
     communityAnswer: { count: async () => 0, findMany: async () => [] },
     communityVote: { count: async () => 0 },
     communityThread: { count: async () => 0 },
@@ -107,7 +118,14 @@ test('ReputationService sync is idempotent for duplicate sources', async () => {
       update: async () => ({}),
     },
     submissionAttempt: {
-      findMany: async () => [{ id: 'sub1', submittedAt: new Date(), createdAt: new Date(), project: { name: 'Test Project' } }],
+      findMany: async () => [
+        {
+          id: 'sub1',
+          submittedAt: new Date(),
+          createdAt: new Date(),
+          project: { name: 'Test Project' },
+        },
+      ],
     },
     communityAnswer: { findMany: async () => [] },
     communityQuestion: { findMany: async () => [] },
