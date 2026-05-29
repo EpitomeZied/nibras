@@ -79,25 +79,42 @@ export type Badge = z.infer<typeof BadgeSchema>;
 export type MyReputationResponse = z.infer<typeof MyReputationResponseSchema>;
 export type LeaderboardResponse = z.infer<typeof LeaderboardResponseSchema>;
 
-/** Reputation score thresholds for user levels 1–12. */
-export const REPUTATION_LEVEL_THRESHOLDS = [
-  0, 250, 750, 1500, 3000, 6000, 10000, 15000, 22000, 32000, 45000, 65000,
-] as const;
+/** Reputation score thresholds for user levels 1–6 (matches /levels). */
+export const REPUTATION_LEVEL_THRESHOLDS = [0, 250, 750, 1500, 3000, 6000] as const;
 
 export const REPUTATION_LEVEL_NAMES = [
-  'Spark',
-  'Ember',
-  'Flame',
-  'Blaze',
-  'Inferno',
-  'Nova',
-  'Comet',
-  'Pulsar',
-  'Quasar',
-  'Nebula',
-  'Galaxy',
-  'Supernova',
+  'Beginner',
+  'Apprentice',
+  'Practitioner',
+  'Specialist',
+  'Expert',
+  'Master',
 ] as const;
+
+export const REPUTATION_LEVEL_COLORS = [
+  '#94a3b8',
+  '#22c55e',
+  '#38bdf8',
+  '#a78bfa',
+  '#f59e0b',
+  '#ef4444',
+] as const;
+
+export type ReputationTier = {
+  tier: number;
+  label: (typeof REPUTATION_LEVEL_NAMES)[number];
+  threshold: number;
+  color: string;
+};
+
+export const REPUTATION_TIERS: readonly ReputationTier[] = REPUTATION_LEVEL_NAMES.map(
+  (label, index) => ({
+    tier: index + 1,
+    label,
+    threshold: REPUTATION_LEVEL_THRESHOLDS[index],
+    color: REPUTATION_LEVEL_COLORS[index],
+  })
+);
 
 export function computeReputationLevel(score: number): number {
   let level = 1;

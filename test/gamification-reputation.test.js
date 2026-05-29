@@ -23,7 +23,7 @@ test('BADGE_CATALOG has unique codes and computeLevel tiers', () => {
   assert.equal(computeLevel(249), 1);
   assert.equal(computeLevel(250), 2);
   assert.equal(computeLevel(6000), 6);
-  assert.equal(computeLevel(65000), 12);
+  assert.equal(computeLevel(65000), 6);
 });
 
 test('GamificationService awards github-connected badge when linked', async () => {

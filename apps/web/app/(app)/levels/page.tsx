@@ -1,31 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  REPUTATION_TIERS,
+  getReputationLevelProgress,
+} from '@nibras/contracts';
 import styles from './page.module.css';
 import EmptyState from '../_components/widgets/EmptyState';
 import { getMyReputation, type MyReputation } from '../../lib/services/reputation';
 import { friendlyMessage } from '../../lib/api-clients/errors';
-
-const LEVELS = [
-  { tier: 1, label: 'Beginner', threshold: 0, color: '#94a3b8' },
-  { tier: 2, label: 'Apprentice', threshold: 250, color: '#22c55e' },
-  { tier: 3, label: 'Practitioner', threshold: 750, color: '#38bdf8' },
-  { tier: 4, label: 'Specialist', threshold: 1500, color: '#a78bfa' },
-  { tier: 5, label: 'Expert', threshold: 3000, color: '#f59e0b' },
-  { tier: 6, label: 'Master', threshold: 6000, color: '#ef4444' },
-];
-
-function computeCurrentTier(score: number) {
-  let current = LEVELS[0];
-  for (const tier of LEVELS) {
-    if (score >= tier.threshold) current = tier;
-  }
-  return current;
-}
-
-function computeNextTier(score: number) {
-  return LEVELS.find((tier) => tier.threshold > score) ?? null;
-}
 
 export default function LevelsPage() {
   const [reputation, setReputation] = useState<MyReputation | null>(null);
@@ -49,14 +32,13 @@ export default function LevelsPage() {
   }, [load]);
 
   const total = reputation?.total ?? 0;
-  const current = useMemo(() => computeCurrentTier(total), [total]);
-  const next = useMemo(() => computeNextTier(total), [total]);
-  const pct = next
-    ? Math.min(
-        100,
-        Math.round(((total - current.threshold) / (next.threshold - current.threshold)) * 100)
-      )
-    : 100;
+  const progress = useMemo(() => getReputationLevelProgress(total), [total]);
+  const currentTier =
+    REPUTATION_TIERS.find((tier) => tier.tier === progress.level) ?? REPUTATION_TIERS[0];
+  const nextTier = progress.nextThreshold
+    ? (REPUTATION_TIERS.find((tier) => tier.threshold === progress.nextThreshold) ?? null)
+    : null;
+  const pct = Math.round(progress.progressInLevel * 100);
 
   return (
     <div className={styles.page}>
@@ -80,19 +62,21 @@ export default function LevelsPage() {
         ) : (
           <>
             <div className={styles.currentTier}>
-              <span className={styles.currentBadge} style={{ background: current.color }}>
-                {current.tier}
+              <span className={styles.currentBadge} style={{ background: currentTier.color }}>
+                {currentTier.tier}
               </span>
               <div className={styles.currentText}>
-                <strong>{current.label}</strong>
+                <strong>{currentTier.label}</strong>
                 <span>{total.toLocaleString()} reputation</span>
               </div>
             </div>
             <div className={styles.progressBlock}>
               <div className={styles.progressMeta}>
-                <span>{next ? `Next: ${next.label}` : 'Max tier reached'}</span>
+                <span>{nextTier ? `Next: ${nextTier.label}` : 'Max tier reached'}</span>
                 <span>
-                  {next ? `${(next.threshold - total).toLocaleString()} to go` : 'Legendary status'}
+                  {nextTier
+                    ? `${(nextTier.threshold - total).toLocaleString()} to go`
+                    : 'Legendary status'}
                 </span>
               </div>
               <div className={styles.progressTrack}>
@@ -106,8 +90,8 @@ export default function LevelsPage() {
       <section className={styles.tiers}>
         <h2 className={styles.sectionTitle}>All tiers</h2>
         <ul className={styles.tierList}>
-          {LEVELS.map((tier) => {
-            const isCurrent = tier.tier === current.tier && !!reputation;
+          {REPUTATION_TIERS.map((tier) => {
+            const isCurrent = tier.tier === currentTier.tier && !!reputation;
             const isUnlocked = !!reputation && total >= tier.threshold;
             return (
               <li

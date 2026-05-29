@@ -30,14 +30,15 @@ test('rating badges use peak metrics and official thresholds', () => {
   assert.equal(lcKnight.threshold, 1200);
 });
 
-test('reputation levels v2 — 12 tiers with names', () => {
-  assert.equal(REPUTATION_LEVEL_THRESHOLDS.length, 12);
+test('reputation levels — 6 tiers with names', () => {
+  assert.equal(REPUTATION_LEVEL_THRESHOLDS.length, 6);
   assert.equal(computeReputationLevel(0), 1);
   assert.equal(computeReputationLevel(249), 1);
   assert.equal(computeReputationLevel(250), 2);
-  assert.equal(getReputationLevelName(2), 'Ember');
-  assert.equal(computeReputationLevel(65000), 12);
-  assert.equal(getReputationLevelName(12), 'Supernova');
+  assert.equal(getReputationLevelName(2), 'Apprentice');
+  assert.equal(computeReputationLevel(6000), 6);
+  assert.equal(computeReputationLevel(65000), 6);
+  assert.equal(getReputationLevelName(6), 'Master');
 });
 
 test('GamificationService awards CF rating badges from platformMaxRating', async () => {
