@@ -23,8 +23,9 @@ import {
   transformSub,
   whatsNew,
 } from './_content/landing';
-import { WEB_BASE_URL } from './lib/web-base-url';
 import styles from './signin.module.css';
+
+const GITHUB_REPO_URL = 'https://github.com/nibras-platform/nibras';
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   email_not_found:
@@ -111,7 +112,7 @@ export default function HomePage({ initialProviders }: HomePageProps) {
 
       <nav className={styles.nav}>
         <div className={styles.navLogo}>
-          <a href={WEB_BASE_URL} className={styles.siteLogoLink} aria-label="nibrasplatform.me">
+          <a href="/" className={styles.siteLogoLink} aria-label="Nibras home">
             <NibrasLogo variant="inverse" width={110} priority />
           </a>
           <span className={styles.navBadge}>Beta</span>
@@ -126,7 +127,7 @@ export default function HomePage({ initialProviders }: HomePageProps) {
             />
           ))}
           <a
-            href="https://github.com/EpitomeZied/nibras"
+            href={GITHUB_REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
             className={styles.navStar}
@@ -227,21 +228,23 @@ export default function HomePage({ initialProviders }: HomePageProps) {
 
       <AgentMissionControlSection />
 
-      <p className={styles.trustedBar}>
-        Trusted by instructors and students running courses, teams, planning, and practice in one
-        system
-      </p>
+      <div className={styles.landingMetrics}>
+        <p className={styles.trustedBar}>
+          Trusted by instructors and students running courses, teams, planning, and practice in one
+          system
+        </p>
 
-      <div className={styles.statsBar}>
-        {statsBar.map((stat, index) => (
-          <div key={stat.label} className={styles.statItemWrap}>
-            {index > 0 && <div className={styles.statDivider} />}
-            <div className={styles.statItem}>
-              <span className={styles.statNumber}>{stat.number}</span>
-              <span className={styles.statLabel}>{stat.label}</span>
+        <div className={styles.statsBar}>
+          {statsBar.map((stat, index) => (
+            <div key={stat.label} className={styles.statItemWrap}>
+              {index > 0 && <div className={styles.statDivider} />}
+              <div className={styles.statItem}>
+                <span className={styles.statNumber}>{stat.number}</span>
+                <span className={styles.statLabel}>{stat.label}</span>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       <section id="how-it-works" className={`${styles.section} ${styles.howItWorksSection}`}>
@@ -447,7 +450,7 @@ export default function HomePage({ initialProviders }: HomePageProps) {
         <div className={styles.footerInner}>
           <div className={styles.footerBrand}>
             <div className={styles.footerBrandRow}>
-              <a href={WEB_BASE_URL} className={styles.siteLogoLink} aria-label="nibrasplatform.me">
+              <a href="/" className={styles.siteLogoLink} aria-label="Nibras home">
                 <NibrasLogo variant="inverse" width={100} />
               </a>
             </div>
@@ -467,7 +470,7 @@ export default function HomePage({ initialProviders }: HomePageProps) {
               <span className={styles.footerColTitle}>Developers</span>
               <Link href="/docs">Documentation</Link>
               <a href="/instructor/onboarding">CLI Setup Guide</a>
-              <a href="https://github.com/nibras-platform/nibras" target="_blank" rel="noreferrer">
+              <a href={GITHUB_REPO_URL} target="_blank" rel="noreferrer">
                 GitHub
               </a>
             </div>

@@ -13,7 +13,7 @@
 
 .sectionInner {
   margin: 0 auto;
-  width: min(1200px, 100%);
+  width: var(--landing-wide, min(1120px, calc(100% - 48px)));
   display: grid;
   grid-template-columns: 1.05fr 1fr;
   gap: clamp(28px, 4vw, 56px);
@@ -742,6 +742,25 @@
   .floatCommunity,
   .liveDot {
     animation: none;
+  }
+}
+
+/* ── Desktop landing rhythm ─────────────────────────────────────────────────── */
+
+@media (min-width: 1024px) {
+  .section {
+    min-height: auto;
+    padding-block: var(--landing-pad-section, clamp(72px, 9vh, 112px));
+  }
+
+  .sectionInner {
+    align-items: center;
+  }
+
+  .canvas {
+    max-height: min(560px, 52vh);
+    aspect-ratio: 1.06 / 1;
+    height: auto;
   }
 }
 
