@@ -140,3 +140,5 @@ export type DailySolveResponse = z.infer<typeof DailySolveResponseSchema>;
 export type DailyProblemContext = z.infer<typeof DailyProblemContextSchema>;
 export type DailyLeaderboardEntry = z.infer<typeof DailyLeaderboardEntrySchema>;
 export type DailyLeaderboardResponse = z.infer<typeof DailyLeaderboardResponseSchema>;
+export type DailyTagsResponse = z.infer<typeof DailyTagsResponseSchema>;
+export type DailyVerifyResponse = z.infer<typeof DailyVerifyResponseSchema>;

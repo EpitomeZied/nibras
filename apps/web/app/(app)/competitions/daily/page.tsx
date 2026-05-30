@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
-import type { DailyHistoryResponse, DailySolveResponse } from '@nibras/contracts';
+import type { DailyHistoryResponse, DailySolveResponse, DailyVerifyResponse } from '@nibras/contracts';
 import { buildIdeProblemUrl } from '../../ide/_content/ide-links';
 import { buildTutorAskHref } from '../../tutor/_content/tutor-context';
 import { useFetch } from '../../../lib/use-fetch';
@@ -125,7 +125,9 @@ export default function DailyProblemPage() {
   const [acting, setActing] = useState(false);
   const [pauseDays, setPauseDays] = useState(7);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [solveCelebration, setSolveCelebration] = useState<DailySolveResponse | null>(null);
+  const [solveCelebration, setSolveCelebration] = useState<
+    DailySolveResponse | DailyVerifyResponse | null
+  >(null);
   const [resetCountdown, setResetCountdown] = useState('');
   const [openedIde, setOpenedIde] = useState(false);
 
