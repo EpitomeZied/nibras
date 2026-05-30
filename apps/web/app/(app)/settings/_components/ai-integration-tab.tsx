@@ -1,18 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { apiFetch } from '../../../lib/session';
 import SelectField from '../../_components/ui/select-field';
 import styles from '../page.module.css';
 
-const MODEL_OPTIONS = [
-  { value: 'gpt-4o-mini', label: 'gpt-4o-mini' },
-  { value: 'gpt-4o', label: 'gpt-4o' },
-  { value: 'gpt-4.1-mini', label: 'gpt-4.1-mini' },
-  { value: 'gpt-4.1', label: 'gpt-4.1' },
-];
-
-type ProviderId = 'openai' | 'gemini' | 'anthropic' | 'poe' | 'openrouter';
+type ProviderId = 'openai' | 'groq' | 'openrouter';
 
 type AiProvider = {
   id: ProviderId;
@@ -20,39 +13,53 @@ type AiProvider = {
   description: string;
   available: boolean;
   docsUrl?: string;
+  defaultModel: string;
+  models: { value: string; label: string }[];
 };
 
 const AI_PROVIDERS: AiProvider[] = [
   {
     id: 'openai',
     name: 'OpenAI',
-    description: 'GPT models — used by Hassona for tutoring answers.',
+    description: 'GPT models — reliable JSON tutoring responses.',
     available: true,
     docsUrl: 'https://platform.openai.com/api-keys',
+    defaultModel: 'gpt-4o-mini',
+    models: [
+      { value: 'gpt-4o-mini', label: 'gpt-4o-mini' },
+      { value: 'gpt-4o', label: 'gpt-4o' },
+      { value: 'gpt-4.1-mini', label: 'gpt-4.1-mini' },
+      { value: 'gpt-4.1', label: 'gpt-4.1' },
+    ],
   },
   {
-    id: 'gemini',
-    name: 'Google Gemini',
-    description: 'Gemini Pro and Flash models for multimodal tutoring.',
-    available: false,
-  },
-  {
-    id: 'anthropic',
-    name: 'Anthropic',
-    description: 'Claude models for long-context explanations and code help.',
-    available: false,
+    id: 'groq',
+    name: 'Groq',
+    description: 'Free tier — fast Llama models (one account per person).',
+    available: true,
+    docsUrl: 'https://console.groq.com/keys',
+    defaultModel: 'llama-3.1-8b-instant',
+    models: [
+      { value: 'llama-3.1-8b-instant', label: 'llama-3.1-8b-instant (recommended)' },
+      { value: 'llama-3.3-70b-versatile', label: 'llama-3.3-70b-versatile' },
+      {
+        value: 'meta-llama/llama-4-scout-17b-16e-instruct',
+        label: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      },
+    ],
   },
   {
     id: 'openrouter',
     name: 'OpenRouter',
-    description: 'Route Hassona through hundreds of models with one API key.',
-    available: false,
-  },
-  {
-    id: 'poe',
-    name: 'Poe',
-    description: 'Access multiple chat models through Poe’s API.',
-    available: false,
+    description: 'Many models, including free routes — one API key.',
+    available: true,
+    docsUrl: 'https://openrouter.ai/keys',
+    defaultModel: 'meta-llama/llama-3.2-3b-instruct:free',
+    models: [
+      { value: 'meta-llama/llama-3.2-3b-instruct:free', label: 'Llama 3.2 3B (free)' },
+      { value: 'google/gemma-2-9b-it:free', label: 'Gemma 2 9B (free)' },
+      { value: 'qwen/qwen-2.5-7b-instruct:free', label: 'Qwen 2.5 7B (free)' },
+    ],
   },
 ];
 
@@ -64,7 +71,7 @@ type AiCredentialState = {
   encryptionReady?: boolean;
 };
 
-function ProviderIcon({ id }: { id: ProviderId }) {
+function ProviderIcon({ id }: { id: ProviderId | 'gemini' | 'anthropic' | 'poe' }) {
   return (
     <img
       src={`/ai-providers/${id}.svg`}
@@ -84,9 +91,15 @@ export default function AiIntegrationTab() {
   const [configured, setConfigured] = useState(false);
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [provider, setProvider] = useState<ProviderId>('openai');
   const [model, setModel] = useState('gpt-4o-mini');
   const [maskedKey, setMaskedKey] = useState<string | null>(null);
   const [encryptionReady, setEncryptionReady] = useState(true);
+
+  const activeProvider = useMemo(
+    () => AI_PROVIDERS.find((p) => p.id === provider) ?? AI_PROVIDERS[0],
+    [provider]
+  );
 
   useEffect(() => {
     let alive = true;
@@ -96,12 +109,15 @@ export default function AiIntegrationTab() {
         if (!res.ok) return;
         const data = (await res.json()) as AiCredentialState;
         if (!alive) return;
+        const savedProvider = (data.provider as ProviderId) || 'openai';
+        const preset = AI_PROVIDERS.find((p) => p.id === savedProvider) ?? AI_PROVIDERS[0];
         setConfigured(data.configured);
-        setModel(data.model || 'gpt-4o-mini');
+        setProvider(savedProvider);
+        setModel(data.model || preset.defaultModel);
         setMaskedKey(data.maskedKey);
         setEncryptionReady(data.encryptionReady !== false);
       } finally {
-        if (alive) setLoading(false);
+        if (!alive) setLoading(false);
       }
     })();
     return () => {
@@ -109,13 +125,19 @@ export default function AiIntegrationTab() {
     };
   }, []);
 
+  function handleProviderChange(next: ProviderId) {
+    setProvider(next);
+    const preset = AI_PROVIDERS.find((p) => p.id === next);
+    if (preset) setModel(preset.defaultModel);
+  }
+
   async function handleSave() {
     setSaving(true);
     setStatus('');
     try {
       const keyToSend = apiKey.trim();
       if (!keyToSend && !configured) {
-        setStatus('Enter your OpenAI API key.');
+        setStatus(`Enter your ${activeProvider.name} API key.`);
         return;
       }
       const res = await apiFetch('/v1/me/ai-credentials', {
@@ -124,20 +146,22 @@ export default function AiIntegrationTab() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           ...(keyToSend ? { apiKey: keyToSend } : {}),
+          provider,
           model,
         }),
       });
       if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
-        setStatus(err.error?.message ?? `Save failed (${res.status}).`);
+        const err = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+        setStatus(err.error ?? err.message ?? `Save failed (${res.status}).`);
         return;
       }
       const data = (await res.json()) as AiCredentialState;
       setConfigured(data.configured);
       setMaskedKey(data.maskedKey);
+      setProvider((data.provider as ProviderId) || provider);
       setModel(data.model);
       setApiKey('');
-      setStatus('Configuration saved. Hassona will use your OpenAI key.');
+      setStatus(`Saved. Hassona will use your ${activeProvider.name} key.`);
     } catch (err) {
       setStatus(err instanceof Error ? err.message : String(err));
     } finally {
@@ -157,7 +181,7 @@ export default function AiIntegrationTab() {
       setConfigured(false);
       setMaskedKey(null);
       setApiKey('');
-      setStatus('Personal API key removed. Hassona will use the platform key when available.');
+      setStatus('API key removed. Connect a key to use Hassona again.');
     } catch (err) {
       setStatus(err instanceof Error ? err.message : String(err));
     } finally {
@@ -178,7 +202,8 @@ export default function AiIntegrationTab() {
         <div>
           <h2 className={styles.sectionHeading}>AI Integration</h2>
           <p className={styles.sectionSub}>
-            Connect an AI provider to enable Hassona tutoring with your own API key.
+            Connect OpenAI, Groq (free tier), or OpenRouter so Hassona can answer your questions
+            using your own API key.
           </p>
         </div>
         <button
@@ -192,42 +217,46 @@ export default function AiIntegrationTab() {
       </div>
 
       <div className={styles.aiProviderList}>
-        {AI_PROVIDERS.map((provider) => {
-          const isOpenAi = provider.id === 'openai';
-          const showConnected = isOpenAi && configured;
+        {AI_PROVIDERS.map((item) => {
+          const isActive = item.id === provider;
+          const showConnected = configured && isActive;
           return (
-            <div
-              key={provider.id}
-              className={`${styles.aiProviderRow} ${!provider.available ? styles.aiProviderRowMuted : ''}`}
+            <button
+              key={item.id}
+              type="button"
+              className={`${styles.aiProviderRow} ${isActive ? styles.aiProviderRowActive : ''} ${!item.available ? styles.aiProviderRowMuted : ''}`}
+              onClick={() => handleProviderChange(item.id)}
+              disabled={!item.available}
             >
               <span className={styles.aiProviderIcon}>
-                <ProviderIcon id={provider.id} />
+                <ProviderIcon id={item.id} />
               </span>
               <div className={styles.aiProviderInfo}>
-                <span className={styles.aiProviderName}>{provider.name}</span>
-                <span className={styles.aiProviderDesc}>{provider.description}</span>
+                <span className={styles.aiProviderName}>{item.name}</span>
+                <span className={styles.aiProviderDesc}>{item.description}</span>
               </div>
               <div className={styles.aiProviderMeta}>
                 {showConnected ? (
                   <span className={styles.connectedBadgeGreen}>Connected</span>
-                ) : provider.available ? (
-                  <span className={styles.aiProviderAvailableBadge}>Available</span>
+                ) : isActive ? (
+                  <span className={styles.aiProviderAvailableBadge}>Selected</span>
                 ) : (
-                  <span className={styles.comingSoonBadge}>Coming soon</span>
+                  <span className={styles.aiProviderAvailableBadge}>Available</span>
                 )}
-                {provider.docsUrl ? (
+                {item.docsUrl ? (
                   <a
-                    href={provider.docsUrl}
+                    href={item.docsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className={styles.externalLink}
-                    aria-label={`Open ${provider.name} API keys page`}
+                    aria-label={`Open ${item.name} API keys page`}
+                    onClick={(e) => e.stopPropagation()}
                   >
                     ↗
                   </a>
                 ) : null}
               </div>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -236,13 +265,11 @@ export default function AiIntegrationTab() {
         <div className={styles.providerCardHeader}>
           <div className={styles.providerCardTitleRow}>
             <span className={styles.aiProviderIcon}>
-              <ProviderIcon id="openai" />
+              <ProviderIcon id={provider} />
             </span>
             <div>
-              <strong>OpenAI</strong>
-              <p className={styles.providerCardDesc}>
-                Fast and capable — used by Hassona for tutoring answers.
-              </p>
+              <strong>{activeProvider.name}</strong>
+              <p className={styles.providerCardDesc}>{activeProvider.description}</p>
             </div>
           </div>
           <div className={styles.providerCardMeta}>
@@ -251,17 +278,17 @@ export default function AiIntegrationTab() {
         </div>
 
         <div className={styles.formField}>
-          <label htmlFor="openai-api-key" className={styles.formLabel}>
+          <label htmlFor="ai-api-key" className={styles.formLabel}>
             API Key
           </label>
           <div className={styles.apiKeyRow}>
             <input
-              id="openai-api-key"
+              id="ai-api-key"
               className={styles.formInput}
               type={showKey ? 'text' : 'password'}
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder={configured && maskedKey ? maskedKey : 'Enter API key'}
+              placeholder={configured && maskedKey ? maskedKey : `Enter ${activeProvider.name} API key`}
               autoComplete="off"
               disabled={!encryptionReady}
             />
@@ -277,14 +304,14 @@ export default function AiIntegrationTab() {
         </div>
 
         <div className={styles.formField}>
-          <label htmlFor="openai-model" className={styles.formLabel}>
+          <label htmlFor="ai-model" className={styles.formLabel}>
             Model
           </label>
           <SelectField
-            id="openai-model"
+            id="ai-model"
             value={model}
             onChange={setModel}
-            options={MODEL_OPTIONS}
+            options={activeProvider.models}
           />
         </div>
 

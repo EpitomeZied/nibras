@@ -17,6 +17,7 @@ import {
 } from '../../lib/services/chatbot';
 import { friendlyMessage } from '../../lib/api-clients/errors';
 import { renderMarkdown } from '../../lib/markdown';
+import { apiFetch } from '../../lib/session';
 
 const SUGGESTED_PROMPTS = [
   'Explain Big-O notation with examples',
@@ -68,6 +69,27 @@ export default function TutorPage() {
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [editingTitle, setEditingTitle] = useState<string | null>(null);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
+  const [aiReady, setAiReady] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await apiFetch('/v1/me/ai-credentials', { auth: true });
+        if (!res.ok) {
+          if (!cancelled) setAiReady(false);
+          return;
+        }
+        const data = (await res.json()) as { configured?: boolean };
+        if (!cancelled) setAiReady(Boolean(data.configured));
+      } catch {
+        if (!cancelled) setAiReady(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -453,6 +475,18 @@ export default function TutorPage() {
         )}
 
         <div className={styles.chatContainer}>
+          {aiReady === false ? (
+            <div className={styles.setupGate}>
+              <h2 className={styles.setupTitle}>Connect an AI provider</h2>
+              <p className={styles.setupDesc}>
+                Hassona uses your own API key (OpenAI, Groq free tier, or OpenRouter). Add a key in
+                Settings → AI Integration, then return here to chat.
+              </p>
+              <Link href="/settings?tab=ai" className={styles.setupBtn}>
+                Open AI Integration
+              </Link>
+            </div>
+          ) : (
           <ChatPanel
             messages={activeConv?.messages ?? []}
             onSend={handleSend}
@@ -461,7 +495,7 @@ export default function TutorPage() {
             busy={busy}
             emptyTitle="Hassona"
             emptyDescription="Ask any question about your courses, projects, or concepts you're stuck on."
-            suggestedPrompts={!activeConv ? SUGGESTED_PROMPTS : undefined}
+            suggestedPrompts={!activeConv && aiReady ? SUGGESTED_PROMPTS : undefined}
             renderContent={(message) => {
               if (message.role === 'assistant' && !message.pending) {
                 const idx = activeConv?.messages.findIndex((m) => m.id === message.id) ?? -1;
@@ -490,6 +524,7 @@ export default function TutorPage() {
               return <p>{message.content}</p>;
             }}
           />
+          )}
         </div>
       </div>
     </div>

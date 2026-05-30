@@ -1735,6 +1735,7 @@ model UserAiCredential {
   id              String   @id @default(cuid())
   userId          String   @unique
   provider        String   @default("openai")
+  baseUrl         String?
   encryptedApiKey String
   model           String   @default("gpt-4o-mini")
   createdAt       DateTime @default(now())

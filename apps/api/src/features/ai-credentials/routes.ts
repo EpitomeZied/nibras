@@ -58,6 +58,7 @@ export function registerAiCredentialRoutes(
           prisma,
           auth.user.id,
           parsed.data.apiKey,
+          parsed.data.provider,
           parsed.data.model
         );
       } catch (err) {

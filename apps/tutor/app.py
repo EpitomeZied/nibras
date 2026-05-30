@@ -30,35 +30,47 @@ limiter = Limiter(
 )
 
 # ── Config ──────────────────────────────────────────────────────────────────
-OPENAI_API_KEY = (os.getenv("OPENAI_API_KEY") or os.getenv("NIBRAS_AI_API_KEY") or "").strip()
-if not OPENAI_API_KEY:
-    raise ValueError(
-        "OPENAI_API_KEY or NIBRAS_AI_API_KEY not found. Add one to the repo root .env file."
-    )
-
-CHAT_MODEL        = os.getenv("NIBRAS_AI_MODEL", "gpt-4o-mini")
-OPENAI_BASE_URL   = (os.getenv("NIBRAS_AI_BASE_URL") or "").strip() or None
-THRESHOLD         = 0.55
-DB_FILE           = os.path.join(os.path.dirname(os.path.abspath(__file__)), "embeddings_cache.db")
-NIBRAS_API_URL    = os.getenv("NIBRAS_API_URL", "http://127.0.0.1:4848/v1/community")
-QUESTIONS_URL     = f"{NIBRAS_API_URL}/questions"
-AI_USER_ID        = os.getenv("AI_USER_ID", "")
+PLATFORM_API_KEY = (os.getenv("OPENAI_API_KEY") or os.getenv("NIBRAS_AI_API_KEY") or "").strip()
+CHAT_MODEL       = os.getenv("NIBRAS_AI_MODEL", "gpt-4o-mini")
+OPENAI_BASE_URL  = (os.getenv("NIBRAS_AI_BASE_URL") or "").strip() or None
+THRESHOLD        = 0.55
+DB_FILE          = os.path.join(os.path.dirname(os.path.abspath(__file__)), "embeddings_cache.db")
+NIBRAS_API_URL   = os.getenv("NIBRAS_API_URL", "http://127.0.0.1:4848/v1/community")
+QUESTIONS_URL    = f"{NIBRAS_API_URL}/questions"
+AI_USER_ID       = os.getenv("AI_USER_ID", "")
 
 # In-memory question cache to avoid hammering the API on every request
 _questions_cache: dict = {}   # tag -> (timestamp, list)
 _all_questions_cache: tuple = (0.0, [])   # (timestamp, list) — cache for full question list
 CACHE_TTL_SECONDS = 60
 
-client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+platform_client: OpenAI | None = None
+if PLATFORM_API_KEY:
+    platform_client = OpenAI(api_key=PLATFORM_API_KEY, base_url=OPENAI_BASE_URL)
+else:
+    logger.warning(
+        "No platform OPENAI_API_KEY / NIBRAS_AI_API_KEY — Hassona runs BYOK-only; "
+        "community semantic search is disabled without a platform key."
+    )
 
 
-def openai_client_for_request(body: dict) -> tuple[OpenAI, str]:
+def _normalize_base_url(url: str | None) -> str | None:
+    if not url:
+        return None
+    cleaned = url.strip().rstrip("/")
+    return cleaned or None
+
+
+def openai_client_for_request(body: dict) -> tuple[OpenAI | None, str]:
     """Use per-request BYOK credentials when the API proxy forwards them."""
     api_key = (body.get("api_key") or "").strip()
     model = (body.get("model") or "").strip() or CHAT_MODEL
+    base_url = _normalize_base_url(body.get("base_url")) or OPENAI_BASE_URL
     if api_key:
-        return OpenAI(api_key=api_key, base_url=OPENAI_BASE_URL), model
-    return client, CHAT_MODEL
+        return OpenAI(api_key=api_key, base_url=base_url), model
+    if platform_client:
+        return platform_client, CHAT_MODEL
+    return None, model
 
 
 def request_uses_personal_api_key(body: dict) -> bool:
@@ -68,14 +80,40 @@ def request_uses_personal_api_key(body: dict) -> bool:
 def openai_key_error_message(*, using_personal_key: bool) -> str:
     if using_personal_key:
         return (
-            "Hassona cannot reach OpenAI — your API key is invalid or expired. "
-            "Open Settings → AI Integration, enter a valid OpenAI API key, and save."
+            "Hassona cannot reach your AI provider — the API key is invalid or expired. "
+            "Open Settings → AI Integration, enter a valid key, and save."
         )
     return (
-        "Hassona cannot reach OpenAI. Add your OpenAI API key in "
-        "Settings → AI Integration (recommended), or contact your administrator "
-        "if the platform tutor key is misconfigured."
+        "Hassona needs an API key. Add yours in Settings → AI Integration "
+        "(OpenAI, Groq, or OpenRouter)."
     )
+
+
+def rate_limit_error_message() -> str:
+    return (
+        "Your provider's free rate limit was reached. Wait a minute and try again, "
+        "or switch to a smaller model in Settings → AI Integration."
+    )
+
+
+def llm_error_from_exception(exc: Exception, *, using_personal_key: bool) -> str:
+    err = str(exc).lower()
+    if "401" in err or "invalid_api_key" in err or "incorrect api key" in err:
+        return openai_key_error_message(using_personal_key=using_personal_key)
+    if "429" in err or "rate limit" in err or "too many requests" in err:
+        return rate_limit_error_message()
+    return "AI generation failed. Please retry."
+
+
+def require_llm_client(body: dict) -> tuple[OpenAI | None, str, dict | None]:
+    """Return (client, model) or an error payload for jsonify."""
+    client, model = openai_client_for_request(body)
+    if client is None:
+        return None, model, {
+            "type": "error",
+            "message": openai_key_error_message(using_personal_key=False),
+        }
+    return client, model, None
 
 # ── CS Keywords ──────────────────────────────────────────────────────────────
 CS_KEYWORDS = {
@@ -614,8 +652,10 @@ def post_answer_to_railway(question_id: str, answer_body: str) -> bool:
 
 
 # ── Embeddings ────────────────────────────────────────────────────────────────
-def get_embeddings_batch(texts: list[str]) -> list[list[float]]:
-    response = client.embeddings.create(model="text-embedding-3-small", input=texts)
+def get_embeddings_batch(texts: list[str]) -> list[list[float]] | None:
+    if not platform_client:
+        return None
+    response = platform_client.embeddings.create(model="text-embedding-3-small", input=texts)
     return [item.embedding for item in response.data]
 
 
@@ -689,7 +729,9 @@ def _semantic_match(query: str, questions: list) -> tuple:
 
     all_uncached_texts = uncached_title_texts + uncached_combined_texts
     if all_uncached_texts:
-        all_embeddings   = get_embeddings_batch(all_uncached_texts)
+        all_embeddings = get_embeddings_batch(all_uncached_texts)
+        if all_embeddings is None:
+            return None, 0.0
         title_results    = all_embeddings[:len(uncached_title_texts)]
         combined_results = all_embeddings[len(uncached_title_texts):]
 
@@ -705,7 +747,10 @@ def _semantic_match(query: str, questions: list) -> tuple:
             cache_set(q["id"], c_hash, emb)
             combined_embeddings[idx] = emb
 
-    query_emb = get_embeddings_batch([query])[0]
+    query_batch = get_embeddings_batch([query])
+    if query_batch is None:
+        return None, 0.0
+    query_emb = query_batch[0]
 
     title_vecs    = np.array(title_embeddings,    dtype="float32")
     combined_vecs = np.array(combined_embeddings, dtype="float32")
@@ -942,18 +987,17 @@ def generate_ai_answer(
         }
     except Exception as e:
         logger.error(f"[AI Generation Error] {e}")
-        err = str(e).lower()
-        if "401" in err or "invalid_api_key" in err or "incorrect api key" in err:
-            return {
-                "status": "error",
-                "message": openai_key_error_message(using_personal_key=using_personal_key),
-            }
-        return {"status": "error", "message": "AI generation failed. Please retry."}
+        return {
+            "status": "error",
+            "message": llm_error_from_exception(e, using_personal_key=using_personal_key),
+        }
 
 
-def _openai_key_ok() -> tuple[bool, str | None]:
+def _platform_key_ok() -> tuple[bool, str | None]:
+    if not platform_client:
+        return True, None
     try:
-        client.models.list()
+        platform_client.models.list()
         return True, None
     except Exception as e:
         return False, str(e)
@@ -962,8 +1006,13 @@ def _openai_key_ok() -> tuple[bool, str | None]:
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.route("/api/health")
 def health():
-    ok, err = _openai_key_ok()
-    return jsonify({"ok": ok, "openai": "ok" if ok else "error", "detail": err}), 200 if ok else 503
+    ok, err = _platform_key_ok()
+    return jsonify({
+        "ok": True,
+        "byok_only": platform_client is None,
+        "platform_key": "ok" if ok else "error",
+        "detail": err,
+    }), 200
 
 
 @app.route("/")
@@ -986,7 +1035,9 @@ def ask():
         })
 
     history = body.get("history", [])
-    oai_client, chat_model = openai_client_for_request(body)
+    oai_client, chat_model, client_err = require_llm_client(body)
+    if client_err:
+        return jsonify(client_err), 503
     ai_response = generate_ai_answer(
         question,
         history=history,
@@ -1053,7 +1104,9 @@ def answer_question():
     if not question_id or not question:
         return jsonify({"error": "id and question required"}), 400
 
-    oai_client, chat_model = openai_client_for_request(body)
+    oai_client, chat_model, client_err = require_llm_client(body)
+    if client_err:
+        return jsonify(client_err), 503
     ai = generate_ai_answer(
         question,
         oai_client=oai_client,
@@ -1078,7 +1131,9 @@ def generate_for_matched():
     if not question:
         return jsonify({"error": "question required"}), 400
 
-    oai_client, chat_model = openai_client_for_request(body)
+    oai_client, chat_model, client_err = require_llm_client(body)
+    if client_err:
+        return jsonify(client_err), 503
     ai = generate_ai_answer(
         question,
         oai_client=oai_client,
@@ -1126,9 +1181,12 @@ Reply ONLY with valid JSON in this exact format:
   "related": ["related_term1", "related_term2"]
 }}
 """
+    oai_client, chat_model, client_err = require_llm_client(body)
+    if client_err:
+        return jsonify({"error": client_err["message"]}), 503
     try:
-        response = client.chat.completions.create(
-            model=CHAT_MODEL,
+        response = oai_client.chat.completions.create(
+            model=chat_model,
             temperature=0.2,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": explain_prompt}],
@@ -1137,7 +1195,9 @@ Reply ONLY with valid JSON in this exact format:
         return jsonify(data)
     except Exception as e:
         logger.error(f"[Explain Error] {e}")
-        return jsonify({"error": "Could not generate explanation. Please retry."}), 500
+        return jsonify({
+            "error": llm_error_from_exception(e, using_personal_key=request_uses_personal_api_key(body)),
+        }), 500
 
 
 # ── Insights endpoint ────────────────────────────────────────────────────────
@@ -1145,6 +1205,7 @@ Reply ONLY with valid JSON in this exact format:
 @limiter.limit("10 per minute")
 def insights():
     body  = request.get_json(silent=True) or {}
+    oai_client, chat_model, client_err = require_llm_client(body)
     stats = body.get("stats", {})
     top_tags = stats.get("topTags", [])
 
@@ -1181,9 +1242,20 @@ Rules:
 - limit to 5 strengths and 5 weaknesses max
 - nextActions should be specific and actionable"""
 
+    if client_err:
+        return jsonify({
+            "hardMetrics": stats,
+            "aiSummary": {
+                "strengths": [],
+                "weaknesses": [],
+                "nextActions": [client_err["message"]],
+                "overallAssessment": "Connect an API key in Settings to enable AI insights.",
+            },
+        })
+
     try:
-        response = client.chat.completions.create(
-            model=CHAT_MODEL,
+        response = oai_client.chat.completions.create(
+            model=chat_model,
             temperature=0.3,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}],
@@ -1197,7 +1269,7 @@ Rules:
             "aiSummary": {
                 "strengths": [],
                 "weaknesses": [],
-                "nextActions": ["Could not generate AI summary. Try again later."],
+                "nextActions": [llm_error_from_exception(e, using_personal_key=request_uses_personal_api_key(body))],
                 "overallAssessment": "Analysis unavailable.",
             },
         })
@@ -1211,6 +1283,10 @@ def routing():
     goal = body.get("goal", "").strip()
     if not goal:
         return jsonify({"error": "goal is required"}), 400
+
+    oai_client, chat_model, client_err = require_llm_client(body)
+    if client_err:
+        return jsonify({"error": client_err["message"]}), 503
 
     prompt = f"""You are a CS learning path planner. A student has this goal:
 "{goal}"
@@ -1241,8 +1317,8 @@ Rules:
 - resourceUrl can be null (the platform will fill these in later)"""
 
     try:
-        response = client.chat.completions.create(
-            model=CHAT_MODEL,
+        response = oai_client.chat.completions.create(
+            model=chat_model,
             temperature=0.3,
             response_format={"type": "json_object"},
             messages=[{"role": "user", "content": prompt}],
@@ -1251,7 +1327,9 @@ Rules:
         return jsonify(data)
     except Exception as e:
         logger.error(f"[Routing Error] {e}")
-        return jsonify({"error": "Could not generate learning path. Please retry."}), 500
+        return jsonify({
+            "error": llm_error_from_exception(e, using_personal_key=request_uses_personal_api_key(body)),
+        }), 500
 
 
 @app.route("/api/community")

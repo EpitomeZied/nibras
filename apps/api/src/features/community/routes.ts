@@ -4,7 +4,12 @@ import { optionalAuth, requireUser } from '../../lib/auth';
 import { Errors } from '../../lib/errors';
 import { requestBaseUrl } from '../../lib/request-base-url';
 import { AppStore } from '../../store';
-import { getUserAiCredential } from '../../lib/ai-credentials';
+import {
+  getUserAiCredential,
+  hasPlatformAiKey,
+  HASSONA_CREDENTIAL_REQUIRED_MESSAGE,
+  tutorPayloadFromCredential,
+} from '../../lib/ai-credentials';
 import { assertCourseManage, assertCourseView, canAcceptAnswer } from './access';
 import {
   authorSelect,
@@ -908,17 +913,28 @@ export function registerCommunityRoutes(
 
   const CHATBOT_V1_URL = process.env.CHATBOT_V1_URL || '';
 
+  async function resolveTutorAccess(
+    userId: string,
+    reply: { code: (status: number) => { send: (body: unknown) => void } }
+  ): Promise<{ credential: Awaited<ReturnType<typeof getUserAiCredential>> } | null> {
+    const credential = await getUserAiCredential(prisma, userId);
+    if (credential || hasPlatformAiKey()) {
+      return { credential };
+    }
+    reply.code(403).send({
+      error: HASSONA_CREDENTIAL_REQUIRED_MESSAGE,
+      code: 'FORBIDDEN',
+    });
+    return null;
+  }
+
   async function tutorRequestPayload(
     userId: string,
     body: Record<string, unknown>
   ): Promise<Record<string, unknown>> {
     const credential = await getUserAiCredential(prisma, userId);
     if (!credential) return body;
-    return {
-      ...body,
-      api_key: credential.apiKey,
-      model: credential.model,
-    };
+    return tutorPayloadFromCredential(credential, body);
   }
 
   type ChatBotV1Response = {
@@ -959,6 +975,8 @@ export function registerCommunityRoutes(
         reply.code(503).send(Errors.unavailable('AI Tutor service is not configured.'));
         return;
       }
+      const access = await resolveTutorAccess(auth.user.id, reply);
+      if (!access) return;
       try {
         const resp = await fetch(`${CHATBOT_V1_URL}/api/ask`, {
           method: 'POST',
@@ -986,10 +1004,15 @@ export function registerCommunityRoutes(
           return;
         }
         if (chatBotResponse.type === 'error') {
+          const errMsg = chatBotResponse.message || 'AI generation failed. Please retry.';
+          const isRateLimit =
+            /rate limit|429|too many requests/i.test(errMsg);
           reply
-            .code(503)
+            .code(isRateLimit ? 429 : 503)
             .send(
-              Errors.unavailable(chatBotResponse.message || 'AI generation failed. Please retry.')
+              isRateLimit
+                ? { ...Errors.unavailable(errMsg), code: 'RATE_LIMITED' as const }
+                : Errors.unavailable(errMsg)
             );
           return;
         }
@@ -1175,18 +1198,23 @@ export function registerCommunityRoutes(
         };
       }
 
-      try {
-        const resp = await fetch(`${CHATBOT_V1_URL}/api/insights`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ stats }),
-          signal: AbortSignal.timeout(20000),
-        });
-        if (resp.ok) {
-          return await resp.json();
+      const canCallTutorAi =
+        CHATBOT_V1_URL &&
+        ((await getUserAiCredential(prisma, auth.user.id)) || hasPlatformAiKey());
+      if (canCallTutorAi) {
+        try {
+          const resp = await fetch(`${CHATBOT_V1_URL}/api/insights`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(await tutorRequestPayload(auth.user.id, { stats })),
+            signal: AbortSignal.timeout(20000),
+          });
+          if (resp.ok) {
+            return await resp.json();
+          }
+        } catch {
+          // fall through to local-only response
         }
-      } catch {
-        // fall through to local-only response
       }
 
       return {
@@ -1218,11 +1246,15 @@ export function registerCommunityRoutes(
         reply.code(503).send(Errors.unavailable('AI Tutor service is not configured.'));
         return;
       }
+      const access = await resolveTutorAccess(auth.user.id, reply);
+      if (!access) return;
       try {
         const resp = await fetch(`${CHATBOT_V1_URL}/api/routing`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ goal: body.goal }),
+          body: JSON.stringify(
+            await tutorRequestPayload(auth.user.id, { goal: body.goal })
+          ),
           signal: AbortSignal.timeout(30000),
         });
         if (!resp.ok) {

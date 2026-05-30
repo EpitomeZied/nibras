@@ -127,17 +127,21 @@ export const UpdateProfileBodySchema = z.object({
   socialLinks: z.array(UpdateProfileSocialLinkSchema).optional(),
 });
 
+export const AiProviderIdSchema = z.enum(['openai', 'groq', 'openrouter']);
+
 export const AiCredentialResponseSchema = z.object({
   configured: z.boolean(),
-  provider: z.string(),
+  provider: AiProviderIdSchema.or(z.string()),
   model: z.string(),
+  baseUrl: z.string().nullable().optional(),
   maskedKey: z.string().nullable(),
   encryptionReady: z.boolean(),
 });
 
 export const UpsertAiCredentialBodySchema = z.object({
   apiKey: z.string().trim().max(512).optional(),
-  model: z.string().trim().min(1).max(64).default('gpt-4o-mini'),
+  provider: AiProviderIdSchema.default('openai'),
+  model: z.string().trim().min(1).max(128).default('gpt-4o-mini'),
 });
 
 export const DevicePollSuccessSchema = z.object({

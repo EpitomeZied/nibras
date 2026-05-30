@@ -6,8 +6,9 @@ Previously maintained as the separate **ChatBot.V1** repository; it now lives in
 
 ## Local development
 
-1. Set `OPENAI_API_KEY` or `NIBRAS_AI_API_KEY` in the repo root `.env` (see `.env.example`).
-2. Set `CHATBOT_V1_URL=http://127.0.0.1:5000` in the root `.env` so the API can reach the tutor.
+1. Set `CHATBOT_V1_URL=http://127.0.0.1:5000` in the root `.env` so the API can reach the tutor.
+2. **BYOK (default):** students save OpenAI, Groq, or OpenRouter keys in Settings → AI Integration. No platform key required.
+3. **Optional platform key:** set `OPENAI_API_KEY` or `NIBRAS_AI_API_KEY` for shared inference and community semantic search embeddings.
 3. Start Postgres and the main stack (`npm run dev`), then in another terminal:
 
 ```bash
