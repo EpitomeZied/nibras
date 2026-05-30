@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { TrackingCourseDetail } from '@nibras/contracts';
-import { getCourseDetail } from '../../../lib/services/course-profile';
+import { getCourseDetail, peekCourseDetail } from '../../../lib/services/course-profile';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 import styles from './course-shell.module.css';
 
@@ -49,12 +49,23 @@ export default function CourseShell({ courseId, children }: Props) {
 
   const load = useCallback(async () => {
     if (!courseId) return;
-    setLoading(true);
+
+    const cached = peekCourseDetail(courseId);
+    const hasCachedCourse = cached !== null;
+    if (hasCachedCourse) {
+      setCourse(cached);
+      setLoading(false);
+    } else {
+      setLoading(true);
+    }
+
     setError(null);
     try {
       setCourse(await getCourseDetail(courseId));
     } catch (err) {
-      setError(friendlyMessage(err));
+      if (!hasCachedCourse) {
+        setError(friendlyMessage(err));
+      }
     } finally {
       setLoading(false);
     }

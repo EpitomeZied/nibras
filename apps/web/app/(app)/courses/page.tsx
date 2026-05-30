@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { listMyTrackingCourses } from '../../lib/services/course-profile';
-import { getCourseDetail } from '../../lib/services/course-profile';
+import { listMyTrackingCourses, getCourseDetail } from '../../lib/services/course-profile';
 import { friendlyMessage } from '../../lib/api-clients/errors';
 import styles from './page.module.css';
 
@@ -17,6 +16,7 @@ type CourseCard = {
   isPublic?: boolean;
   videoProgressPercent?: number;
   publishedAssignmentCount?: number;
+  enriching?: boolean;
 };
 
 export default function MyCoursesPage() {
@@ -29,25 +29,36 @@ export default function MyCoursesPage() {
     setError(null);
     try {
       const list = await listMyTrackingCourses();
-      const enriched = await Promise.all(
-        list.map(async (c) => {
+      const baseCards: CourseCard[] = list.map((course) => ({ ...course, enriching: true }));
+      setCourses(baseCards);
+      setLoading(false);
+
+      await Promise.all(
+        baseCards.map(async (course) => {
           try {
-            const detail = await getCourseDetail(c.id);
-            return {
-              ...c,
-              isPublic: detail.isPublic ?? c.isPublic,
-              videoProgressPercent: detail.videoProgressPercent,
-              publishedAssignmentCount: detail.publishedAssignmentCount,
-            };
+            const detail = await getCourseDetail(course.id);
+            setCourses((prev) =>
+              prev.map((item) =>
+                item.id === course.id
+                  ? {
+                      ...item,
+                      isPublic: detail.isPublic ?? item.isPublic,
+                      videoProgressPercent: detail.videoProgressPercent,
+                      publishedAssignmentCount: detail.publishedAssignmentCount,
+                      enriching: false,
+                    }
+                  : item
+              )
+            );
           } catch {
-            return { ...c };
+            setCourses((prev) =>
+              prev.map((item) => (item.id === course.id ? { ...item, enriching: false } : item))
+            );
           }
         })
       );
-      setCourses(enriched);
     } catch (err) {
       setError(friendlyMessage(err));
-    } finally {
       setLoading(false);
     }
   }, []);
@@ -80,11 +91,18 @@ export default function MyCoursesPage() {
               </p>
               <div className={styles.progressWrap}>
                 <div className={styles.progressBar}>
-                  <div className={styles.progressFill} style={{ width: `${lecturePct}%` }} />
+                  <div
+                    className={styles.progressFill}
+                    style={{ width: course.enriching ? '0%' : `${lecturePct}%` }}
+                  />
                 </div>
                 <div className={styles.stats}>
-                  <span>{lecturePct}% lectures watched</span>
-                  <span>{course.publishedAssignmentCount ?? 0} assignments</span>
+                  <span>
+                    {course.enriching ? 'Loading progress…' : `${lecturePct}% lectures watched`}
+                  </span>
+                  <span>
+                    {course.enriching ? '…' : `${course.publishedAssignmentCount ?? 0} assignments`}
+                  </span>
                 </div>
               </div>
             </Link>

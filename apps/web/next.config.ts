@@ -1,5 +1,10 @@
 import type { NextConfig } from 'next';
 import path from 'path';
+import bundleAnalyzer from '@next/bundle-analyzer';
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_NIBRAS_API_BASE_URL ?? 'http://localhost:4848';
 // Server-side only: the real API origin used for rewrites and API routes.
@@ -84,6 +89,15 @@ const nextConfig: NextConfig = {
   // Required for monorepo standalone builds to correctly trace and bundle
   // workspace dependencies from the repo root. Moved out of experimental in Next.js 15.
   outputFileTracingRoot: path.join(__dirname, '../../'),
+  experimental: {
+    optimizePackageImports: [
+      'echarts',
+      'echarts-for-react',
+      'three',
+      '@dnd-kit/core',
+      '@dnd-kit/utilities',
+    ],
+  },
   webpack: (config, { isServer }) => {
     if (!isServer) {
       config.module.rules.push({
@@ -124,4 +138,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

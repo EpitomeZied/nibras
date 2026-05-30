@@ -187,26 +187,29 @@ export default function Nibras75Page() {
   }, [loadProblems]);
 
   useEffect(() => {
-    void loadStats();
-  }, [loadStats, completedInSet]);
-
-  useEffect(() => {
-    void loadAnalytics();
-  }, [loadAnalytics]);
-
-  useEffect(() => {
-    void loadConfig();
-  }, [loadConfig]);
-
-  useEffect(() => {
     if (!user) {
+      setConfig(DEFAULT_CONFIG);
       setWorkspace(null);
       return;
     }
-    void getNibras75Workspace()
-      .then((data) => setWorkspace(data.workspace))
-      .catch(() => setWorkspace(null));
-  }, [user]);
+
+    void Promise.all([
+      loadConfig(),
+      getNibras75Workspace()
+        .then((data) => setWorkspace(data.workspace))
+        .catch(() => setWorkspace(null)),
+    ]);
+  }, [user, loadConfig]);
+
+  useEffect(() => {
+    if (!activeHandle) {
+      setStats(null);
+      setAnalytics(null);
+      return;
+    }
+
+    void Promise.all([loadStats(), user ? loadAnalytics() : Promise.resolve()]);
+  }, [activeHandle, completedInSet, user, loadStats, loadAnalytics]);
 
   async function handleConnectGitHub() {
     setForkError(null);

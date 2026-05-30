@@ -1,4 +1,5 @@
 import { serviceFetch } from '../api-clients/service-fetch';
+import { buildCacheKey, peekCached } from '../request-cache';
 import type {
   CourseBrowseItem,
   CourseEnrollmentRequest,
@@ -14,6 +15,22 @@ export async function getCourseDetail(courseId: string) {
   return serviceFetch<TrackingCourseDetail>('tracking', `/v1/tracking/courses/${courseId}/detail`, {
     auth: true,
   });
+}
+
+const COURSE_DETAIL_CACHE_MS = 60_000;
+
+function courseDetailCacheKey(courseId: string): string {
+  return buildCacheKey([
+    'service',
+    'tracking',
+    `/v1/tracking/courses/${courseId}/detail`,
+    '{}',
+    'true',
+  ]);
+}
+
+export function peekCourseDetail(courseId: string): TrackingCourseDetail | null {
+  return peekCached(courseDetailCacheKey(courseId), COURSE_DETAIL_CACHE_MS);
 }
 
 export async function updateCourseProfile(courseId: string, payload: UpdateCourseProfileRequest) {

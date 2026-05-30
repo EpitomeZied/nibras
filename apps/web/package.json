@@ -7,16 +7,17 @@
     "prebuild": "node scripts/copy-monaco.mjs",
     "predev": "node scripts/copy-monaco.mjs",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
     "dev": "next dev",
     "start": "next start"
   },
   "dependencies": {
-    "@nibras/core": "file:../../packages/core",
-    "@nibras/contracts": "file:../../packages/contracts",
     "@better-auth/prisma-adapter": "^1.6.11",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/utilities": "^3.2.2",
     "@monaco-editor/react": "^4.7.0",
+    "@nibras/contracts": "file:../../packages/contracts",
+    "@nibras/core": "file:../../packages/core",
     "@polar-sh/better-auth": "^1.8.4",
     "@polar-sh/sdk": "^0.47.1",
     "@prisma/client": "^6.19.2",
@@ -34,6 +35,7 @@
     "three": "^0.183.2"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.18",
     "@types/react": "^19.2.14"
   }
 }

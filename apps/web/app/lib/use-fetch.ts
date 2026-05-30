@@ -1,6 +1,12 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { apiFetch } from './session';
+import {
+  buildCacheKey,
+  cachedGet,
+  invalidateRequestCache,
+  shouldCacheApiPath,
+} from './request-cache';
 
 export function useFetch<T>(
   path: string | null,
@@ -11,7 +17,12 @@ export function useFetch<T>(
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
 
-  const reload = useCallback(() => setRevision((r) => r + 1), []);
+  const reload = useCallback(() => {
+    if (path !== null) {
+      invalidateRequestCache(buildCacheKey(['api', path, String(options?.auth ?? true)]));
+    }
+    setRevision((r) => r + 1);
+  }, [path, options?.auth]);
 
   useEffect(() => {
     if (path === null) {
@@ -21,14 +32,25 @@ export function useFetch<T>(
     let alive = true;
     setLoading(true);
     setError('');
+
+    const auth = options?.auth ?? true;
+    const cacheKey = buildCacheKey(['api', path, String(auth)]);
+
     void (async () => {
       try {
-        const res = await apiFetch(path, { auth: options?.auth ?? true });
-        if (!res.ok) {
-          const body = (await res.json().catch(() => ({}))) as { error?: string };
-          throw new Error(body.error ?? `Request failed (${res.status})`);
-        }
-        const payload = (await res.json()) as T;
+        const fetchPayload = async (): Promise<T> => {
+          const res = await apiFetch(path, { auth });
+          if (!res.ok) {
+            const body = (await res.json().catch(() => ({}))) as { error?: string };
+            throw new Error(body.error ?? `Request failed (${res.status})`);
+          }
+          return (await res.json()) as T;
+        };
+
+        const payload = shouldCacheApiPath(path)
+          ? await cachedGet(cacheKey, fetchPayload)
+          : await fetchPayload();
+
         if (alive) setData(payload);
       } catch (err) {
         if (alive) setError(err instanceof Error ? err.message : String(err));

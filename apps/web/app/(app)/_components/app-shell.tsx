@@ -60,17 +60,34 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener(PREF_EVENTS.compactChanged, onCompactChanged);
   }, []);
 
+  async function applySessionResponse(response: Response): Promise<boolean> {
+    if (!response.ok) return false;
+    const payload = (await response.json()) as ShellSessionPayload;
+    setSession({ ...payload.user, memberships: payload.memberships ?? [] });
+    return true;
+  }
+
   async function loadSession(): Promise<boolean> {
     const response = await apiFetch('/v1/web/session', { auth: true });
     if (!response.ok) {
       window.location.href = '/?auth=required';
       return false;
     }
-    const payload = (await response.json()) as ShellSessionPayload;
-    setSession({ ...payload.user, memberships: payload.memberships ?? [] });
-    return true;
+    return applySessionResponse(response);
   }
 
+  async function refreshSessionSoft(): Promise<void> {
+    try {
+      const response = await apiFetch('/v1/web/session', { auth: true });
+      if (response.ok) {
+        await applySessionResponse(response);
+      }
+    } catch {
+      // Keep the last known session while revalidating in the background.
+    }
+  }
+
+  // Initial session load — once on mount, not on every navigation.
   useEffect(() => {
     let alive = true;
     const publicCommunity = isPublicCommunityPath(pathname);
@@ -112,7 +129,28 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => {
       alive = false;
     };
-  }, [pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // If the user opens a protected route without a session (e.g. from public community), auth once.
+  useEffect(() => {
+    if (isPublicCommunityPath(pathname) || session || loading) return;
+    void loadSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, session, loading]);
+
+  // Stale-while-revalidate when the tab becomes visible again.
+  useEffect(() => {
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        void refreshSessionSoft();
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', onVisibilityChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <SessionProvider

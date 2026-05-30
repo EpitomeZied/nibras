@@ -2,6 +2,12 @@
 
 import { resolveServiceBaseUrl, type ApiServiceName } from './registry';
 import { ApiError } from './errors';
+import {
+  buildCacheKey,
+  cachedGet,
+  invalidateRequestCache,
+  shouldCacheApiPath,
+} from '../request-cache';
 
 const WEB_SESSION_TOKEN_KEY = 'nibras.webSession';
 const REFRESH_PATH = '/auth/refresh-tokens';
@@ -135,48 +141,71 @@ export async function serviceFetch<T = unknown>(
   path: string,
   init: ServiceFetchInit = {}
 ): Promise<T> {
-  const url = buildUrl(service, path, init.query);
-  const token = readSessionToken();
-  const firstRequest = prepareInit(init, token);
+  const method = (init.method ?? 'GET').toUpperCase();
+  const auth = init.auth !== false;
+  const cacheKey = buildCacheKey([
+    'service',
+    service,
+    path,
+    JSON.stringify(init.query ?? {}),
+    String(auth),
+  ]);
 
-  let response = await fetch(url, firstRequest);
+  const execute = async (): Promise<T> => {
+    const url = buildUrl(service, path, init.query);
+    const token = readSessionToken();
+    const firstRequest = prepareInit(init, token);
 
-  if (response.status === 401 && init.auth !== false) {
-    const refreshed = await tryRefreshToken();
-    if (refreshed) {
-      response = await fetch(url, prepareInit(init, refreshed));
+    let response = await fetch(url, firstRequest);
+
+    if (response.status === 401 && auth) {
+      invalidateRequestCache('service::');
+      const refreshed = await tryRefreshToken();
+      if (refreshed) {
+        response = await fetch(url, prepareInit(init, refreshed));
+      }
     }
+
+    const body = await readResponseBody(response);
+
+    if (!response.ok) {
+      const message =
+        (typeof body === 'object' && body !== null
+          ? ((body as Record<string, unknown>).message as string | undefined) ||
+            (typeof (body as { error?: unknown }).error === 'string'
+              ? ((body as { error: string }).error as string)
+              : undefined) ||
+            ((body as { error?: { message?: string } }).error?.message ?? undefined)
+          : typeof body === 'string'
+            ? body
+            : undefined) ?? `Request failed with status ${response.status}`;
+      throw new ApiError(message, {
+        service,
+        status: response.status,
+        code:
+          typeof body === 'object' && body !== null
+            ? ((body as { code?: string }).code ??
+              (body as { error?: { code?: string } }).error?.code)
+            : undefined,
+        body,
+      });
+    }
+
+    if (body && typeof body === 'object' && 'data' in (body as Record<string, unknown>)) {
+      return (body as { data: T }).data;
+    }
+    return body as T;
+  };
+
+  if (method === 'GET' && shouldCacheApiPath(path)) {
+    return cachedGet(cacheKey, execute);
   }
 
-  const body = await readResponseBody(response);
-
-  if (!response.ok) {
-    const message =
-      (typeof body === 'object' && body !== null
-        ? ((body as Record<string, unknown>).message as string | undefined) ||
-          (typeof (body as { error?: unknown }).error === 'string'
-            ? ((body as { error: string }).error as string)
-            : undefined) ||
-          ((body as { error?: { message?: string } }).error?.message ?? undefined)
-        : typeof body === 'string'
-          ? body
-          : undefined) ?? `Request failed with status ${response.status}`;
-    throw new ApiError(message, {
-      service,
-      status: response.status,
-      code:
-        typeof body === 'object' && body !== null
-          ? ((body as { code?: string }).code ??
-            (body as { error?: { code?: string } }).error?.code)
-          : undefined,
-      body,
-    });
+  if (method !== 'GET') {
+    invalidateRequestCache('service::');
   }
 
-  if (body && typeof body === 'object' && 'data' in (body as Record<string, unknown>)) {
-    return (body as { data: T }).data;
-  }
-  return body as T;
+  return execute();
 }
 
 /**

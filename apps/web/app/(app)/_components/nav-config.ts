@@ -21,6 +21,8 @@ export type AppNavItem = {
   /** When true, only exact href + matchPrefixes apply (not all paths under href). */
   exactHref?: boolean;
   matchPrefixes?: string[];
+  /** Disable Next.js route prefetch for heavy pages. Defaults to true when omitted. */
+  prefetch?: boolean;
 };
 
 export type NavDropdownGroup = {
@@ -101,6 +103,7 @@ export const appNavItems: AppNavItem[] = [
     description: 'Install the CLI, authenticate with GitHub, and submit your first project.',
     visibility: 'all',
     placement: 'learn',
+    prefetch: false,
   },
   {
     href: '/catalog',
@@ -123,6 +126,7 @@ export const appNavItems: AppNavItem[] = [
     description: 'Run code in a sandboxed playground.',
     visibility: 'all',
     placement: 'learn',
+    prefetch: false,
   },
   {
     href: '/community',
@@ -169,6 +173,7 @@ export const appNavItems: AppNavItem[] = [
     description: 'Curated LeetCode list — 75 essential DSA problems.',
     visibility: 'all',
     placement: 'compete',
+    prefetch: false,
   },
   {
     href: '/competitions/daily',

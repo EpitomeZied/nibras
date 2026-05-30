@@ -5,7 +5,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import DropdownMenu, { DropdownChevron, DropdownGroup, useDropdownClose } from './ui/dropdown-menu';
 import { usePathname } from 'next/navigation';
 import UserAvatar from './widgets/UserAvatar';
-import NibrasLogo from '@/app/_components/nibras-logo';
+import NibrasLogoMark from '@/app/_components/nibras-logo-mark';
 import { WEB_BASE_URL } from '@/app/lib/web-base-url';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import NotificationsPanel from './notifications-panel';
@@ -140,7 +140,7 @@ function UserDropdown({
   const menuItems = [
     ...(canTeach ? [{ label: 'Instructor', icon: <IconBuilder />, href: '/instructor' }] : []),
     { label: 'Profile', icon: <IconProfile />, href: '/users' },
-    { label: 'Settings', icon: <IconSettings />, href: '/settings' },
+    { label: 'Settings', icon: <IconSettings />, href: '/settings', prefetch: false },
     {
       label: 'Send Feedback',
       icon: <IconFeedback />,
@@ -222,7 +222,7 @@ function UserMenuPanel({
   email,
   loading,
 }: {
-  menuItems: Array<{ label: string; icon: ReactNode; href: string }>;
+  menuItems: Array<{ label: string; icon: ReactNode; href: string; prefetch?: boolean }>;
   identity: string;
   email?: string;
   loading: boolean;
@@ -269,6 +269,7 @@ function UserMenuPanel({
           <Link
             key={item.label}
             href={item.href}
+            prefetch={item.prefetch ?? true}
             role="menuitem"
             onClick={close}
             style={{
@@ -377,7 +378,12 @@ function NavLink({
 }) {
   const isActive = isNavItemActive(item, pathname);
   return (
-    <Link href={item.href} title={item.description} style={navLinkStyle(isActive, compact)}>
+    <Link
+      href={item.href}
+      prefetch={item.prefetch ?? true}
+      title={item.description}
+      style={navLinkStyle(isActive, compact)}
+    >
       {item.label}
     </Link>
   );
@@ -473,6 +479,7 @@ function NavMenuPanel({
             <Link
               key={item.href}
               href={item.href}
+              prefetch={item.prefetch ?? true}
               role="menuitem"
               title={item.description}
               onClick={close}
@@ -576,7 +583,7 @@ export default function TopHeader({
                 title="Visit NibrasPlaftorm.me"
                 style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
               >
-                <NibrasLogo variant="inverse" width={compact ? 82 : 90} priority />
+                <NibrasLogoMark variant="inverse" width={compact ? 82 : 90} priority />
               </a>
               <span
                 style={{

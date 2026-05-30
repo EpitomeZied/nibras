@@ -189,6 +189,8 @@ function NotificationsPanelContent({
   );
 }
 
+const POLL_INTERVAL_MS = 4 * 60_000;
+
 export default function NotificationsPanel() {
   const [open, setOpen] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -209,8 +211,24 @@ export default function NotificationsPanel() {
 
   useEffect(() => {
     void fetchCount();
-    const id = setInterval(() => void fetchCount(), 60_000);
-    return () => clearInterval(id);
+
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void fetchCount();
+      }
+    }, POLL_INTERVAL_MS);
+
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        void fetchCount();
+      }
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, [fetchCount]);
 
   useEffect(() => {
@@ -239,7 +257,10 @@ export default function NotificationsPanel() {
   }, [open]);
 
   function handleOpenChange(next: boolean) {
-    if (next) setLoaded(false);
+    if (next) {
+      setLoaded(false);
+      void fetchCount();
+    }
     setOpen(next);
   }
 

@@ -2,6 +2,7 @@
 
 import { authClient } from '@/lib/auth-client';
 import { apiFetch } from './session';
+import { invalidateRequestCache } from './request-cache';
 
 const LEGACY_SESSION_KEYS = [
   'nibras.webSession',
@@ -30,6 +31,7 @@ export async function signOutWebSession(): Promise<void> {
   }
 
   clearLocalSession();
+  invalidateRequestCache();
 
   try {
     await authClient.signOut();
