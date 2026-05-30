@@ -378,18 +378,24 @@ target Azure gives you — usually a CNAME to the Container Apps environment
 domain.
 
 Repeat for `nibras-api` if you want `api.nibrasplatform.me` (recommended for
-OAuth callbacks).
+OAuth callbacks). **Until that DNS record exists**, use the same-origin pattern
+below so sign-in does not hang on `/auth/complete`.
 
 **2. Update GitHub Actions variables** (repo → Settings → Variables):
 
 | Name | Value |
 | ---- | ----- |
 | `NIBRAS_WEB_BASE_URL` | `https://nibrasplatform.me` |
-| `NIBRAS_API_BASE_URL` | `https://api.nibrasplatform.me` *(or keep Azure API FQDN)* |
-| `NIBRAS_API_INTERNAL_URL` | same as `NIBRAS_API_BASE_URL` |
+| `NIBRAS_API_BASE_URL` | `https://nibrasplatform.me` *(same-origin; required until `api.nibrasplatform.me` exists)* |
+| `NIBRAS_API_INTERNAL_URL` | `https://nibras-api.<env>.azurecontainerapps.io` *(server-side only)* |
+
+When `api.nibrasplatform.me` is bound on the API Container App, you may switch
+`NIBRAS_API_BASE_URL` to `https://api.nibrasplatform.me` and set
+`NIBRAS_WEB_CORS_ORIGINS=https://nibrasplatform.me` on `nibras-api`.
 
 Push to `main` so the web image rebuilds with
-`NEXT_PUBLIC_NIBRAS_WEB_BASE_URL=https://nibrasplatform.me` baked in.
+`NEXT_PUBLIC_NIBRAS_WEB_BASE_URL=https://nibrasplatform.me` and
+`NEXT_PUBLIC_NIBRAS_API_BASE_URL=https://nibrasplatform.me` baked in.
 
 **3. Update live Container App env vars**
 
@@ -399,6 +405,9 @@ az containerapp update \
   --set-env-vars \
     NIBRAS_WEB_BASE_URL=https://nibrasplatform.me \
     NIBRAS_WEB_CORS_ORIGINS=https://nibrasplatform.me
+
+# Avoid cold-start delays on the first API request after idle (recommended)
+az containerapp update --name nibras-api --resource-group $RG --min-replicas 1
 
 az containerapp update \
   --name nibras-worker --resource-group $RG \

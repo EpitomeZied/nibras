@@ -1,11 +1,36 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { apiFetch } from '../../lib/session';
 import { sanitizeNextPath } from '@/lib/public-origin';
 import styles from './page.module.css';
 
 type LogLine = { text: string; type: 'cmd' | 'info' | 'success' | 'error' | 'muted' };
+
+const VERIFY_TIMEOUT_MS = 12_000;
+
+async function verifySession(sessionToken: string | null): Promise<void> {
+  const verifyUrl = sessionToken
+    ? `/api/nibras/verify-session?st=${encodeURIComponent(sessionToken)}`
+    : '/api/nibras/verify-session';
+
+  const response = await fetch(verifyUrl, {
+    credentials: 'include',
+    signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS),
+  });
+
+  if (!response.ok) {
+    let message = 'Web session was not established.';
+    try {
+      const payload = (await response.json()) as { error?: string };
+      if (payload?.error) {
+        message = payload.error;
+      }
+    } catch {
+      /* use default */
+    }
+    throw new Error(message);
+  }
+}
 
 export default function AuthCompletePage() {
   const [lines, setLines] = useState<LogLine[]>([
@@ -25,13 +50,7 @@ export default function AuthCompletePage() {
         const st = params.get('st');
         const next = sanitizeNextPath(params.get('next'), '/dashboard');
 
-        const response = await apiFetch('/v1/web/session', {
-          auth: true,
-          ...(st ? { accessToken: st } : {}),
-        });
-        if (!response.ok) {
-          throw new Error('Web session was not established.');
-        }
+        await verifySession(st);
 
         if (st) {
           window.localStorage.setItem('nibras.webSession', st);
@@ -48,10 +67,14 @@ export default function AuthCompletePage() {
           window.location.href = next;
         }, 900);
       } catch (err) {
-        addLine({
-          text: `✗ ${err instanceof Error ? err.message : String(err)}`,
-          type: 'error',
-        });
+        setDone(true);
+        const message =
+          err instanceof Error && err.name === 'TimeoutError'
+            ? 'Session verification timed out — try signing in again.'
+            : err instanceof Error
+              ? err.message
+              : String(err);
+        addLine({ text: `✗ ${message}`, type: 'error' });
       }
     })();
   }, []);

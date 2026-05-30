@@ -60,6 +60,26 @@ if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('@127.0.0.1:')
   warnings++;
 }
 
+function hostnameFromUrl(value) {
+  if (!value) return null;
+  try {
+    return new URL(value).hostname;
+  } catch {
+    return null;
+  }
+}
+
+const apiPublicHost = hostnameFromUrl(process.env.NEXT_PUBLIC_NIBRAS_API_BASE_URL);
+const webPublicHost = hostnameFromUrl(process.env.NIBRAS_WEB_BASE_URL);
+if (apiPublicHost && webPublicHost && apiPublicHost !== webPublicHost) {
+  console.warn(
+    '⚠️  NEXT_PUBLIC_NIBRAS_API_BASE_URL host (%s) differs from NIBRAS_WEB_BASE_URL host (%s) — ensure the API host is reachable and NIBRAS_WEB_CORS_ORIGINS includes the web origin',
+    apiPublicHost,
+    webPublicHost
+  );
+  warnings++;
+}
+
 if (warnings > 0) {
   console.warn('\n%d warning(s) above — review before deploying.\n', warnings);
 }

@@ -3,7 +3,9 @@
 import {
   apiFetchWith,
   buildApiBaseUrlCandidates,
+  DEFAULT_FETCH_TIMEOUT_MS,
   discoverApiBaseUrlWith,
+  fetchWithTimeout,
   normalizeApiBaseUrl,
   shouldIgnoreStoredApiBaseUrlForOrigin,
 } from './session-core.js';
@@ -68,7 +70,11 @@ export async function discoverApiBaseUrl(): Promise<string> {
       storedApiBaseUrl: getStoredApiBaseUrl(),
       configuredApiBaseUrl: getConfiguredApiBaseUrl(),
       probe: async (candidate) => {
-        const response = await fetch(`${candidate}/v1/health`);
+        const response = await fetchWithTimeout(
+          `${candidate}/v1/health`,
+          {},
+          DEFAULT_FETCH_TIMEOUT_MS
+        );
         return response.ok;
       },
       persistApiBaseUrl: async (candidate) => {
@@ -106,6 +112,6 @@ export async function apiFetch(
     auth,
     accessToken,
     discoverApiBaseUrl,
-    fetchImpl: (input, request) => fetch(input, request),
+    fetchImpl: (input, request) => fetchWithTimeout(input, request ?? {}, DEFAULT_FETCH_TIMEOUT_MS),
   });
 }

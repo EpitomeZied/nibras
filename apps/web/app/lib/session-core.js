@@ -127,6 +127,15 @@ export function formatApiFetchError(apiBaseUrl) {
   return `Unable to reach the Nibras API at ${apiBaseUrl}. Start \`npm run api:dev\` for local API access, start \`npm run proxy:dev\` for same-origin proxy access, or update \`.env\` and your tunnel URL.`;
 }
 
+export const DEFAULT_FETCH_TIMEOUT_MS = 8_000;
+
+export async function fetchWithTimeout(url, init = {}, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS) {
+  return fetch(url, {
+    ...init,
+    signal: init.signal ?? AbortSignal.timeout(timeoutMs),
+  });
+}
+
 export async function apiFetchWith({
   path,
   init = {},
@@ -134,6 +143,7 @@ export async function apiFetchWith({
   discoverApiBaseUrl,
   fetchImpl,
   accessToken,
+  fetchTimeoutMs = DEFAULT_FETCH_TIMEOUT_MS,
 }) {
   const apiBaseUrl = await discoverApiBaseUrl();
   const headers = new Headers(init.headers ?? undefined);
@@ -147,6 +157,7 @@ export async function apiFetchWith({
       ...init,
       headers,
       credentials: auth ? 'include' : init.credentials,
+      signal: init.signal ?? AbortSignal.timeout(fetchTimeoutMs),
     });
   } catch {
     throw new Error(formatApiFetchError(apiBaseUrl));

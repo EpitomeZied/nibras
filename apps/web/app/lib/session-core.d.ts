@@ -19,6 +19,12 @@ export function discoverApiBaseUrlWith(args: {
 }): Promise<string>;
 export function createApiUrl(apiBaseUrl: string, path: string): string;
 export function formatApiFetchError(apiBaseUrl: string): string;
+export const DEFAULT_FETCH_TIMEOUT_MS: number;
+export function fetchWithTimeout(
+  url: string,
+  init?: RequestInit,
+  timeoutMs?: number
+): Promise<Response>;
 export function apiFetchWith(args: {
   path: string;
   init?: RequestInit;
@@ -26,4 +32,5 @@ export function apiFetchWith(args: {
   discoverApiBaseUrl: () => Promise<string>;
   fetchImpl: (input: string, init?: RequestInit) => Promise<Response>;
   accessToken?: string | null;
+  fetchTimeoutMs?: number;
 }): Promise<Response>;

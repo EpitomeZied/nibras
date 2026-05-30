@@ -106,3 +106,50 @@ test('web apiFetch surfaces JSON API errors directly', async () => {
     /GitHub App is not configured\./
   );
 });
+
+test('web session discovery skips timed-out candidates and tries the next one', async () => {
+  const { discoverApiBaseUrlWith } = await import('../apps/web/app/lib/session-core.js');
+  const attempted = [];
+
+  const apiBaseUrl = await discoverApiBaseUrlWith({
+    pageOrigin: 'https://nibras.example',
+    storedApiBaseUrl: null,
+    configuredApiBaseUrl: 'https://api.example',
+    probe: async (candidate) => {
+      attempted.push(candidate);
+      if (candidate === 'https://api.example') {
+        throw new DOMException('The operation was aborted.', 'TimeoutError');
+      }
+      return candidate === 'https://nibras.example';
+    },
+  });
+
+  assert.equal(apiBaseUrl, 'https://nibras.example');
+  assert.deepEqual(attempted, ['https://api.example', 'https://nibras.example']);
+});
+
+test('fetchWithTimeout exposes the default timeout constant', async () => {
+  const { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout } =
+    await import('../apps/web/app/lib/session-core.js');
+
+  assert.equal(DEFAULT_FETCH_TIMEOUT_MS, 8_000);
+
+  const controller = new AbortController();
+  let capturedSignal = null;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_url, init) => {
+    capturedSignal = init?.signal ?? null;
+    controller.abort();
+    throw new DOMException('The operation was aborted.', 'AbortError');
+  };
+
+  try {
+    await assert.rejects(
+      () => fetchWithTimeout('https://api.example/v1/health', {}, 123),
+      /aborted/i
+    );
+    assert.ok(capturedSignal);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
