@@ -10,10 +10,13 @@ import Skeleton from '../../_components/widgets/Skeleton';
 import MarkdownToolbar from '../../_components/widgets/MarkdownToolbar';
 import type { TrackingCourseSummary } from '@nibras/contracts';
 import {
+  canModerateDiscussion,
   createThread,
   listDiscussionCourses,
   listThreads,
   listThreadsAcrossCourses,
+  setThreadClosed,
+  setThreadPinned,
   type CommunityThread,
 } from '../../../lib/services/community';
 import { useSession } from '../../_components/session-context';
@@ -65,6 +68,43 @@ export default function DiscussionsPage() {
   const [searchQ, setSearchQ] = useState('');
   const debouncedSearchQ = useDebounce(searchQ, 300);
   const threadBodyRef = useRef<HTMLTextAreaElement>(null);
+  const [moderatingId, setModeratingId] = useState<string | null>(null);
+
+  const activeCourseId = courseId ?? courses[0]?.id;
+
+  async function handleListPinToggle(thread: CommunityThread, event: React.MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    setModeratingId(thread.id);
+    const nextPinned = !thread.pinned;
+    setThreads((prev) => prev.map((t) => (t.id === thread.id ? { ...t, pinned: nextPinned } : t)));
+    try {
+      const updated = await setThreadPinned(thread.id, nextPinned);
+      setThreads((prev) => prev.map((t) => (t.id === thread.id ? updated : t)));
+    } catch (err) {
+      setThreads((prev) => prev.map((t) => (t.id === thread.id ? { ...t, pinned: thread.pinned } : t)));
+      setError(friendlyMessage(err));
+    } finally {
+      setModeratingId(null);
+    }
+  }
+
+  async function handleListCloseToggle(thread: CommunityThread, event: React.MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    setModeratingId(thread.id);
+    const nextClosed = !thread.closed;
+    setThreads((prev) => prev.map((t) => (t.id === thread.id ? { ...t, closed: nextClosed } : t)));
+    try {
+      const updated = await setThreadClosed(thread.id, nextClosed);
+      setThreads((prev) => prev.map((t) => (t.id === thread.id ? updated : t)));
+    } catch (err) {
+      setThreads((prev) => prev.map((t) => (t.id === thread.id ? { ...t, closed: thread.closed } : t)));
+      setError(friendlyMessage(err));
+    } finally {
+      setModeratingId(null);
+    }
+  }
 
   async function handleThreadSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -470,10 +510,34 @@ export default function DiscussionsPage() {
                   ))}
                 </div>
               </div>
-              <Link href={`/community/discussions/${thread.id}`} className={styles.threadStats}>
-                <strong>{thread.replyCount}</strong>
-                <span>replies</span>
-              </Link>
+              <div className={styles.threadAside}>
+                {canModerateDiscussion(user, thread.courseId ?? activeCourseId) && (
+                  <div className={styles.threadModActions}>
+                    <button
+                      type="button"
+                      className={styles.modBtn}
+                      disabled={moderatingId === thread.id}
+                      title={thread.pinned ? 'Unpin' : 'Pin'}
+                      onClick={(e) => void handleListPinToggle(thread, e)}
+                    >
+                      {thread.pinned ? 'Unpin' : 'Pin'}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.modBtn}
+                      disabled={moderatingId === thread.id}
+                      title={thread.closed ? 'Reopen' : 'Close'}
+                      onClick={(e) => void handleListCloseToggle(thread, e)}
+                    >
+                      {thread.closed ? 'Open' : 'Close'}
+                    </button>
+                  </div>
+                )}
+                <Link href={`/community/discussions/${thread.id}`} className={styles.threadStats}>
+                  <strong>{thread.replyCount}</strong>
+                  <span>replies</span>
+                </Link>
+              </div>
             </div>
           ))}
         </div>

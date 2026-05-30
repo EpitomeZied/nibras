@@ -83,6 +83,41 @@
   gap: 10px;
 }
 
+.threadAside {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.threadModActions {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.modBtn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.modBtn:hover:not(:disabled) {
+  border-color: var(--primary, #22c55e);
+  color: var(--text);
+}
+
+.modBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .thread {
   display: grid;
   grid-template-columns: 1fr auto;

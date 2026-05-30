@@ -23,12 +23,19 @@ export async function assertCourseView(
   return true;
 }
 
+export function canManageCourseDiscussions(
+  auth: AuthenticatedRequest,
+  courseId: string
+): boolean {
+  return auth.user.systemRole === 'admin' || canManageCourse(auth, courseId);
+}
+
 export function assertCourseManage(
   auth: AuthenticatedRequest,
   courseId: string,
   reply: FastifyReply
 ): boolean {
-  if (!canManageCourse(auth, courseId)) {
+  if (!canManageCourseDiscussions(auth, courseId)) {
     reply.code(403).send(Errors.forbidden());
     return false;
   }

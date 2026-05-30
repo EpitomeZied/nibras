@@ -10,7 +10,13 @@ import { Errors } from '../../lib/errors';
 import { requestBaseUrl } from '../../lib/request-base-url';
 import { AppStore } from '../../store';
 import { canManageCourse } from '../tracking/policies/access';
-import { authorSelect, loadReputationTotals, presentAuthor, presentThread } from './present';
+import {
+  authorSelect,
+  loadReputationTotals,
+  presentAuthor,
+  presentThread,
+  presentThreadAdmin,
+} from './present';
 import {
   findPendingReport,
   setTargetModerationStatus,
@@ -105,12 +111,53 @@ export function registerCommunityV2Routes(
         }),
         prisma.communityReport.count({ where }),
       ]);
+      const postIds = reports
+        .filter((r) => r.targetType === CommunityReportTargetType.post)
+        .map((r) => r.targetId);
+      const answerIds = reports
+        .filter((r) => r.targetType === CommunityReportTargetType.answer)
+        .map((r) => r.targetId);
+      const [posts, answers] = await Promise.all([
+        postIds.length > 0
+          ? prisma.communityPost.findMany({
+              where: { id: { in: postIds } },
+              select: { id: true, threadId: true },
+            })
+          : Promise.resolve([]),
+        answerIds.length > 0
+          ? prisma.communityAnswer.findMany({
+              where: { id: { in: answerIds } },
+              select: { id: true, questionId: true },
+            })
+          : Promise.resolve([]),
+      ]);
+      const postsById = new Map(posts.map((p) => [p.id, p.threadId]));
+      const questionIdByAnswerId = new Map(answers.map((a) => [a.id, a.questionId]));
+
       return {
-        reports: reports.map((r) => ({
-          ...r,
-          _id: r.id,
-          reporter: presentAuthor(r.reporter),
-        })),
+        reports: reports.map((r) => {
+          let contentUrl: string | undefined;
+          let threadId: string | undefined;
+          if (r.targetType === CommunityReportTargetType.question) {
+            contentUrl = `/community/q/${r.targetId}`;
+          } else if (r.targetType === CommunityReportTargetType.answer) {
+            const questionId = questionIdByAnswerId.get(r.targetId);
+            contentUrl = questionId ? `/community/q/${questionId}` : undefined;
+          } else if (r.targetType === CommunityReportTargetType.thread) {
+            threadId = r.targetId;
+            contentUrl = `/community/discussions/${r.targetId}`;
+          } else if (r.targetType === CommunityReportTargetType.post) {
+            threadId = postsById.get(r.targetId);
+            contentUrl = threadId ? `/community/discussions/${threadId}` : undefined;
+          }
+          return {
+            ...r,
+            _id: r.id,
+            reporter: presentAuthor(r.reporter),
+            threadId,
+            contentUrl,
+          };
+        }),
         pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
       };
     }
@@ -288,6 +335,126 @@ export function registerCommunityV2Routes(
         page,
         limit,
       };
+    }
+  );
+
+  // ── Admin thread organization ──────────────────────────────────────────
+
+  app.get(
+    '/v1/community/threads/admin',
+    { schema: { tags: ['community'], summary: 'List all course discussion threads (admin)' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      if (auth.user.systemRole !== 'admin') {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const query = request.query as {
+        courseId?: string;
+        q?: string;
+        pinned?: string;
+        closed?: string;
+        status?: string;
+        page?: string;
+        limit?: string;
+      };
+      const page = Math.max(1, parseInt(query.page || '1', 10) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(query.limit || '30', 10) || 30));
+      const skip = (page - 1) * limit;
+
+      const where: Record<string, unknown> = {};
+      const statusFilter = query.status?.trim();
+      if (statusFilter && statusFilter !== 'all') {
+        const valid = Object.values(CommunityModerationStatus);
+        if (!valid.includes(statusFilter as CommunityModerationStatus)) {
+          reply.code(400).send(Errors.validation('Invalid status filter.'));
+          return;
+        }
+        where.moderationStatus = statusFilter;
+      }
+      if (query.courseId) where.courseId = query.courseId;
+      if (query.pinned === 'true') where.pinned = true;
+      if (query.pinned === 'false') where.pinned = false;
+      if (query.closed === 'true') where.closed = true;
+      if (query.closed === 'false') where.closed = false;
+      if (query.q) {
+        where.OR = [
+          { title: { contains: query.q, mode: 'insensitive' } },
+          { body: { contains: query.q, mode: 'insensitive' } },
+        ];
+      }
+
+      const [threads, total] = await Promise.all([
+        prisma.communityThread.findMany({
+          where,
+          orderBy: [{ pinned: 'desc' }, { lastActivityAt: 'desc' }],
+          skip,
+          take: limit,
+          include: {
+            author: { select: authorSelect },
+            course: { select: { id: true, title: true, courseCode: true } },
+          },
+        }),
+        prisma.communityThread.count({ where }),
+      ]);
+      const reputationByUserId = await loadReputationTotals(
+        prisma,
+        threads.map((t) => t.author.id)
+      );
+      return {
+        items: threads.map((t) => presentThreadAdmin(t, reputationByUserId)),
+        total,
+        page,
+        limit,
+      };
+    }
+  );
+
+  app.patch(
+    '/v1/community/threads/:threadId/moderation',
+    { schema: { tags: ['community'], summary: 'Set thread moderation status (admin)' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      if (auth.user.systemRole !== 'admin') {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const { threadId } = request.params as { threadId: string };
+      const body = request.body as { status?: string };
+      const status = body.status?.trim();
+      const valid = Object.values(CommunityModerationStatus);
+      if (!status || !valid.includes(status as CommunityModerationStatus)) {
+        reply
+          .code(400)
+          .send(Errors.validation('status must be visible, hidden, or removed.'));
+        return;
+      }
+      const thread = await prisma.communityThread.findUnique({ where: { id: threadId } });
+      if (!thread) {
+        reply.code(404).send(Errors.notFound('Thread'));
+        return;
+      }
+      await setTargetModerationStatus(
+        prisma,
+        CommunityReportTargetType.thread,
+        threadId,
+        status as CommunityModerationStatus
+      );
+      const updated = await prisma.communityThread.findUnique({
+        where: { id: threadId },
+        include: {
+          author: { select: authorSelect },
+          course: { select: { id: true, title: true, courseCode: true } },
+        },
+      });
+      if (!updated) {
+        reply.code(404).send(Errors.notFound('Thread'));
+        return;
+      }
+      const reputationByUserId = await loadReputationTotals(prisma, [updated.author.id]);
+      return presentThreadAdmin(updated, reputationByUserId);
     }
   );
 
@@ -478,7 +645,11 @@ export function registerCommunityV2Routes(
       const { threadId } = request.params as { threadId: string };
       const body = request.body as { title?: string; body?: string; tags?: string[] };
       const thread = await prisma.communityThread.findUnique({ where: { id: threadId } });
-      if (!thread || thread.moderationStatus !== CommunityModerationStatus.visible) {
+      if (
+        !thread ||
+        (thread.moderationStatus !== CommunityModerationStatus.visible &&
+          auth.user.systemRole !== 'admin')
+      ) {
         reply.code(404).send(Errors.notFound('Thread'));
         return;
       }

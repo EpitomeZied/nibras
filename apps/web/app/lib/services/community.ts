@@ -36,6 +36,8 @@ export type CommunityAnswer = {
   updatedAt?: string;
 };
 
+export type ThreadModerationStatus = 'visible' | 'hidden' | 'removed';
+
 export type CommunityThread = {
   id: string;
   courseId?: string;
@@ -48,6 +50,26 @@ export type CommunityThread = {
   closed: boolean;
   createdAt: string;
   lastActivityAt?: string;
+  moderationStatus?: ThreadModerationStatus;
+  courseTitle?: string;
+  courseCode?: string;
+};
+
+export type AdminDiscussionThread = CommunityThread & {
+  moderationStatus: ThreadModerationStatus;
+  courseId: string;
+  courseTitle?: string;
+  courseCode?: string;
+};
+
+export type AdminThreadFilters = {
+  courseId?: string;
+  q?: string;
+  pinned?: boolean;
+  closed?: boolean;
+  status?: ThreadModerationStatus | 'all';
+  page?: number;
+  limit?: number;
 };
 
 export type CommunityPost = {
@@ -535,6 +557,8 @@ export type AdminReport = {
   resolution?: string | null;
   createdAt: string;
   reporter: CommunityAuthor;
+  threadId?: string;
+  contentUrl?: string;
 };
 
 export async function listReportsAdmin(status = 'pending') {
@@ -612,5 +636,61 @@ export async function listThreadsAcrossCourses(filters: ThreadFilters = {}) {
   return serviceFetch<Paginated<CommunityThread>>('community', '/v1/community/threads/me', {
     auth: true,
     query: toQuery(filters),
+  });
+}
+
+type DiscussionUser = {
+  id?: string;
+  systemRole?: string | null;
+  memberships?: Array<{ courseId: string; role: string }>;
+};
+
+export function canModerateDiscussion(user: DiscussionUser | null | undefined, courseId?: string): boolean {
+  if (!user) return false;
+  if (user.systemRole === 'admin') return true;
+  if (!courseId) return false;
+  return (user.memberships ?? []).some(
+    (m) => m.courseId === courseId && ['instructor', 'ta'].includes(m.role.toLowerCase())
+  );
+}
+
+export function canEditDiscussionContent(
+  user: DiscussionUser | null | undefined,
+  authorId: string,
+  courseId?: string
+): boolean {
+  if (!user) return false;
+  if (user.id === authorId) return true;
+  return canModerateDiscussion(user, courseId);
+}
+
+export async function listThreadsAdmin(filters: AdminThreadFilters = {}) {
+  const { status, ...rest } = filters;
+  const query = toQuery({
+    ...rest,
+    ...(status && status !== 'all' ? { status } : status === 'all' ? { status: 'all' } : {}),
+  });
+  return serviceFetch<Paginated<AdminDiscussionThread>>('community', '/v1/community/threads/admin', {
+    auth: true,
+    query,
+  });
+}
+
+export async function setThreadModeration(threadId: string, status: ThreadModerationStatus) {
+  return serviceFetch<AdminDiscussionThread>(
+    'community',
+    `/v1/community/threads/${threadId}/moderation`,
+    { method: 'PATCH', auth: true, body: { status } }
+  );
+}
+
+export async function updateThread(
+  threadId: string,
+  payload: { title?: string; body?: string; tags?: string[] }
+) {
+  return serviceFetch<CommunityThread>('community', `/v1/community/threads/${threadId}/content`, {
+    method: 'PATCH',
+    auth: true,
+    body: payload as Record<string, unknown>,
   });
 }

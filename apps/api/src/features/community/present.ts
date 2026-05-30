@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { CommunityModerationStatus, PrismaClient } from '@prisma/client';
 
 export const authorSelect = {
   id: true,
@@ -76,28 +76,41 @@ export function presentQuestion(
   };
 }
 
-export function presentThread(
-  t: {
-    id: string;
-    courseId: string;
-    title: string;
-    body: string;
-    tags: string[];
-    pinned: boolean;
-    closed: boolean;
-    postsCount: number;
-    lastActivityAt: Date;
-    createdAt: Date;
-    updatedAt: Date;
-    author: AuthorRow;
-  },
-  reputationByUserId: Map<string, number>
-) {
+type ThreadRow = {
+  id: string;
+  courseId: string;
+  title: string;
+  body: string;
+  tags: string[];
+  pinned: boolean;
+  closed: boolean;
+  postsCount: number;
+  lastActivityAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  author: AuthorRow;
+  moderationStatus?: CommunityModerationStatus;
+  course?: { id: string; title: string; courseCode: string };
+};
+
+export function presentThread(t: ThreadRow, reputationByUserId: Map<string, number>) {
   return {
     ...t,
     _id: t.id,
     author: presentAuthor(t.author, reputationByUserId),
     replyCount: t.postsCount,
     lastActivityAt: t.lastActivityAt.toISOString(),
+    createdAt: t.createdAt.toISOString(),
+    updatedAt: t.updatedAt.toISOString(),
+  };
+}
+
+export function presentThreadAdmin(t: ThreadRow, reputationByUserId: Map<string, number>) {
+  const base = presentThread(t, reputationByUserId);
+  return {
+    ...base,
+    moderationStatus: t.moderationStatus ?? CommunityModerationStatus.visible,
+    courseTitle: t.course?.title,
+    courseCode: t.course?.courseCode,
   };
 }

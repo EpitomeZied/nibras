@@ -61,6 +61,9 @@ export default function AdminPage() {
             <Link href="/admin/community" className={styles.btnSecondary}>
               Community moderation
             </Link>
+            <Link href="/admin/discussions" className={styles.btnSecondary}>
+              Course discussions
+            </Link>
           </div>
         </>
       )}

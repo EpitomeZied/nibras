@@ -10,15 +10,16 @@ import EmptyState from '../../_components/widgets/EmptyState';
 import Skeleton from '../../_components/widgets/Skeleton';
 
 function contentLink(report: AdminReport): string {
+  if (report.contentUrl) return report.contentUrl;
   switch (report.targetType) {
     case 'question':
-      return `/community/q/${report.targetId}`;
-    case 'answer':
       return `/community/q/${report.targetId}`;
     case 'thread':
       return `/community/discussions/${report.targetId}`;
     case 'post':
-      return `/community/discussions/${report.targetId}`;
+      return report.threadId
+        ? `/community/discussions/${report.threadId}`
+        : '/community/discussions';
     default:
       return '/community';
   }
