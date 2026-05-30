@@ -13,14 +13,15 @@ export type LandingFeatureGroup = {
   features: LandingFeature[];
 };
 
-export const heroBadge =
-  'Platform 2.0 · Early access — catalog LMS, profiles, gamification v2, community v2 & auth';
+export const heroTerminalTitle = 'Platform 2.0 · Early access';
 
 export const heroTitleLines = [
-  { line: 'Run your academic system', variant: 'default' as const },
-  { line: 'like a real operating platform.', variant: 'accent' as const },
-  { line: 'Without the chaos.', variant: 'muted' as const },
+  { line: 'Catalog, courses, and CLI', variant: 'default' as const },
+  { line: 'without the tab chaos.', variant: 'italic' as const },
 ] as const;
+
+export const heroSub =
+  'Browse and enroll from the Catalog, learn in My Courses, share public profiles, and submit with CLI 2.0 — Hassona tutoring and community v2 on the same dashboard.';
 
 export const heroSignInHint = 'GitHub, magic link, or email/password on /sign-in';
 

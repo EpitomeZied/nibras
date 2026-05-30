@@ -336,6 +336,19 @@
   font-weight: 600;
 }
 
+.heroTerminalTitleItalic {
+  color: rgba(250, 250, 250, 0.88);
+  font-style: italic;
+}
+
+.heroSub {
+  margin: 0;
+  max-width: 56ch;
+  font-size: 14px;
+  line-height: 1.75;
+  color: rgba(161, 161, 170, 0.76);
+}
+
 .heroWhatsNew {
   margin: 0;
   padding: 0 0 0 2px;

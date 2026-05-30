@@ -9,8 +9,9 @@ import FeatureTilesShowcase from './_components/feature-tiles-showcase';
 import CliShowcase from './_components/cli-showcase';
 import {
   footerTagline,
-  heroBadge,
   heroSignInHint,
+  heroSub,
+  heroTerminalTitle,
   heroTitleLines,
   howItWorksIntro,
   howItWorksSteps,
@@ -160,15 +161,10 @@ export default function HomePage() {
             <span className={styles.termDot} style={{ background: '#ff5f57' }} />
             <span className={styles.termDot} style={{ background: '#febc2e' }} />
             <span className={styles.termDot} style={{ background: '#28c840' }} />
-            <span className={styles.termTitle}>nibras — welcome</span>
+            <span className={styles.termTitle}>{heroTerminalTitle}</span>
           </div>
 
           <div className={`${styles.terminalBody} ${styles.heroTerminalBody}`}>
-            <div className={styles.termLine}>
-              <span className={styles.termMuted}># </span>
-              <span className={styles.heroTermBadge}>{heroBadge}</span>
-            </div>
-
             <h1 className={styles.heroTerminalTitle}>
               {heroTitleLines.map((part) => (
                 <span
@@ -178,13 +174,17 @@ export default function HomePage() {
                       ? styles.heroTerminalTitleAccent
                       : part.variant === 'muted'
                         ? styles.heroTerminalTitleMuted
-                        : ''
+                        : part.variant === 'italic'
+                          ? styles.heroTerminalTitleItalic
+                          : ''
                   }`}
                 >
                   {part.line}
                 </span>
               ))}
             </h1>
+
+            <p className={styles.heroSub}>{heroSub}</p>
 
             <div className={styles.termLine}>
               <span className={styles.termPrompt}>nibras</span>
