@@ -120,13 +120,14 @@ export function isVideoPlayable(video: {
   return resolvePlaybackUrl(video).length > 0;
 }
 
-function resolveThumbnailUrl(video: {
+export function resolveThumbnailUrl(video: {
   provider: VideoProvider;
   externalId: string | null;
 }): string | undefined {
   if (video.provider === 'youtube' && video.externalId) {
     const id = normalizeYouTubeExternalId(video.externalId);
-    if (id) return `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+    // i.ytimg.com is whitelisted in apps/web CSP (img-src); img.youtube.com is not.
+    if (id) return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
   }
   return undefined;
 }

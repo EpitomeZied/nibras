@@ -4,6 +4,7 @@ const {
   normalizeYouTubeExternalId,
   normalizeBilibiliExternalId,
   resolvePlaybackUrl,
+  resolveThumbnailUrl,
   isVideoPlayable,
 } = require('../apps/api/dist/features/tracking/course-videos');
 
@@ -23,6 +24,30 @@ test('normalizeBilibiliExternalId extracts BV id from URL', () => {
   assert.equal(
     normalizeBilibiliExternalId('https://www.bilibili.com/video/BV1xx411c7mD'),
     'BV1xx411c7mD'
+  );
+});
+
+test('resolveThumbnailUrl uses i.ytimg.com (CSP-allowed CDN)', () => {
+  assert.equal(
+    resolveThumbnailUrl({
+      provider: 'youtube',
+      externalId: 'dQw4w9WgXcQ',
+    }),
+    'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg'
+  );
+  assert.equal(
+    resolveThumbnailUrl({
+      provider: 'youtube',
+      externalId: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    }),
+    'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg'
+  );
+  assert.equal(
+    resolveThumbnailUrl({
+      provider: 'mp4',
+      externalId: null,
+    }),
+    undefined
   );
 });
 
