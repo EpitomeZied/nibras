@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { resolveServerApiBaseUrls } from '@/lib/api-internal-url';
 import { getPublicWebOrigin } from '@/lib/public-origin';
 
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${publicOrigin}/?auth=required`);
   }
 
-  const apiInternalUrl = process.env.NIBRAS_API_INTERNAL_URL || 'https://nibras-api.fly.dev';
+  const apiCandidates = resolveServerApiBaseUrls(publicOrigin);
+  const apiInternalUrl = apiCandidates[0] ?? 'https://nibras-api.fly.dev';
 
   const callbackUrl =
     `${apiInternalUrl}/v1/github/oauth/callback` +

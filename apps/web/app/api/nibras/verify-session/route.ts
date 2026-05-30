@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { resolveServerApiBaseUrls } from '@/lib/api-internal-url';
+import { getPublicWebOrigin } from '@/lib/public-origin';
 import { NIBRAS_WEB_SESSION_COOKIE } from '@/lib/web-session-cookie';
 
 export const dynamic = 'force-dynamic';
@@ -13,8 +15,19 @@ function getSessionToken(request: NextRequest): string | null {
   return request.cookies.get(NIBRAS_WEB_SESSION_COOKIE)?.value ?? null;
 }
 
-function apiInternalUrl(): string {
-  return process.env.NIBRAS_API_INTERNAL_URL || 'http://api:4848';
+async function fetchSessionFromApi(
+  apiBaseUrl: string,
+  sessionToken: string
+): Promise<Response | null> {
+  const apiUrl = `${apiBaseUrl}/v1/web/session`;
+  try {
+    return await fetch(apiUrl, {
+      headers: { Authorization: `Bearer ${sessionToken}` },
+      signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS),
+    });
+  } catch {
+    return null;
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -23,34 +36,38 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Missing session token.' }, { status: 401 });
   }
 
-  const apiUrl = `${apiInternalUrl()}/v1/web/session`;
+  const webOrigin = getPublicWebOrigin(request);
+  const candidates = resolveServerApiBaseUrls(webOrigin);
 
-  let apiResponse: Response;
-  try {
-    apiResponse = await fetch(apiUrl, {
-      headers: { Authorization: `Bearer ${sessionToken}` },
-      signal: AbortSignal.timeout(VERIFY_TIMEOUT_MS),
-    });
-  } catch {
-    return NextResponse.json(
-      { error: 'Unable to reach the Nibras API. Try signing in again.' },
-      { status: 503 }
-    );
-  }
+  let lastStatus = 503;
+  let lastError = 'Unable to reach the Nibras API. Try signing in again.';
 
-  if (!apiResponse.ok) {
-    let error = 'Web session was not established.';
+  for (const apiBaseUrl of candidates) {
+    const apiResponse = await fetchSessionFromApi(apiBaseUrl, sessionToken);
+    if (!apiResponse) {
+      continue;
+    }
+
+    if (apiResponse.ok) {
+      const payload = await apiResponse.json();
+      return NextResponse.json(payload);
+    }
+
+    lastStatus = apiResponse.status;
     try {
       const payload = (await apiResponse.json()) as { error?: string };
       if (payload?.error) {
-        error = payload.error;
+        lastError = payload.error;
       }
     } catch {
-      /* use default */
+      lastError = 'Web session was not established.';
     }
-    return NextResponse.json({ error }, { status: apiResponse.status });
+
+    // Auth failures are definitive — no point trying other hosts.
+    if (apiResponse.status === 401 || apiResponse.status === 403) {
+      break;
+    }
   }
 
-  const payload = await apiResponse.json();
-  return NextResponse.json(payload);
+  return NextResponse.json({ error: lastError }, { status: lastStatus });
 }

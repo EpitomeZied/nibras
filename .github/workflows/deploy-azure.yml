@@ -159,12 +159,19 @@ jobs:
       - name: Update nibras-web
         env:
           WEB_BASE: ${{ vars.NIBRAS_WEB_BASE_URL }}
+          API_INTERNAL: ${{ vars.NIBRAS_API_INTERNAL_URL }}
         run: |
           set -euo pipefail
           RG="${{ vars.AZURE_RESOURCE_GROUP }}"
           IMG="${{ env.REGISTRY }}/${{ env.IMAGE_REPO }}/web:${{ github.sha }}"
 
-          ENV_VARS=("BETTER_AUTH_URL=${WEB_BASE}" "NIBRAS_WEB_BASE_URL=${WEB_BASE}")
+          ENV_VARS=(
+            "BETTER_AUTH_URL=${WEB_BASE}"
+            "NIBRAS_WEB_BASE_URL=${WEB_BASE}"
+          )
+          if [ -n "${API_INTERNAL}" ]; then
+            ENV_VARS+=("NIBRAS_API_INTERNAL_URL=${API_INTERNAL}")
+          fi
           az containerapp update \
             --name nibras-web --resource-group "$RG" \
             --image "$IMG" \
