@@ -673,33 +673,38 @@
 /* ── Verse Footer ────────────────────────────────────────────────────────── */
 .verseFooter {
   margin-top: 48px;
-  padding-top: 32px;
+  padding: 40px 0 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  text-align: center;
   font-family: var(--font-guesswhat), 'Noto Naskh Arabic', serif;
-  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
-  line-height: 1.9;
-  color: var(--text-muted);
+  font-size: clamp(1.25rem, 2.8vw, 1.85rem);
+  line-height: 2;
+  color: var(--text);
 }
 
 .verseIntro {
-  margin: 0 0 12px;
+  margin: 0 0 24px;
+  text-align: right;
 }
 
 .verseQuote {
-  margin: 0 auto 16px;
+  margin: 0 0 32px;
   padding: 0;
-  max-width: 52ch;
+  max-width: none;
   border: none;
+  text-align: center;
   font-size: inherit;
   line-height: inherit;
   color: inherit;
 }
 
+.verseHighlight {
+  color: var(--primary-strong);
+}
+
 .verseAttribution {
   margin: 0;
-  font-size: 0.85em;
-  opacity: 0.75;
+  text-align: left;
+  font-size: inherit;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */

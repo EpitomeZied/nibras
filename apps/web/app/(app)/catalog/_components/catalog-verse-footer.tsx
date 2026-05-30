@@ -11,7 +11,8 @@ export default function CatalogVerseFooter() {
     >
       <p className={s.verseIntro}>قال رسول الله ﷺ :</p>
       <blockquote className={s.verseQuote}>
-        إذا مات الإنسان انقطع عمله إلا من ثلاث: صدقة جارية أو علم ينتفع به أو ولد صالح يدعو له
+        &ldquo;إذا مات الإنسان انقطع عمله إلا من ثلاث: صدقة جارية أو{' '}
+        <span className={s.verseHighlight}>علم ينتفع به</span> أو ولد صالح يدعو له&rdquo;
       </blockquote>
       <p className={s.verseAttribution}>رواه مسلم</p>
     </footer>
