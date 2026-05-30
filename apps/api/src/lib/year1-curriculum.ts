@@ -3,6 +3,7 @@
  * Planner codes CS101–PHY101 map to these slugs; see docs/year1-curriculum.md.
  */
 import type { Prisma } from '@prisma/client';
+import { CS106A_LECTURE_RESOURCES, CS106A_LECTURES } from './year1-cs106a-lectures';
 import { ENG101_LECTURES } from './year1-eng101-lectures';
 
 export type Year1Milestone = {
@@ -62,29 +63,6 @@ export type Year1CourseDefinition = {
   project: Year1ProjectDefinition;
 };
 
-const CS106A_LECTURES: Year1Lecture[] = [
-  {
-    sectionTitle: 'Lecture 1: Welcome — Karel and Java',
-    sortOrder: 0,
-    youtubeId: 'mQOndhpPopg',
-  },
-  {
-    sectionTitle: 'Lecture 2: Control Flow',
-    sortOrder: 1,
-    youtubeId: 'Xc9DPuB8HTU',
-  },
-  {
-    sectionTitle: 'Lecture 3: Decomposition',
-    sortOrder: 2,
-    youtubeId: 'iH9R2DS1L5Y',
-  },
-  {
-    sectionTitle: 'Lecture 4: For Loops and Graphics',
-    sortOrder: 3,
-    youtubeId: '3lBiwIHHK5Y',
-  },
-];
-
 const CS106B_LECTURES: Year1Lecture[] = [
   {
     sectionTitle: 'Lecture 1: C++ Welcome',
@@ -138,18 +116,28 @@ export const YEAR1_COURSES: Year1CourseDefinition[] = [
     title: 'Programming Methodology',
     termLabel: 'Year 1 · Fall',
     description:
-      'Introduction to programming using Python. Covers variables, control flow, functions, and object-oriented programming.',
+      'Introduction to programming using Python. Lecture videos from Stanford Code in Place 2020: Karel, control flow, functions, graphics, lists, and dictionaries.',
     syllabusJson: {
-      schedule: 'Year 1 · Fall — introductory programming.',
-      topics: ['Karel', 'Control flow', 'Functions', 'OOP'],
+      schedule: 'Year 1 · Fall — introductory programming (Code in Place).',
+      topics: ['Karel', 'Control flow', 'Functions', 'Graphics', 'Lists', 'Dictionaries'],
       plannerCode: 'CS101',
     },
     sequentialVideos: true,
     sections: [
-      { title: 'Welcome & Karel', sortOrder: 0 },
-      { title: 'Control Flow', sortOrder: 1 },
-      { title: 'Functions', sortOrder: 2 },
-      { title: 'Object-Oriented Programming', sortOrder: 3 },
+      { title: 'Lecture 1: Welcome to Code in Place', sortOrder: 0 },
+      { title: 'Lecture 2: Control Flow in Karel', sortOrder: 1 },
+      { title: 'Lecture 3: Decomposition', sortOrder: 2 },
+      { title: 'Lecture 4: Variables in Python', sortOrder: 3 },
+      { title: 'Lecture 5: Expressions', sortOrder: 4 },
+      { title: 'Lecture 6: Control Flow in Python', sortOrder: 5 },
+      { title: 'Lecture 7: Functions Revisited', sortOrder: 6 },
+      { title: 'Lecture 8: Functions — More Practice', sortOrder: 7 },
+      { title: 'Lecture 9: Images', sortOrder: 8 },
+      { title: 'Lecture 10: Graphics', sortOrder: 9 },
+      { title: 'Lecture 11: Animations', sortOrder: 10 },
+      { title: 'Lecture 12: Lists', sortOrder: 11 },
+      { title: 'Lecture 13: Text Processing', sortOrder: 12 },
+      { title: 'Lecture 14: Dictionaries', sortOrder: 13 },
     ],
     lectures: CS106A_LECTURES,
     assignments: [
@@ -233,6 +221,7 @@ Design two related classes with inheritance. Submit a short design doc and worki
           isFinal: true,
         },
       ],
+      resourcesJson: CS106A_LECTURE_RESOURCES,
     },
   },
   {

@@ -32,6 +32,13 @@ test('year1-eng101 includes 25 Stanford Writing in the Sciences lectures', () =>
   assert.equal(eng101.sequentialVideos, true);
 });
 
+test('stanford-cs106a includes 73 Code in Place lecture videos', () => {
+  const cs106a = YEAR1_COURSES.find((c) => c.slug === 'stanford-cs106a');
+  assert.ok(cs106a);
+  assert.equal(cs106a.lectures?.length, 73);
+  assert.equal(cs106a.sequentialVideos, true);
+});
+
 test('seedYear1Curriculum upserts seven Year 1 courses in database', async (t) => {
   if (!process.env.DATABASE_URL) {
     t.skip('DATABASE_URL not set');
