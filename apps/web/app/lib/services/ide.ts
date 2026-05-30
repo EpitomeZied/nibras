@@ -17,9 +17,13 @@ export async function listIdeLanguages(): Promise<IdeLanguage[]> {
   return response.languages;
 }
 
-export async function runIdeCode(payload: IdeRunRequest): Promise<IdeRunResponse> {
+export async function runIdeCode(
+  payload: IdeRunRequest,
+  init?: { signal?: AbortSignal }
+): Promise<IdeRunResponse> {
   return serviceFetch<IdeRunResponse>('admin', '/v1/ide/run', {
     method: 'POST',
     body: payload,
+    signal: init?.signal,
   });
 }

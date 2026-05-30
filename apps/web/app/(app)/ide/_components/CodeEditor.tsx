@@ -3,6 +3,7 @@
 import Editor, { type OnMount } from '@monaco-editor/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ensureMonacoReady } from './monaco-bootstrap';
+import { useEditorTheme } from '../_hooks/use-editor-theme';
 import styles from '../page.module.css';
 
 type CodeEditorProps = {
@@ -11,6 +12,8 @@ type CodeEditorProps = {
   onChange: (value: string) => void;
   onRun?: () => void;
   readOnly?: boolean;
+  fontSize?: number;
+  wordWrap?: boolean;
 };
 
 export default function CodeEditor({
@@ -19,11 +22,14 @@ export default function CodeEditor({
   onChange,
   onRun,
   readOnly = false,
+  fontSize = 14,
+  wordWrap = false,
 }: CodeEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [initError, setInitError] = useState<string | null>(null);
   const [height, setHeight] = useState(480);
+  const monacoTheme = useEditorTheme();
 
   useEffect(() => {
     let cancelled = false;
@@ -91,17 +97,17 @@ export default function CodeEditor({
         value={value}
         onChange={(next) => onChange(next ?? '')}
         onMount={handleMount}
-        theme="vs-dark"
+        theme={monacoTheme}
         loading={<div className={styles.editorLoading}>Loading editor…</div>}
         options={{
           readOnly,
           minimap: { enabled: false },
-          fontSize: 14,
+          fontSize,
           lineNumbers: 'on',
           scrollBeyondLastLine: false,
           automaticLayout: true,
           tabSize: 2,
-          wordWrap: 'off',
+          wordWrap: wordWrap ? 'on' : 'off',
           padding: { top: 12 },
         }}
       />

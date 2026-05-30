@@ -1,6 +1,8 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useCallback } from 'react';
+import { buildIdeProblemUrl } from '../../ide/_content/ide-links';
 import { useFetch } from '../../../lib/use-fetch';
 import { apiFetch } from '../../../lib/session';
 import StatTile from '../../_components/widgets/StatTile';
@@ -241,6 +243,16 @@ export default function DailyProblemPage() {
                 <div className={styles.pausedBanner}>Skipped (freeze used)</div>
               ) : (
                 <div className={styles.actions}>
+                  <Link
+                    href={buildIdeProblemUrl({
+                      source: 'daily',
+                      problem: today.assignment.problem.id,
+                      title: today.assignment.problem.title,
+                    })}
+                    className={styles.ideLink}
+                  >
+                    Open in IDE
+                  </Link>
                   <button className={styles.btnSolve} onClick={handleSolve} disabled={acting}>
                     Mark as Solved
                   </button>

@@ -12,6 +12,8 @@ export const IdeLanguagesResponseSchema = z.object({
 export const IdeStatusResponseSchema = z.object({
   configured: z.boolean(),
   reachable: z.boolean(),
+  cpuTimeLimitSeconds: z.number().positive().optional(),
+  memoryLimitKb: z.number().int().positive().optional(),
 });
 
 export const IdeRunRequestSchema = z.object({

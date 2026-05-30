@@ -14,6 +14,7 @@ import {
   type Nibras75Workspace,
 } from '../../../lib/services/competitions';
 import CompanyIcons from './_components/CompanyIcons';
+import { buildIdeProblemUrl } from '../../ide/_content/ide-links';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 import { discoverApiBaseUrl } from '../../../lib/session';
 import { useSession } from '../../_components/session-context';
@@ -441,6 +442,19 @@ export default function Nibras75Page() {
                       {tag.replace(/-/g, ' ')}
                     </span>
                   ))}
+                </div>
+                <div className={styles.cardActions}>
+                  <Link
+                    href={buildIdeProblemUrl({
+                      source: 'nibras75',
+                      problem: problem.problemId,
+                      title: problem.name,
+                      description: problem.description,
+                    })}
+                    className={styles.ideLink}
+                  >
+                    Open in IDE
+                  </Link>
                 </div>
               </div>
             </article>

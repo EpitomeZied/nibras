@@ -361,6 +361,31 @@
   text-transform: capitalize;
 }
 
+.cardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ideLink {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+  background: var(--background);
+}
+
+.ideLink:hover {
+  border-color: var(--primary, #22c55e);
+  color: var(--primary, #22c55e);
+}
+
 .linkRow {
   display: flex;
   flex-wrap: wrap;

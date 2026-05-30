@@ -66,6 +66,10 @@
   flex-direction: column;
 }
 
+:global([data-theme='light']) .editorPane {
+  background: #f3f3f3;
+}
+
 .editorLoading {
   display: flex;
   align-items: center;
@@ -189,6 +193,149 @@
   font-size: 14px;
 }
 
+.secondaryButton {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--background);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.prefControl,
+.prefToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.prefSelect {
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: var(--text);
+  font: inherit;
+}
+
+.prefToggle input {
+  accent-color: var(--primary, #22c55e);
+}
+
+.problemBanner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.problemBannerBody {
+  flex: 1;
+  min-width: 200px;
+}
+
+.problemBannerLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.problemBannerTitle {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.problemBannerDesc {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.problemBannerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.panelHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.copyButton {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.limitsHint {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.collapsePanelsButton,
+.expandPanelsButton {
+  align-self: flex-start;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sidePanelsCollapsed {
+  display: flex;
+  align-items: flex-start;
+  min-height: 0;
+}
+
+.runHistoryList {
+  list-style: none;
+  margin: 0;
+  padding: 8px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.runHistoryItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.runHistoryMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
 @media (max-width: 960px) {
   .workspace {
     grid-template-columns: 1fr;
@@ -196,5 +343,9 @@
 
   .page {
     height: auto;
+  }
+
+  .toolbar {
+    gap: 8px;
   }
 }

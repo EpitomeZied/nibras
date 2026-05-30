@@ -24,7 +24,14 @@ export function registerIdeRoutes(app: FastifyInstance, store: AppStore): void {
     async () => {
       const configured = isJudge0Configured();
       const reachable = configured ? await checkJudge0Reachable() : false;
-      return IdeStatusResponseSchema.parse({ configured, reachable });
+      const cpuTimeLimitSeconds = Number.parseFloat(process.env.JUDGE0_CPU_TIME_LIMIT || '5');
+      const memoryLimitKb = Number.parseInt(process.env.JUDGE0_MEMORY_LIMIT || '128000', 10);
+      return IdeStatusResponseSchema.parse({
+        configured,
+        reachable,
+        cpuTimeLimitSeconds: Number.isFinite(cpuTimeLimitSeconds) ? cpuTimeLimitSeconds : 5,
+        memoryLimitKb: Number.isFinite(memoryLimitKb) ? memoryLimitKb : 128000,
+      });
     }
   );
 
