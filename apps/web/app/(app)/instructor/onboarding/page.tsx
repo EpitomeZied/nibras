@@ -1413,13 +1413,12 @@ export default function OnboardingPage() {
               />
             )}
             <p className={styles.hint}>
-              Prefer npm directly? Run <code className={styles.inlineCode}>{NPM_INSTALL_COMMAND}</code>
-              .
+              Prefer npm directly? Run{' '}
+              <code className={styles.inlineCode}>{NPM_INSTALL_COMMAND}</code>.
             </p>
             <p className={styles.hint}>
-              From a git clone:{' '}
-              <code className={styles.inlineCode}>bash scripts/install.sh</code> (macOS / Linux /
-              Git Bash) or{' '}
+              From a git clone: <code className={styles.inlineCode}>bash scripts/install.sh</code>{' '}
+              (macOS / Linux / Git Bash) or{' '}
               <code className={styles.inlineCode}>
                 powershell -ExecutionPolicy Bypass -File scripts/install.ps1
               </code>{' '}

@@ -48,7 +48,9 @@ export function uniqueActions(
 
 export function activityHref(event: TrackingActivityEvent): string | null {
   if (event.submissionId) return `/submissions/${event.submissionId}`;
-  if (event.projectId && event.courseId) return `/projects?courseId=${event.courseId}`;
+  if (event.projectId && event.courseId) {
+    return `/projects?courseId=${event.courseId}&projectId=${event.projectId}`;
+  }
   if (event.courseId) return `/projects?courseId=${event.courseId}`;
   return null;
 }

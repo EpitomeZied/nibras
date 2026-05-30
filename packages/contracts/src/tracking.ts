@@ -194,6 +194,10 @@ export const TrackingMilestoneSchema = z.object({
   status: z.string().min(1),
   statusLabel: z.string().min(1),
   isFinal: z.boolean(),
+  latestSubmissionId: z.string().nullable().optional(),
+  verificationStatus: z.string().nullable().optional(),
+  reviewStatus: z.string().nullable().optional(),
+  reviewComment: z.string().nullable().optional(),
 });
 
 export const TrackingProjectDetailSchema = TrackingProjectSummarySchema.extend({
@@ -472,6 +476,18 @@ export const DashboardHomeResponseSchema = z.object({
   instructor: InstructorHomeDashboardSchema.optional(),
 });
 
+export const StudentProjectPortfolioCourseSchema = z.object({
+  courseId: z.string().min(1),
+  courseCode: z.string().min(1),
+  title: z.string().min(1),
+  termLabel: z.string().min(1),
+  completion: z.number().int().nonnegative(),
+  projectCount: z.number().int().nonnegative(),
+  openMilestones: z.number().int().nonnegative(),
+  nextDueAt: z.string().datetime().nullable(),
+  nextDueLabel: z.string().nullable(),
+});
+
 export const StudentProjectsDashboardResponseSchema = z.object({
   course: TrackingCourseSummarySchema.nullable(),
   memberships: z.array(TrackingMembershipSchema),
@@ -481,6 +497,8 @@ export const StudentProjectsDashboardResponseSchema = z.object({
   activity: z.array(TrackingActivityEventSchema),
   statsByProject: z.record(z.string(), TrackingDashboardStatsSchema),
   pageError: z.string().nullable(),
+  portfolioCourses: z.array(StudentProjectPortfolioCourseSchema).optional(),
+  courseDeadlines: z.array(StudentUpcomingDeadlineSchema).optional(),
 });
 
 export const InstructorDashboardResponseSchema = z.object({
@@ -750,6 +768,7 @@ export type TrackingActivityEvent = z.infer<typeof TrackingActivityEventSchema>;
 export type StudentProjectsDashboardResponse = z.infer<
   typeof StudentProjectsDashboardResponseSchema
 >;
+export type StudentProjectPortfolioCourse = z.infer<typeof StudentProjectPortfolioCourseSchema>;
 export type InstructorDashboardResponse = z.infer<typeof InstructorDashboardResponseSchema>;
 export type DashboardHomeResponse = z.infer<typeof DashboardHomeResponseSchema>;
 export type DashboardMode = z.infer<typeof DashboardModeSchema>;

@@ -294,7 +294,9 @@ export default function AiIntegrationTab() {
               type={showKey ? 'text' : 'password'}
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder={configured && maskedKey ? maskedKey : `Enter ${activeProvider.name} API key`}
+              placeholder={
+                configured && maskedKey ? maskedKey : `Enter ${activeProvider.name} API key`
+              }
               autoComplete="off"
               disabled={!encryptionReady}
             />

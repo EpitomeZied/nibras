@@ -1645,3 +1645,306 @@
   margin-top: 2px;
   display: block;
 }
+
+/* ── Hub, filters, activity ───────────────────────────────────────────────── */
+
+.hubSection {
+  display: grid;
+  gap: 16px;
+}
+
+.hubGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.hubCard {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.hubCard:hover {
+  border-color: var(--accent, #6366f1);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--accent, #6366f1) 12%, transparent);
+}
+
+.hubCardCode {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.hubCardTitle {
+  font-size: 16px;
+  color: var(--text);
+}
+
+.hubCardMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.hubCardStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text-soft);
+  margin-top: 4px;
+}
+
+.hubCardDue {
+  font-size: 12px;
+  color: var(--primary-strong, var(--accent));
+}
+
+.hubFooter {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.inlineLink {
+  color: var(--accent, #6366f1);
+  text-decoration: underline;
+}
+
+.toolbarRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.searchInput {
+  min-width: 200px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.filterSelect {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.viewToggle {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.viewToggleBtn {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.viewToggleBtnActive {
+  background: var(--accent, #6366f1);
+  border-color: var(--accent, #6366f1);
+  color: #fff;
+}
+
+.nextActionCard {
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent, #6366f1) 30%, var(--border));
+  background: color-mix(in srgb, var(--accent, #6366f1) 6%, var(--surface));
+  display: grid;
+  gap: 6px;
+}
+
+.nextActionLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.nextActionTitle {
+  font-size: 17px;
+  color: var(--text);
+}
+
+.nextActionBody {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.nextActionBtn {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent, #6366f1);
+}
+
+.nextActionHint {
+  font-size: 12px;
+  color: var(--text-soft);
+}
+
+.milestoneChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.reviewComment {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+  padding: 10px 12px;
+  background: var(--surface-strong);
+  border-radius: 8px;
+  line-height: 1.5;
+}
+
+.submissionLink {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent, #6366f1);
+  text-decoration: none;
+}
+
+.membershipLine {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.deadlineList {
+  display: grid;
+  gap: 8px;
+}
+
+.deadlineRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s;
+}
+
+.deadlineRow:hover {
+  border-color: var(--accent, #6366f1);
+}
+
+.deadlineKicker {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.deadlineTitle {
+  font-size: 14px;
+  margin: 2px 0;
+  color: var(--text);
+}
+
+.deadlineMeta {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.activityList {
+  display: grid;
+  gap: 8px;
+}
+
+.activityRow {
+  display: grid;
+  gap: 2px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  text-decoration: none;
+  color: inherit;
+}
+
+.activityRow:last-child {
+  border-bottom: none;
+}
+
+.activitySummary {
+  font-size: 13px;
+  color: var(--text);
+}
+
+.activityTime {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.rubricFillEarned {
+  background: var(--success, #22c55e);
+}
+
+.projectDates {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.emptyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+}
+
+.emptyActionBtn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  background: var(--surface);
+}
+
+.emptyActionBtnPrimary {
+  background: var(--accent, #6366f1);
+  border-color: var(--accent, #6366f1);
+  color: #fff;
+}

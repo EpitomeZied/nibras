@@ -50,6 +50,7 @@ import {
   presentProject,
   presentStudentDashboard,
 } from './presenters/dashboard';
+import { buildStudentProjectPortfolio } from './home-dashboard';
 import {
   canManageCourse,
   canManageProject,
@@ -476,7 +477,7 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
           : Promise.resolve(undefined),
       ]);
       if (total !== undefined) void reply.header('X-Total-Count', String(total));
-      return projects.map(presentProject);
+      return projects.map((project) => presentProject(project));
     }
   );
 
@@ -1750,10 +1751,28 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
           reviewsByMilestone[milestone.id] = Array.from(reviewsMap.values());
         }
       }
+      const homeRecord = await store.getHomeDashboard(
+        requestBaseUrl(request),
+        auth.user.id,
+        'student'
+      );
+      const activeCourseId = query.courseId || dashboard.course?.id || null;
+      const portfolioCourses = homeRecord.student
+        ? buildStudentProjectPortfolio(
+            homeRecord.student.courses,
+            homeRecord.student.courseSnapshots
+          )
+        : undefined;
+      const courseDeadlines = homeRecord.student?.upcomingDeadlines.filter(
+        (deadline) => !activeCourseId || deadline.courseId === activeCourseId
+      );
+
       return presentStudentDashboard({
         dashboard,
         submissionsByMilestone,
         reviewsByMilestone,
+        portfolioCourses,
+        courseDeadlines,
       });
     }
   );

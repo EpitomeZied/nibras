@@ -175,7 +175,9 @@ export default function LecturePlayerView({ courseId }: Props) {
                   )}
                   {active.linkedProjectId && (
                     <p className={styles.projectLink}>
-                      <Link href={`/projects?course=${courseId}`}>
+                      <Link
+                        href={`/projects?courseId=${courseId}${active.linkedProjectId ? `&projectId=${active.linkedProjectId}` : ''}`}
+                      >
                         Go to linked project
                         {active.linkedProjectTitle ? `: ${active.linkedProjectTitle}` : ''}
                       </Link>

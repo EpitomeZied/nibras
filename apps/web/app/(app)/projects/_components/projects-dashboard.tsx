@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import type {
@@ -13,71 +14,32 @@ import type {
   TrackingProjectSummary,
 } from '@nibras/contracts';
 import { prefs } from '../../../lib/prefs';
-import { apiFetch } from '../../../lib/session';
-import { formatHoursMinutes, minutesUntil } from '../../../lib/utils';
 import {
-  getLevelLabel,
-  getLevelName,
-  getLevelBadgeSuffix,
-  LEVEL_NAMES,
-  MAX_LEVEL,
-} from '../../../lib/levels';
+  fetchMyTeamApplication,
+  fetchProjectGitHubStatus,
+  fetchStudentProjectsDashboard,
+  listProjectTeams,
+  listTrackingCourses,
+  submitMilestoneTracking,
+  submitTeamApplication,
+  type ProjectGitHubStatus,
+} from '../../../lib/services/project-tracking';
+import { getLevelBadgeSuffix, getLevelLabel, getLevelName } from '../../../lib/levels';
 import { useSession } from '../../_components/session-context';
+import SelectField from '../../_components/ui/select-field';
+import MilestoneCard from './milestone-card';
+import ProjectsHub from './projects-hub';
+import ProjectsNextAction from './projects-next-action';
+import ProjectsRightRail from './projects-right-rail';
+import {
+  useMilestoneFilters,
+  useProjectSearch,
+  type MilestoneStatusFilter,
+} from '../_hooks/use-student-projects-dashboard';
+import { statusColor } from './projects-helpers';
 import SubmissionModal from './submission-modal';
 import TeamApplicationModal from './team-application-modal';
-import SelectField from '../../_components/ui/select-field';
 import styles from './projects.module.css';
-
-type SessionUser = {
-  githubLinked?: boolean;
-  githubAppInstalled?: boolean;
-  githubLogin?: string | null;
-};
-
-type GitHubStatus = {
-  available: boolean;
-  githubLinked: boolean;
-  githubAppInstalled: boolean;
-  githubLogin: string;
-  installUrl: string;
-  statusMessage: string;
-};
-
-/* ── helpers ──────────────────────────────────────────────────────────────── */
-
-function statusColor(status: string): string {
-  if (status === 'approved' || status === 'graded') return styles.statusApproved;
-  if (status === 'submitted' || status === 'under_review') return styles.statusReview;
-  if (status === 'changes_requested') return styles.statusChanges;
-  return styles.statusOpen;
-}
-
-function dueDateColor(dueAt: string | null | undefined, status: string): string {
-  if (status === 'approved' || status === 'graded') return styles.dueDateDone;
-  const minutes = minutesUntil(dueAt);
-  if (minutes === null) return '';
-  if (minutes < 0) return styles.dueDateOverdue;
-  if (minutes <= 48 * 60) return styles.dueDateUrgent;
-  return '';
-}
-
-function dueDateText(dueAt: string | null | undefined): string {
-  if (!dueAt) return 'No due date';
-  const minutes = minutesUntil(dueAt);
-  if (minutes === null) return 'No due date';
-  if (minutes < 0) return `Overdue by ${formatHoursMinutes(minutes)}`;
-  if (minutes === 0) return 'Due now';
-  return `Due in ${formatHoursMinutes(minutes)}`;
-}
-
-function statusIcon(status: string): string {
-  if (status === 'approved' || status === 'graded') return '✓';
-  if (status === 'submitted' || status === 'under_review') return '●';
-  if (status === 'changes_requested') return '↩';
-  return '○';
-}
-
-/* ── skeleton ─────────────────────────────────────────────────────────────── */
 
 function Skeleton({ w = '100%', h = 14, r = 6 }: { w?: string; h?: number; r?: number }) {
   return (
@@ -89,108 +51,28 @@ function Skeleton({ w = '100%', h = 14, r = 6 }: { w?: string; h?: number; r?: n
   );
 }
 
-/* ── milestone card ───────────────────────────────────────────────────────── */
-
-function MilestoneCard({
-  milestone,
-  actionMode,
-  onSubmit,
-}: {
-  milestone: TrackingMilestone;
-  actionMode: 'submit' | 'apply';
-  onSubmit: (m: TrackingMilestone) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const minutes = minutesUntil(milestone.dueAt);
-  const isApproved = milestone.status === 'approved' || milestone.status === 'graded';
-  const isSubmitted = milestone.status === 'submitted' || milestone.status === 'under_review';
-  const canSubmit = !isApproved;
-
-  return (
-    <article className={`${styles.milestone} ${isApproved ? styles.milestoneApproved : ''}`}>
-      {/* Left marker */}
-      <div className={`${styles.milestoneMarker} ${statusColor(milestone.status)}`}>
-        <span className={styles.milestoneIcon}>{statusIcon(milestone.status)}</span>
-      </div>
-
-      {/* Content */}
-      <div className={styles.milestoneContent}>
-        <button
-          type="button"
-          className={styles.milestoneHeader}
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-        >
-          <div className={styles.milestoneHeaderLeft}>
-            <div className={styles.milestoneTitleRow}>
-              <strong className={styles.milestoneTitle}>{milestone.title}</strong>
-              {milestone.isFinal && <span className={styles.finalBadge}>Final</span>}
-              <span className={`${styles.statusPill} ${statusColor(milestone.status)}`}>
-                {milestone.statusLabel}
-              </span>
-            </div>
-            {milestone.dueAt && (
-              <span
-                className={`${styles.dueDate} ${dueDateColor(milestone.dueAt, milestone.status)}`}
-              >
-                {dueDateText(milestone.dueAt)}
-                {minutes !== null && minutes < 0 && !isApproved ? ' ⚠' : ''}
-              </span>
-            )}
-          </div>
-          <span className={`${styles.chevron} ${open ? styles.chevronOpen : ''}`}>▾</span>
-        </button>
-
-        {!open && milestone.description && (
-          <p className={styles.milestonePeek}>
-            {milestone.description.length > 90
-              ? `${milestone.description.slice(0, 90)}…`
-              : milestone.description}
-          </p>
-        )}
-
-        {open && (
-          <div className={styles.milestoneBody}>
-            {milestone.description && (
-              <p className={styles.milestoneDesc}>{milestone.description}</p>
-            )}
-            <div className={styles.milestoneActions}>
-              {canSubmit && (
-                <button
-                  type="button"
-                  className={styles.submitBtn}
-                  onClick={() => onSubmit(milestone)}
-                >
-                  {actionMode === 'apply'
-                    ? 'Apply for Team'
-                    : isSubmitted
-                      ? '↩ Resubmit'
-                      : '↑ Submit'}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-    </article>
-  );
-}
-
-/* ── main component ───────────────────────────────────────────────────────── */
-
 export default function ProjectsDashboard({
   initialCourseId = null,
   initialProjectId = null,
+  initialView = null,
 }: {
   initialCourseId?: string | null;
   initialProjectId?: string | null;
+  initialView?: string | null;
 }) {
   const { user: sessionUser } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const courseIdFromUrl = searchParams.get('courseId');
-  const projectIdFromUrl = searchParams.get('projectId');
+  const courseIdFromUrl =
+    searchParams.get('courseId') || searchParams.get('course') || initialCourseId;
+  const projectIdFromUrl = searchParams.get('projectId') || initialProjectId;
+
+  const hubMode =
+    initialView === 'hub' ||
+    searchParams.get('view') === 'hub' ||
+    (!courseIdFromUrl && searchParams.get('view') !== 'workspace');
+
   const [dashboard, setDashboard] = useState<StudentProjectsDashboardResponse | null>(null);
   const [courses, setCourses] = useState<TrackingCourseSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -207,7 +89,9 @@ export default function ProjectsDashboard({
   const [applicationError, setApplicationError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [githubStatus, setGitHubStatus] = useState<GitHubStatus>({
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<MilestoneStatusFilter>('all');
+  const [githubStatus, setGitHubStatus] = useState<ProjectGitHubStatus>({
     available: false,
     githubLinked: false,
     githubAppInstalled: false,
@@ -216,17 +100,30 @@ export default function ProjectsDashboard({
     statusMessage: 'GitHub status is temporarily unavailable.',
   });
 
-  function replaceSelectionQuery(courseId: string | null, projectId: string | null) {
+  function replaceSelectionQuery(
+    courseId: string | null,
+    projectId: string | null,
+    view?: 'hub' | 'workspace' | null
+  ) {
     const params = new URLSearchParams(searchParams.toString());
     if (courseId) {
       params.set('courseId', courseId);
+      params.delete('course');
     } else {
       params.delete('courseId');
+      params.delete('course');
     }
     if (projectId) {
       params.set('projectId', projectId);
     } else {
       params.delete('projectId');
+    }
+    if (view === 'hub') {
+      params.set('view', 'hub');
+    } else if (view === 'workspace') {
+      params.set('view', 'workspace');
+    } else if (view === null) {
+      params.delete('view');
     }
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
@@ -234,133 +131,50 @@ export default function ProjectsDashboard({
 
   function syncCourseSelection(courseId: string | null) {
     prefs.setSelectedCourseId(courseId);
-    replaceSelectionQuery(courseId, null);
+    replaceSelectionQuery(courseId, null, courseId ? 'workspace' : 'hub');
   }
 
   function syncProjectSelection(projectId: string) {
     setSelectedProjectId(projectId);
-    replaceSelectionQuery(activeCourseId ?? dashboard?.course?.id ?? null, projectId);
+    replaceSelectionQuery(activeCourseId ?? dashboard?.course?.id ?? null, projectId, 'workspace');
   }
 
-  async function loadGitHubStatus(): Promise<GitHubStatus> {
-    try {
-      const sessionResponse = await apiFetch('/v1/web/session', { auth: true });
-      if (!sessionResponse.ok) {
-        const body = (await sessionResponse.json().catch(() => ({}))) as { error?: string };
-        return {
-          available: false,
-          githubLinked: false,
-          githubAppInstalled: false,
-          githubLogin: '',
-          installUrl: '',
-          statusMessage: body.error || 'GitHub status is temporarily unavailable.',
-        };
-      }
-
-      const payload = (await sessionResponse.json()) as { user?: SessionUser };
-      const user = payload.user || {};
-      const githubLinked = Boolean(user.githubLinked);
-      const githubAppInstalled = Boolean(user.githubAppInstalled);
-      const githubLogin = user.githubLogin || '';
-
-      if (!githubLinked || githubAppInstalled) {
-        return {
-          available: true,
-          githubLinked,
-          githubAppInstalled,
-          githubLogin,
-          installUrl: '',
-          statusMessage: '',
-        };
-      }
-
-      try {
-        const installResponse = await apiFetch('/v1/github/install-url', { auth: true });
-        if (!installResponse.ok) {
-          const body = (await installResponse.json().catch(() => ({}))) as { error?: string };
-          return {
-            available: true,
-            githubLinked,
-            githubAppInstalled,
-            githubLogin,
-            installUrl: '',
-            statusMessage: body.error || 'GitHub App install link is temporarily unavailable.',
-          };
-        }
-        const installPayload = (await installResponse.json()) as { installUrl?: string };
-        return {
-          available: true,
-          githubLinked,
-          githubAppInstalled,
-          githubLogin,
-          installUrl: installPayload.installUrl || '',
-          statusMessage: '',
-        };
-      } catch (error) {
-        return {
-          available: true,
-          githubLinked,
-          githubAppInstalled,
-          githubLogin,
-          installUrl: '',
-          statusMessage:
-            error instanceof Error
-              ? error.message
-              : 'GitHub App install link is temporarily unavailable.',
-        };
-      }
-    } catch (error) {
-      return {
-        available: false,
-        githubLinked: false,
-        githubAppInstalled: false,
-        githubLogin: '',
-        installUrl: '',
-        statusMessage:
-          error instanceof Error ? error.message : 'GitHub status is temporarily unavailable.',
-      };
-    }
+  function openHubView() {
+    setActiveCourseId(null);
+    replaceSelectionQuery(null, null, 'hub');
+    void loadDashboard(null, true);
   }
 
-  async function loadDashboard(courseId?: string | null) {
+  async function loadDashboard(courseId?: string | null, portfolioOnly = false) {
     setLoading(true);
     setError('');
     try {
-      const query = courseId ? `?courseId=${encodeURIComponent(courseId)}` : '';
-      const [response, coursesResponse, nextGitHubStatus] = await Promise.all([
-        apiFetch(`/v1/tracking/dashboard/student${query}`, { auth: true }),
-        apiFetch('/v1/tracking/courses', { auth: true }),
-        loadGitHubStatus(),
+      const [payload, nextCourses, nextGitHubStatus] = await Promise.all([
+        fetchStudentProjectsDashboard(portfolioOnly ? null : courseId),
+        listTrackingCourses(),
+        fetchProjectGitHubStatus(),
       ]);
-      if (!response.ok) {
-        const body = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error || `Failed to load dashboard (${response.status}).`);
-      }
-      if (!coursesResponse.ok) {
-        const body = (await coursesResponse.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error || `Failed to load courses (${coursesResponse.status}).`);
-      }
-      const payload = (await response.json()) as StudentProjectsDashboardResponse;
-      const nextCourses = (await coursesResponse.json()) as TrackingCourseSummary[];
       const preferredProjectId = projectIdFromUrl || initialProjectId;
       setDashboard(payload);
       setCourses(nextCourses);
       setGitHubStatus(nextGitHubStatus);
-      setSelectedProjectId((current) =>
-        preferredProjectId && payload.projects.some((p) => p.id === preferredProjectId)
-          ? preferredProjectId
-          : payload.projects.some((p) => p.id === current)
-            ? current
-            : (payload.activeProjectId ?? payload.projects[0]?.id ?? '')
-      );
-      const resolvedCourseId = payload.course?.id ?? nextCourses[0]?.id ?? null;
-      if (resolvedCourseId !== activeCourseId) {
-        setActiveCourseId(resolvedCourseId);
-      }
-      if (resolvedCourseId !== courseIdFromUrl) {
-        syncCourseSelection(resolvedCourseId);
-      } else if (resolvedCourseId) {
-        prefs.setSelectedCourseId(resolvedCourseId);
+      if (!portfolioOnly) {
+        setSelectedProjectId((current) =>
+          preferredProjectId && payload.projects.some((p) => p.id === preferredProjectId)
+            ? preferredProjectId
+            : payload.projects.some((p) => p.id === current)
+              ? current
+              : (payload.activeProjectId ?? payload.projects[0]?.id ?? '')
+        );
+        const resolvedCourseId = payload.course?.id ?? nextCourses[0]?.id ?? null;
+        if (resolvedCourseId !== activeCourseId) {
+          setActiveCourseId(resolvedCourseId);
+        }
+        if (resolvedCourseId && resolvedCourseId !== courseIdFromUrl) {
+          syncCourseSelection(resolvedCourseId);
+        } else if (resolvedCourseId) {
+          prefs.setSelectedCourseId(resolvedCourseId);
+        }
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -370,18 +184,21 @@ export default function ProjectsDashboard({
   }
 
   useEffect(() => {
-    const preferredCourseId = courseIdFromUrl || initialCourseId || prefs.getSelectedCourseId();
-    setActiveCourseId(preferredCourseId || null);
-    setSelectionReady(true);
-  }, [courseIdFromUrl, initialCourseId]);
-
-  useEffect(() => {
-    if (!selectionReady) {
+    if (hubMode) {
+      setActiveCourseId(null);
+      setSelectionReady(true);
       return;
     }
-    void loadDashboard(activeCourseId);
+    const preferredCourseId = courseIdFromUrl || prefs.getSelectedCourseId();
+    setActiveCourseId(preferredCourseId || null);
+    setSelectionReady(true);
+  }, [courseIdFromUrl, hubMode]);
+
+  useEffect(() => {
+    if (!selectionReady) return;
+    void loadDashboard(activeCourseId, hubMode);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCourseId, selectionReady]);
+  }, [activeCourseId, selectionReady, hubMode]);
 
   const activeProject = useMemo<TrackingProjectSummary | null>(
     () =>
@@ -389,11 +206,10 @@ export default function ProjectsDashboard({
     [dashboard, selectedProjectId]
   );
 
-  const activeMilestones = useMemo(
-    () =>
-      activeProject && dashboard ? (dashboard.milestonesByProject[activeProject.id] ?? []) : [],
-    [dashboard, activeProject]
-  );
+  const rawMilestones =
+    activeProject && dashboard ? (dashboard.milestonesByProject[activeProject.id] ?? []) : [];
+  const activeMilestones = useMilestoneFilters(rawMilestones, searchQuery, statusFilter);
+  const filteredProjects = useProjectSearch(dashboard, searchQuery);
 
   const activeStats = useMemo(
     () =>
@@ -439,16 +255,12 @@ export default function ProjectsDashboard({
       return;
     }
     try {
-      const [applicationResponse, teamsResponse] = await Promise.all([
-        apiFetch(`/v1/tracking/projects/${projectId}/applications/me`, { auth: true }),
-        apiFetch(`/v1/tracking/projects/${projectId}/teams`, { auth: true }),
+      const [application, teams] = await Promise.all([
+        fetchMyTeamApplication(projectId),
+        listProjectTeams(projectId),
       ]);
-      setActiveApplication(
-        applicationResponse.ok
-          ? ((await applicationResponse.json()) as ProjectRoleApplication | null)
-          : null
-      );
-      setActiveTeams(teamsResponse.ok ? ((await teamsResponse.json()) as Team[]) : []);
+      setActiveApplication(application);
+      setActiveTeams(teams);
     } catch {
       setActiveApplication(null);
       setActiveTeams([]);
@@ -460,22 +272,11 @@ export default function ProjectsDashboard({
   }, [activeProject?.id]);
 
   async function submitMilestone(payload: CreateTrackingSubmissionRequest) {
-    if (!activeMilestone) {
-      return;
-    }
+    if (!activeMilestone) return;
     setSubmitting(true);
     setSubmitError('');
     try {
-      const response = await apiFetch(`/v1/tracking/milestones/${activeMilestone.id}/submissions`, {
-        auth: true,
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const body = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error || `Submission failed (${response.status}).`);
-      }
+      await submitMilestoneTracking(activeMilestone.id, payload);
       setActiveMilestone(null);
       setToast('✅ Milestone submitted successfully!');
       setTimeout(() => setToast(''), 4000);
@@ -488,22 +289,11 @@ export default function ProjectsDashboard({
   }
 
   async function submitApplication(payload: CreateProjectRoleApplicationRequest) {
-    if (!activeProject) {
-      return;
-    }
+    if (!activeProject) return;
     setApplicationSubmitting(true);
     setApplicationError('');
     try {
-      const response = await apiFetch(`/v1/tracking/projects/${activeProject.id}/applications`, {
-        auth: true,
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const body = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error || `Application failed (${response.status}).`);
-      }
+      await submitTeamApplication(activeProject.id, payload);
       setApplicationOpen(false);
       await loadTeamState(activeProject.id);
       setToast('✅ Team application saved.');
@@ -516,43 +306,70 @@ export default function ProjectsDashboard({
     }
   }
 
-  /* student level — single global source of truth from User.yearLevel */
   const studentLevel = sessionUser?.yearLevel ?? 1;
-
-  /* progress values */
   const approved = activeStats?.approved ?? 0;
   const underReview = activeStats?.underReview ?? 0;
   const total = activeStats?.total ?? 0;
-  const open = Math.max(0, total - approved - underReview);
-  const pctApproved = total > 0 ? (approved / total) * 100 : 0;
-  const pctReview = total > 0 ? (underReview / total) * 100 : 0;
-  const pctOpen = total > 0 ? (open / total) * 100 : 0;
+  const portfolioCourses = dashboard?.portfolioCourses ?? [];
+  const courseDeadlines = dashboard?.courseDeadlines ?? [];
+  const showWorkspace =
+    !hubMode && !loading && !dashboard?.pageError && (dashboard?.projects.length ?? 0) > 0;
+  const showEmptyWorkspace =
+    !hubMode && !loading && !dashboard?.pageError && (dashboard?.projects.length ?? 0) === 0;
 
   return (
     <main className={styles.page}>
-      {/* ── Toast ───────────────────────────────────────────────── */}
       {toast && <div className={styles.toast}>{toast}</div>}
 
-      {/* ── Page header ─────────────────────────────────────────── */}
       <div className={styles.pageHeader}>
-        {/* Left: eyebrow + title + subtitle */}
         <div className={styles.pageHeaderText}>
           <p className={styles.eyebrow}>
-            {dashboard?.course
-              ? `${dashboard.course.courseCode} · ${dashboard.course.termLabel}`
-              : 'Project Tracking'}
+            {hubMode
+              ? 'Project portfolio'
+              : dashboard?.course
+                ? `${dashboard.course.courseCode} · ${dashboard.course.termLabel}`
+                : 'Project Tracking'}
           </p>
           <h1 className={styles.pageTitle}>
-            {loading ? <Skeleton w="260px" h={32} /> : (dashboard?.course?.title ?? 'Projects')}
+            {loading ? (
+              <Skeleton w="260px" h={32} />
+            ) : hubMode ? (
+              'Projects'
+            ) : (
+              (dashboard?.course?.title ?? 'Projects')
+            )}
           </h1>
           <p className={styles.pageSub}>
-            {loading ? null : 'Track milestones, submit work, and monitor your progress.'}
+            {loading
+              ? null
+              : hubMode
+                ? 'See progress across all enrolled courses, then open a workspace.'
+                : 'Track milestones, submit work, and monitor your progress.'}
           </p>
         </div>
 
-        {/* Right: course switcher stacked above stats */}
         <div className={styles.pageHeaderRight}>
-          {courses.length > 0 && (
+          <div className={styles.viewToggle}>
+            <button
+              type="button"
+              className={`${styles.viewToggleBtn} ${hubMode ? styles.viewToggleBtnActive : ''}`}
+              onClick={openHubView}
+            >
+              All courses
+            </button>
+            <button
+              type="button"
+              className={`${styles.viewToggleBtn} ${!hubMode ? styles.viewToggleBtnActive : ''}`}
+              onClick={() => {
+                const nextId = activeCourseId || dashboard?.course?.id || courses[0]?.id || null;
+                if (nextId) syncCourseSelection(nextId);
+              }}
+              disabled={courses.length === 0}
+            >
+              Workspace
+            </button>
+          </div>
+          {!hubMode && courses.length > 0 && (
             <SelectField
               variant="rich"
               className={styles.courseSwitcher}
@@ -561,9 +378,8 @@ export default function ProjectsDashboard({
               aria-label="Choose course"
               value={activeCourseId ?? dashboard?.course?.id ?? ''}
               onChange={(nextId) => {
-                const nextCourseId = nextId || null;
-                setActiveCourseId(nextCourseId);
-                syncCourseSelection(nextCourseId);
+                setActiveCourseId(nextId || null);
+                syncCourseSelection(nextId || null);
               }}
               disabled={loading || courses.length <= 1}
               options={courses.map((course) => ({
@@ -585,31 +401,31 @@ export default function ProjectsDashboard({
               }
             />
           )}
-          <div className={styles.pageHeaderStats}>
-            <div className={styles.headerStat}>
-              <span>{loading ? '—' : approved}</span>
-              <label>Approved</label>
+          {!hubMode && (
+            <div className={styles.pageHeaderStats}>
+              <div className={styles.headerStat}>
+                <span>{loading ? '—' : approved}</span>
+                <label>Approved</label>
+              </div>
+              <div className={styles.headerStatDivider} />
+              <div className={styles.headerStat}>
+                <span>{loading ? '—' : underReview}</span>
+                <label>In Review</label>
+              </div>
+              <div className={styles.headerStatDivider} />
+              <div className={styles.headerStat}>
+                <span style={{ color: 'var(--primary-strong)' }}>
+                  {loading ? '—' : `${activeStats?.completion ?? 0}%`}
+                </span>
+                <label>Complete</label>
+              </div>
             </div>
-            <div className={styles.headerStatDivider} />
-            <div className={styles.headerStat}>
-              <span>{loading ? '—' : underReview}</span>
-              <label>In Review</label>
-            </div>
-            <div className={styles.headerStatDivider} />
-            <div className={styles.headerStat}>
-              <span style={{ color: 'var(--primary-strong)' }}>
-                {loading ? '—' : `${activeStats?.completion ?? 0}%`}
-              </span>
-              <label>Complete</label>
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {/* ── Error ───────────────────────────────────────────────── */}
       {error && <div className={styles.errorBar}>{error}</div>}
 
-      {/* ── Loading skeleton ─────────────────────────────────────── */}
       {loading && (
         <div className={styles.loadingGrid}>
           <div className={styles.skeletonPanel}>
@@ -631,25 +447,88 @@ export default function ProjectsDashboard({
         </div>
       )}
 
-      {/* ── Page error (from server) ─────────────────────────────── */}
+      {!loading && hubMode && (
+        <ProjectsHub
+          courses={portfolioCourses}
+          onSelectCourse={(courseId) => {
+            setActiveCourseId(courseId);
+            syncCourseSelection(courseId);
+          }}
+        />
+      )}
+
       {!loading && dashboard?.pageError && (
         <div className={styles.emptyState}>
           <span className={styles.emptyEmoji}>📋</span>
           <h2>Nothing published yet</h2>
           <p>{dashboard.pageError}</p>
+          <div className={styles.emptyActions}>
+            <Link
+              href="/catalog"
+              className={`${styles.emptyActionBtn} ${styles.emptyActionBtnPrimary}`}
+            >
+              Browse catalog
+            </Link>
+            <button type="button" className={styles.emptyActionBtn} onClick={openHubView}>
+              All courses
+            </button>
+          </div>
         </div>
       )}
 
-      {/* ── Main content ────────────────────────────────────────── */}
-      {!loading && (dashboard?.projects.length ?? 0) > 0 && (
+      {showEmptyWorkspace && (
+        <div className={styles.emptyState}>
+          <span className={styles.emptyEmoji}>📂</span>
+          <h2>No projects in this course</h2>
+          <p>
+            Your instructor has not published projects here yet, or you may need a different course.
+          </p>
+          <div className={styles.emptyActions}>
+            <button type="button" className={styles.emptyActionBtn} onClick={openHubView}>
+              All courses
+            </button>
+            <Link href="/catalog" className={styles.emptyActionBtn}>
+              Browse catalog
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {showWorkspace && (
         <>
-          {/* Project tabs */}
+          <div className={styles.toolbarRow}>
+            <div className={styles.filterRow}>
+              <input
+                type="search"
+                className={styles.searchInput}
+                placeholder="Search projects and milestones…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search projects and milestones"
+              />
+              <select
+                className={styles.filterSelect}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as MilestoneStatusFilter)}
+                aria-label="Filter milestones by status"
+              >
+                <option value="all">All statuses</option>
+                <option value="open">Open</option>
+                <option value="review">In review</option>
+                <option value="approved">Approved</option>
+              </select>
+            </div>
+            <Link href="/submissions" className={styles.inlineLink}>
+              Submission history →
+            </Link>
+          </div>
+
           <div className={styles.projectTabs}>
-            {dashboard!.projects.map((project) => {
+            {filteredProjects.map((project) => {
               const stats = dashboard!.statsByProject[project.id];
               const pct = stats?.completion ?? 0;
               const isActive = project.id === activeProject?.id;
-              const projectLevel = (project as { level?: number }).level ?? 1;
+              const projectLevel = project.level ?? 1;
               const isLocked = projectLevel > studentLevel;
               const badgeSuffix = getLevelBadgeSuffix(projectLevel);
               return (
@@ -712,17 +591,28 @@ export default function ProjectsDashboard({
             })}
           </div>
 
-          {/* Main grid */}
           <div className={styles.mainGrid}>
-            {/* LEFT: milestones */}
             <div className={styles.leftCol}>
-              {/* Project overview strip */}
+              <ProjectsNextAction
+                milestones={dashboard!.milestonesByProject[activeProject?.id ?? ''] ?? []}
+                activeProject={activeProject}
+                teamApplicationRequired={Boolean(teamApplicationRequired)}
+                hasApplication={Boolean(activeApplication)}
+                githubStatus={githubStatus}
+                deadlines={courseDeadlines}
+              />
+
               <div className={styles.overviewStrip}>
                 <span
                   className={`${styles.overviewStatus} ${statusColor(activeProject?.status ?? 'open')}`}
                 >
                   {activeProject?.status ?? 'draft'}
                 </span>
+                {activeProject?.startDate && activeProject?.endDate && (
+                  <p className={styles.projectDates}>
+                    {activeProject.startDate} – {activeProject.endDate}
+                  </p>
+                )}
                 {activeProject?.description && (
                   <p className={styles.overviewDesc}>{activeProject.description}</p>
                 )}
@@ -803,7 +693,8 @@ export default function ProjectsDashboard({
                             : 'Rank your preferred roles before the instructor generates and locks teams.'}
                       </p>
                     </div>
-                    <span
+                    <button
+                      type="button"
                       className={[
                         styles.teamWorkflowStatus,
                         teamWorkflowState === 'locked'
@@ -812,18 +703,18 @@ export default function ProjectsDashboard({
                             ? styles.teamWorkflowStatusApplied
                             : styles.teamWorkflowStatusPending,
                       ].join(' ')}
+                      onClick={() => teamWorkflowState !== 'locked' && setApplicationOpen(true)}
                     >
                       {teamWorkflowState === 'locked'
                         ? 'Teams locked'
                         : teamWorkflowState === 'applied'
                           ? 'Applied ✓'
                           : 'Apply now'}
-                    </span>
+                    </button>
                   </div>
                 )}
               </div>
 
-              {/* Milestones panel */}
               <section className={styles.panel}>
                 <div className={styles.panelHead}>
                   <h2 className={styles.panelTitle}>Milestones</h2>
@@ -831,11 +722,10 @@ export default function ProjectsDashboard({
                     {approved} / {total} complete
                   </span>
                 </div>
-
                 {activeMilestones.length === 0 ? (
                   <div className={styles.emptyState}>
                     <span className={styles.emptyEmoji}>🗂️</span>
-                    <p>No milestones for this project yet.</p>
+                    <p>No milestones match your filters.</p>
                   </div>
                 ) : (
                   <div className={styles.milestoneList}>
@@ -851,7 +741,6 @@ export default function ProjectsDashboard({
                 )}
               </section>
 
-              {/* Final submission */}
               <section className={styles.panel}>
                 <div className={styles.panelHead}>
                   <h2 className={styles.panelTitle}>Final Submission</h2>
@@ -889,7 +778,8 @@ export default function ProjectsDashboard({
                         : finalMilestone.status === 'approved' || finalMilestone.status === 'graded'
                           ? '✓ Final Project Approved'
                           : finalMilestone.status === 'submitted' ||
-                              finalMilestone.status === 'under_review'
+                              finalMilestone.status === 'under_review' ||
+                              finalMilestone.status === 'changes_requested'
                             ? '↩ Resubmit Final Project'
                             : '📤 Submit Final Project'}
                   </button>
@@ -897,175 +787,18 @@ export default function ProjectsDashboard({
               </section>
             </div>
 
-            {/* RIGHT: progress + breakdown + resources */}
-            <div className={styles.rightCol}>
-              {/* Academic Standing panel */}
-              <div className={styles.standingPanel}>
-                <div className={styles.standingHead}>
-                  <h2 className={styles.standingTitle}>Academic Standing</h2>
-                  <span
-                    className={`${styles.standingBadge} ${styles[`levelBadge${getLevelBadgeSuffix(studentLevel)}`] ?? ''}`}
-                  >
-                    {getLevelLabel(studentLevel)}
-                  </span>
-                </div>
-
-                <div className={styles.levelJourney}>
-                  {[1, 2, 3, 4].map((lvl) => {
-                    const isDone = lvl < studentLevel;
-                    const isActive = lvl === studentLevel;
-                    const stepClass = isDone
-                      ? styles.journeyDone
-                      : isActive
-                        ? styles.journeyActive
-                        : styles.journeyLocked;
-                    return (
-                      <div key={lvl} className={`${styles.journeyStep} ${stepClass}`}>
-                        <div className={styles.journeyDot}>{isDone ? '✓' : lvl}</div>
-                        <div className={styles.journeyLabel}>
-                          <span className={styles.journeyLabelYear}>Yr {lvl}</span>
-                          {LEVEL_NAMES[lvl]}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <p className={styles.standingHint}>
-                  {studentLevel < MAX_LEVEL
-                    ? `Complete all ${getLevelLabel(studentLevel)} projects to advance to ${getLevelLabel(studentLevel + 1)}.`
-                    : 'You have reached Senior standing. Congratulations!'}
-                </p>
-              </div>
-
-              {/* Progress panel */}
-              <section className={styles.panel}>
-                <div className={styles.panelHead}>
-                  <h2 className={styles.panelTitle}>Progress</h2>
-                  <span className={styles.pctBig}>{activeStats?.completion ?? 0}%</span>
-                </div>
-
-                {/* Segmented bar */}
-                <div className={styles.segBar}>
-                  {pctApproved > 0 && (
-                    <div
-                      className={`${styles.seg} ${styles.segGreen}`}
-                      style={{ width: `${pctApproved}%` }}
-                      title={`Approved: ${approved}`}
-                    />
-                  )}
-                  {pctReview > 0 && (
-                    <div
-                      className={`${styles.seg} ${styles.segPurple}`}
-                      style={{ width: `${pctReview}%` }}
-                      title={`In review: ${underReview}`}
-                    />
-                  )}
-                  {pctOpen > 0 && (
-                    <div
-                      className={`${styles.seg} ${styles.segGray}`}
-                      style={{ width: `${pctOpen}%` }}
-                      title={`Open: ${open}`}
-                    />
-                  )}
-                  {total === 0 && <div className={styles.seg} style={{ width: '100%' }} />}
-                </div>
-
-                <div className={styles.segLegend}>
-                  <span>
-                    <span className={styles.dot} style={{ background: 'var(--success)' }} />
-                    Approved ({approved})
-                  </span>
-                  <span>
-                    <span className={styles.dot} style={{ background: 'var(--purple)' }} />
-                    Review ({underReview})
-                  </span>
-                  <span>
-                    <span className={styles.dot} style={{ background: 'var(--surface-muted)' }} />
-                    Open ({open})
-                  </span>
-                </div>
-
-                <dl className={styles.statGrid}>
-                  <div>
-                    <dt>Time Remaining</dt>
-                    <dd>{activeStats ? formatHoursMinutes(activeStats.minutesRemaining) : '—'}</dd>
-                  </div>
-                  <div>
-                    <dt>Approved</dt>
-                    <dd>
-                      {approved} / {total}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>In Review</dt>
-                    <dd>{underReview}</dd>
-                  </div>
-                  <div>
-                    <dt>Open</dt>
-                    <dd>{open}</dd>
-                  </div>
-                </dl>
-              </section>
-
-              {/* Grading breakdown */}
-              {activeProject?.rubric && activeProject.rubric.length > 0 && (
-                <section className={styles.panel}>
-                  <div className={styles.panelHead}>
-                    <h2 className={styles.panelTitle}>Grading Breakdown</h2>
-                  </div>
-                  <div className={styles.rubricList}>
-                    {activeProject.rubric.map((item) => {
-                      const rubricTotal =
-                        activeProject.rubric.reduce((s, r) => s + r.maxScore, 0) || 1;
-                      const w = Math.round((item.maxScore / rubricTotal) * 100);
-                      return (
-                        <div key={item.criterion} className={styles.rubricRow}>
-                          <div className={styles.rubricInfo}>
-                            <span className={styles.rubricCriterion}>{item.criterion}</span>
-                            <div className={styles.rubricTrack}>
-                              <div className={styles.rubricFill} style={{ width: `${w}%` }} />
-                            </div>
-                          </div>
-                          <strong className={styles.rubricPct}>{w}%</strong>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {/* Resources */}
-              <section className={styles.panel}>
-                <div className={styles.panelHead}>
-                  <h2 className={styles.panelTitle}>Resources</h2>
-                </div>
-                {activeProject?.resources?.length ? (
-                  <div className={styles.resourceList}>
-                    {activeProject.resources.map((r) => (
-                      <a
-                        key={r.url}
-                        href={r.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className={styles.resourceLink}
-                      >
-                        <span className={styles.resourceIcon}>🔗</span>
-                        <span>{r.label}</span>
-                        <span className={styles.resourceArrow}>→</span>
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <p className={styles.noResources}>No resources linked for this project.</p>
-                )}
-              </section>
-            </div>
+            <ProjectsRightRail
+              studentLevel={studentLevel}
+              activeProject={activeProject}
+              activeStats={activeStats}
+              memberships={dashboard!.memberships}
+              activity={dashboard!.activity}
+              deadlines={courseDeadlines}
+            />
           </div>
         </>
       )}
 
-      {/* ── Submission modal ────────────────────────────────────── */}
       {activeMilestone && (
         <SubmissionModal
           milestone={activeMilestone}

@@ -215,7 +215,16 @@ export default function AdminDiscussionsPage() {
             <option value="no">Open</option>
           </select>
         </label>
-        <label style={{ display: 'flex', flexDirection: 'column', gap: 4, fontSize: 12, flex: 1, minWidth: 200 }}>
+        <label
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 4,
+            fontSize: 12,
+            flex: 1,
+            minWidth: 200,
+          }}
+        >
           Search
           <input
             type="search"
@@ -239,7 +248,16 @@ export default function AdminDiscussionsPage() {
       ) : threads.length === 0 ? (
         <EmptyState title="No threads" description="No discussion threads match your filters." />
       ) : (
-        <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <ul
+          style={{
+            listStyle: 'none',
+            padding: 0,
+            margin: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+          }}
+        >
           {threads.map((thread) => (
             <li
               key={thread.id}
@@ -250,12 +268,29 @@ export default function AdminDiscussionsPage() {
                 background: 'var(--surface)',
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
                 <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 4 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 8,
+                      flexWrap: 'wrap',
+                      alignItems: 'center',
+                      marginBottom: 4,
+                    }}
+                  >
                     <strong>{thread.title}</strong>
                     {thread.pinned && (
-                      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--warning, #f59e0b)' }}>
+                      <span
+                        style={{ fontSize: 10, fontWeight: 700, color: 'var(--warning, #f59e0b)' }}
+                      >
                         PINNED
                       </span>
                     )}
@@ -280,11 +315,15 @@ export default function AdminDiscussionsPage() {
                   </div>
                   <p style={{ margin: '0 0 6px', fontSize: 13, color: 'var(--text-muted)' }}>
                     {thread.courseCode ?? thread.courseId}
-                    {thread.courseTitle ? ` · ${thread.courseTitle}` : ''} · {thread.author.username} ·{' '}
-                    {formatRelative(thread.lastActivityAt ?? thread.createdAt)} · {thread.replyCount} replies
+                    {thread.courseTitle ? ` · ${thread.courseTitle}` : ''} ·{' '}
+                    {thread.author.username} ·{' '}
+                    {formatRelative(thread.lastActivityAt ?? thread.createdAt)} ·{' '}
+                    {thread.replyCount} replies
                   </p>
                 </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                <div
+                  style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'flex-start' }}
+                >
                   <Link href={`/community/discussions/${thread.id}`} style={{ fontSize: 12 }}>
                     View
                   </Link>

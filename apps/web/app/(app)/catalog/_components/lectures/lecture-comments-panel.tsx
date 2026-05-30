@@ -4,10 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { CourseVideoComment } from '@nibras/contracts';
 import CommunityAuthorLink from '../../../community/_components/community-author-link';
 import { useSession } from '../../../_components/session-context';
-import {
-  createVideoComment,
-  listVideoComments,
-} from '../../../../lib/services/course-content';
+import { createVideoComment, listVideoComments } from '../../../../lib/services/course-content';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
 import type { CommunityAuthor } from '../../../../lib/services/community';
 import styles from './lecture-comments-panel.module.css';
@@ -102,7 +99,11 @@ export default function LectureCommentsPanel({ videoId }: Props) {
             disabled={submitting}
           />
           <div className={styles.formActions}>
-            <button type="submit" className={styles.submitBtn} disabled={submitting || !body.trim()}>
+            <button
+              type="submit"
+              className={styles.submitBtn}
+              disabled={submitting || !body.trim()}
+            >
               {submitting ? 'Posting…' : 'Post comment'}
             </button>
           </div>

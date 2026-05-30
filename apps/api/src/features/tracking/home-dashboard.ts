@@ -114,7 +114,7 @@ function buildStudentCourseSnapshot({
           ? stats.minutesRemaining
           : null,
       nextMilestoneTitle: nextMilestone?.title || null,
-      href: `/projects?courseId=${snapshot.course?.id || project.courseId}`,
+      href: `/projects?courseId=${snapshot.course?.id || project.courseId}&projectId=${project.id}`,
     };
   });
 
@@ -424,7 +424,7 @@ function buildStudentUpcomingDeadlines(args: {
           dueAt: milestone.dueAt,
           status,
           statusLabel: statusLabel(status),
-          href: `/projects?courseId=${courseId || project.courseId}`,
+          href: `/projects?courseId=${courseId || project.courseId}&projectId=${project.id}#milestone-${milestone.id}`,
         });
       }
     }
@@ -588,6 +588,38 @@ export function buildStudentHomeDashboard(args: {
       reviewsBySubmission: args.reviewsBySubmission,
     }),
   };
+}
+
+export function buildStudentProjectPortfolio(
+  courses: CourseRecord[],
+  snapshots: StudentCourseSnapshotRecord[]
+): Array<{
+  courseId: string;
+  courseCode: string;
+  title: string;
+  termLabel: string;
+  completion: number;
+  projectCount: number;
+  openMilestones: number;
+  nextDueAt: string | null;
+  nextDueLabel: string | null;
+}> {
+  const courseById = new Map(courses.map((course) => [course.id, course]));
+  return snapshots.map((snapshot) => {
+    const course = courseById.get(snapshot.courseId);
+    const nextDue = snapshot.nextMilestones.find((entry) => entry.dueAt) ?? null;
+    return {
+      courseId: snapshot.courseId,
+      courseCode: course?.courseCode || '',
+      title: snapshot.courseTitle,
+      termLabel: course?.termLabel || '',
+      completion: snapshot.completion,
+      projectCount: snapshot.projects.length,
+      openMilestones: snapshot.open,
+      nextDueAt: nextDue?.dueAt ?? null,
+      nextDueLabel: nextDue?.title ?? null,
+    };
+  });
 }
 
 export function buildInstructorHomeDashboard(args: {

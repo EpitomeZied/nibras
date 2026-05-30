@@ -29,26 +29,33 @@ export function SearchModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
         const res = await apiFetch('/v1/tracking/dashboard/student', { auth: true });
         if (!res.ok) return;
         const data = (await res.json()) as {
-          projects?: Array<{
-            id: string;
-            title: string;
-            milestones?: Array<{ id: string; title: string; status: string }>;
-          }>;
+          course?: { id: string } | null;
+          projects?: Array<{ id: string; title: string; courseId?: string }>;
+          milestonesByProject?: Record<
+            string,
+            Array<{ id: string; title: string; status: string }>
+          >;
         };
+        const courseId = data.course?.id ?? '';
         const searchItems: SearchItem[] = [];
         for (const project of data.projects ?? []) {
+          const projectCourseId = project.courseId || courseId;
+          const params = new URLSearchParams();
+          if (projectCourseId) params.set('courseId', projectCourseId);
+          params.set('projectId', project.id);
+          const baseHref = `/projects?${params.toString()}`;
           searchItems.push({
             id: `project-${project.id}`,
             title: project.title,
             type: 'project',
-            href: '/projects',
+            href: baseHref,
           });
-          for (const milestone of project.milestones ?? []) {
+          for (const milestone of data.milestonesByProject?.[project.id] ?? []) {
             searchItems.push({
               id: `milestone-${milestone.id}`,
               title: milestone.title,
               type: 'milestone',
-              href: '/projects',
+              href: `${baseHref}#milestone-${milestone.id}`,
               subtitle: project.title,
             });
           }

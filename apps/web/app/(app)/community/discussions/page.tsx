@@ -82,7 +82,9 @@ export default function DiscussionsPage() {
       const updated = await setThreadPinned(thread.id, nextPinned);
       setThreads((prev) => prev.map((t) => (t.id === thread.id ? updated : t)));
     } catch (err) {
-      setThreads((prev) => prev.map((t) => (t.id === thread.id ? { ...t, pinned: thread.pinned } : t)));
+      setThreads((prev) =>
+        prev.map((t) => (t.id === thread.id ? { ...t, pinned: thread.pinned } : t))
+      );
       setError(friendlyMessage(err));
     } finally {
       setModeratingId(null);
@@ -99,7 +101,9 @@ export default function DiscussionsPage() {
       const updated = await setThreadClosed(thread.id, nextClosed);
       setThreads((prev) => prev.map((t) => (t.id === thread.id ? updated : t)));
     } catch (err) {
-      setThreads((prev) => prev.map((t) => (t.id === thread.id ? { ...t, closed: thread.closed } : t)));
+      setThreads((prev) =>
+        prev.map((t) => (t.id === thread.id ? { ...t, closed: thread.closed } : t))
+      );
       setError(friendlyMessage(err));
     } finally {
       setModeratingId(null);
