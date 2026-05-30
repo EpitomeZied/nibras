@@ -1932,8 +1932,7 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
       if (!canManageCourse(auth, query.courseId)) {
         return reply.code(403).send(Errors.forbidden());
       }
-      const analytics = await store.getInstructorAnalytics(requestBaseUrl(request), query.courseId);
-      return { analytics };
+      return store.getInstructorAnalytics(requestBaseUrl(request), query.courseId);
     }
   );
 

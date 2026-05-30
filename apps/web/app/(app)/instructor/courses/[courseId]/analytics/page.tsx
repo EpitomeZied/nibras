@@ -54,7 +54,7 @@ export default function CourseAnalyticsPage({ params }: { params: Promise<{ cour
 
   useEffect(() => {
     void getVideoAnalytics(courseId)
-      .then((r) => setVideoStats(r.videos))
+      .then((r) => setVideoStats(r.videos ?? []))
       .catch(() => setVideoStats([]));
   }, [courseId]);
 

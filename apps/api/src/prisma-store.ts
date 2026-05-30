@@ -6392,7 +6392,7 @@ export class PrismaStore implements AppStore {
           totalStudents,
           submittedCount,
           passedCount,
-          passRate: totalStudents > 0 ? Math.round((passedCount / totalStudents) * 100) : 0,
+          passRate: totalStudents > 0 ? passedCount / totalStudents : 0,
         };
       })
     );
@@ -6426,7 +6426,7 @@ export class PrismaStore implements AppStore {
       submissionCount: await this.prisma.submissionAttempt.count({
         where: { project: { courseId } },
       }),
-      passRate: totalPossible > 0 ? Math.round((totalPassed / totalPossible) * 100) : 0,
+      passRate: totalPossible > 0 ? totalPassed / totalPossible : 0,
       milestones: milestoneStats,
       students: studentStats,
     };
