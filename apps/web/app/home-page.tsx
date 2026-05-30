@@ -9,10 +9,6 @@ import FeatureTilesShowcase from './_components/feature-tiles-showcase';
 import CliShowcase from './_components/cli-showcase';
 import {
   footerTagline,
-  heroSignInHint,
-  heroSub,
-  heroTerminalTitle,
-  heroTitleLines,
   howItWorksIntro,
   howItWorksSteps,
   landingFooterContactEmail,
@@ -21,7 +17,6 @@ import {
   transformGains,
   transformPains,
   transformSub,
-  whatsNew,
 } from './_content/landing';
 import styles from './signin.module.css';
 
@@ -154,68 +149,6 @@ export default function HomePage() {
           </Link>
         </div>
       </nav>
-
-      <div className={`${styles.landingFill} ${styles.hero}`}>
-        <div className={`${styles.terminalWindow} ${styles.heroTerminal}`}>
-          <div className={styles.terminalTitleBar}>
-            <span className={styles.termDot} style={{ background: '#ff5f57' }} />
-            <span className={styles.termDot} style={{ background: '#febc2e' }} />
-            <span className={styles.termDot} style={{ background: '#28c840' }} />
-            <span className={styles.termTitle}>{heroTerminalTitle}</span>
-          </div>
-
-          <div className={`${styles.terminalBody} ${styles.heroTerminalBody}`}>
-            <h1 className={styles.heroTerminalTitle}>
-              {heroTitleLines.map((part) => (
-                <span
-                  key={part.line}
-                  className={`${styles.heroTerminalTitleLine} ${
-                    part.variant === 'italic' ? styles.heroTerminalTitleItalic : ''
-                  }`}
-                >
-                  {part.line}
-                </span>
-              ))}
-            </h1>
-
-            <p className={styles.heroSub}>{heroSub}</p>
-
-            <div className={styles.termLine}>
-              <span className={styles.termPrompt}>nibras</span>
-              <span className={styles.termCmd}> login</span>
-            </div>
-
-            <Link href="/sign-in" className={styles.termAuthBtn}>
-              Get started free →
-            </Link>
-            <p className={styles.heroSignInHint}>
-              <span className={styles.termMuted}># </span>
-              {heroSignInHint}
-            </p>
-
-            <div className={styles.termLine}>
-              <span className={styles.termPrompt}>nibras</span>
-              <span className={styles.termCmd}> whats-new</span>
-            </div>
-
-            <ul className={styles.heroWhatsNew} aria-label="What's new">
-              {whatsNew.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <p className={styles.heroWhatsNewLinkWrap}>
-              <Link href="/changelog" className={styles.whatsNewLink}>
-                View full changelog →
-              </Link>
-            </p>
-
-            <a href="#how-it-works" className={styles.heroTermHelpLink}>
-              <span className={styles.termPrompt}>nibras</span>
-              <span className={styles.termCmd}> help --how-it-works</span>
-            </a>
-          </div>
-        </div>
-      </div>
 
       <AgentMissionControlSection />
 
