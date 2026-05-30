@@ -51,6 +51,91 @@ test('student dashboard returns the migrated projects view model', async () => {
   }
 });
 
+test('student dashboard accepts an explicit courseId query param', async () => {
+  const storePath = makeStorePath();
+  const store = new FileStore(storePath);
+  const app = createSession(store, storePath, 'user_demo', 'student-token');
+
+  try {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/v1/tracking/dashboard/student?courseId=course_cs161',
+      headers: {
+        authorization: 'Bearer student-token',
+      },
+    });
+    assert.equal(response.statusCode, 200);
+    const payload = response.json();
+    assert.equal(payload.course.id, 'course_cs161');
+    assert.ok(Array.isArray(payload.projects));
+    assert.equal(payload.portfolioCourses, undefined);
+  } finally {
+    await app.close();
+  }
+});
+
+test('student dashboard includePortfolio returns portfolio course cards', async () => {
+  const storePath = makeStorePath();
+  const store = new FileStore(storePath);
+  const app = createSession(store, storePath, 'user_demo', 'student-token');
+
+  try {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/v1/tracking/dashboard/student?includePortfolio=1',
+      headers: {
+        authorization: 'Bearer student-token',
+      },
+    });
+    assert.equal(response.statusCode, 200);
+    const payload = response.json();
+    assert.ok(Array.isArray(payload.portfolioCourses));
+    assert.ok(payload.portfolioCourses.length >= 1);
+    assert.equal(typeof payload.portfolioCourses[0].courseCode, 'string');
+    assert.ok(payload.portfolioCourses[0].courseCode.length > 0);
+    assert.ok(Array.isArray(payload.courseDeadlines));
+  } finally {
+    await app.close();
+  }
+});
+
+test('student dashboard tolerates legacy rubric rows with empty criteria', async () => {
+  const storePath = makeStorePath();
+  const store = new FileStore(storePath);
+  const data = store.read('http://127.0.0.1');
+  data.sessions.push({
+    accessToken: 'student-token',
+    refreshToken: 'student-token-refresh',
+    userId: 'user_demo',
+    createdAt: new Date().toISOString(),
+  });
+  const legacyProject = data.projects.find((entry) => entry.id === 'project_cs161_exam1');
+  assert.ok(legacyProject);
+  legacyProject.rubric = [
+    { criterion: '', maxScore: 10 },
+    { criterion: 'Implementation', maxScore: 25 },
+  ];
+  store.write(data);
+  const app = buildApp(new FileStore(storePath));
+
+  try {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/v1/tracking/dashboard/student?courseId=course_cs161',
+      headers: {
+        authorization: 'Bearer student-token',
+      },
+    });
+    assert.equal(response.statusCode, 200);
+    const payload = response.json();
+    assert.equal(payload.projects.length, 1);
+    assert.equal(payload.projects[0].rubric.length, 1);
+    assert.equal(payload.projects[0].rubric[0].criterion, 'Implementation');
+  } finally {
+    await app.close();
+  }
+});
+
 test('instructor can create and list project templates', async () => {
   const storePath = makeStorePath();
   const store = new FileStore(storePath);

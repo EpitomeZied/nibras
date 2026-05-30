@@ -14,6 +14,7 @@ import type {
   TrackingProjectSummary,
 } from '@nibras/contracts';
 import { prefs } from '../../../lib/prefs';
+import { friendlyMessage } from '../../../lib/api-clients/errors';
 import {
   fetchMyTeamApplication,
   fetchProjectGitHubStatus,
@@ -150,7 +151,10 @@ export default function ProjectsDashboard({
     setError('');
     try {
       const [payload, nextCourses, nextGitHubStatus] = await Promise.all([
-        fetchStudentProjectsDashboard(portfolioOnly ? null : courseId),
+        fetchStudentProjectsDashboard(portfolioOnly ? null : courseId, {
+          includePortfolio: portfolioOnly,
+          includeDeadlines: !portfolioOnly,
+        }),
         listTrackingCourses(),
         fetchProjectGitHubStatus(),
       ]);
@@ -177,7 +181,7 @@ export default function ProjectsDashboard({
         }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      setError(friendlyMessage(err));
     } finally {
       setLoading(false);
     }

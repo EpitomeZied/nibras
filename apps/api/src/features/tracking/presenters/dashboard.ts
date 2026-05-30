@@ -16,7 +16,40 @@ import {
   ReviewRecord,
   StudentDashboardRecord,
   SubmissionRecord,
+  TeamMemberBadgeRecord,
+  TrackingRubricItemRecord,
 } from '../../../store';
+
+function clampLevel(level: number | null | undefined): number {
+  const value = level ?? 1;
+  return Math.min(4, Math.max(1, value));
+}
+
+function sanitizeRubric(items: TrackingRubricItemRecord[]): TrackingRubricItemRecord[] {
+  return items
+    .filter((item) => typeof item.criterion === 'string' && item.criterion.trim().length > 0)
+    .map((item) => ({
+      criterion: item.criterion.trim(),
+      maxScore: Math.max(0, item.maxScore ?? 0),
+      ...(item.earned !== undefined ? { earned: Math.max(0, item.earned) } : {}),
+    }));
+}
+
+function sanitizeTeamBadges(team: TeamMemberBadgeRecord[]): TeamMemberBadgeRecord[] {
+  return team
+    .filter((member) => member.userId.trim().length > 0)
+    .map((member) => {
+      const name = member.name.trim() || member.userId;
+      return {
+        userId: member.userId,
+        name,
+        initials: member.initials.trim() || name.slice(0, 2).toUpperCase() || '?',
+        color: member.color.trim() || '#64748b',
+        roleKey: member.roleKey,
+        roleLabel: member.roleLabel,
+      };
+    });
+}
 
 function formatDateLabel(value: string | null): string {
   if (!value) return 'No due date';
@@ -107,13 +140,18 @@ export function presentMilestone(
 
 export function presentProject(
   project: ProjectRecord,
-  options?: { latestReview?: ReviewRecord | null }
-): TrackingProjectSummary {
-  const rubricTotal = project.rubric.reduce((sum, item) => sum + (item.maxScore || 0), 0);
+  options?: { latestReview?: ReviewRecord | null; fallbackCourseId?: string | null }
+): TrackingProjectSummary | null {
+  const courseId = project.courseId || options?.fallbackCourseId || null;
+  if (!courseId || !project.projectKey?.trim() || !project.title?.trim()) {
+    return null;
+  }
+  const rubricBase = sanitizeRubric(project.rubric);
+  const rubricTotal = rubricBase.reduce((sum, item) => sum + (item.maxScore || 0), 0);
   const earnedByCriterion = new Map(
     (options?.latestReview?.rubric ?? []).map((item) => [item.criterion, item.earned ?? 0])
   );
-  const rubric = project.rubric.map((item) => ({
+  const rubric = rubricBase.map((item) => ({
     ...item,
     earned: earnedByCriterion.has(item.criterion)
       ? earnedByCriterion.get(item.criterion)
@@ -122,11 +160,11 @@ export function presentProject(
   return {
     id: project.id,
     projectKey: project.projectKey,
-    courseId: project.courseId || '',
+    courseId,
     title: project.title,
     description: project.description,
     status: project.status,
-    level: project.level ?? 1,
+    level: clampLevel(project.level),
     deliveryMode: project.deliveryMode,
     templateId: project.templateId,
     teamFormationStatus: project.teamFormationStatus,
@@ -144,8 +182,19 @@ export function presentProject(
     type: project.deliveryMode === 'team' ? 'Team' : 'Individual',
     rubric,
     resources: project.resources,
-    team: project.team,
+    team: sanitizeTeamBadges(project.team),
   };
+}
+
+export function presentProjectSummary(
+  project: ProjectRecord,
+  options?: { latestReview?: ReviewRecord | null; fallbackCourseId?: string | null }
+): TrackingProjectSummary {
+  const result = presentProject(project, options);
+  if (!result) {
+    throw new Error(`Project ${project.id} is missing required presentation fields.`);
+  }
+  return result;
 }
 
 function latestGradedReviewForProject(
@@ -196,15 +245,18 @@ export function presentStudentDashboard(args: {
       role: entry.role,
       level: entry.level ?? 1,
     })),
-    projects: args.dashboard.projects.map((project) =>
-      presentProject(project, {
-        latestReview: latestGradedReviewForProject(
-          args.dashboard.milestonesByProject[project.id] || [],
-          args.submissionsByMilestone,
-          args.reviewsByMilestone
-        ),
-      })
-    ),
+    projects: args.dashboard.projects
+      .map((project) =>
+        presentProject(project, {
+          fallbackCourseId: args.dashboard.course?.id ?? null,
+          latestReview: latestGradedReviewForProject(
+            args.dashboard.milestonesByProject[project.id] || [],
+            args.submissionsByMilestone,
+            args.reviewsByMilestone
+          ),
+        })
+      )
+      .filter((project): project is TrackingProjectSummary => project !== null),
     milestonesByProject,
     activeProjectId: args.dashboard.activeProjectId,
     activity: args.dashboard.activity,

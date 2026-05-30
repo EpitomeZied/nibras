@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { ZodError } from 'zod';
 import {
   AddCourseMemberRequestSchema,
   CourseBrowseItemSchema,
@@ -37,6 +38,7 @@ import {
   UpdateTrackingProjectRequestSchema,
   UpdateTrackingSubmissionRequestSchema,
   NOTIFICATION_EMAIL_PREF,
+  StudentUpcomingDeadline,
 } from '@nibras/contracts';
 import { requireUser, type AuthenticatedRequest } from '../../lib/auth';
 import { sendReviewSubmittedEmail } from '../../lib/email';
@@ -49,6 +51,7 @@ import {
   presentHomeDashboard,
   presentMilestone,
   presentProject,
+  presentProjectSummary,
   presentStudentDashboard,
 } from './presenters/dashboard';
 import { buildStudentProjectPortfolio } from './home-dashboard';
@@ -478,7 +481,11 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
           : Promise.resolve(undefined),
       ]);
       if (total !== undefined) void reply.header('X-Total-Count', String(total));
-      return projects.map((project) => presentProject(project));
+      return projects
+        .map((project) =>
+          presentProject(project, { fallbackCourseId: params.courseId })
+        )
+        .filter((project): project is NonNullable<typeof project> => project !== null);
     }
   );
 
@@ -499,7 +506,9 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
         payload
       );
       reply.code(201);
-      return TrackingProjectSummarySchema.parse(presentProject(created));
+      return TrackingProjectSummarySchema.parse(
+        presentProjectSummary(created, { fallbackCourseId: payload.courseId })
+      );
     }
   );
 
@@ -735,7 +744,7 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
         ? await store.getProjectTemplateById(requestBaseUrl(request), project.templateId)
         : null;
       return TrackingProjectDetailSchema.parse({
-        ...presentProject(project),
+        ...presentProjectSummary(project, { fallbackCourseId: project.courseId }),
         milestones: milestones.map((milestone) => presentMilestone(milestone, [], [])),
         template,
       });
@@ -768,7 +777,9 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
         reply.code(404).send(Errors.notFound('Project'));
         return;
       }
-      return TrackingProjectSummarySchema.parse(presentProject(updated));
+      return TrackingProjectSummarySchema.parse(
+        presentProjectSummary(updated, { fallbackCourseId: updated.courseId })
+      );
     }
   );
 
@@ -793,7 +804,9 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
         params.projectId,
         'published'
       );
-      return TrackingProjectSummarySchema.parse(presentProject(updated || project));
+      return TrackingProjectSummarySchema.parse(
+        presentProjectSummary(updated || project, { fallbackCourseId: project.courseId })
+      );
     }
   );
 
@@ -818,7 +831,9 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
         params.projectId,
         'draft'
       );
-      return TrackingProjectSummarySchema.parse(presentProject(updated || project));
+      return TrackingProjectSummarySchema.parse(
+        presentProjectSummary(updated || project, { fallbackCourseId: project.courseId })
+      );
     }
   );
 
@@ -1802,7 +1817,17 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
     async (request, reply) => {
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
-      const query = request.query as { courseId?: string };
+      const query = request.query as {
+        courseId?: string;
+        includePortfolio?: string;
+        includeDeadlines?: string;
+      };
+      const includePortfolio =
+        query.includePortfolio === '1' || query.includePortfolio === 'true';
+      const includeDeadlines =
+        query.includeDeadlines === '1' ||
+        query.includeDeadlines === 'true' ||
+        includePortfolio;
       const dashboard = await store.getStudentTrackingDashboard(
         requestBaseUrl(request),
         auth.user.id,
@@ -1830,29 +1855,49 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
           reviewsByMilestone[milestone.id] = Array.from(reviewsMap.values());
         }
       }
-      const homeRecord = await store.getHomeDashboard(
-        requestBaseUrl(request),
-        auth.user.id,
-        'student'
-      );
-      const activeCourseId = query.courseId || dashboard.course?.id || null;
-      const portfolioCourses = homeRecord.student
-        ? buildStudentProjectPortfolio(
+
+      let portfolioCourses: ReturnType<typeof buildStudentProjectPortfolio> | undefined;
+      let courseDeadlines: StudentUpcomingDeadline[] | undefined;
+
+      if (includePortfolio || includeDeadlines) {
+        const homeRecord = await store.getHomeDashboard(
+          requestBaseUrl(request),
+          auth.user.id,
+          'student'
+        );
+        const activeCourseId = query.courseId || dashboard.course?.id || null;
+        if (includePortfolio && homeRecord.student) {
+          portfolioCourses = buildStudentProjectPortfolio(
             homeRecord.student.courses,
             homeRecord.student.courseSnapshots
-          )
-        : undefined;
-      const courseDeadlines = homeRecord.student?.upcomingDeadlines.filter(
-        (deadline) => !activeCourseId || deadline.courseId === activeCourseId
-      );
+          );
+        }
+        if (includeDeadlines && homeRecord.student) {
+          courseDeadlines = homeRecord.student.upcomingDeadlines.filter(
+            (deadline) => !activeCourseId || deadline.courseId === activeCourseId
+          );
+        }
+      }
 
-      return presentStudentDashboard({
-        dashboard,
-        submissionsByMilestone,
-        reviewsByMilestone,
-        portfolioCourses,
-        courseDeadlines,
-      });
+      try {
+        return presentStudentDashboard({
+          dashboard,
+          submissionsByMilestone,
+          reviewsByMilestone,
+          portfolioCourses,
+          courseDeadlines,
+        });
+      } catch (error) {
+        if (error instanceof ZodError) {
+          request.log.warn(
+            { issues: error.issues, courseId: query.courseId || null },
+            'student dashboard response validation failed'
+          );
+          reply.code(422).send(Errors.validation('Student dashboard response validation failed.'));
+          return;
+        }
+        throw error;
+      }
     }
   );
 

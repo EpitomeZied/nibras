@@ -18,15 +18,19 @@ export type ProjectGitHubStatus = {
 };
 
 export async function fetchStudentProjectsDashboard(
-  courseId?: string | null
+  courseId?: string | null,
+  options?: { includePortfolio?: boolean; includeDeadlines?: boolean }
 ): Promise<StudentProjectsDashboardResponse> {
-  const query = courseId ? { courseId } : undefined;
+  const query: Record<string, string> = {};
+  if (courseId) query.courseId = courseId;
+  if (options?.includePortfolio) query.includePortfolio = '1';
+  if (options?.includeDeadlines) query.includeDeadlines = '1';
   return serviceFetch<StudentProjectsDashboardResponse>(
     'tracking',
     '/v1/tracking/dashboard/student',
     {
       auth: true,
-      query,
+      query: Object.keys(query).length > 0 ? query : undefined,
     }
   );
 }

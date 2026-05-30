@@ -400,6 +400,15 @@ function buildStudentAttentionItems(args: {
   return items.slice(0, 8);
 }
 
+function projectCourseId(snapshot: StudentDashboardRecord): string | null {
+  for (const project of snapshot.projects) {
+    if (project.courseId?.trim()) {
+      return project.courseId;
+    }
+  }
+  return null;
+}
+
 function buildStudentUpcomingDeadlines(args: {
   snapshots: StudentDashboardRecord[];
   submissions: SubmissionRecord[];
@@ -408,8 +417,9 @@ function buildStudentUpcomingDeadlines(args: {
   const deadlines: StudentUpcomingDeadlineRecord[] = [];
 
   for (const snapshot of args.snapshots) {
-    const courseId = snapshot.course?.id || '';
-    const courseTitle = snapshot.course?.title || 'Course';
+    const courseId = snapshot.course?.id || projectCourseId(snapshot) || null;
+    if (!courseId) continue;
+    const courseTitle = snapshot.course?.title?.trim() || 'Course';
     for (const project of snapshot.projects) {
       for (const milestone of snapshot.milestonesByProject[project.id] || []) {
         const status = resolveMilestoneStatus(milestone.id, args.submissions, args.reviewsBySubmission);
@@ -424,7 +434,7 @@ function buildStudentUpcomingDeadlines(args: {
           dueAt: milestone.dueAt,
           status,
           statusLabel: statusLabel(status),
-          href: `/projects?courseId=${courseId || project.courseId}&projectId=${project.id}#milestone-${milestone.id}`,
+          href: `/projects?courseId=${courseId}&projectId=${project.id}#milestone-${milestone.id}`,
         });
       }
     }
@@ -605,21 +615,26 @@ export function buildStudentProjectPortfolio(
   nextDueLabel: string | null;
 }> {
   const courseById = new Map(courses.map((course) => [course.id, course]));
-  return snapshots.map((snapshot) => {
-    const course = courseById.get(snapshot.courseId);
-    const nextDue = snapshot.nextMilestones.find((entry) => entry.dueAt) ?? null;
-    return {
-      courseId: snapshot.courseId,
-      courseCode: course?.courseCode || '',
-      title: snapshot.courseTitle,
-      termLabel: course?.termLabel || '',
-      completion: snapshot.completion,
-      projectCount: snapshot.projects.length,
-      openMilestones: snapshot.open,
-      nextDueAt: nextDue?.dueAt ?? null,
-      nextDueLabel: nextDue?.title ?? null,
-    };
-  });
+  return snapshots
+    .filter((snapshot) => snapshot.courseId.trim().length > 0)
+    .map((snapshot) => {
+      const course = courseById.get(snapshot.courseId);
+      const nextDue = snapshot.nextMilestones.find((entry) => entry.dueAt) ?? null;
+      const courseCode = course?.courseCode?.trim() || 'Course';
+      const termLabel = course?.termLabel?.trim() || 'TBD';
+      const title = snapshot.courseTitle?.trim() || course?.title?.trim() || 'Course';
+      return {
+        courseId: snapshot.courseId,
+        courseCode,
+        title,
+        termLabel,
+        completion: snapshot.completion,
+        projectCount: snapshot.projects.length,
+        openMilestones: snapshot.open,
+        nextDueAt: nextDue?.dueAt ?? null,
+        nextDueLabel: nextDue?.title ?? null,
+      };
+    });
 }
 
 export function buildInstructorHomeDashboard(args: {
