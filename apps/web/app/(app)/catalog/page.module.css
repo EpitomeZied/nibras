@@ -670,6 +670,38 @@
   display: inline-block;
 }
 
+/* ── Verse Footer ────────────────────────────────────────────────────────── */
+.verseFooter {
+  margin-top: 48px;
+  padding-top: 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: center;
+  font-family: var(--font-guesswhat), 'Noto Naskh Arabic', serif;
+  font-size: clamp(1.1rem, 2.5vw, 1.5rem);
+  line-height: 1.9;
+  color: var(--text-muted);
+}
+
+.verseIntro {
+  margin: 0 0 12px;
+}
+
+.verseQuote {
+  margin: 0 auto 16px;
+  padding: 0;
+  max-width: 52ch;
+  border: none;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.verseAttribution {
+  margin: 0;
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .layout {
@@ -689,5 +721,8 @@
   }
   .cardGrid {
     grid-template-columns: 1fr;
+  }
+  .verseFooter {
+    padding-inline: 8px;
   }
 }

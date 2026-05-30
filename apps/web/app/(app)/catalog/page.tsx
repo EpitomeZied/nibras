@@ -2,6 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import CatalogTabs, { type CatalogTab } from './_components/catalog-tabs';
+import CatalogVerseFooter from './_components/catalog-verse-footer';
 import CourseCatalogTab from './_components/course-catalog-tab';
 import ProjectCatalogTab from './_components/project-catalog-tab';
 import s from './page.module.css';
@@ -30,6 +31,8 @@ export default function CatalogPage() {
       <CatalogTabs active={tab} preserveCourseFilter={courseFilter || undefined} />
 
       {tab === 'courses' ? <CourseCatalogTab /> : <ProjectCatalogTab />}
+
+      <CatalogVerseFooter />
     </main>
   );
 }
