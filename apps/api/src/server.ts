@@ -56,26 +56,27 @@ async function syncBadgeCatalogOnStartup(): Promise<void> {
   }
 }
 
-async function syncYear1CurriculumOnStartup(): Promise<void> {
+async function syncCurriculumOnStartup(): Promise<void> {
   if (!process.env.DATABASE_URL) return;
 
-  const { seedYear1Curriculum, seedYear2Cs107 } = await import('./lib/year1-seed');
+  const { seedYear1Curriculum } = await import('./lib/year1-seed');
+  const { seedYear2Curriculum } = await import('./lib/year2-seed');
   const { getSharedPrisma } = await import('./lib/prisma');
   try {
     const prisma = getSharedPrisma();
     await seedYear1Curriculum(prisma);
-    await seedYear2Cs107(prisma);
+    await seedYear2Curriculum(prisma);
     console.log(
       JSON.stringify({
         level: 'info',
-        msg: 'Year 1 curriculum synced on startup',
+        msg: 'Year 1 and Year 2 curricula synced on startup',
       })
     );
   } catch (err) {
     console.error(
       JSON.stringify({
         level: 'error',
-        msg: 'Year 1 curriculum sync failed on startup',
+        msg: 'Year 1 and Year 2 curriculum sync failed on startup',
         error: err instanceof Error ? err.message : String(err),
       })
     );
@@ -85,7 +86,7 @@ async function syncYear1CurriculumOnStartup(): Promise<void> {
 async function main(): Promise<void> {
   validateEnv();
   await syncBadgeCatalogOnStartup();
-  await syncYear1CurriculumOnStartup();
+  await syncCurriculumOnStartup();
   const port = Number(process.env.PORT || '4848');
   const host = process.env.HOST || '127.0.0.1';
   const app = buildApp();

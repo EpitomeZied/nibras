@@ -42,6 +42,7 @@ npm run seed:stanford-projects
 npm run seed:open-curricula          # MIT Missing Semester + similar public courses
 npm run seed:open-curricula-projects
 npm run seed:year1
+npm run seed:year2
 ```
 
 ## Architecture

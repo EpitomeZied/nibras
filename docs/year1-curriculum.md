@@ -14,7 +14,7 @@ Seven tracking courses (22 planner units) for the freshman year. Planner catalog
 | MATH112 | 3 | `year1-math112` | MATH 112 — Calculus II |
 | PHY101 | 3 | `year1-phy101` | PHY 101 — Physics for Computing |
 
-**CS 107** (Computer Organization & Systems) is a **Year 2** course (`stanford-cs107`, `Year 2 · Sophomore`), not part of the seven foundation courses.
+**CS 107** and other Year 2 courses live in [year2-curriculum.md](./year2-curriculum.md) (not part of the seven foundation courses).
 
 **CS106L** (`cs106l`, Self-Paced) is optional C++ practice linked from the CS 106B project resources.
 
@@ -36,7 +36,7 @@ Optional CLI projects for CS 106B (after course seed):
 npm run seed:stanford-projects
 ```
 
-The API also upserts Year 1 courses on **API startup** (after deploy) and on first `prisma-store` bootstrap.
+The API also upserts Year 1 courses on **API startup** (after deploy) and on first `prisma-store` bootstrap. Year 2 uses the same pattern — see [year2-curriculum.md](./year2-curriculum.md).
 
 ### Production (nibrasplatform.me)
 

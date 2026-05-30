@@ -11,7 +11,6 @@ import {
 } from '@prisma/client';
 import {
   YEAR1_COURSES,
-  YEAR1_CS107_COURSE,
   type Year1CourseDefinition,
   type Year1Lecture,
 } from './year1-curriculum';
@@ -300,12 +299,4 @@ export async function seedYear1Curriculum(
   }
 
   log('✅ Year 1 curriculum seed complete.');
-}
-
-/** Seed CS 107 as Year 2 sophomore course. */
-export async function seedYear2Cs107(
-  prisma: PrismaClient,
-  options?: Year1SeedOptions
-): Promise<void> {
-  await seedYear1Course(prisma, YEAR1_CS107_COURSE, options);
 }

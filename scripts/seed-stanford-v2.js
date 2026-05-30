@@ -7,7 +7,8 @@ const { register } = require('tsx/cjs/api');
 register();
 
 const { PrismaClient } = require('@prisma/client');
-const { seedYear1Curriculum, seedYear2Cs107 } = require('../apps/api/src/lib/year1-seed.ts');
+const { seedYear1Curriculum } = require('../apps/api/src/lib/year1-seed.ts');
+const { seedYear2Curriculum } = require('../apps/api/src/lib/year2-seed.ts');
 const prisma = new PrismaClient();
 
 const INSTRUCTOR_ID = process.env.NIBRAS_INSTRUCTOR_USER_ID || 'cmnmguy3l0000u5hpqtm9ebci';
@@ -15,208 +16,8 @@ const INSTRUCTOR_ID = process.env.NIBRAS_INSTRUCTOR_USER_ID || 'cmnmguy3l0000u5h
 // Old year-level courses to remove
 const OLD_COURSE_SLUGS = ['stanford-cs-y1', 'stanford-cs-y2', 'stanford-cs-y3', 'stanford-cs-y4'];
 
-// ── Curriculum (Years 2–4; Year 1 via year1-seed.ts) ─────────────────────────
+// ── Curriculum (Years 3–4; Years 1–2 via year1/year2-seed.ts) ────────────────
 const CURRICULUM = [
-  // ─ YEAR 2: SOPHOMORE ────────────────────────────────────────────────────
-  {
-    year: 2,
-    yearLabel: 'Year 2 · Sophomore',
-    courses: [
-      {
-        course: {
-          slug: 'stanford-cs109',
-          courseCode: 'CS 109',
-          title: 'Probability for Computer Scientists',
-          termLabel: 'Year 2 · Sophomore',
-        },
-        project: {
-          subject: { slug: 'cs109', name: 'CS 109' },
-          slug: 'cs109-main',
-          name: 'CS 109 — Probability for Computer Scientists',
-          description:
-            'Probability, counting, random variables, distributions (Binomial, Poisson, Gaussian), Bayesian inference, MLE, and Markov chains.',
-          level: 2,
-          rubric: [
-            { criterion: 'Mathematical Derivations', maxScore: 50 },
-            { criterion: 'Implementation Correctness', maxScore: 30 },
-            { criterion: 'Analysis & Interpretation', maxScore: 20 },
-          ],
-          milestones: [
-            {
-              title: 'Counting & Probability Axioms',
-              description:
-                'Solve 20 counting problems (permutations, combinations, inclusion-exclusion). Prove basic probability theorems. Implement a Monte Carlo estimator of π.',
-              order: 0,
-            },
-            {
-              title: 'Random Variables & Distributions',
-              description:
-                'Derive PMFs/PDFs for Binomial, Geometric, Poisson, and Gaussian distributions. Implement a central-limit-theorem simulator.',
-              order: 1,
-            },
-            {
-              title: 'Bayesian Networks & MLE',
-              description:
-                'Build a Naïve Bayes spam classifier. Derive and implement MLE for Gaussian and Bernoulli distributions. Evaluate on a held-out email dataset.',
-              order: 2,
-            },
-            {
-              title: 'Final: Probabilistic Inference Engine',
-              description:
-                'Implement variable-elimination for exact inference in a Bayesian network. Test on a medical-diagnosis network with 10+ nodes.',
-              order: 3,
-              isFinal: true,
-            },
-          ],
-        },
-      },
-      {
-        course: {
-          slug: 'stanford-cs110',
-          courseCode: 'CS 110',
-          title: 'Principles of Computer Systems',
-          termLabel: 'Year 2 · Sophomore',
-        },
-        project: {
-          subject: { slug: 'cs110', name: 'CS 110' },
-          slug: 'cs110-main',
-          name: 'CS 110 — Principles of Computer Systems',
-          description:
-            'Filesystems, processes, signals, IPC, multithreading, synchronisation, and introductory network programming in C/C++.',
-          level: 2,
-          rubric: [
-            { criterion: 'Correctness under Concurrency', maxScore: 45 },
-            { criterion: 'Resource Management (no leaks/deadlocks)', maxScore: 35 },
-            { criterion: 'Performance Benchmarks', maxScore: 20 },
-          ],
-          milestones: [
-            {
-              title: 'Filesystems & I/O',
-              description:
-                'Implement a shell built-in that mirrors GNU ls using low-level POSIX calls (opendir, stat, read). Handle symlinks and hidden files.',
-              order: 0,
-            },
-            {
-              title: 'Processes & Signals',
-              description:
-                'Build a job-control shell (foreground/background, SIGCHLD, SIGINT, SIGTSTP). Implement a pipe operator using fork/exec/pipe.',
-              order: 1,
-            },
-            {
-              title: 'Multithreading & Synchronisation',
-              description:
-                'Implement a thread pool using pthreads, condition variables, and mutexes. Demonstrate absence of data races using ThreadSanitizer.',
-              order: 2,
-            },
-            {
-              title: 'Final: Multithreaded HTTP/1.1 Server',
-              description:
-                'Build a fully concurrent HTTP/1.1 server with keep-alive, GET/HEAD, and directory listing. Sustain 500 req/s under ApacheBench.',
-              order: 3,
-              isFinal: true,
-            },
-          ],
-        },
-      },
-      {
-        course: {
-          slug: 'stanford-cs143',
-          courseCode: 'CS 143',
-          title: 'Compilers',
-          termLabel: 'Year 2 · Sophomore',
-        },
-        project: {
-          subject: { slug: 'cs143', name: 'CS 143' },
-          slug: 'cs143-main',
-          name: 'CS 143 — Compilers',
-          description:
-            'Complete compiler construction for COOL: lexing, parsing (LALR), semantic analysis, type checking, and code generation to MIPS assembly.',
-          level: 2,
-          rubric: [
-            { criterion: 'Test Suite Pass Rate', maxScore: 60 },
-            { criterion: 'Error Recovery & Messages', maxScore: 25 },
-            { criterion: 'Code Quality', maxScore: 15 },
-          ],
-          milestones: [
-            {
-              title: 'Lexical Analysis (flex)',
-              description:
-                'Implement the COOL lexer using flex. Handle all string escape sequences and nested comments. Pass ≥ 95% of the lexer test suite.',
-              order: 0,
-            },
-            {
-              title: 'Syntax Analysis (bison LALR)',
-              description:
-                'Write the COOL LALR(1) grammar in bison. Resolve all shift/reduce conflicts. Pass the parser test suite and produce correct ASTs.',
-              order: 1,
-            },
-            {
-              title: 'Semantic Analysis & Type Checking',
-              description:
-                'Build the symbol table, perform scope analysis, and implement the COOL type system. Report meaningful error messages for all 15 type errors.',
-              order: 2,
-            },
-            {
-              title: 'Final: Full COOL Compiler → MIPS',
-              description:
-                'Implement code generation to MIPS assembly with correct object layout, dispatch tables, GC roots, and runtime calls. Pass all 63 reference tests.',
-              order: 3,
-              isFinal: true,
-            },
-          ],
-        },
-      },
-      {
-        course: {
-          slug: 'stanford-cs161',
-          courseCode: 'CS 161',
-          title: 'Design & Analysis of Algorithms',
-          termLabel: 'Year 2 · Sophomore',
-        },
-        project: {
-          subject: { slug: 'cs161-algo', name: 'CS 161 Algorithms' },
-          slug: 'cs161-main',
-          name: 'CS 161 — Design & Analysis of Algorithms',
-          description:
-            'Asymptotic analysis, divide-and-conquer, dynamic programming, greedy algorithms, graph algorithms, and NP-completeness.',
-          level: 2,
-          rubric: [
-            { criterion: 'Correctness Proofs', maxScore: 40 },
-            { criterion: 'Algorithm Implementation', maxScore: 40 },
-            { criterion: 'Complexity Analysis', maxScore: 20 },
-          ],
-          milestones: [
-            {
-              title: 'Divide & Conquer',
-              description:
-                'Implement and analyse MergeSort, QuickSort, and Strassen matrix multiplication. Solve 5 recurrence relations using the Master Theorem.',
-              order: 0,
-            },
-            {
-              title: 'Dynamic Programming',
-              description:
-                'Solve Edit Distance, LCS, Matrix Chain, and 0/1 Knapsack. Reconstruct solutions with traceback. Analyse space optimisations.',
-              order: 1,
-            },
-            {
-              title: 'Graph Algorithms',
-              description:
-                'Implement BFS, DFS, Dijkstra, Bellman-Ford, Kruskal, and Prim. Solve 3 graph problems. Benchmark on 10M-edge graphs.',
-              order: 2,
-            },
-            {
-              title: 'Final: NP-Completeness & Approximation',
-              description:
-                'Prove 3-SAT ≤_p Independent Set. Implement a 2-approximation for Vertex Cover. Design a local-search TSP heuristic.',
-              order: 3,
-              isFinal: true,
-            },
-          ],
-        },
-      },
-    ],
-  },
-
   // ─ YEAR 3: JUNIOR ───────────────────────────────────────────────────────
   {
     year: 3,
@@ -659,13 +460,13 @@ async function seed() {
     log: (msg) => console.log(msg),
     instructorUserId: INSTRUCTOR_ID,
   });
-  await seedYear2Cs107(prisma, {
+  await seedYear2Curriculum(prisma, {
     log: (msg) => console.log(msg),
     instructorUserId: INSTRUCTOR_ID,
   });
   console.log('');
 
-  console.log('🎓  Seeding Stanford CS Years 2–4…\n');
+  console.log('🎓  Seeding Stanford CS Years 3–4…\n');
 
   for (const { year, yearLabel, courses } of CURRICULUM) {
     console.log(`── ${yearLabel} ${'─'.repeat(50 - yearLabel.length)}`);

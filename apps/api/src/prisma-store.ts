@@ -47,6 +47,7 @@ import {
 import { seedOpenCurricula } from './lib/open-curricula-seed';
 import { seedOpenCurriculaProjects } from './lib/open-curricula-projects-seed';
 import { seedYear1Curriculum } from './lib/year1-seed';
+import { seedYear2Curriculum } from './lib/year2-seed';
 import {
   buildDashboardHomeRecord,
   buildInstructorHomeDashboard,
@@ -1768,6 +1769,7 @@ export class PrismaStore implements AppStore {
     await seedOpenCurricula(this.prisma);
     await seedOpenCurriculaProjects(this.prisma, apiBaseUrl);
     await seedYear1Curriculum(this.prisma);
+    await seedYear2Curriculum(this.prisma);
 
     this.seeded = true;
   }
