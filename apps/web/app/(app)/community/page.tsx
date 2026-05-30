@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
 import CommunityAuthorLink from './_components/community-author-link';
+import CommunityVerseFooter from './_components/community-verse-footer';
 import EmptyState from '../_components/widgets/EmptyState';
 import Skeleton from '../_components/widgets/Skeleton';
 import VoteButton from '../_components/widgets/VoteButton';
@@ -553,6 +554,8 @@ export default function CommunityPage() {
           </button>
         </div>
       )}
+
+      <CommunityVerseFooter />
     </div>
   );
 }

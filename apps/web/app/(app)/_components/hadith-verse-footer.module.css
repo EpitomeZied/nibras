@@ -1,0 +1,41 @@
+.verseFooter {
+  margin-top: 48px;
+  padding: 40px 0 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-guesswhat), 'Noto Naskh Arabic', serif;
+  font-size: clamp(1.25rem, 2.8vw, 1.85rem);
+  line-height: 2;
+  color: var(--text);
+}
+
+.verseIntro {
+  margin: 0 0 24px;
+  text-align: right;
+}
+
+.verseQuote {
+  margin: 0 0 32px;
+  padding: 0;
+  max-width: none;
+  border: none;
+  text-align: center;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+
+.verseHighlight {
+  color: var(--primary-strong);
+}
+
+.verseAttribution {
+  margin: 0;
+  text-align: left;
+  font-size: inherit;
+}
+
+@media (max-width: 600px) {
+  .verseFooter {
+    padding-inline: 8px;
+  }
+}
