@@ -14,7 +14,7 @@ const onboardingPath = path.join(
   '(app)',
   'instructor',
   'onboarding',
-  'page.tsx'
+  'onboarding-page-content.tsx'
 );
 const onboardingHelperPath = path.join(
   repoRoot,

@@ -1039,6 +1039,7 @@ export type StoreData = {
   activity: ActivityRecord[];
   notifications?: NotificationRecord[];
   notificationPreferences?: NotificationPreferenceRecord[];
+  onboardingProgressByUserId?: Record<string, Record<string, boolean>>;
 };
 
 export interface AppStore {
@@ -1062,6 +1063,16 @@ export interface AppStore {
       socialLinks?: Array<{ platform: string; value: string }>;
     }
   ): Promise<UserRecord | null>;
+  getOnboardingProgress(
+    apiBaseUrl: string,
+    userId: string,
+    suggested?: Record<string, boolean>
+  ): Promise<{ progress: Record<string, boolean>; suggested: Record<string, boolean> }>;
+  updateOnboardingProgress(
+    apiBaseUrl: string,
+    userId: string,
+    progress: Record<string, boolean>
+  ): Promise<Record<string, boolean>>;
   upsertGitHubUserSession(args: {
     githubUserId: string;
     login: string;
@@ -3048,6 +3059,31 @@ export class FileStore implements AppStore {
     }
     this.write(data);
     return user;
+  }
+
+  async getOnboardingProgress(
+    apiBaseUrl: string,
+    userId: string,
+    suggested: Record<string, boolean> = {}
+  ): Promise<{ progress: Record<string, boolean>; suggested: Record<string, boolean> }> {
+    const data = this.read(apiBaseUrl);
+    if (!data.onboardingProgressByUserId) data.onboardingProgressByUserId = {};
+    return {
+      progress: { ...(data.onboardingProgressByUserId[userId] ?? {}) },
+      suggested,
+    };
+  }
+
+  async updateOnboardingProgress(
+    apiBaseUrl: string,
+    userId: string,
+    progress: Record<string, boolean>
+  ): Promise<Record<string, boolean>> {
+    const data = this.read(apiBaseUrl);
+    if (!data.onboardingProgressByUserId) data.onboardingProgressByUserId = {};
+    data.onboardingProgressByUserId[userId] = { ...progress };
+    this.write(data);
+    return data.onboardingProgressByUserId[userId];
   }
 
   async deleteUserAccount(apiBaseUrl: string, userId: string): Promise<void> {

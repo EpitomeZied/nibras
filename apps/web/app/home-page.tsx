@@ -310,7 +310,7 @@ export default function HomePage() {
             <div className={styles.footerCol}>
               <span className={styles.footerColTitle}>Developers</span>
               <Link href="/docs">Documentation</Link>
-              <a href="/instructor/onboarding">CLI Setup Guide</a>
+              <a href="/setup">CLI Setup Guide</a>
               <a href={GITHUB_REPO_URL} target="_blank" rel="noreferrer">
                 GitHub
               </a>

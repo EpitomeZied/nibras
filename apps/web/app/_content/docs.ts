@@ -140,7 +140,7 @@ export const docsGettingStarted: DocsGettingStartedStep[] = [
     title: '4. Install and log in to the CLI',
     description:
       'Install the @nibras/cli package globally, then run nibras login and approve the device code in your browser. Node.js 18+ and git are required.',
-    link: { href: '/instructor/onboarding', label: 'CLI setup guide' },
+    link: { href: '/setup', label: 'CLI setup guide' },
   },
   {
     title: '5. Set up and submit a project',

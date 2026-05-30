@@ -32,7 +32,7 @@ export default function DocsHubPage() {
 
       <p className={styles.footnote}>
         For full CLI install steps and troubleshooting, see the{' '}
-        <Link href="/instructor/onboarding">CLI setup guide</Link> or the{' '}
+        <Link href="/setup">CLI setup guide</Link> or the{' '}
         <a
           href="https://github.com/nibras-platform/nibras/blob/main/docs/student-guide.md"
           target="_blank"

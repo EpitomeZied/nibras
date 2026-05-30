@@ -40,14 +40,14 @@ export function getOnboardingConfigPath(os) {
   return '~/.config/nibras/config.json';
 }
 
-export function getOnboardingDirExample(os, windowsShell = 'powershell') {
+export function getOnboardingDirExample(os, windowsShell = 'powershell', projectKey = 'cs101/a1') {
   if (os !== 'windows') {
-    return 'nibras setup --project cs101/a1 --dir ~/projects/a1';
+    return `nibras setup --project ${projectKey} --dir ~/projects/a1`;
   }
   if (windowsShell === 'gitbash') {
-    return 'nibras setup --project cs101/a1 --dir /c/projects/a1';
+    return `nibras setup --project ${projectKey} --dir /c/projects/a1`;
   }
-  return 'nibras setup --project cs101/a1 --dir C:\\projects\\a1';
+  return `nibras setup --project ${projectKey} --dir C:\\projects\\a1`;
 }
 
 export function getInstallTroubleshootingCommand(os, windowsShell = 'powershell') {
@@ -77,15 +77,63 @@ export function buildHostedLoginCommand(apiBaseUrl) {
   return `nibras login --api-base-url ${normalized || apiBaseUrl}`;
 }
 
-export function buildStudentQuickStart(apiBaseUrl, projectKey = 'cs101/assignment-1') {
+export function buildStudentQuickStart(
+  apiBaseUrl,
+  projectKey = 'cs101/assignment-1',
+  os = 'mac',
+  windowsShell = 'powershell'
+) {
   return [
-    NPM_INSTALL_COMMAND,
+    getInstallCommand(os, windowsShell),
     'nibras --version',
     buildHostedLoginCommand(apiBaseUrl),
     `nibras setup --project ${projectKey}`,
+    'nibras task',
     'nibras test',
     'nibras submit',
   ].join('\n');
+}
+
+export function buildStudentEmailBody({
+  apiBaseUrl,
+  projectKey = 'cs101/assignment-1',
+  os = 'mac',
+  windowsShell = 'powershell',
+  setupGuideUrl,
+}) {
+  const installLine = getInstallCommand(os, windowsShell);
+  const loginLine = buildHostedLoginCommand(apiBaseUrl ?? '<api-url>');
+  return [
+    'Hi everyone,',
+    '',
+    "To submit your assignments, you'll use the Nibras CLI tool. Here's how to get started:",
+    '',
+    '1. Install the CLI:',
+    `   ${installLine}`,
+    '',
+    '2. Log in with your GitHub account:',
+    `   ${loginLine}`,
+    '',
+    '3. Set up the project:',
+    `   nibras setup --project ${projectKey}`,
+    '',
+    '4. View the task instructions:',
+    '   nibras task',
+    '',
+    '5. Run tests locally:',
+    '   nibras test',
+    '',
+    '6. Submit your work:',
+    '   nibras submit',
+    '',
+    'If you run into any issues, run `nibras ping` and share the output with me.',
+    '',
+    setupGuideUrl ? `Full setup guide: ${setupGuideUrl}` : null,
+    '',
+    'Good luck!',
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 export async function discoverOnboardingApiBaseUrl({ configuredApiBaseUrl, pageOrigin, probe }) {

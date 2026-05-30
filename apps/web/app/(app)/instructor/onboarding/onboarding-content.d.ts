@@ -13,13 +13,29 @@ export function getInstallCommand(
 export function getUnixInstallCommand(tag?: string): string;
 export function getWindowsInstallCommand(tag?: string): string;
 export function getOnboardingConfigPath(os: OnboardingOs): string;
-export function getOnboardingDirExample(os: OnboardingOs, windowsShell?: WindowsShell): string;
+export function getOnboardingDirExample(
+  os: OnboardingOs,
+  windowsShell?: WindowsShell,
+  projectKey?: string
+): string;
 export function getInstallTroubleshootingCommand(
   os: OnboardingOs,
   windowsShell?: WindowsShell
 ): string;
 export function buildHostedLoginCommand(apiBaseUrl: string): string;
-export function buildStudentQuickStart(apiBaseUrl: string, projectKey?: string): string;
+export function buildStudentQuickStart(
+  apiBaseUrl: string,
+  projectKey?: string,
+  os?: OnboardingOs,
+  windowsShell?: WindowsShell
+): string;
+export function buildStudentEmailBody(args: {
+  apiBaseUrl: string | null;
+  projectKey?: string;
+  os?: OnboardingOs;
+  windowsShell?: WindowsShell;
+  setupGuideUrl?: string;
+}): string;
 export function discoverOnboardingApiBaseUrl(args: {
   configuredApiBaseUrl: string | null | undefined;
   pageOrigin: string | null | undefined;

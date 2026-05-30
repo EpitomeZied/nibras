@@ -1277,3 +1277,180 @@
     height: 34px;
   }
 }
+
+/* ── Mobile step nav ─────────────────────────────────────────────────────────── */
+
+.mobileStepNav {
+  display: none;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 8px;
+  margin-top: 12px;
+  scrollbar-width: thin;
+}
+
+.mobileStepChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-soft);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mobileStepChipActive {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+.mobileStepChipDone {
+  opacity: 0.85;
+}
+
+.mobileStepChipNum {
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* ── Account status ──────────────────────────────────────────────────────────── */
+
+.accountStatus {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+}
+
+.accountStatusTitle {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-soft);
+}
+
+.accountStatusGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.accountStatusChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.accountStatusChipDone {
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: var(--primary-soft);
+  color: var(--primary-strong);
+}
+
+/* ── API URL panel ───────────────────────────────────────────────────────────── */
+
+.apiUrlPanel {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.apiUrlChipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.apiUrlChip {
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.apiUrlManual {
+  display: grid;
+  gap: 6px;
+}
+
+.apiUrlManualLabel,
+.projectKeyPickerLabel,
+.troubleshootSearchLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.apiUrlManualInput,
+.projectKeyPickerSelect,
+.troubleshootSearchInput {
+  width: 100%;
+  max-width: 520px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.projectKeyPicker {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.shareLinkCopy {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  margin: 12px 0;
+}
+
+.shareLinkCopyLabel {
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.shareLinkCopyUrl {
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.troubleshootSearch {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 860px) {
+  .mobileStepNav {
+    display: flex;
+  }
+}

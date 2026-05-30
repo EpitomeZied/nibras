@@ -217,6 +217,8 @@ model User {
   githubAppInstalled Boolean           @default(false)
   systemRole        SystemRole         @default(user)
   yearLevel         Int                @default(1)
+  /// CLI onboarding checklist completion keyed by step id (e.g. step-03).
+  onboardingProgress Json              @default("{}")
   lastReputationSyncAt DateTime?
   createdAt         DateTime           @default(now())
   updatedAt         DateTime           @updatedAt

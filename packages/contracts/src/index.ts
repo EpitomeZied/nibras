@@ -168,6 +168,17 @@ export const MeResponseSchema = z.object({
   memberships: z.array(SessionMembershipSchema).default([]),
 });
 
+export const OnboardingProgressSchema = z.record(z.string(), z.boolean());
+
+export const OnboardingProgressResponseSchema = z.object({
+  progress: OnboardingProgressSchema,
+  suggested: OnboardingProgressSchema.optional(),
+});
+
+export const UpdateOnboardingProgressBodySchema = z.object({
+  progress: OnboardingProgressSchema,
+});
+
 export const ProjectTaskResponseSchema = z.object({
   projectKey: z.string().min(1),
   task: z.string().min(1),
@@ -290,6 +301,8 @@ export type CliConfig = z.infer<typeof CliConfigSchema>;
 export type DeviceStartResponse = z.infer<typeof DeviceStartResponseSchema>;
 export type DevicePollResponse = z.infer<typeof DevicePollResponseSchema>;
 export type MeResponse = z.infer<typeof MeResponseSchema>;
+export type OnboardingProgress = z.infer<typeof OnboardingProgressSchema>;
+export type OnboardingProgressResponse = z.infer<typeof OnboardingProgressResponseSchema>;
 export type ProjectTaskResponse = z.infer<typeof ProjectTaskResponseSchema>;
 export type ProjectStarter = z.infer<typeof ProjectStarterSchema>;
 export type ProjectSetupResponse = z.infer<typeof ProjectSetupResponseSchema>;

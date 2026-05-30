@@ -2,6 +2,8 @@ import { FastifyInstance } from 'fastify';
 import {
   LocalTestResultRequestSchema,
   MeResponseSchema,
+  OnboardingProgressResponseSchema,
+  UpdateOnboardingProgressBodySchema,
   UpdateProfileBodySchema,
   PingResponseSchema,
   ProjectSetupResponseSchema,
@@ -26,6 +28,26 @@ import {
 import { requestBaseUrl } from '../../lib/request-base-url';
 import { clearWebSessionCookie } from '../../lib/web-session';
 import { buildStarterBundleFromStorageKey } from '../../lib/starter-bundles';
+
+function buildSuggestedOnboardingProgress(
+  user: AuthenticatedRequest['user'],
+  memberships: AuthenticatedRequest['memberships']
+): Record<string, boolean> {
+  const suggested: Record<string, boolean> = {};
+  if (user.githubLinked) {
+    suggested['step-03'] = true;
+  }
+  if (user.githubAppInstalled) {
+    suggested['step-github-app'] = true;
+  }
+  if (memberships.some((m) => m.role === 'student')) {
+    suggested['step-join'] = true;
+  }
+  if (memberships.some((m) => ['instructor', 'ta'].includes(m.role))) {
+    suggested['step-04'] = true;
+  }
+  return suggested;
+}
 
 function canAccessProject(auth: AuthenticatedRequest, project: ProjectRecord): boolean {
   return !project.courseId || hasCourseAccess(auth, project.courseId);
@@ -158,6 +180,42 @@ export function registerHostedCliRoutes(
           level: m.level,
         })),
       });
+    }
+  );
+
+  app.get(
+    '/v1/me/onboarding-progress',
+    { schema: { tags: ['auth'], summary: 'Get CLI onboarding checklist progress' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const suggested = buildSuggestedOnboardingProgress(auth.user, auth.memberships);
+      const payload = await store.getOnboardingProgress(
+        requestBaseUrl(request),
+        auth.user.id,
+        suggested
+      );
+      return OnboardingProgressResponseSchema.parse(payload);
+    }
+  );
+
+  app.patch(
+    '/v1/me/onboarding-progress',
+    { schema: { tags: ['auth'], summary: 'Update CLI onboarding checklist progress' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const parsed = UpdateOnboardingProgressBodySchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send(Errors.validation(parsed.error.message));
+      }
+      const progress = await store.updateOnboardingProgress(
+        requestBaseUrl(request),
+        auth.user.id,
+        parsed.data.progress
+      );
+      const suggested = buildSuggestedOnboardingProgress(auth.user, auth.memberships);
+      return OnboardingProgressResponseSchema.parse({ progress, suggested });
     }
   );
 

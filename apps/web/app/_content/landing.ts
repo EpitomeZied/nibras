@@ -246,7 +246,7 @@ export const howItWorksSteps = [
     title: 'Open your academic workspace',
     desc: 'Browse and enroll from the Catalog, join project teams, plan your program, and ask questions — all from one dashboard.',
     cta: 'View CLI guide →',
-    href: '/instructor/onboarding',
+    href: '/setup',
   },
   {
     step: '03',

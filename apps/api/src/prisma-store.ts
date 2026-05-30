@@ -2407,6 +2407,48 @@ export class PrismaStore implements AppStore {
     }
   }
 
+  async getOnboardingProgress(
+    _apiBaseUrl: string,
+    userId: string,
+    suggested: Record<string, boolean> = {}
+  ): Promise<{ progress: Record<string, boolean>; suggested: Record<string, boolean> }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { onboardingProgress: true },
+    });
+    const raw = user?.onboardingProgress;
+    const progress =
+      raw && typeof raw === 'object' && !Array.isArray(raw)
+        ? Object.fromEntries(
+            Object.entries(raw as Record<string, unknown>).filter(
+              (entry): entry is [string, boolean] => typeof entry[1] === 'boolean'
+            )
+          )
+        : {};
+    return { progress, suggested };
+  }
+
+  async updateOnboardingProgress(
+    _apiBaseUrl: string,
+    userId: string,
+    progress: Record<string, boolean>
+  ): Promise<Record<string, boolean>> {
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { onboardingProgress: progress as Prisma.InputJsonValue },
+      select: { onboardingProgress: true },
+    });
+    const raw = updated.onboardingProgress;
+    if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+      return Object.fromEntries(
+        Object.entries(raw as Record<string, unknown>).filter(
+          (entry): entry is [string, boolean] => typeof entry[1] === 'boolean'
+        )
+      );
+    }
+    return {};
+  }
+
   async deleteUserAccount(apiBaseUrl: string, userId: string): Promise<void> {
     await this.seed(apiBaseUrl);
     // Run deletion in a transaction to ensure atomicity

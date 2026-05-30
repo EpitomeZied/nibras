@@ -380,6 +380,10 @@ export const pageTitles: Record<string, { title: string; subtitle: string }> = {
     title: 'CLI Setup Guide',
     subtitle: 'Install the Nibras CLI, authenticate, and submit your first project.',
   },
+  '/setup': {
+    title: 'CLI Setup',
+    subtitle: 'Install the Nibras CLI, join your course, and submit assignments from the terminal.',
+  },
   '/settings': {
     title: 'Settings',
     subtitle: 'Manage your account preferences and connected services.',
