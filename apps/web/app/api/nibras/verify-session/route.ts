@@ -5,9 +5,13 @@ import {
   SERVER_API_VERIFY_DEADLINE_MS,
 } from '@/lib/api-internal-url';
 import { getPublicWebOrigin } from '@/lib/public-origin';
+import { resolvePublicApiBaseUrl, resolveWebSessionMeResponse } from '@/lib/verify-web-session';
 import { NIBRAS_WEB_SESSION_COOKIE } from '@/lib/web-session-cookie';
 
 export const dynamic = 'force-dynamic';
+
+const API_TRANSPORT_ERROR =
+  'Could not reach the Nibras API to verify your session. Try signing in again.';
 
 function getSessionToken(request: NextRequest): string | null {
   const fromQuery = request.nextUrl.searchParams.get('st');
@@ -44,6 +48,13 @@ export async function GET(request: NextRequest) {
   }
 
   const webOrigin = getPublicWebOrigin(request);
+  const apiBaseUrl = resolvePublicApiBaseUrl(webOrigin);
+
+  const localSession = await resolveWebSessionMeResponse(sessionToken, apiBaseUrl);
+  if (localSession) {
+    return NextResponse.json(localSession);
+  }
+
   const candidates = resolveServerApiBaseUrls(webOrigin);
   const deadlineMs = Date.now() + SERVER_API_VERIFY_DEADLINE_MS;
 
@@ -56,9 +67,9 @@ export async function GET(request: NextRequest) {
       break;
     }
 
-    const apiBaseUrl = candidates[index];
+    const candidateBaseUrl = candidates[index];
     const timeoutMs = resolveCandidateTimeoutMs(index, budget);
-    const apiResponse = await fetchSessionFromApi(apiBaseUrl, sessionToken, timeoutMs);
+    const apiResponse = await fetchSessionFromApi(candidateBaseUrl, sessionToken, timeoutMs);
     if (!apiResponse) {
       continue;
     }
@@ -75,7 +86,7 @@ export async function GET(request: NextRequest) {
         lastError = payload.error;
       }
     } catch {
-      lastError = 'Web session was not established.';
+      lastError = API_TRANSPORT_ERROR;
     }
 
     // Auth failures are definitive — no point trying other hosts.

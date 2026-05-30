@@ -381,6 +381,15 @@ Repeat for `nibras-api` if you want `api.nibrasplatform.me` (recommended for
 OAuth callbacks). **Until that DNS record exists**, use the same-origin pattern
 below so sign-in does not hang on `/auth/complete`.
 
+**Sign-in verification (`/auth/complete`):** After GitHub or magic-link sign-in,
+`session-bridge` writes the web session directly to Postgres. The
+`/api/nibras/verify-session` route validates that token via Prisma on `nibras-web`
+(it does **not** require a server-to-server HTTP call to `nibras-api`). Ensure
+`nibras-web` has the same `DATABASE_URL` as `nibras-api`. If you still see
+"Web session was not established", check that `session-bridge` succeeded (no
+`?error=session_bridge_failed` on the home page) and that Better Auth env vars
+are set on `nibras-web` (see table below).
+
 **2. Update GitHub Actions variables** (repo → Settings → Variables):
 
 | Name | Value |
