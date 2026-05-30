@@ -9,20 +9,23 @@ COPY apps/api/package.json ./apps/api/
 COPY packages/contracts/package.json ./packages/contracts/
 COPY packages/core/package.json ./packages/core/
 COPY packages/github/package.json ./packages/github/
+COPY packages/daily-problem/package.json ./packages/daily-problem/
 COPY prisma ./prisma
-RUN npm ci --workspace=@nibras/api --workspace=@nibras/contracts --workspace=@nibras/core --workspace=@nibras/github --include-workspace-root
+RUN npm ci --workspace=@nibras/api --workspace=@nibras/contracts --workspace=@nibras/core --workspace=@nibras/daily-problem --workspace=@nibras/github --include-workspace-root
 
 # ── Build ─────────────────────────────────────────────────────────────────────
 FROM deps AS build
 COPY packages/contracts ./packages/contracts
 COPY packages/core ./packages/core
 COPY packages/github ./packages/github
+COPY packages/daily-problem ./packages/daily-problem
 COPY apps/api ./apps/api
 COPY courses ./courses
 COPY tsconfig.base.json ./
 RUN npm run db:generate
 # Build only the packages needed for API (don't build CLI)
 RUN npm run build -w @nibras/contracts && \
+    npm run build -w @nibras/daily-problem && \
     npm run build -w @nibras/core && \
     npm run build -w @nibras/github && \
     npm run build -w @nibras/api
@@ -39,6 +42,8 @@ COPY --from=build /app/packages/core/dist ./packages/core/dist
 COPY --from=build /app/packages/core/package.json ./packages/core/
 COPY --from=build /app/packages/github/dist ./packages/github/dist
 COPY --from=build /app/packages/github/package.json ./packages/github/
+COPY --from=build /app/packages/daily-problem/dist ./packages/daily-problem/dist
+COPY --from=build /app/packages/daily-problem/package.json ./packages/daily-problem/
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/
 COPY --from=build /app/courses ./courses

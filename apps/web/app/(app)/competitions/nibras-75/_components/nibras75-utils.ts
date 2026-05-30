@@ -1,4 +1,4 @@
-import type { Nibras75Problem, Nibras75Workspace } from '../../../lib/services/competitions';
+import type { Nibras75Problem, Nibras75Workspace } from '../../../../lib/services/competitions';
 
 export type Nibras75Filters = {
   q: string;
