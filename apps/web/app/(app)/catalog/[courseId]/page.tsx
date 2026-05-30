@@ -2,73 +2,26 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useCallback, useEffect, useState } from 'react';
-import type { TrackingCourseDetail } from '@nibras/contracts';
-import { getCourseDetail } from '../../../lib/services/course-profile';
-import { friendlyMessage } from '../../../lib/api-clients/errors';
+import CourseShell, { useCourseShell } from '../_components/course-shell';
 import styles from './page.module.css';
 
-export default function CourseHubPage() {
+function CourseOverviewContent() {
   const params = useParams<{ courseId: string }>();
   const courseId = params?.courseId ?? '';
-  const [course, setCourse] = useState<TrackingCourseDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    if (!courseId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      setCourse(await getCourseDetail(courseId));
-    } catch (err) {
-      setError(friendlyMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [courseId]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const { course, loading, error } = useCourseShell();
 
   if (loading) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.skeleton} />
-      </div>
-    );
+    return <div className={styles.skeleton} />;
   }
 
   if (error || !course) {
-    return (
-      <div className={styles.page}>
-        <p className={styles.error}>{error ?? 'Course not found'}</p>
-        <button type="button" onClick={() => void load()}>
-          Retry
-        </button>
-      </div>
-    );
+    return <p className={styles.error}>{error ?? 'Course not found'}</p>;
   }
 
   const syllabus = course.syllabusJson as Record<string, unknown> | null | undefined;
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <Link href="/courses" className={styles.back}>
-          ← My courses
-        </Link>
-        {course.thumbnailUrl && <img src={course.thumbnailUrl} alt="" className={styles.thumb} />}
-        <div>
-          <h1 className={styles.title}>{course.title}</h1>
-          <p className={styles.meta}>
-            {course.courseCode} · {course.termLabel}
-            {course.isPublic && <span className={styles.publicTag}> · Public</span>}
-          </p>
-        </div>
-      </header>
-
+    <>
       {course.description && <p className={styles.description}>{course.description}</p>}
 
       {syllabus && (
@@ -90,12 +43,6 @@ export default function CourseHubPage() {
           )}
         </section>
       )}
-
-      <div className={styles.stats}>
-        <span>{course.videoProgressPercent ?? 0}% lectures watched</span>
-        <span>{course.publishedAssignmentCount ?? 0} assignments</span>
-        <span>{course.projectCount ?? 0} projects</span>
-      </div>
 
       <div className={styles.grid}>
         <Link href={`/catalog/${courseId}/videos`} className={styles.card}>
@@ -119,6 +66,17 @@ export default function CourseHubPage() {
           <p>Course threads</p>
         </Link>
       </div>
-    </div>
+    </>
+  );
+}
+
+export default function CourseHubPage() {
+  const params = useParams<{ courseId: string }>();
+  const courseId = params?.courseId ?? '';
+
+  return (
+    <CourseShell courseId={courseId}>
+      <CourseOverviewContent />
+    </CourseShell>
   );
 }

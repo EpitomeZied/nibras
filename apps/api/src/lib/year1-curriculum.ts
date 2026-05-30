@@ -3,7 +3,7 @@
  * Planner codes CS101–PHY101 map to these slugs; see docs/year1-curriculum.md.
  */
 import type { Prisma } from '@prisma/client';
-import { CS106A_LECTURE_RESOURCES, CS106A_LECTURES } from './year1-cs106a-lectures';
+import { CS106A_LECTURES } from './year1-cs106a-lectures';
 import { ENG101_LECTURES } from './year1-eng101-lectures';
 
 export type Year1Milestone = {
@@ -42,6 +42,8 @@ export type Year1Lecture = {
   videoTitle?: string;
   sectionSortOrder?: number;
   videoSortOrder?: number;
+  /** Slides, code zips, and other links shown on the lecture player. */
+  resources?: Array<{ label: string; url: string }>;
 };
 
 export type Year1ProjectDefinition = {
@@ -227,7 +229,6 @@ Design two related classes with inheritance. Submit a short design doc and worki
           isFinal: true,
         },
       ],
-      resourcesJson: CS106A_LECTURE_RESOURCES,
     },
   },
   {

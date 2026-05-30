@@ -2,7 +2,12 @@
 
 import Link from 'next/link';
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
-import type { CourseSection, CourseVideo, VideoProvider } from '@nibras/contracts';
+import type {
+  CourseResourceLink,
+  CourseSection,
+  CourseVideo,
+  VideoProvider,
+} from '@nibras/contracts';
 import VideoEmbed from '../../../../_components/VideoEmbed';
 import { friendlyMessage } from '../../../../../lib/api-clients/errors';
 import {
@@ -49,6 +54,7 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
   const [editVideoDesc, setEditVideoDesc] = useState('');
   const [editVideoLinkedProject, setEditVideoLinkedProject] = useState('');
   const [editVideoMoveSection, setEditVideoMoveSection] = useState('');
+  const [editVideoResources, setEditVideoResources] = useState<CourseResourceLink[]>([]);
 
   const { data: projects } = useFetch<Array<{ id: string; title: string; status: string }>>(
     `/v1/tracking/courses/${courseId}/projects`
@@ -210,11 +216,29 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
     setEditVideoDesc(video.description ?? '');
     setEditVideoLinkedProject(video.linkedProjectId ?? '');
     setEditVideoMoveSection(video.sectionId);
+    setEditVideoResources((video.resources ?? []).map((r) => ({ ...r })));
+  }
+
+  function addEditResourceRow() {
+    setEditVideoResources((prev) => [...prev, { label: '', url: '' }]);
+  }
+
+  function updateEditResourceRow(index: number, field: 'label' | 'url', value: string) {
+    setEditVideoResources((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row))
+    );
+  }
+
+  function removeEditResourceRow(index: number) {
+    setEditVideoResources((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function saveVideoEdit(videoId: string) {
     setSaving(true);
     try {
+      const resources = editVideoResources
+        .map((r) => ({ label: r.label.trim(), url: r.url.trim() }))
+        .filter((r) => r.label && r.url);
       await updateCourseVideo(courseId, videoId, {
         title: editVideoTitle.trim() || undefined,
         description: editVideoDesc.trim() || null,
@@ -223,6 +247,7 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
           editVideoMoveSection && editVideoMoveSection !== activeSectionId
             ? editVideoMoveSection
             : undefined,
+        resources,
       });
       setEditingVideoId(null);
       await load();
@@ -447,6 +472,48 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
                                 ))}
                               </select>
                             </label>
+                            <div className={styles.dynamicSection}>
+                              <div className={styles.dynamicSectionHeader}>
+                                <span className={styles.dynamicSectionLabel}>Resources</span>
+                                <button
+                                  type="button"
+                                  className={styles.btnAddRow}
+                                  onClick={addEditResourceRow}
+                                >
+                                  + Add resource
+                                </button>
+                              </div>
+                              {editVideoResources.map((row, index) => (
+                                <div key={index} className={styles.dynamicRow}>
+                                  <input
+                                    type="text"
+                                    placeholder="Label"
+                                    value={row.label}
+                                    onChange={(e) =>
+                                      updateEditResourceRow(index, 'label', e.target.value)
+                                    }
+                                    className={styles.dynamicRowLabel}
+                                  />
+                                  <input
+                                    type="url"
+                                    placeholder="https://…"
+                                    value={row.url}
+                                    onChange={(e) =>
+                                      updateEditResourceRow(index, 'url', e.target.value)
+                                    }
+                                    className={styles.dynamicRowMain}
+                                  />
+                                  <button
+                                    type="button"
+                                    className={styles.btnRemoveRow}
+                                    onClick={() => removeEditResourceRow(index)}
+                                    aria-label="Remove resource"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
                             <div style={{ display: 'flex', gap: 8 }}>
                               <button
                                 type="button"
@@ -473,6 +540,13 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
                                 <span className={styles.muted}>
                                   {' '}
                                   · → {video.linkedProjectTitle}
+                                </span>
+                              )}
+                              {(video.resources?.length ?? 0) > 0 && (
+                                <span className={styles.muted}>
+                                  {' '}
+                                  · {video.resources?.length} resource
+                                  {(video.resources?.length ?? 0) === 1 ? '' : 's'}
                                 </span>
                               )}
                             </span>

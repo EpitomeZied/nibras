@@ -1,6 +1,14 @@
 import { z } from 'zod';
+import { CommunityAuthorSchema } from './community';
 
 export const VideoProviderSchema = z.enum(['youtube', 'bilibili', 'mp4', 'url']);
+
+export const CourseResourceLinkSchema = z.object({
+  label: z.string().min(1).max(200),
+  url: z.string().url().max(2000),
+});
+
+export const CourseResourceLinksSchema = z.array(CourseResourceLinkSchema).max(50);
 
 export const CourseVideoSchema = z.object({
   id: z.string().min(1),
@@ -24,6 +32,7 @@ export const CourseVideoSchema = z.object({
   linkedProjectId: z.string().nullable().optional(),
   linkedMilestoneId: z.string().nullable().optional(),
   linkedProjectTitle: z.string().optional(),
+  resources: z.array(CourseResourceLinkSchema).optional(),
 });
 
 export const CourseSectionSchema = z.object({
@@ -62,6 +71,7 @@ export const CreateCourseVideoRequestSchema = z.object({
   requiresVideoId: z.string().optional(),
   linkedProjectId: z.string().optional(),
   linkedMilestoneId: z.string().optional(),
+  resources: CourseResourceLinksSchema.optional(),
 });
 
 export const UpdateCourseVideoRequestSchema = z.object({
@@ -76,6 +86,24 @@ export const UpdateCourseVideoRequestSchema = z.object({
   requiresVideoId: z.string().nullable().optional(),
   linkedProjectId: z.string().nullable().optional(),
   linkedMilestoneId: z.string().nullable().optional(),
+  resources: CourseResourceLinksSchema.optional(),
+});
+
+export const CourseVideoCommentSchema = z.object({
+  id: z.string().min(1),
+  videoId: z.string().min(1),
+  body: z.string().min(1),
+  author: CommunityAuthorSchema,
+  createdAt: z.string(),
+  updatedAt: z.string().optional(),
+});
+
+export const CourseVideoCommentsResponseSchema = z.object({
+  comments: z.array(CourseVideoCommentSchema),
+});
+
+export const CreateCourseVideoCommentRequestSchema = z.object({
+  body: z.string().min(1).max(2000),
 });
 
 export const VideoProgressRequestSchema = z.object({
@@ -97,3 +125,8 @@ export type UpdateCourseVideoRequest = z.infer<typeof UpdateCourseVideoRequestSc
 export type VideoProgressRequest = z.infer<typeof VideoProgressRequestSchema>;
 export type VideoProgressResponse = z.infer<typeof VideoProgressResponseSchema>;
 export type VideoProvider = z.infer<typeof VideoProviderSchema>;
+export type CourseResourceLink = z.infer<typeof CourseResourceLinkSchema>;
+export type CourseVideoComment = z.infer<typeof CourseVideoCommentSchema>;
+export type CreateCourseVideoCommentRequest = z.infer<
+  typeof CreateCourseVideoCommentRequestSchema
+>;

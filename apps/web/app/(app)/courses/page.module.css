@@ -1,27 +1,63 @@
 .page {
-  max-width: 960px;
+  padding: 32px 24px 56px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 24px 20px 48px;
+  display: grid;
+  gap: 32px;
 }
 
-.header {
-  margin-bottom: 24px;
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(99, 102, 241, 0.2), transparent 36%),
+    radial-gradient(circle at bottom left, rgba(34, 197, 94, 0.1), transparent 34%),
+    linear-gradient(135deg, rgba(18, 18, 18, 0.96), rgba(9, 9, 9, 0.96));
+  box-shadow: var(--shadow-lg);
+  padding: 28px 32px;
 }
 
-.header h1 {
-  font-size: 1.75rem;
+.heroGlow {
+  position: absolute;
+  inset: auto -6% -28% auto;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(99, 102, 241, 0.28), transparent 70%);
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+.heroEyebrow {
+  display: block;
+  font-size: 11px;
   font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--primary-strong);
   margin: 0 0 8px;
 }
 
-.subtitle {
-  color: var(--text-soft);
+.heroTitle {
+  margin: 0 0 8px;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+}
+
+.heroSub {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.65;
+  max-width: 640px;
 }
 
 .muted {
-  color: var(--text-soft);
+  color: var(--text-soft, var(--text-muted));
 }
 
 .error {
@@ -29,7 +65,7 @@
 }
 
 .section {
-  margin-bottom: 32px;
+  margin-bottom: 8px;
 }
 
 .sectionTitle {
@@ -39,31 +75,75 @@
 }
 
 .sectionSub {
-  color: var(--text-soft);
+  color: var(--text-muted);
   margin: 0 0 16px;
   font-size: 0.9rem;
 }
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
 }
 
 .card {
   position: relative;
-  display: block;
-  padding: 18px;
-  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--surface);
   text-decoration: none;
   color: inherit;
-  transition: border-color 0.15s ease;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
 }
 
 .card:hover {
-  border-color: var(--accent, #6366f1);
+  border-color: color-mix(in srgb, var(--primary-strong, #6366f1) 40%, var(--border));
+  transform: translateY(-2px);
+}
+
+.card h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.meta {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.progressWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progressBar {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border) 80%, transparent);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary-strong, #6366f1);
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }
 
 .publicBadge {
@@ -71,30 +151,11 @@
   top: 12px;
   right: 12px;
   font-size: 0.7rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 2px 8px;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--accent, #6366f1) 18%, transparent);
-  color: var(--accent, #6366f1);
-}
-
-.card h2 {
-  font-size: 1.1rem;
-  margin: 0 0 6px;
-  padding-right: 56px;
-}
-
-.meta {
-  font-size: 0.85rem;
-  color: var(--text-soft);
-  margin: 0 0 12px;
-}
-
-.stats {
-  display: flex;
-  gap: 12px;
-  font-size: 0.8rem;
-  color: var(--text-soft);
+  background: color-mix(in srgb, var(--primary-strong, #6366f1) 18%, transparent);
+  color: var(--primary-strong, #6366f1);
 }

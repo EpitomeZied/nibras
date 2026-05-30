@@ -247,6 +247,7 @@ model User {
   communityVotes           CommunityVote[]     @relation("CommunityVoteUser")
   communityThreads         CommunityThread[]   @relation("CommunityThreadAuthor")
   communityPosts           CommunityPost[]     @relation("CommunityPostAuthor")
+  courseVideoComments      CourseVideoComment[] @relation("CourseVideoCommentAuthor")
   communityReports         CommunityReport[]   @relation("CommunityReportReporter")
   communityReportsReviewed CommunityReport[]   @relation("CommunityReportReviewer")
   communityQuestionBookmarks CommunityQuestionBookmark[]
@@ -422,6 +423,7 @@ model CourseVideo {
   requiresVideoId   String?
   linkedProjectId   String?
   linkedMilestoneId String?
+  resourcesJson     Json           @default("[]")
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
   section           CourseSection  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
@@ -429,8 +431,25 @@ model CourseVideo {
   dependentVideos   CourseVideo[]  @relation("VideoPrerequisite")
   linkedProject     Project?       @relation(fields: [linkedProjectId], references: [id], onDelete: SetNull)
   progress          VideoProgress[]
+  comments          CourseVideoComment[]
 
   @@index([sectionId, sortOrder])
+}
+
+model CourseVideoComment {
+  id               String                    @id @default(cuid())
+  videoId          String
+  authorId         String
+  body             String
+  moderationStatus CommunityModerationStatus @default(visible)
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  video            CourseVideo               @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  author           User                      @relation("CourseVideoCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([videoId, createdAt])
+  @@index([authorId])
+  @@index([moderationStatus])
 }
 
 model CourseAssignment {

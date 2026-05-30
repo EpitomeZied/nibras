@@ -83,9 +83,6 @@ export default function AssignmentListView({ courseId }: Props) {
 
   return (
     <div className={styles.page}>
-      <header className={styles.breadcrumb}>
-        <Link href={`/catalog/${courseId}`}>← Course home</Link>
-      </header>
       <h1 className={styles.title}>Assignments</h1>
 
       {loading ? (

@@ -23,6 +23,7 @@ import { registerGitHubRoutes } from './features/github/routes';
 import { registerHostedCliRoutes } from './features/hosted-cli/routes';
 import { registerTrackingRoutes } from './features/tracking/routes';
 import { registerCourseVideoRoutes } from './features/tracking/course-videos';
+import { registerCourseVideoCommentRoutes } from './features/tracking/course-video-comments';
 import { registerCourseAssignmentRoutes } from './features/tracking/course-assignments';
 import { registerCourseProfileRoutes } from './features/tracking/course-profile';
 import { registerCourseGradesRoutes } from './features/tracking/course-grades';
@@ -339,6 +340,7 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
   if (process.env.DATABASE_URL) {
     const prisma = getSharedPrisma();
     registerCourseVideoRoutes(app, store, prisma);
+    registerCourseVideoCommentRoutes(app, store, prisma);
     registerCourseAssignmentRoutes(app, store, prisma);
     registerCourseProfileRoutes(app, store, prisma);
     registerCourseGradesRoutes(app, store, prisma);

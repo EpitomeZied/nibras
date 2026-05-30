@@ -110,6 +110,7 @@ async function upsertLectureVideos(
     const videoSortOrder = globalVideoOrder++;
 
     if (!video) {
+      const resourcesJson = (lecture.resources ?? []) as Prisma.InputJsonValue;
       video = await prisma.courseVideo.create({
         data: {
           sectionId: section.id,
@@ -122,9 +123,11 @@ async function upsertLectureVideos(
           embedUrl: null,
           sortOrder: videoSortOrder,
           requiresVideoId,
+          resourcesJson,
         },
       });
     } else {
+      const resourcesJson = (lecture.resources ?? []) as Prisma.InputJsonValue;
       video = await prisma.courseVideo.update({
         where: { id: video.id },
         data: {
@@ -137,6 +140,7 @@ async function upsertLectureVideos(
           embedUrl: null,
           sortOrder: videoSortOrder,
           requiresVideoId,
+          resourcesJson,
         },
       });
     }

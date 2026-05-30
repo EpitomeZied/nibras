@@ -43,6 +43,17 @@ test('stanford-cs106a includes 73 Code in Place lecture videos', () => {
   assert.equal(sectionTitles.size, 14);
 });
 
+test('stanford-cs106a lectures include per-lecture resources', () => {
+  const cs106a = YEAR1_COURSES.find((c) => c.slug === 'stanford-cs106a');
+  assert.ok(cs106a?.lectures?.length);
+  const withResources = cs106a.lectures.filter((l) => l.resources?.length);
+  assert.ok(withResources.length >= 14);
+  const lecture2 = withResources.find((l) => l.sectionTitle.includes('Lecture 2'));
+  assert.ok(lecture2?.resources?.some((r) => r.label.includes('slides')));
+  assert.ok(lecture2?.resources?.some((r) => r.label.includes('code')));
+  assert.equal(cs106a.project.resourcesJson, undefined);
+});
+
 test('seedYear1Curriculum upserts seven Year 1 courses in database', async (t) => {
   if (!process.env.DATABASE_URL) {
     t.skip('DATABASE_URL not set');

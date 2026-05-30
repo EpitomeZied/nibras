@@ -2,7 +2,9 @@ import { serviceFetch } from '../api-clients/service-fetch';
 import type {
   CourseSection,
   CourseVideo,
+  CourseVideoComment,
   CreateCourseSectionRequest,
+  CreateCourseVideoCommentRequest,
   CreateCourseVideoRequest,
   UpdateCourseSectionRequest,
   UpdateCourseVideoRequest,
@@ -131,6 +133,34 @@ export async function deleteCourseVideo(courseId: string, videoId: string): Prom
   await serviceFetch<{ ok: boolean }>(
     'tracking',
     `/v1/tracking/courses/${courseId}/videos/${videoId}`,
+    { method: 'DELETE', auth: true }
+  );
+}
+
+export async function listVideoComments(videoId: string): Promise<CourseVideoComment[]> {
+  const data = await serviceFetch<{ comments: CourseVideoComment[] }>(
+    'tracking',
+    `/v1/tracking/videos/${videoId}/comments`,
+    { auth: true }
+  );
+  return data.comments;
+}
+
+export async function createVideoComment(
+  videoId: string,
+  payload: CreateCourseVideoCommentRequest
+): Promise<CourseVideoComment> {
+  return serviceFetch<CourseVideoComment>('tracking', `/v1/tracking/videos/${videoId}/comments`, {
+    method: 'POST',
+    auth: true,
+    body: payload as Record<string, unknown>,
+  });
+}
+
+export async function deleteVideoComment(videoId: string, commentId: string): Promise<void> {
+  await serviceFetch<{ ok: boolean }>(
+    'tracking',
+    `/v1/tracking/videos/${videoId}/comments/${commentId}`,
     { method: 'DELETE', auth: true }
   );
 }

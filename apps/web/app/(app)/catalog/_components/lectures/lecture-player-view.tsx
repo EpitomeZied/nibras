@@ -12,6 +12,8 @@ import {
 } from '../../../../lib/services/course-content';
 import { friendlyMessage } from '../../../../lib/api-clients/errors';
 import LectureSidebar from './lecture-sidebar';
+import LectureResourcesPanel from './lecture-resources-panel';
+import LectureCommentsPanel from './lecture-comments-panel';
 import styles from './lecture-player-view.module.css';
 
 type Props = {
@@ -117,10 +119,7 @@ export default function LecturePlayerView({ courseId }: Props) {
 
   return (
     <div className={styles.page}>
-      <header className={styles.breadcrumb}>
-        <Link href={`/catalog/${courseId}`}>← Course home</Link>
-      </header>
-      <h1 className={styles.title}>Videos</h1>
+      <h1 className={styles.title}>Lectures</h1>
 
       {loading ? (
         <div
@@ -200,6 +199,8 @@ export default function LecturePlayerView({ courseId }: Props) {
                     Mark watched
                   </button>
                 </div>
+                <LectureResourcesPanel resources={active.resources ?? []} />
+                <LectureCommentsPanel videoId={active.id} />
               </>
             )}
           </div>

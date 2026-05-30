@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { PrismaClient, VideoProvider } from '@prisma/client';
 import {
+  CourseResourceLinkSchema,
   CourseSectionSchema,
   CourseSectionsResponseSchema,
   CourseVideoSchema,
@@ -32,9 +33,20 @@ type VideoRow = {
   requiresVideoId: string | null;
   linkedProjectId: string | null;
   linkedMilestoneId: string | null;
+  resourcesJson?: unknown;
   section: { id: string; courseId: string; title: string };
   linkedProject?: { id: string; name: string } | null;
 };
+
+export function parseCourseVideoResources(raw: unknown) {
+  if (!Array.isArray(raw)) return [];
+  const out: Array<{ label: string; url: string }> = [];
+  for (const item of raw) {
+    const parsed = CourseResourceLinkSchema.safeParse(item);
+    if (parsed.success) out.push(parsed.data);
+  }
+  return out;
+}
 
 const YOUTUBE_ID_RE = /^[\w-]{11}$/;
 
@@ -184,6 +196,7 @@ function presentVideo(
     linkedProjectId: video.linkedProjectId,
     linkedMilestoneId: video.linkedMilestoneId,
     linkedProjectTitle: video.linkedProject?.name,
+    resources: parseCourseVideoResources(video.resourcesJson),
   });
 }
 
@@ -458,6 +471,7 @@ export function registerCourseVideoRoutes(
           requiresVideoId: body.requiresVideoId ?? null,
           linkedProjectId: body.linkedProjectId ?? null,
           linkedMilestoneId: body.linkedMilestoneId ?? null,
+          resourcesJson: body.resources ?? [],
         },
         include: {
           section: { select: { id: true, courseId: true, title: true } },
@@ -540,6 +554,7 @@ export function registerCourseVideoRoutes(
             body.linkedProjectId !== undefined ? body.linkedProjectId : undefined,
           linkedMilestoneId:
             body.linkedMilestoneId !== undefined ? body.linkedMilestoneId : undefined,
+          ...(body.resources !== undefined ? { resourcesJson: body.resources } : {}),
         },
         include: {
           section: { select: { id: true, courseId: true, title: true } },

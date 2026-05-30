@@ -69,28 +69,38 @@ export default function MyCoursesPage() {
   function renderGrid(items: CourseCard[]) {
     return (
       <div className={styles.grid}>
-        {items.map((course) => (
-          <Link key={course.id} href={`/catalog/${course.id}`} className={styles.card}>
-            {course.isPublic && <span className={styles.publicBadge}>Public</span>}
-            <h2>{course.title}</h2>
-            <p className={styles.meta}>
-              {course.courseCode} · {course.termLabel}
-            </p>
-            <div className={styles.stats}>
-              <span>{course.videoProgressPercent ?? 0}% lectures</span>
-              <span>{course.publishedAssignmentCount ?? 0} assignments</span>
-            </div>
-          </Link>
-        ))}
+        {items.map((course) => {
+          const lecturePct = course.videoProgressPercent ?? 0;
+          return (
+            <Link key={course.id} href={`/catalog/${course.id}`} className={styles.card}>
+              {course.isPublic && <span className={styles.publicBadge}>Public</span>}
+              <h2>{course.title}</h2>
+              <p className={styles.meta}>
+                {course.courseCode} · {course.termLabel}
+              </p>
+              <div className={styles.progressWrap}>
+                <div className={styles.progressBar}>
+                  <div className={styles.progressFill} style={{ width: `${lecturePct}%` }} />
+                </div>
+                <div className={styles.stats}>
+                  <span>{lecturePct}% lectures watched</span>
+                  <span>{course.publishedAssignmentCount ?? 0} assignments</span>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
       </div>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <h1>My Courses</h1>
-        <p className={styles.subtitle}>
+    <main className={styles.page}>
+      <header className={styles.hero}>
+        <div className={styles.heroGlow} aria-hidden />
+        <span className={styles.heroEyebrow}>Courses</span>
+        <h1 className={styles.heroTitle}>My Courses</h1>
+        <p className={styles.heroSub}>
           Open a course hub for lectures, assignments, projects, grades, and discussions. Public
           courses are open to all students without an invite.
         </p>
@@ -130,6 +140,6 @@ export default function MyCoursesPage() {
           {renderGrid(publicCourses)}
         </section>
       )}
-    </div>
+    </main>
   );
 }
