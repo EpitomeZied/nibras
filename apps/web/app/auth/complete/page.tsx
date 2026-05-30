@@ -6,7 +6,7 @@ import styles from './page.module.css';
 
 type LogLine = { text: string; type: 'cmd' | 'info' | 'success' | 'error' | 'muted' };
 
-const VERIFY_TIMEOUT_MS = 12_000;
+const VERIFY_TIMEOUT_MS = 30_000;
 
 async function verifySession(sessionToken: string | null): Promise<void> {
   const verifyUrl = sessionToken
