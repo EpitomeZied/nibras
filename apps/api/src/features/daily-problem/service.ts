@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import type { DailyMilestone } from '@nibras/contracts';
 import { getUserToday, isConsecutiveDay } from '@nibras/daily-problem';
 import { selectDailyProblem } from './selection';
+import { NIBRAS_75_CURRICULUM } from '../competitions/practice/nibras75/curriculum';
 import { GamificationService } from '../gamification/service';
 import { getUserCfData } from '../competitions/practice/codeforces/cf-api';
 
@@ -215,7 +216,12 @@ export async function getTodayAssignment(
       };
     }
 
-    const problem = await selectDailyProblem(prisma, userId, config);
+    const nibras75Config = await prisma.nibras75Config.findUnique({ where: { userId } });
+    const platformProblemIds = nibras75Config?.useForDailyProblem
+      ? NIBRAS_75_CURRICULUM.map((e) => e.slug)
+      : undefined;
+
+    const problem = await selectDailyProblem(prisma, userId, config, { platformProblemIds });
     if (!problem) {
       return {
         paused: false,

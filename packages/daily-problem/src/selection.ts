@@ -12,7 +12,8 @@ function buildDifficultyFilter(prefs: number[]): Prisma.ProblemWhereInput | unde
 export async function selectDailyProblem(
   prisma: PrismaClient,
   userId: string,
-  config: Pick<DailyProblemConfig, 'difficultyPref' | 'tagPrefs'>
+  config: Pick<DailyProblemConfig, 'difficultyPref' | 'tagPrefs'>,
+  options?: { platformProblemIds?: string[] }
 ): Promise<Problem | null> {
   const assignedProblemIds = (
     await prisma.dailyProblemAssignment.findMany({
@@ -31,10 +32,15 @@ export async function selectDailyProblem(
   const excludeIds = [...new Set([...assignedProblemIds, ...solvedProblemIds])];
 
   const difficultyFilter = buildDifficultyFilter(config.difficultyPref);
+  const slugFilter =
+    options?.platformProblemIds && options.platformProblemIds.length > 0
+      ? { platformProblemId: { in: options.platformProblemIds } }
+      : {};
   const where: Prisma.ProblemWhereInput = {
     ...(excludeIds.length > 0 ? { id: { notIn: excludeIds } } : {}),
     ...(difficultyFilter ?? {}),
     ...(config.tagPrefs.length > 0 ? { tags: { hasSome: config.tagPrefs } } : {}),
+    ...slugFilter,
   };
 
   const count = await prisma.problem.count({ where });

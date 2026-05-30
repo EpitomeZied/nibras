@@ -437,6 +437,9 @@ export type Nibras75ProblemsParams = {
   q?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
   solved?: 'true' | 'false';
+  tag?: string;
+  company?: string;
+  sort?: 'rank' | 'difficulty' | 'askedByCount';
 };
 
 export async function getNibras75Problems(
@@ -447,6 +450,10 @@ export async function getNibras75Problems(
   if (params?.q) query.q = params.q;
   if (params?.difficulty) query.difficulty = params.difficulty;
   if (params?.solved) query.solved = params.solved;
+
+  if (params?.tag) query.tag = params.tag;
+  if (params?.company) query.company = params.company;
+  if (params?.sort) query.sort = params.sort;
 
   return serviceFetch<Nibras75ProblemsResponse>('competitions', '/v1/practice/nibras-75/problems', {
     auth: true,
@@ -488,6 +495,76 @@ export async function forkNibras75Workspace(): Promise<{ workspace: Nibras75Work
     '/v1/practice/nibras-75/workspace/fork',
     { method: 'POST', auth: true, body: {} }
   );
+}
+
+export type Nibras75ScopedAnalytics = {
+  solvedInSet: number;
+  totalInSet: number;
+  byDifficulty: {
+    easy: { total: number; solved: number };
+    medium: { total: number; solved: number };
+    hard: { total: number; solved: number };
+  };
+};
+
+export type Nibras75AnalyticsResponse = LcAnalyticsPayload & {
+  nibras75: Nibras75ScopedAnalytics;
+  handle: string;
+};
+
+export async function getNibras75Analytics(
+  handle?: string
+): Promise<Nibras75AnalyticsResponse> {
+  return serviceFetch<Nibras75AnalyticsResponse>('competitions', '/v1/practice/nibras-75/analytics', {
+    auth: true,
+    query: handle ? { handle } : undefined,
+  });
+}
+
+export type Nibras75StatsResponse = {
+  completedInSet: number;
+  curriculumTotal: number;
+  byDifficulty: Nibras75ScopedAnalytics['byDifficulty'];
+  tagMastery: { tag: string; total: number; solved: number }[];
+  calendar: { date: string; count: number }[];
+  nextUnsolved: {
+    rank: number;
+    problemId: string;
+    name: string;
+    url: string;
+    difficulty: string;
+    description: string;
+  } | null;
+  handle: string | null;
+};
+
+export async function getNibras75Stats(handle?: string): Promise<Nibras75StatsResponse> {
+  return serviceFetch<Nibras75StatsResponse>('competitions', '/v1/practice/nibras-75/stats', {
+    auth: true,
+    query: handle ? { handle } : undefined,
+  });
+}
+
+export type Nibras75Config = {
+  weeklyPace: number;
+  targetDate: string | null;
+  useForDailyProblem: boolean;
+};
+
+export async function getNibras75Config(): Promise<{ config: Nibras75Config }> {
+  return serviceFetch<{ config: Nibras75Config }>('competitions', '/v1/practice/nibras-75/config', {
+    auth: true,
+  });
+}
+
+export async function patchNibras75Config(
+  patch: Partial<Nibras75Config>
+): Promise<{ config: Nibras75Config }> {
+  return serviceFetch<{ config: Nibras75Config }>('competitions', '/v1/practice/nibras-75/config', {
+    method: 'PATCH',
+    auth: true,
+    body: patch,
+  });
 }
 
 export type PlatformIntegrationCategory =

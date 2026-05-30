@@ -259,6 +259,7 @@ model User {
   problemProgress          UserProblemProgress[]
   linkedAccounts           LinkedAccount[]
   nibras75Workspace        Nibras75Workspace?
+  nibras75Config           Nibras75Config?
   contestParticipations    UserContestParticipation[]
   cachedRankings           CachedRanking[]
   tutorConversations       TutorConversation[]
@@ -1525,6 +1526,19 @@ model Nibras75Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Nibras75Config {
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  weeklyPace         Int       @default(5)
+  targetDate         DateTime?
+  useForDailyProblem Boolean   @default(false)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }

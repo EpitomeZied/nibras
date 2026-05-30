@@ -2,71 +2,61 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import styles from './page.module.css';
 import EmptyState from '../../_components/widgets/EmptyState';
+import Nibras75Hero from './_components/Nibras75Hero';
+import Nibras75Toolbar from './_components/Nibras75Toolbar';
+import Nibras75ProblemCard from './_components/Nibras75ProblemCard';
+import Nibras75Analytics from './_components/Nibras75Analytics';
+import Nibras75ProgressHeatmap from './_components/Nibras75ProgressHeatmap';
+import Nibras75StudyPlan from './_components/Nibras75StudyPlan';
+import {
+  filtersToSearchParams,
+  parseFiltersFromSearch,
+  type Nibras75Filters,
+} from './_components/nibras75-utils';
 import {
   forkNibras75Workspace,
+  getNibras75Analytics,
+  getNibras75Config,
   getNibras75Problems,
+  getNibras75Stats,
   getNibras75Workspace,
   linkAccount,
+  patchNibras75Config,
   setNibras75ProblemSolved,
+  type Nibras75AnalyticsResponse,
+  type Nibras75Config,
   type Nibras75Problem,
+  type Nibras75StatsResponse,
   type Nibras75Workspace,
 } from '../../../lib/services/competitions';
-import CompanyIcons from './_components/CompanyIcons';
-import { buildIdeProblemUrl } from '../../ide/_content/ide-links';
 import { friendlyMessage } from '../../../lib/api-clients/errors';
 import { discoverApiBaseUrl } from '../../../lib/session';
 import { useSession } from '../../_components/session-context';
 
-/** Set to true when GitHub template fork is ready for production. */
-const FORK_ON_GITHUB_ENABLED = false;
-
-function difficultyClass(d: string): string {
-  if (d === 'Easy') return styles.difficultyEasy;
-  if (d === 'Hard') return styles.difficultyHard;
-  return styles.difficultyMedium;
-}
-
-function ForkOnGitHubButton({ label = 'Fork on GitHub' }: { label?: string }) {
-  return (
-    <button
-      type="button"
-      className={`${styles.linkBtn} ${styles.linkBtnDisabled}`}
-      disabled
-      aria-disabled="true"
-      title="Coming soon"
-    >
-      <span className={styles.forkBtnContent}>
-        <svg
-          className={styles.forkBtnIcon}
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          aria-hidden="true"
-        >
-          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-        </svg>
-        {label}
-        <span className={styles.comingSoonBadge}>Coming soon</span>
-      </span>
-    </button>
-  );
-}
+const DEFAULT_CONFIG: Nibras75Config = {
+  weeklyPace: 5,
+  targetDate: null,
+  useForDailyProblem: false,
+};
 
 export default function Nibras75Page() {
   const { user } = useSession();
+  const searchParams = useSearchParams();
   const githubLinked = Boolean(user?.githubLinked);
+
+  const [filters, setFilters] = useState<Nibras75Filters>(() =>
+    parseFiltersFromSearch(new URLSearchParams(searchParams.toString()))
+  );
+  const [debouncedQ, setDebouncedQ] = useState(filters.q.trim());
+
   const [items, setItems] = useState<Nibras75Problem[]>([]);
   const [total, setTotal] = useState(75);
   const [completedInSet, setCompletedInSet] = useState(0);
   const [curriculumTotal, setCurriculumTotal] = useState(75);
   const [activeHandle, setActiveHandle] = useState<string | null>(null);
-  const [q, setQ] = useState('');
-  const [debouncedQ, setDebouncedQ] = useState('');
-  const [difficulty, setDifficulty] = useState<'all' | 'easy' | 'medium' | 'hard'>('all');
-  const [solvedFilter, setSolvedFilter] = useState<'all' | 'solved' | 'unsolved'>('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [linkHandle, setLinkHandle] = useState('');
@@ -76,13 +66,32 @@ export default function Nibras75Page() {
   const [workspace, setWorkspace] = useState<Nibras75Workspace | null>(null);
   const [forking, setForking] = useState(false);
   const [forkError, setForkError] = useState<string | null>(null);
+  const [stats, setStats] = useState<Nibras75StatsResponse | null>(null);
+  const [analytics, setAnalytics] = useState<Nibras75AnalyticsResponse | null>(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
+  const [config, setConfig] = useState<Nibras75Config>(DEFAULT_CONFIG);
+  const [configSaving, setConfigSaving] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQ(q.trim()), 300);
-    return () => clearTimeout(t);
-  }, [q]);
+    setFilters(parseFiltersFromSearch(new URLSearchParams(searchParams.toString())));
+  }, [searchParams]);
 
-  // After GitHub OAuth, API redirects here with ?st= — persist for apiFetch (see /auth/complete).
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(filters.q.trim()), 300);
+    return () => clearTimeout(t);
+  }, [filters.q]);
+
+  useEffect(() => {
+    const params = filtersToSearchParams({ ...filters, q: debouncedQ });
+    const qs = params.toString();
+    const target = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    const current = `${window.location.pathname}${window.location.search}`;
+    if (current !== target) {
+      window.history.replaceState(null, '', target);
+    }
+  }, [filters, debouncedQ]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const st = params.get('st');
@@ -98,20 +107,27 @@ export default function Nibras75Page() {
     window.location.reload();
   }, []);
 
-  const load = useCallback(async () => {
+  const updateFilters = useCallback((patch: Partial<Nibras75Filters>) => {
+    setFilters((prev) => ({ ...prev, ...patch }));
+  }, []);
+
+  const loadProblems = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const solved =
-        solvedFilter === 'all'
+        filters.solved === 'all'
           ? undefined
-          : solvedFilter === 'solved'
+          : filters.solved === 'solved'
             ? ('true' as const)
             : ('false' as const);
       const data = await getNibras75Problems({
         q: debouncedQ || undefined,
-        difficulty: difficulty === 'all' ? undefined : difficulty,
+        difficulty: filters.difficulty === 'all' ? undefined : filters.difficulty,
         solved,
+        tag: filters.tag || undefined,
+        company: filters.company || undefined,
+        sort: filters.sort,
       });
       setItems(data.items ?? []);
       setTotal(data.total ?? 0);
@@ -124,11 +140,63 @@ export default function Nibras75Page() {
     } finally {
       setLoading(false);
     }
-  }, [debouncedQ, difficulty, solvedFilter]);
+  }, [debouncedQ, filters]);
+
+  const loadStats = useCallback(async () => {
+    try {
+      const data = await getNibras75Stats(activeHandle ?? undefined);
+      setStats(data);
+    } catch {
+      setStats(null);
+    }
+  }, [activeHandle]);
+
+  const loadAnalytics = useCallback(async () => {
+    if (!user || !activeHandle) {
+      setAnalytics(null);
+      return;
+    }
+    setAnalyticsLoading(true);
+    setAnalyticsError(null);
+    try {
+      const data = await getNibras75Analytics(activeHandle);
+      setAnalytics(data);
+    } catch (err) {
+      setAnalyticsError(friendlyMessage(err));
+      setAnalytics(null);
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  }, [activeHandle, user]);
+
+  const loadConfig = useCallback(async () => {
+    if (!user) {
+      setConfig(DEFAULT_CONFIG);
+      return;
+    }
+    try {
+      const data = await getNibras75Config();
+      setConfig(data.config);
+    } catch {
+      setConfig(DEFAULT_CONFIG);
+    }
+  }, [user]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void loadProblems();
+  }, [loadProblems]);
+
+  useEffect(() => {
+    void loadStats();
+  }, [loadStats, completedInSet]);
+
+  useEffect(() => {
+    void loadAnalytics();
+  }, [loadAnalytics]);
+
+  useEffect(() => {
+    void loadConfig();
+  }, [loadConfig]);
 
   useEffect(() => {
     if (!user) {
@@ -168,11 +236,6 @@ export default function Nibras75Page() {
     }
   }
 
-  const progressPct = useMemo(() => {
-    if (curriculumTotal <= 0) return 0;
-    return Math.round((completedInSet / curriculumTotal) * 100);
-  }, [completedInSet, curriculumTotal]);
-
   async function toggleSolved(problem: Nibras75Problem) {
     if (!user) return;
     const next = !problem.solved;
@@ -187,6 +250,7 @@ export default function Nibras75Page() {
         )
       );
       setCompletedInSet((prev) => prev + (next ? 1 : -1));
+      void loadStats();
     } catch (err) {
       setError(friendlyMessage(err));
     } finally {
@@ -202,7 +266,7 @@ export default function Nibras75Page() {
     try {
       await linkAccount({ host: 'leetcode', handle });
       setLinkHandle('');
-      await load();
+      await loadProblems();
     } catch (err) {
       setLinkError(friendlyMessage(err));
     } finally {
@@ -210,104 +274,58 @@ export default function Nibras75Page() {
     }
   }
 
+  async function handleConfigChange(patch: Partial<Nibras75Config>) {
+    if (!user) return;
+    const next = { ...config, ...patch };
+    setConfig(next);
+    setConfigSaving(true);
+    try {
+      const data = await patchNibras75Config(patch);
+      setConfig(data.config);
+    } catch (err) {
+      setError(friendlyMessage(err));
+      void loadConfig();
+    } finally {
+      setConfigSaving(false);
+    }
+  }
+
+  const remaining = useMemo(
+    () => Math.max(0, curriculumTotal - completedInSet),
+    [curriculumTotal, completedInSet]
+  );
+
+  const needsLink = Boolean(user && !activeHandle);
+
   return (
     <div className={styles.page}>
-      <section className={styles.hero}>
-        <span className={styles.badge}>Interview prep</span>
-        <h1 className={styles.title}>Nibras 75</h1>
-        <p className={styles.subtitle}>
-          The essential data structures and algorithms list for software engineering interviews.
-          Master these 75 LeetCode problems — weighted toward what top companies ask most often.
-        </p>
-        <div className={styles.metaRow}>
-          <span className={styles.metaPill}>75 curated questions</span>
-          <span className={styles.metaPill}>LeetCode practice</span>
-          <span className={styles.metaPill}>FAANG-style DSA</span>
-        </div>
-        <div>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: 12,
-              marginBottom: 6,
-            }}
-          >
-            <span style={{ color: 'var(--text-muted)' }}>Questions completed</span>
-            <strong>
-              {completedInSet} / {curriculumTotal}
-            </strong>
-          </div>
-          <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: `${progressPct}%` }} />
-          </div>
-        </div>
-        {user && (
-          <div className={styles.forkRow}>
-            {workspace ? (
-              <>
-                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  Solutions repo:{' '}
-                  <a href={workspace.htmlUrl} target="_blank" rel="noopener noreferrer">
-                    {workspace.fullName}
-                  </a>
-                </span>
-                {workspace.cloneUrl ? (
-                  <code className={styles.cloneHint}>git clone {workspace.cloneUrl}</code>
-                ) : null}
-              </>
-            ) : !FORK_ON_GITHUB_ENABLED ? (
-              <>
-                <ForkOnGitHubButton />
-                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  Private solutions workspace from the Nibras 75 template — available soon.
-                </span>
-              </>
-            ) : !githubLinked ? (
-              <>
-                <button
-                  type="button"
-                  className={styles.linkBtn}
-                  onClick={() => void handleConnectGitHub()}
-                >
-                  Connect GitHub
-                </button>
-                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  Sign in with GitHub to fork your private solutions workspace.
-                </span>
-                {forkError ? (
-                  <span style={{ color: 'var(--status-error-text, #dc2626)', fontSize: 12 }}>
-                    {forkError}
-                  </span>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  className={styles.linkBtn}
-                  disabled={forking}
-                  onClick={() => void handleFork()}
-                >
-                  {forking ? 'Creating repo…' : 'Fork on GitHub'}
-                </button>
-                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                  Creates a private repo from the Nibras 75 template for your solutions.
-                </span>
-                {forkError ? (
-                  <span style={{ color: 'var(--status-error-text, #dc2626)', fontSize: 12 }}>
-                    {forkError}
-                  </span>
-                ) : null}
-              </>
-            )}
-          </div>
-        )}
-      </section>
+      <Nibras75Hero
+        completedInSet={completedInSet}
+        curriculumTotal={curriculumTotal}
+        stats={stats}
+        activeHandle={activeHandle}
+        user={Boolean(user)}
+        githubLinked={githubLinked}
+        workspace={workspace}
+        forking={forking}
+        forkError={forkError}
+        weeklyPace={config.weeklyPace}
+        targetDate={config.targetDate}
+        onConnectGitHub={() => void handleConnectGitHub()}
+        onFork={() => void handleFork()}
+      />
+
+      <Nibras75StudyPlan
+        config={config}
+        remaining={remaining}
+        saving={configSaving}
+        user={Boolean(user)}
+        onChange={(patch) => void handleConfigChange(patch)}
+      />
 
       {user && !activeHandle && (
         <div className={styles.linkRow}>
-          <span style={{ color: 'var(--text-muted)' }}>
+          <span className={styles.mutedText}>
             Link LeetCode to track solved problems in this list:
           </span>
           <input
@@ -324,140 +342,59 @@ export default function Nibras75Page() {
           >
             {linking ? 'Linking…' : 'Link'}
           </button>
-          {linkError && (
-            <span style={{ color: 'var(--status-error-text, #dc2626)' }}>{linkError}</span>
-          )}
+          {linkError && <span className={styles.errorText}>{linkError}</span>}
         </div>
       )}
 
       {user && activeHandle && (
-        <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>
+        <p className={styles.mutedText}>
           Tracking as <strong>{activeHandle}</strong> ·{' '}
           <Link href="/competitions">Manage accounts</Link>
         </p>
       )}
 
       {!user && (
-        <p style={{ margin: 0, fontSize: 13, color: 'var(--text-muted)' }}>
+        <p className={styles.mutedText}>
           <Link href="/connect">Sign in</Link> to mark problems solved and track your progress.
         </p>
       )}
 
-      <div className={styles.toolbar}>
-        <input
-          className={styles.searchInput}
-          placeholder="Search Nibras 75 (e.g. Two Sum, LRU Cache)"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-        />
-        <div className={styles.filterPicker} role="tablist" aria-label="Difficulty">
-          {(['all', 'easy', 'medium', 'hard'] as const).map((d) => (
-            <button
-              key={d}
-              type="button"
-              role="tab"
-              aria-selected={difficulty === d}
-              className={`${styles.filterChip} ${difficulty === d ? styles.filterChipActive : ''}`}
-              onClick={() => setDifficulty(d)}
-            >
-              {d === 'all' ? 'All' : d[0].toUpperCase() + d.slice(1)}
-            </button>
-          ))}
-        </div>
-        <div className={styles.filterPicker} role="tablist" aria-label="Progress">
-          {(['all', 'solved', 'unsolved'] as const).map((s) => (
-            <button
-              key={s}
-              type="button"
-              role="tab"
-              aria-selected={solvedFilter === s}
-              className={`${styles.filterChip} ${solvedFilter === s ? styles.filterChipActive : ''}`}
-              onClick={() => setSolvedFilter(s)}
-            >
-              {s[0].toUpperCase() + s.slice(1)}
-            </button>
-          ))}
-        </div>
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          Showing {total} question{total === 1 ? '' : 's'}
-        </span>
-      </div>
+      <Nibras75ProgressHeatmap stats={stats} />
+
+      <Nibras75Analytics
+        user={Boolean(user)}
+        needsLink={needsLink}
+        loading={analyticsLoading}
+        error={analyticsError}
+        analytics={analytics}
+        activeHandle={activeHandle}
+        onRetry={() => void loadAnalytics()}
+      />
+
+      <Nibras75Toolbar filters={filters} total={total} onChange={updateFilters} />
 
       {loading ? (
-        <div
-          style={{
-            height: 320,
-            borderRadius: 12,
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-          }}
-        />
+        <div className={styles.listSkeleton} />
       ) : error ? (
         <EmptyState
           title="Could not load Nibras 75"
           description={error}
           tone="error"
-          action={{ label: 'Retry', onClick: () => void load() }}
+          action={{ label: 'Retry', onClick: () => void loadProblems() }}
         />
       ) : items.length === 0 ? (
         <EmptyState title="No matches" description="Try another search or filter." />
       ) : (
         <div className={styles.list}>
           {items.map((problem) => (
-            <article
+            <Nibras75ProblemCard
               key={problem.problemId}
-              className={`${styles.card} ${problem.solved ? styles.cardSolved : ''}`}
-            >
-              {user ? (
-                <button
-                  type="button"
-                  className={`${styles.solvedToggle} ${problem.solved ? styles.solvedToggleOn : ''}`}
-                  aria-pressed={problem.solved}
-                  aria-label={problem.solved ? 'Mark as not solved' : 'Mark as solved'}
-                  disabled={togglingSlug === problem.problemId}
-                  onClick={() => void toggleSolved(problem)}
-                >
-                  {togglingSlug === problem.problemId ? '…' : problem.solved ? '✓' : ''}
-                </button>
-              ) : (
-                <span className={styles.rank}>#{problem.rank}</span>
-              )}
-              <div className={styles.body}>
-                <div className={styles.cardHeader}>
-                  <h2 className={styles.problemTitle}>
-                    <span className={styles.rankInline}>#{problem.rank}</span>{' '}
-                    <a href={problem.url} target="_blank" rel="noopener noreferrer">
-                      {problem.name}
-                    </a>
-                  </h2>
-                  <span className={`${styles.difficulty} ${difficultyClass(problem.difficulty)}`}>
-                    {problem.difficulty}
-                  </span>
-                </div>
-                <CompanyIcons companies={problem.companies ?? []} />
-                <p className={styles.description}>{problem.description}</p>
-                <div className={styles.tags}>
-                  {problem.tags.map((tag) => (
-                    <span key={tag} className={styles.tag}>
-                      {tag.replace(/-/g, ' ')}
-                    </span>
-                  ))}
-                </div>
-                <div className={styles.cardActions}>
-                  <Link
-                    href={buildIdeProblemUrl({
-                      source: 'nibras75',
-                      problem: problem.problemId,
-                      title: problem.name,
-                      description: problem.description,
-                    })}
-                    className={styles.ideLink}
-                  >
-                    Open in IDE
-                  </Link>
-                </div>
-              </div>
-            </article>
+              problem={problem}
+              user={Boolean(user)}
+              toggling={togglingSlug === problem.problemId}
+              workspace={workspace}
+              onToggleSolved={toggleSolved}
+            />
           ))}
         </div>
       )}

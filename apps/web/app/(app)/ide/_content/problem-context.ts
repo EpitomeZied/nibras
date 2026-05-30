@@ -1,6 +1,7 @@
 import type { LanguageTemplate } from './templates';
 import { templateForLanguage } from './templates';
 import type { IdeProblemSource } from './ide-links';
+import { NIBRAS_75_STARTERS, type Nibras75Starter } from './nibras75-starters';
 
 export type IdeProblemContext = {
   source: IdeProblemSource;
@@ -11,44 +12,7 @@ export type IdeProblemContext = {
   externalUrl?: string;
 };
 
-type ProblemStarter = {
-  title: string;
-  description: string;
-  sampleStdin?: string;
-};
-
-const NIBRAS_75_STARTERS: Record<string, ProblemStarter> = {
-  'two-sum': {
-    title: 'Two Sum',
-    description: 'Find two numbers that add up to a target and return their indices.',
-    sampleStdin: '4\n2 7 11 15\n9',
-  },
-  'valid-parentheses': {
-    title: 'Valid Parentheses',
-    description: 'Check if brackets are opened and closed in valid order.',
-    sampleStdin: '()[]{}',
-  },
-  'best-time-to-buy-and-sell-stock': {
-    title: 'Best Time to Buy and Sell Stock',
-    description: 'Maximize profit with one buy and one sell.',
-    sampleStdin: '6\n7 1 5 3 6 4',
-  },
-  'longest-substring-without-repeating-characters': {
-    title: 'Longest Substring Without Repeating Characters',
-    description: 'Longest contiguous substring with all unique characters.',
-    sampleStdin: 'abcabcbb',
-  },
-  'merge-intervals': {
-    title: 'Merge Intervals',
-    description: 'Merge all overlapping intervals in a collection.',
-    sampleStdin: '3\n1 3\n2 6\n8 10\n15 18',
-  },
-  'number-of-islands': {
-    title: 'Number of Islands',
-    description: 'Count connected land regions in a grid.',
-    sampleStdin: '4 5\n11110\n11010\n11000\n00000',
-  },
-};
+type ProblemStarter = Nibras75Starter;
 
 function cppStarter(title: string, description: string): string {
   return `// ${title}

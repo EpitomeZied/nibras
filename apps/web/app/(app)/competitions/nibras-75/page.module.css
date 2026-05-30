@@ -462,3 +462,319 @@
   font-size: 13px;
   min-width: 160px;
 }
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .statsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.progressLabel {
+  color: var(--text-muted);
+}
+
+.continueRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.continueBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--primary, #22c55e);
+  color: #052e16;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.continueSecondary {
+  display: inline-flex;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.mutedText {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.errorText {
+  color: var(--status-error-text, #dc2626);
+  font-size: 12px;
+}
+
+.syncLine {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.toolbarBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sortSelect {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tagChip {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.tagChipActive {
+  border-color: var(--primary, #22c55e);
+  color: var(--primary, #22c55e);
+  background: color-mix(in oklab, var(--primary, #22c55e) 12%, var(--surface));
+}
+
+.cardAttempted {
+  border-color: color-mix(in oklab, #eab308 50%, var(--border));
+  background: color-mix(in oklab, #eab308 8%, var(--surface));
+}
+
+.metaBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.freqBadge,
+.badgeManual,
+.badgeSynced,
+.badgeAttempted {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.freqBadge {
+  background: color-mix(in oklab, var(--border) 40%, transparent);
+  color: var(--text-muted);
+}
+
+.badgeManual {
+  background: color-mix(in oklab, #6366f1 18%, transparent);
+  color: #4338ca;
+}
+
+.badgeSynced {
+  background: color-mix(in oklab, #22c55e 18%, transparent);
+  color: #166534;
+}
+
+.badgeAttempted {
+  background: color-mix(in oklab, #eab308 22%, transparent);
+  color: #854d0e;
+}
+
+.panel {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+  background: var(--surface);
+}
+
+.panelTitle {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.analyticsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.analyticsTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.analyticsSkeleton,
+.listSkeleton {
+  height: 320px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.scopedStats {
+  font-size: 14px;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(30, 1fr);
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 640px) {
+  .calendarGrid {
+    grid-template-columns: repeat(15, 1fr);
+  }
+}
+
+.calendarCell {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--border) 50%, transparent);
+}
+
+.calendarCell[data-level='low'] {
+  background: color-mix(in oklab, var(--primary, #22c55e) 35%, transparent);
+}
+
+.calendarCell[data-level='mid'] {
+  background: color-mix(in oklab, var(--primary, #22c55e) 60%, transparent);
+}
+
+.calendarCell[data-level='high'] {
+  background: var(--primary, #22c55e);
+}
+
+.calendarLegend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.legendSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--border) 50%, transparent);
+}
+
+.legendSwatch[data-level='low'] {
+  background: color-mix(in oklab, var(--primary, #22c55e) 35%, transparent);
+}
+
+.legendSwatch[data-level='mid'] {
+  background: color-mix(in oklab, var(--primary, #22c55e) 60%, transparent);
+}
+
+.legendSwatch[data-level='high'] {
+  background: var(--primary, #22c55e);
+}
+
+.masteryList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.masteryRow {
+  display: grid;
+  grid-template-columns: 120px 1fr 48px;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.masteryLabel {
+  text-transform: capitalize;
+  color: var(--text-muted);
+}
+
+.masteryBar {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--border) 60%, transparent);
+  overflow: hidden;
+}
+
+.masteryFill {
+  height: 100%;
+  background: var(--primary, #22c55e);
+}
+
+.masteryPct {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.studyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.studyField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.studyField input[type='number'],
+.studyField input[type='date'] {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: var(--background);
+  color: var(--text);
+}
+
+.studyToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text);
+}

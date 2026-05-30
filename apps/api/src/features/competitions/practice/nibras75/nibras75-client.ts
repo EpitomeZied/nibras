@@ -29,7 +29,80 @@ export type Nibras75ProblemsQuery = {
   q?: string;
   difficulty?: 'easy' | 'medium' | 'hard';
   solved?: 'true' | 'false';
+  tag?: string;
+  company?: string;
+  sort?: 'rank' | 'difficulty' | 'askedByCount';
 };
+
+export function mergeNibras75Status(
+  slug: string,
+  dbProgress: Map<string, { solved: boolean; attempted: boolean }>,
+  lcStatus: Map<string, { solved: boolean; attempted: boolean }>
+): { solved: boolean; attempted: boolean; userMarked: boolean } {
+  const db = dbProgress.get(slug);
+  if (db !== undefined) {
+    return { solved: db.solved, attempted: db.attempted, userMarked: true };
+  }
+  const lc = lcStatus.get(slug);
+  return {
+    solved: lc?.solved ?? false,
+    attempted: lc?.attempted ?? false,
+    userMarked: false,
+  };
+}
+
+export function matchesNibras75Query(
+  entry: Nibras75Entry,
+  query: Nibras75ProblemsQuery,
+  companyIds?: string[]
+): boolean {
+  if (query.q?.trim()) {
+    const q = query.q.trim().toLowerCase();
+    if (
+      !entry.title.toLowerCase().includes(q) &&
+      !entry.slug.includes(q) &&
+      !entry.tags.some((t) => t.includes(q))
+    ) {
+      return false;
+    }
+  }
+  if (query.difficulty) {
+    const label =
+      query.difficulty === 'easy' ? 'Easy' : query.difficulty === 'medium' ? 'Medium' : 'Hard';
+    if (entry.difficulty !== label) return false;
+  }
+  if (query.tag?.trim()) {
+    const tag = query.tag.trim().toLowerCase();
+    if (!entry.tags.some((t) => t.toLowerCase() === tag)) return false;
+  }
+  if (query.company?.trim()) {
+    const company = query.company.trim().toLowerCase();
+    if (!companyIds?.some((id) => id.toLowerCase() === company)) return false;
+  }
+  return true;
+}
+
+const DIFFICULTY_ORDER: Record<string, number> = { Easy: 0, Medium: 1, Hard: 2 };
+
+export function sortNibras75Rows(
+  rows: Nibras75ProblemRow[],
+  sort: Nibras75ProblemsQuery['sort']
+): Nibras75ProblemRow[] {
+  const mode = sort ?? 'rank';
+  const sorted = [...rows];
+  if (mode === 'difficulty') {
+    sorted.sort(
+      (a, b) =>
+        (DIFFICULTY_ORDER[a.difficulty] ?? 1) - (DIFFICULTY_ORDER[b.difficulty] ?? 1) ||
+        a.rank - b.rank
+    );
+  } else if (mode === 'askedByCount') {
+    sorted.sort((a, b) => b.askedByCount - a.askedByCount || a.rank - b.rank);
+  } else {
+    sorted.sort((a, b) => a.rank - b.rank);
+  }
+  return sorted;
+}
 
 async function loadDbProgress(
   prisma: PrismaClient,
@@ -103,23 +176,8 @@ export async function setNibras75ProblemSolved(
   return { solved, problemId: slug };
 }
 
-function matchesQuery(entry: Nibras75Entry, query: Nibras75ProblemsQuery): boolean {
-  if (query.q?.trim()) {
-    const q = query.q.trim().toLowerCase();
-    if (
-      !entry.title.toLowerCase().includes(q) &&
-      !entry.slug.includes(q) &&
-      !entry.tags.some((t) => t.includes(q))
-    ) {
-      return false;
-    }
-  }
-  if (query.difficulty) {
-    const label =
-      query.difficulty === 'easy' ? 'Easy' : query.difficulty === 'medium' ? 'Medium' : 'Hard';
-    if (entry.difficulty !== label) return false;
-  }
-  return true;
+function matchesQuery(entry: Nibras75Entry, query: Nibras75ProblemsQuery, companyIds?: string[]): boolean {
+  return matchesNibras75Query(entry, query, companyIds);
 }
 
 export async function fetchNibras75Problems(
@@ -138,18 +196,7 @@ export async function fetchNibras75Problems(
     loadDbProgress(prisma, userId),
   ]);
 
-  const mergeStatus = (slug: string) => {
-    const db = dbProgress.get(slug);
-    if (db !== undefined) {
-      return { solved: db.solved, attempted: db.attempted, userMarked: true };
-    }
-    const lc = lcStatus.get(slug);
-    return {
-      solved: lc?.solved ?? false,
-      attempted: lc?.attempted ?? false,
-      userMarked: false,
-    };
-  };
+  const mergeStatus = (slug: string) => mergeNibras75Status(slug, dbProgress, lcStatus);
 
   let completedInSet = 0;
   const rows: Nibras75ProblemRow[] = [];
@@ -160,7 +207,6 @@ export async function fetchNibras75Problems(
 
     if (query.solved === 'true' && !st.solved) continue;
     if (query.solved === 'false' && st.solved) continue;
-    if (!matchesQuery(entry, query)) continue;
 
     const companies = pickCompaniesForProblem(entry.slug, entry.askedByCount).map((c) => ({
       id: c.id,
@@ -168,6 +214,8 @@ export async function fetchNibras75Problems(
       domain: c.domain,
       iconUrl: companyIconUrl(c.id),
     }));
+
+    if (!matchesQuery(entry, query, companies.map((c) => c.id))) continue;
 
     rows.push({
       rank: entry.rank,
@@ -185,9 +233,11 @@ export async function fetchNibras75Problems(
     });
   }
 
+  const items = sortNibras75Rows(rows, query.sort);
+
   return {
-    items: rows,
-    total: rows.length,
+    items,
+    total: items.length,
     solvedCount: completedInSet,
     completedInSet,
   };

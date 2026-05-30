@@ -3,13 +3,18 @@ import { CompPlatform, PrismaClient } from '@prisma/client';
 import { GitHubRequestError, type GitHubAppConfig } from '@nibras/github';
 import { optionalUser, requireUser } from '../../lib/auth';
 import { AppStore } from '../../store';
-import { fetchPracticeLcAnalytics } from './practice/leetcode/leetcode-client';
+import {
+  fetchNibras75Analytics,
+  getNibras75Config,
+  upsertNibras75Config,
+} from './practice/nibras75/nibras75-analytics';
 import {
   fetchNibras75Problems,
   getNibras75Meta,
   setNibras75ProblemSolved,
 } from './practice/nibras75/nibras75-client';
 import { forkNibras75Workspace, getNibras75Workspace } from './practice/nibras75/nibras75-fork';
+import { fetchNibras75Stats } from './practice/nibras75/nibras75-stats';
 
 function nibras75ForkErrorStatus(err: unknown, message: string): number {
   if (message.includes('Link your GitHub')) return 400;
@@ -35,6 +40,11 @@ async function resolveLeetcodeHandle(
   return account?.handle;
 }
 
+function parseSort(value?: string): 'rank' | 'difficulty' | 'askedByCount' | undefined {
+  if (value === 'rank' || value === 'difficulty' || value === 'askedByCount') return value;
+  return undefined;
+}
+
 export function registerNibras75Routes(
   app: FastifyInstance,
   store: AppStore,
@@ -51,6 +61,9 @@ export function registerNibras75Routes(
         q?: string;
         difficulty?: string;
         solved?: string;
+        tag?: string;
+        company?: string;
+        sort?: string;
       };
 
       try {
@@ -66,6 +79,9 @@ export function registerNibras75Routes(
           q: q.q,
           difficulty,
           solved,
+          tag: q.tag,
+          company: q.company,
+          sort: parseSort(q.sort),
         });
         const meta = getNibras75Meta();
 
@@ -78,6 +94,24 @@ export function registerNibras75Routes(
           completedInSet: result.completedInSet,
           handle: handle ?? null,
         };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return reply.status(502).send({ error: message });
+      }
+    }
+  );
+
+  app.get(
+    '/v1/practice/nibras-75/stats',
+    { schema: { tags: ['competitions'], summary: 'Nibras 75 progress stats and heatmap' } },
+    async (request, reply) => {
+      const user = await optionalUser(request, reply, store);
+      const query = request.query as { handle?: string };
+
+      try {
+        const handle = await resolveLeetcodeHandle(prisma, user?.id, query.handle);
+        const stats = await fetchNibras75Stats(handle, user?.id, prisma);
+        return { ...stats, handle: handle ?? null };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         return reply.status(502).send({ error: message });
@@ -104,12 +138,60 @@ export function registerNibras75Routes(
             error: 'LeetCode username is required (link account or pass handle)',
           });
         }
-        const body = await fetchPracticeLcAnalytics(handle);
+        const body = await fetchNibras75Analytics(handle, user?.id, prisma);
         return { ...body, handle };
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         return reply.status(502).send({ error: message });
       }
+    }
+  );
+
+  app.get(
+    '/v1/practice/nibras-75/config',
+    { schema: { tags: ['competitions'], summary: 'Get Nibras 75 study plan config' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+
+      const config = await getNibras75Config(prisma, auth.user.id);
+      return {
+        config: config
+          ? {
+              weeklyPace: config.weeklyPace,
+              targetDate: config.targetDate?.toISOString() ?? null,
+              useForDailyProblem: config.useForDailyProblem,
+            }
+          : {
+              weeklyPace: 5,
+              targetDate: null,
+              useForDailyProblem: false,
+            },
+      };
+    }
+  );
+
+  app.patch(
+    '/v1/practice/nibras-75/config',
+    { schema: { tags: ['competitions'], summary: 'Update Nibras 75 study plan config' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+
+      const body = request.body as {
+        weeklyPace?: number;
+        targetDate?: string | null;
+        useForDailyProblem?: boolean;
+      };
+
+      const config = await upsertNibras75Config(prisma, auth.user.id, body);
+      return {
+        config: {
+          weeklyPace: config.weeklyPace,
+          targetDate: config.targetDate?.toISOString() ?? null,
+          useForDailyProblem: config.useForDailyProblem,
+        },
+      };
     }
   );
 
