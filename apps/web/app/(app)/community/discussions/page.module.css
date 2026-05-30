@@ -35,6 +35,9 @@
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
 }
 
 .startBtn:disabled {
@@ -42,14 +45,44 @@
   cursor: not-allowed;
 }
 
-.filters {
+.toolbar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
 }
 
-.coursePicker {
+.searchWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 10px;
+  padding: 6px 12px;
+  flex: 1 1 280px;
+  max-width: 480px;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 13.5px;
+  outline: none;
+  font-family: inherit;
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tabs {
   display: inline-flex;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -57,7 +90,7 @@
   gap: 2px;
 }
 
-.courseChip {
+.tab {
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -68,13 +101,95 @@
   cursor: pointer;
 }
 
+.tab:hover {
+  color: var(--text);
+}
+
+.tabActive {
+  background: color-mix(in oklab, var(--primary, #22c55e) 18%, var(--surface));
+  color: var(--primary, #22c55e);
+}
+
+.courseFilter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-top: 1px dashed var(--border);
+  padding-top: 12px;
+}
+
+.courseChip {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
 .courseChip:hover {
+  border-color: var(--primary, #22c55e);
   color: var(--text);
 }
 
 .courseChipActive {
-  background: color-mix(in oklab, var(--primary, #22c55e) 18%, var(--surface));
+  background: var(--primary, #22c55e);
+  border-color: var(--primary, #22c55e);
+  color: #052e16;
+}
+
+.activeFilters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.activeFilterPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 10px 4px 12px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--primary, #22c55e) 12%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--primary, #22c55e) 30%, var(--border));
+  color: var(--text);
+}
+
+.activeFilterPill strong {
   color: var(--primary, #22c55e);
+  font-weight: 700;
+}
+
+.activeFilterPill button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.clearAllBtn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.clearAllBtn:hover {
+  color: var(--text);
 }
 
 .threadList {
@@ -88,6 +203,7 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
+  justify-content: center;
 }
 
 .threadModActions {
@@ -205,13 +321,25 @@
   overflow: hidden;
 }
 
-.threadMeta {
+.metaRow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
   font-size: 11.5px;
   color: var(--text-muted);
-  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat strong {
+  font-size: 14px;
+  color: var(--text);
 }
 
 .tag {
@@ -222,23 +350,14 @@
   color: var(--text);
 }
 
-.threadStats {
-  text-align: right;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  text-decoration: none;
-  color: inherit;
-}
-
-.threadStats strong {
-  font-size: 16px;
-  color: var(--text);
-}
-
-.threadStats span {
-  font-size: 11px;
-  color: var(--text-muted);
+.courseBadge {
+  font-size: 10.5px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--primary, #22c55e) 12%, var(--surface));
+  border: 1px solid color-mix(in oklab, var(--primary, #22c55e) 25%, var(--border));
+  color: var(--primary, #22c55e);
+  font-weight: 600;
 }
 
 .modalBackdrop {
@@ -294,7 +413,8 @@
 }
 
 .formInput,
-.formTextarea {
+.formTextarea,
+.formSelect {
   border: 1px solid var(--border);
   background: var(--surface);
   border-radius: 8px;
@@ -311,7 +431,8 @@
 }
 
 .formInput:focus,
-.formTextarea:focus {
+.formTextarea:focus,
+.formSelect:focus {
   outline: none;
   border-color: var(--primary, #22c55e);
 }
@@ -352,4 +473,17 @@
 .submitBtn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.pagination {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.paginationLabel {
+  font-size: 13px;
+  opacity: 0.7;
 }

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styles from './page.module.css';
 import CommunityAuthorLink from '../_components/community-author-link';
+import CommunityVerseFooter from '../_components/community-verse-footer';
 import EmptyState from '../../_components/widgets/EmptyState';
 import Skeleton from '../../_components/widgets/Skeleton';
 import MarkdownToolbar from '../../_components/widgets/MarkdownToolbar';
@@ -26,6 +27,15 @@ import { stripMarkdown } from '../../../lib/strip-markdown';
 import { useDebounce } from '../../../lib/hooks/use-debounce';
 
 type DiscussionCourse = { id: string; title: string; courseCode: string };
+type StatusFilter = 'all' | 'open' | 'unanswered';
+
+const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
+  { value: 'all', label: 'All' },
+  { value: 'open', label: 'Open' },
+  { value: 'unanswered', label: 'Unanswered' },
+];
+
+const PAGE_LIMIT = 30;
 
 function formatRelative(iso?: string): string {
   if (!iso) return '';
@@ -42,6 +52,10 @@ function formatRelative(iso?: string): string {
   } catch {
     return iso;
   }
+}
+
+function statusFilterLabel(value: StatusFilter): string {
+  return STATUS_FILTERS.find((s) => s.value === value)?.label ?? value;
 }
 
 export default function DiscussionsPage() {
@@ -62,15 +76,26 @@ export default function DiscussionsPage() {
   const [threadTitle, setThreadTitle] = useState('');
   const [threadBody, setThreadBody] = useState('');
   const [threadTags, setThreadTags] = useState('');
+  const [threadModalCourseId, setThreadModalCourseId] = useState<string>('');
   const [threadSubmitting, setThreadSubmitting] = useState(false);
   const [threadError, setThreadError] = useState<string | null>(null);
   const [feedScope, setFeedScope] = useState<'course' | 'all'>('course');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQ, setSearchQ] = useState('');
   const debouncedSearchQ = useDebounce(searchQ, 300);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const threadBodyRef = useRef<HTMLTextAreaElement>(null);
   const [moderatingId, setModeratingId] = useState<string | null>(null);
 
   const activeCourseId = courseId ?? courses[0]?.id;
+  const showModalCoursePicker = feedScope === 'all' || !courseId;
+  const canStartThread = courses.length > 0;
+
+  function openThreadModal() {
+    setThreadModalCourseId(courseId ?? courses[0]?.id ?? '');
+    setThreadOpen(true);
+  }
 
   async function handleListPinToggle(thread: CommunityThread, event: React.MouseEvent) {
     event.preventDefault();
@@ -114,7 +139,10 @@ export default function DiscussionsPage() {
     event.preventDefault();
     const title = threadTitle.trim();
     const body = threadBody.trim();
-    if (!title || (feedScope === 'course' && !courseId)) return;
+    const targetCourseId = showModalCoursePicker
+      ? threadModalCourseId
+      : (courseId ?? courses[0]?.id);
+    if (!title || !targetCourseId) return;
     setThreadSubmitting(true);
     setThreadError(null);
     try {
@@ -122,8 +150,6 @@ export default function DiscussionsPage() {
         .split(',')
         .map((t) => t.trim())
         .filter(Boolean);
-      const targetCourseId = courseId ?? courses[0]?.id;
-      if (!targetCourseId) throw new Error('No course selected.');
       const created = await createThread(targetCourseId, {
         title,
         body: body || undefined,
@@ -133,6 +159,7 @@ export default function DiscussionsPage() {
       setThreadTitle('');
       setThreadBody('');
       setThreadTags('');
+      setThreadModalCourseId('');
       router.push(`/community/discussions/${created.id}`);
     } catch (err) {
       setThreadError(friendlyMessage(err));
@@ -192,6 +219,7 @@ export default function DiscussionsPage() {
   const load = useCallback(async () => {
     if (feedScope === 'course' && !courseId) {
       setThreads([]);
+      setTotalPages(1);
       setLoading(false);
       return;
     }
@@ -200,19 +228,28 @@ export default function DiscussionsPage() {
     try {
       const response =
         feedScope === 'all'
-          ? await listThreadsAcrossCourses({ limit: 30, q: debouncedSearchQ || undefined })
+          ? await listThreadsAcrossCourses({
+              limit: PAGE_LIMIT,
+              page,
+              q: debouncedSearchQ || undefined,
+            })
           : await listThreads(courseId!, {
-              limit: 30,
+              limit: PAGE_LIMIT,
+              page,
               q: debouncedSearchQ || undefined,
             });
       setThreads(response.items ?? []);
+      const total = response.total ?? 0;
+      const limit = response.limit ?? PAGE_LIMIT;
+      setTotalPages(Math.max(1, Math.ceil(total / limit)));
     } catch (err) {
       setError(friendlyMessage(err));
       setThreads([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  }, [courseId, feedScope, debouncedSearchQ]);
+  }, [courseId, feedScope, debouncedSearchQ, page]);
 
   useEffect(() => {
     const fromUrl = searchParams.get('courseId');
@@ -233,6 +270,10 @@ export default function DiscussionsPage() {
     void load();
   }, [load, courseId, courses, feedScope]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [feedScope, courseId, debouncedSearchQ]);
+
   const sortedThreads = useMemo(() => {
     return [...threads].sort((a, b) => {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
@@ -241,6 +282,29 @@ export default function DiscussionsPage() {
       return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
   }, [threads]);
+
+  const displayedThreads = useMemo(() => {
+    if (statusFilter === 'open') {
+      return sortedThreads.filter((t) => !t.closed);
+    }
+    if (statusFilter === 'unanswered') {
+      return sortedThreads.filter((t) => t.replyCount === 0);
+    }
+    return sortedThreads;
+  }, [sortedThreads, statusFilter]);
+
+  const hasActiveFilters =
+    searchQ.trim().length > 0 ||
+    (feedScope === 'course' && courseId != null) ||
+    statusFilter !== 'all';
+
+  function clearAllFilters() {
+    setSearchQ('');
+    setStatusFilter('all');
+    if (feedScope === 'course' && courses.length > 0) {
+      setCourseId(courses[0].id);
+    }
+  }
 
   useEffect(() => {
     if (!threadOpen) return;
@@ -267,8 +331,8 @@ export default function DiscussionsPage() {
           <button
             type="button"
             className={styles.startBtn}
-            disabled={!courseId}
-            onClick={() => setThreadOpen(true)}
+            disabled={!canStartThread}
+            onClick={openThreadModal}
           >
             Start a thread
           </button>
@@ -297,6 +361,26 @@ export default function DiscussionsPage() {
             <p className={styles.modalHint}>
               Threads are scoped to the selected course. Keep the title focused.
             </p>
+            {showModalCoursePicker && courses.length > 0 && (
+              <div className={styles.formRow}>
+                <label className={styles.formLabel} htmlFor="thread-course">
+                  Course
+                </label>
+                <select
+                  id="thread-course"
+                  className={styles.formSelect}
+                  value={threadModalCourseId}
+                  onChange={(e) => setThreadModalCourseId(e.target.value)}
+                  required
+                >
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {courseNameMap.get(c.id) || c.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className={styles.formRow}>
               <label className={styles.formLabel} htmlFor="thread-title">
                 Title
@@ -308,7 +392,7 @@ export default function DiscussionsPage() {
                 onChange={(e) => setThreadTitle(e.target.value)}
                 placeholder="What do you want to discuss?"
                 maxLength={160}
-                autoFocus
+                autoFocus={!showModalCoursePicker}
                 required
               />
             </div>
@@ -359,7 +443,11 @@ export default function DiscussionsPage() {
               <button
                 type="submit"
                 className={styles.submitBtn}
-                disabled={threadSubmitting || !threadTitle.trim()}
+                disabled={
+                  threadSubmitting ||
+                  !threadTitle.trim() ||
+                  (showModalCoursePicker && !threadModalCourseId)
+                }
               >
                 {threadSubmitting ? 'Posting...' : 'Start thread'}
               </button>
@@ -369,37 +457,60 @@ export default function DiscussionsPage() {
       )}
 
       {courses.length > 0 && (
-        <div className={styles.filters}>
-          <div className={styles.coursePicker} role="tablist" aria-label="Feed scope">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={feedScope === 'all'}
-              className={`${styles.courseChip} ${feedScope === 'all' ? styles.courseChipActive : ''}`}
-              onClick={() => setFeedScope('all')}
-            >
-              All courses
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={feedScope === 'course'}
-              className={`${styles.courseChip} ${feedScope === 'course' ? styles.courseChipActive : ''}`}
-              onClick={() => setFeedScope('course')}
-            >
-              Per course
-            </button>
+        <>
+          <div className={styles.toolbar}>
+            <div className={styles.searchWrap}>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M9 9l3 3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+              <input
+                className={styles.searchInput}
+                placeholder="Search discussions"
+                value={searchQ}
+                onChange={(e) => setSearchQ(e.target.value)}
+              />
+            </div>
+            <div className={styles.toolbarRight}>
+              <div role="tablist" aria-label="Feed scope" className={styles.tabs}>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={feedScope === 'all'}
+                  className={`${styles.tab} ${feedScope === 'all' ? styles.tabActive : ''}`}
+                  onClick={() => setFeedScope('all')}
+                >
+                  All courses
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={feedScope === 'course'}
+                  className={`${styles.tab} ${feedScope === 'course' ? styles.tabActive : ''}`}
+                  onClick={() => setFeedScope('course')}
+                >
+                  Per course
+                </button>
+              </div>
+              <div role="tablist" aria-label="Status filter" className={styles.tabs}>
+                {STATUS_FILTERS.map((s) => (
+                  <button
+                    key={s.value}
+                    type="button"
+                    role="tab"
+                    aria-selected={statusFilter === s.value}
+                    className={`${styles.tab} ${statusFilter === s.value ? styles.tabActive : ''}`}
+                    onClick={() => setStatusFilter(s.value)}
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className={styles.searchWrap} style={{ marginTop: 10 }}>
-            <input
-              className={styles.formInput}
-              placeholder="Search discussions"
-              value={searchQ}
-              onChange={(e) => setSearchQ(e.target.value)}
-            />
-          </div>
+
           {feedScope === 'course' && (
-            <div className={styles.coursePicker} role="tablist" aria-label="Course filter">
+            <div className={styles.courseFilter} role="tablist" aria-label="Course filter">
               {courses.map((c) => (
                 <button
                   key={c.id}
@@ -414,7 +525,49 @@ export default function DiscussionsPage() {
               ))}
             </div>
           )}
-        </div>
+
+          {hasActiveFilters && (
+            <div className={styles.activeFilters}>
+              {searchQ.trim() && (
+                <span className={styles.activeFilterPill}>
+                  search: <strong>{searchQ.trim()}</strong>
+                  <button type="button" aria-label="Clear search" onClick={() => setSearchQ('')}>
+                    ×
+                  </button>
+                </span>
+              )}
+              {feedScope === 'course' && courseId && (
+                <span className={styles.activeFilterPill}>
+                  course: <strong>{courseNameMap.get(courseId) ?? courseId}</strong>
+                  <button
+                    type="button"
+                    aria-label="Clear course filter"
+                    onClick={() => {
+                      if (courses.length > 0) setCourseId(courses[0].id);
+                    }}
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {statusFilter !== 'all' && (
+                <span className={styles.activeFilterPill}>
+                  status: <strong>{statusFilterLabel(statusFilter)}</strong>
+                  <button
+                    type="button"
+                    aria-label="Clear status filter"
+                    onClick={() => setStatusFilter('all')}
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              <button type="button" className={styles.clearAllBtn} onClick={clearAllFilters}>
+                Clear all
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {sessionLoading || coursesLoading ? (
@@ -477,14 +630,18 @@ export default function DiscussionsPage() {
           tone="error"
           action={{ label: 'Retry', onClick: () => void load() }}
         />
-      ) : sortedThreads.length === 0 ? (
+      ) : displayedThreads.length === 0 ? (
         <EmptyState
-          title="No threads yet"
-          description="Be the first to start a discussion in this course."
+          title={statusFilter !== 'all' ? 'No threads match' : 'No threads yet'}
+          description={
+            statusFilter !== 'all'
+              ? 'Try a different status filter or clear your search.'
+              : 'Be the first to start a discussion in this course.'
+          }
         />
       ) : (
         <div className={styles.threadList}>
-          {sortedThreads.map((thread) => (
+          {displayedThreads.map((thread) => (
             <div
               key={thread.id}
               className={`${styles.thread} ${thread.pinned ? styles.threadPinned : ''} ${
@@ -503,7 +660,15 @@ export default function DiscussionsPage() {
                   </div>
                   {thread.body && <p className={styles.snippet}>{stripMarkdown(thread.body)}</p>}
                 </Link>
-                <div className={styles.threadMeta}>
+                <div className={styles.metaRow}>
+                  <span className={styles.stat}>
+                    <strong>{thread.replyCount}</strong> replies
+                  </span>
+                  {feedScope === 'all' && thread.courseId && (
+                    <span className={styles.courseBadge}>
+                      {courseNameMap.get(thread.courseId) ?? thread.courseTitle ?? thread.courseCode ?? 'Course'}
+                    </span>
+                  )}
                   <CommunityAuthorLink author={thread.author} showAvatar avatarSize={18} />
                   <span>·</span>
                   <span>{formatRelative(thread.lastActivityAt ?? thread.createdAt)}</span>
@@ -514,8 +679,8 @@ export default function DiscussionsPage() {
                   ))}
                 </div>
               </div>
-              <div className={styles.threadAside}>
-                {canModerateDiscussion(user, thread.courseId ?? activeCourseId) && (
+              {canModerateDiscussion(user, thread.courseId ?? activeCourseId) && (
+                <div className={styles.threadAside}>
                   <div className={styles.threadModActions}>
                     <button
                       type="button"
@@ -536,16 +701,38 @@ export default function DiscussionsPage() {
                       {thread.closed ? 'Open' : 'Close'}
                     </button>
                   </div>
-                )}
-                <Link href={`/community/discussions/${thread.id}`} className={styles.threadStats}>
-                  <strong>{thread.replyCount}</strong>
-                  <span>replies</span>
-                </Link>
-              </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
       )}
+
+      {totalPages > 1 && !loading && !error && displayedThreads.length > 0 && (
+        <div className={styles.pagination}>
+          <button
+            type="button"
+            className={styles.cancelBtn}
+            disabled={page <= 1}
+            onClick={() => setPage(Math.max(1, page - 1))}
+          >
+            &larr; Previous
+          </button>
+          <span className={styles.paginationLabel}>
+            Page {page} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className={styles.cancelBtn}
+            disabled={page >= totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next &rarr;
+          </button>
+        </div>
+      )}
+
+      <CommunityVerseFooter />
     </div>
   );
 }
