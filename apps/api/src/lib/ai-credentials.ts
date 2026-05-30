@@ -78,24 +78,79 @@ export function resolveProviderPreset(provider: string): AiProviderPreset {
   return AI_PROVIDER_PRESETS[id] ?? AI_PROVIDER_PRESETS.openai;
 }
 
+function providerValidationHeaders(provider: AiProviderId, apiKey: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${apiKey.trim()}`,
+  };
+  if (provider === 'openrouter') {
+    const site =
+      process.env.NIBRAS_WEB_BASE_URL?.trim() ||
+      process.env.NEXT_PUBLIC_NIBRAS_WEB_BASE_URL?.trim() ||
+      'http://127.0.0.1:3000';
+    headers['HTTP-Referer'] = site.replace(/\/$/, '');
+    headers['X-OpenRouter-Title'] = 'Nibras Hassona';
+  }
+  return headers;
+}
+
+async function validateWithChatProbe(provider: AiProviderId, apiKey: string): Promise<void> {
+  const preset = AI_PROVIDER_PRESETS[provider];
+  const response = await fetch(`${preset.baseUrl}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      ...providerValidationHeaders(provider, apiKey),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: preset.defaultModel,
+      messages: [{ role: 'user', content: 'ping' }],
+      max_tokens: 1,
+    }),
+    signal: AbortSignal.timeout(20000),
+  });
+  if (response.status === 401 || response.status === 403) {
+    throw new Error(`Invalid ${preset.name} API key.`);
+  }
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(
+      text.includes('invalid') || text.includes('Unauthorized')
+        ? `Invalid ${preset.name} API key.`
+        : `${preset.name} validation failed (${response.status}). Check the model name and try again.`
+    );
+  }
+}
+
 export async function validateProviderApiKey(
   provider: AiProviderId,
   apiKey: string
 ): Promise<void> {
-  const preset = AI_PROVIDER_PRESETS[provider];
-  const response = await fetch(preset.validateUrl, {
-    headers: { Authorization: `Bearer ${apiKey.trim()}` },
-    signal: AbortSignal.timeout(15000),
-  });
-  if (!response.ok) {
-    const text = await response.text().catch(() => '');
-    const label = preset.name;
-    throw new Error(
-      text.includes('invalid') || response.status === 401
-        ? `Invalid ${label} API key.`
-        : `${label} validation failed (${response.status}).`
-    );
+  if (process.env.NIBRAS_SKIP_AI_KEY_VALIDATION === 'true') {
+    return;
   }
+
+  const preset = AI_PROVIDER_PRESETS[provider];
+  const headers = providerValidationHeaders(provider, apiKey);
+
+  try {
+    const response = await fetch(preset.validateUrl, {
+      headers,
+      signal: AbortSignal.timeout(15000),
+    });
+    if (response.ok) {
+      return;
+    }
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`Invalid ${preset.name} API key.`);
+    }
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Invalid')) {
+      throw err;
+    }
+    // Network or non-auth failure — fall through to chat probe
+  }
+
+  await validateWithChatProbe(provider, apiKey);
 }
 
 /** @deprecated Use validateProviderApiKey */

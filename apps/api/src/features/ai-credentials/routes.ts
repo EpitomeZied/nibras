@@ -63,6 +63,20 @@ export function registerAiCredentialRoutes(
         );
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Could not save API key.';
+        if (
+          message.includes('baseUrl') ||
+          message.includes('Unknown argument') ||
+          message.includes('column') ||
+          message.includes('does not exist')
+        ) {
+          return reply
+            .code(503)
+            .send(
+              Errors.unavailable(
+                'Database schema is outdated. Run npm run db:deploy, then restart the API.'
+              )
+            );
+        }
         return reply.code(400).send(Errors.validation(message));
       }
       return AiCredentialResponseSchema.parse(

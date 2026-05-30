@@ -61,13 +61,27 @@ def _normalize_base_url(url: str | None) -> str | None:
     return cleaned or None
 
 
+def _openrouter_default_headers() -> dict[str, str]:
+    site = (
+        os.getenv("NIBRAS_WEB_BASE_URL")
+        or os.getenv("NEXT_PUBLIC_NIBRAS_WEB_BASE_URL")
+        or "http://127.0.0.1:3000"
+    ).strip().rstrip("/")
+    return {
+        "HTTP-Referer": site,
+        "X-OpenRouter-Title": "Nibras Hassona",
+    }
+
+
 def openai_client_for_request(body: dict) -> tuple[OpenAI | None, str]:
     """Use per-request BYOK credentials when the API proxy forwards them."""
     api_key = (body.get("api_key") or "").strip()
     model = (body.get("model") or "").strip() or CHAT_MODEL
     base_url = _normalize_base_url(body.get("base_url")) or OPENAI_BASE_URL
+    provider = (body.get("provider") or "").strip()
+    default_headers = _openrouter_default_headers() if provider == "openrouter" else None
     if api_key:
-        return OpenAI(api_key=api_key, base_url=base_url), model
+        return OpenAI(api_key=api_key, base_url=base_url, default_headers=default_headers), model
     if platform_client:
         return platform_client, CHAT_MODEL
     return None, model

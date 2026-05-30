@@ -138,6 +138,14 @@ export default function AiIntegrationTab() {
       const keyToSend = apiKey.trim();
       if (!keyToSend && !configured) {
         setStatus(`Enter your ${activeProvider.name} API key.`);
+        setSaving(false);
+        return;
+      }
+      if (!encryptionReady) {
+        setStatus(
+          'Server encryption is not configured. Set NIBRAS_ENCRYPTION_KEY in the API environment (openssl rand -hex 32), then restart the API.'
+        );
+        setSaving(false);
         return;
       }
       const res = await apiFetch('/v1/me/ai-credentials', {
@@ -150,11 +158,6 @@ export default function AiIntegrationTab() {
           model,
         }),
       });
-      if (!res.ok) {
-        const err = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
-        setStatus(err.error ?? err.message ?? `Save failed (${res.status}).`);
-        return;
-      }
       const data = (await res.json()) as AiCredentialState;
       setConfigured(data.configured);
       setMaskedKey(data.maskedKey);
