@@ -32,6 +32,24 @@ async function main() {
   });
   console.log('✅ Admin user: admin@nibras.local (systemRole: admin)');
 
+  await prisma.user.upsert({
+    where: { email: 'support@nibrasplatform.me' },
+    update: {
+      username: 'support',
+      displayName: 'Nibras Support',
+      systemRole: SystemRole.admin,
+      emailVerified: true,
+    },
+    create: {
+      username: 'support',
+      email: 'support@nibrasplatform.me',
+      displayName: 'Nibras Support',
+      systemRole: SystemRole.admin,
+      emailVerified: true,
+    },
+  });
+  console.log('✅ Support user: support@nibrasplatform.me (systemRole: admin)');
+
   // ── 2. Demo Subject ───────────────────────────────────────────────────────
   const subject = await prisma.subject.upsert({
     where: { slug: 'cs161' },

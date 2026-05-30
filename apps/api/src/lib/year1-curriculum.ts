@@ -33,9 +33,15 @@ export type Year1Assignment = {
 };
 
 export type Year1Lecture = {
+  /** Section heading in the lecture sidebar (shared when videoTitle is set). */
   sectionTitle: string;
+  /** Section order; use sectionSortOrder when grouping multiple videos per section. */
   sortOrder: number;
   youtubeId: string;
+  /** When set, multiple entries with the same sectionTitle share one section. */
+  videoTitle?: string;
+  sectionSortOrder?: number;
+  videoSortOrder?: number;
 };
 
 export type Year1ProjectDefinition = {

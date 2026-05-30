@@ -37,7 +37,7 @@ export async function listVideos(courseId: string): Promise<FlatCourseVideo[]> {
     for (const video of section.videos) {
       flat.push({
         ...video,
-        order: video.sortOrder,
+        order: section.sortOrder * 1000 + video.sortOrder,
         url: video.playbackUrl,
       });
     }

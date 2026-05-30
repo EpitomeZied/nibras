@@ -18,25 +18,27 @@ type Props = {
   courseId: string;
 };
 
+function flattenSectionVideos(sections: CourseSection[]): FlatCourseVideo[] {
+  const flat: FlatCourseVideo[] = [];
+  for (const section of sections) {
+    for (const video of section.videos) {
+      flat.push({
+        ...video,
+        order: section.sortOrder * 1000 + video.sortOrder,
+        url: video.playbackUrl,
+      });
+    }
+  }
+  return flat.sort((a, b) => a.order - b.order);
+}
+
 export default function LecturePlayerView({ courseId }: Props) {
   const [sections, setSections] = useState<CourseSection[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const videos = useMemo(() => {
-    const flat: FlatCourseVideo[] = [];
-    for (const section of sections) {
-      for (const video of section.videos) {
-        flat.push({
-          ...video,
-          order: video.sortOrder,
-          url: video.playbackUrl,
-        });
-      }
-    }
-    return flat.sort((a, b) => a.order - b.order);
-  }, [sections]);
+  const videos = useMemo(() => flattenSectionVideos(sections), [sections]);
 
   const load = useCallback(async () => {
     if (!courseId) return;
@@ -45,13 +47,7 @@ export default function LecturePlayerView({ courseId }: Props) {
     try {
       const list = await listCourseSections(courseId);
       setSections(list);
-      const flat: FlatCourseVideo[] = [];
-      for (const section of list) {
-        for (const video of section.videos) {
-          flat.push({ ...video, order: video.sortOrder, url: video.playbackUrl });
-        }
-      }
-      flat.sort((a, b) => a.order - b.order);
+      const flat = flattenSectionVideos(list);
       if (flat.length > 0) setActiveId(flat[0].id);
       else setActiveId(null);
     } catch (err) {

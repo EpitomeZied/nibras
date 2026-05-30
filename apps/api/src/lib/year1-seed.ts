@@ -40,6 +40,34 @@ async function resolveInstructorId(
   return admin?.id ?? null;
 }
 
+function resolveLectureEntry(lecture: Year1Lecture): {
+  sectionTitle: string;
+  sectionSortOrder: number;
+  videoTitle: string;
+  videoSortOrder: number;
+  youtubeId: string;
+  grouped: boolean;
+} {
+  if (lecture.videoTitle != null) {
+    return {
+      sectionTitle: lecture.sectionTitle,
+      sectionSortOrder: lecture.sectionSortOrder ?? lecture.sortOrder,
+      videoTitle: lecture.videoTitle,
+      videoSortOrder: lecture.videoSortOrder ?? 0,
+      youtubeId: lecture.youtubeId,
+      grouped: true,
+    };
+  }
+  return {
+    sectionTitle: lecture.sectionTitle,
+    sectionSortOrder: lecture.sortOrder,
+    videoTitle: lecture.sectionTitle.replace(/^Lecture \d+: /, ''),
+    videoSortOrder: 0,
+    youtubeId: lecture.youtubeId,
+    grouped: false,
+  };
+}
+
 async function upsertLectureVideos(
   prisma: PrismaClient,
   courseId: string,
@@ -48,43 +76,51 @@ async function upsertLectureVideos(
   log: (msg: string) => void
 ): Promise<void> {
   let previousVideoId: string | null = null;
+  let globalVideoOrder = 0;
+  const keptSectionTitles = new Set<string>();
+  const hasGroupedLectures = lectures.some((l) => l.videoTitle != null);
 
   for (const lecture of lectures) {
+    const entry = resolveLectureEntry(lecture);
+    keptSectionTitles.add(entry.sectionTitle);
+
     let section = await prisma.courseSection.findFirst({
-      where: { courseId, title: lecture.sectionTitle },
+      where: { courseId, title: entry.sectionTitle },
     });
     if (!section) {
       section = await prisma.courseSection.create({
         data: {
           courseId,
-          title: lecture.sectionTitle,
-          sortOrder: lecture.sortOrder,
+          title: entry.sectionTitle,
+          sortOrder: entry.sectionSortOrder,
         },
       });
     } else {
       section = await prisma.courseSection.update({
         where: { id: section.id },
-        data: { sortOrder: lecture.sortOrder },
+        data: { sortOrder: entry.sectionSortOrder },
       });
     }
 
-    const videoTitle = lecture.sectionTitle.replace(/^Lecture \d+: /, '');
     let video = await prisma.courseVideo.findFirst({
-      where: { sectionId: section.id, title: videoTitle },
+      where: { sectionId: section.id, title: entry.videoTitle },
     });
 
     const requiresVideoId: string | null = sequential && previousVideoId ? previousVideoId : null;
+    const videoSortOrder = globalVideoOrder++;
 
     if (!video) {
       video = await prisma.courseVideo.create({
         data: {
           sectionId: section.id,
-          title: videoTitle,
-          description: lecture.sectionTitle,
+          title: entry.videoTitle,
+          description: entry.grouped
+            ? `${entry.sectionTitle} — ${entry.videoTitle}`
+            : entry.sectionTitle,
           provider: 'youtube',
-          externalId: lecture.youtubeId,
+          externalId: entry.youtubeId,
           embedUrl: null,
-          sortOrder: 0,
+          sortOrder: videoSortOrder,
           requiresVideoId,
         },
       });
@@ -92,19 +128,36 @@ async function upsertLectureVideos(
       video = await prisma.courseVideo.update({
         where: { id: video.id },
         data: {
-          title: videoTitle,
-          description: lecture.sectionTitle,
+          title: entry.videoTitle,
+          description: entry.grouped
+            ? `${entry.sectionTitle} — ${entry.videoTitle}`
+            : entry.sectionTitle,
           provider: 'youtube',
-          externalId: lecture.youtubeId,
+          externalId: entry.youtubeId,
           embedUrl: null,
-          sortOrder: 0,
+          sortOrder: videoSortOrder,
           requiresVideoId,
         },
       });
     }
 
     previousVideoId = video.id;
-    log(`   🎬 Video: ${videoTitle}`);
+    log(`   🎬 ${entry.sectionTitle} → ${entry.videoTitle}`);
+  }
+
+  if (hasGroupedLectures && keptSectionTitles.size > 0) {
+    const stale = await prisma.courseSection.findMany({
+      where: {
+        courseId,
+        title: { notIn: [...keptSectionTitles] },
+        OR: [{ title: { startsWith: 'Lecture ' } }, { title: { startsWith: 'Unit ' } }],
+      },
+      select: { id: true, title: true },
+    });
+    for (const section of stale) {
+      await prisma.courseSection.delete({ where: { id: section.id } });
+      log(`   🗑 Removed stale section: ${section.title}`);
+    }
   }
 }
 

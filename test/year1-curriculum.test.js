@@ -30,6 +30,8 @@ test('year1-eng101 includes 25 Stanford Writing in the Sciences lectures', () =>
   assert.ok(eng101);
   assert.equal(eng101.lectures?.length, 25);
   assert.equal(eng101.sequentialVideos, true);
+  const sectionTitles = new Set(eng101.lectures?.map((l) => l.sectionTitle));
+  assert.equal(sectionTitles.size, 4);
 });
 
 test('stanford-cs106a includes 73 Code in Place lecture videos', () => {
@@ -37,6 +39,8 @@ test('stanford-cs106a includes 73 Code in Place lecture videos', () => {
   assert.ok(cs106a);
   assert.equal(cs106a.lectures?.length, 73);
   assert.equal(cs106a.sequentialVideos, true);
+  const sectionTitles = new Set(cs106a.lectures?.map((l) => l.sectionTitle));
+  assert.equal(sectionTitles.size, 14);
 });
 
 test('seedYear1Curriculum upserts seven Year 1 courses in database', async (t) => {

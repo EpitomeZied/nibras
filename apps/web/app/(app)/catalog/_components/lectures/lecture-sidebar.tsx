@@ -23,9 +23,11 @@ type Props = {
 };
 
 export default function LectureSidebar({ sections, videos, activeId, onSelect }: Props) {
+  const sectionsWithVideos = sections.filter((section) => section.videos.length > 0);
+
   return (
     <div className={styles.list}>
-      {sections.map((section) => (
+      {sectionsWithVideos.map((section) => (
         <div key={section.id}>
           <div className={styles.sectionLabel}>{section.title}</div>
           {section.videos.map((video) => {
