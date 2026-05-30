@@ -42,14 +42,16 @@
     "seed:stanford": "npx tsx prisma/seed-stanford.ts",
     "seed:stanford-projects": "npx tsx prisma/seed-stanford-projects.ts",
     "seed:open-curricula": "npx tsx prisma/seed-open-curricula.ts",
-    "seed:open-curricula-projects": "npx tsx prisma/seed-open-curricula-projects.ts"
+    "seed:open-curricula-projects": "npx tsx prisma/seed-open-curricula-projects.ts",
+    "seed:year1": "npx tsx prisma/seed-year1.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts",
     "seed:stanford": "npx tsx prisma/seed-stanford.ts",
     "seed:stanford-projects": "npx tsx prisma/seed-stanford-projects.ts",
     "seed:open-curricula": "npx tsx prisma/seed-open-curricula.ts",
-    "seed:open-curricula-projects": "npx tsx prisma/seed-open-curricula-projects.ts"
+    "seed:open-curricula-projects": "npx tsx prisma/seed-open-curricula-projects.ts",
+    "seed:year1": "npx tsx prisma/seed-year1.ts"
   },
   "files": [
     "apps",

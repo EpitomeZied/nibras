@@ -9,7 +9,24 @@ const prisma = new PrismaClient();
 const API_BASE = 'https://nibras-api.fly.dev';
 const RELEASE = '2026-05-25-stanford-v1';
 
-// ── Project definitions per course slug ─────────────────────────────────────
+// ── Project definitions per course slug (subject slug for upsert) ─────────────
+
+/** Tracking course slug candidates (Year 1 v2 uses stanford-*). */
+const COURSE_SLUG_LOOKUP: Record<string, string[]> = {
+  cs106b: ['stanford-cs106b', 'cs106b'],
+  cs107: ['stanford-cs107', 'cs107'],
+  cs221: ['stanford-cs221', 'cs221'],
+  cs224n: ['stanford-cs224n', 'cs224n'],
+  cs231n: ['stanford-cs231n', 'cs231n'],
+};
+
+const SUBJECT_SLUG_BY_KEY: Record<string, string> = {
+  cs106b: 'cs106b',
+  cs107: 'cs107',
+  cs221: 'cs221',
+  cs224n: 'cs224n',
+  cs231n: 'cs231n',
+};
 
 const PROJECTS: Record<
   string,
@@ -639,24 +656,34 @@ Implement a **Variational Autoencoder**:
 
 // ── Main ────────────────────────────────────────────────────────────────────
 
+async function resolveCourse(courseKey: string) {
+  const candidates = COURSE_SLUG_LOOKUP[courseKey] ?? [courseKey];
+  for (const slug of candidates) {
+    const course = await prisma.course.findUnique({ where: { slug } });
+    if (course) return course;
+  }
+  return null;
+}
+
 async function main() {
   console.log('🚀 Seeding Stanford projects...\n');
 
   let totalProjects = 0;
+  let coursesSeeded = 0;
 
-  for (const [courseSlug, projects] of Object.entries(PROJECTS)) {
-    // Look up the course
-    const course = await prisma.course.findUnique({ where: { slug: courseSlug } });
+  for (const [courseKey, projects] of Object.entries(PROJECTS)) {
+    const course = await resolveCourse(courseKey);
     if (!course) {
-      console.warn(`⚠️  Course not found: ${courseSlug} — skipping`);
+      console.warn(`⚠️  Course not found (${courseKey}) — skipping`);
       continue;
     }
+    coursesSeeded++;
 
-    // Upsert subject
+    const subjectSlug = SUBJECT_SLUG_BY_KEY[courseKey] ?? courseKey;
     const subject = await prisma.subject.upsert({
-      where: { slug: courseSlug },
+      where: { slug: subjectSlug },
       update: { name: course.courseCode },
-      create: { slug: courseSlug, name: course.courseCode },
+      create: { slug: subjectSlug, name: course.courseCode },
     });
 
     console.log(`📚 ${course.courseCode} (${projects.length} projects)`);
@@ -739,9 +766,7 @@ async function main() {
     console.log('');
   }
 
-  console.log(
-    `🎉 Done! ${totalProjects} projects seeded across ${Object.keys(PROJECTS).length} courses.`
-  );
+  console.log(`🎉 Done! ${totalProjects} projects seeded across ${coursesSeeded} courses.`);
 }
 
 main()

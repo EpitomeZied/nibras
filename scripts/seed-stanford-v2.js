@@ -1,217 +1,22 @@
 'use strict';
 // Stanford CS Curriculum v2 — one Course per subject, grouped by Year
-// Run: flyctl ssh console --app nibras-api --command "node /app/seed-stanford-v2.js"
+// Year 1 Foundation: shared module (apps/api/src/lib/year1-seed.ts)
+// Run: npm run seed:year1  OR  flyctl ssh console --command "node /app/scripts/seed-stanford-v2.js"
+
+const { register } = require('tsx/cjs/api');
+register();
 
 const { PrismaClient } = require('@prisma/client');
+const { seedYear1Curriculum, seedYear2Cs107 } = require('../apps/api/src/lib/year1-seed.ts');
 const prisma = new PrismaClient();
 
-const INSTRUCTOR_ID = 'cmnmguy3l0000u5hpqtm9ebci'; // EpitomeZied
+const INSTRUCTOR_ID = process.env.NIBRAS_INSTRUCTOR_USER_ID || 'cmnmguy3l0000u5hpqtm9ebci';
 
 // Old year-level courses to remove
 const OLD_COURSE_SLUGS = ['stanford-cs-y1', 'stanford-cs-y2', 'stanford-cs-y3', 'stanford-cs-y4'];
 
-// ── Curriculum (one Course per subject) ──────────────────────────────────────
+// ── Curriculum (Years 2–4; Year 1 via year1-seed.ts) ─────────────────────────
 const CURRICULUM = [
-  // ─ YEAR 1: FRESHMAN ─────────────────────────────────────────────────────
-  {
-    year: 1,
-    yearLabel: 'Year 1 · Freshman',
-    courses: [
-      {
-        course: {
-          slug: 'stanford-cs106a',
-          courseCode: 'CS 106A',
-          title: 'Programming Methodology',
-          termLabel: 'Year 1 · Freshman',
-        },
-        project: {
-          subject: { slug: 'cs106a', name: 'CS 106A' },
-          slug: 'cs106a-main',
-          name: 'CS 106A — Programming Methodology',
-          description:
-            'Introduction to programming using Python. Covers variables, control flow, functions, and object-oriented programming. The entry point to the Stanford CS curriculum.',
-          level: 1,
-          rubric: [
-            { criterion: 'Correctness', maxScore: 50 },
-            { criterion: 'Code Quality & Decomposition', maxScore: 30 },
-            { criterion: 'Write-up & Explanation', maxScore: 20 },
-          ],
-          milestones: [
-            {
-              title: 'Variables, Expressions & Control Flow',
-              description:
-                'Write Python programs using variables, arithmetic expressions, and control flow (if/while/for). Complete Karel exercises 1–5.',
-              order: 0,
-            },
-            {
-              title: 'Functions & Decomposition',
-              description:
-                'Implement recursive and iterative functions. Apply top-down decomposition to solve multi-step problems.',
-              order: 1,
-            },
-            {
-              title: 'Object-Oriented Programming',
-              description:
-                'Define classes, constructors, and methods. Implement inheritance and polymorphism in a simple class hierarchy.',
-              order: 2,
-            },
-            {
-              title: 'Final: Karel the Robot',
-              description:
-                'Build a fully-functional Karel world using all OOP principles learned. Submit your GitHub repo and a short write-up explaining your design.',
-              order: 3,
-              isFinal: true,
-            },
-          ],
-        },
-      },
-      {
-        course: {
-          slug: 'stanford-cs106b',
-          courseCode: 'CS 106B',
-          title: 'Programming Abstractions',
-          termLabel: 'Year 1 · Freshman',
-        },
-        project: {
-          subject: { slug: 'cs106b', name: 'CS 106B' },
-          slug: 'cs106b-main',
-          name: 'CS 106B — Programming Abstractions',
-          description:
-            'C++ programming with a focus on abstraction, recursion, and fundamental data structures: stacks, queues, sets, maps, trees, and graphs.',
-          level: 1,
-          rubric: [
-            { criterion: 'Correctness & Edge Cases', maxScore: 50 },
-            { criterion: 'Algorithm Efficiency', maxScore: 30 },
-            { criterion: 'Code Clarity', maxScore: 20 },
-          ],
-          milestones: [
-            {
-              title: 'Recursion Fundamentals',
-              description:
-                'Solve classic recursive problems: permutations, Towers of Hanoi, fractal drawing. Implement backtracking search.',
-              order: 0,
-            },
-            {
-              title: 'Abstract Data Types (Stack, Queue, Map, Set)',
-              description:
-                'Implement and use Stack, Queue, Set, and Map. Analyse time complexity of each operation. Solve a real problem using each ADT.',
-              order: 1,
-            },
-            {
-              title: 'Trees & Priority Queues',
-              description:
-                'Implement a binary search tree with insert, search, and delete. Build a min-heap and use it for Huffman encoding.',
-              order: 2,
-            },
-            {
-              title: 'Final: Huffman Encoder/Decoder',
-              description:
-                'Build a complete file compression tool using Huffman coding. Benchmark compression ratio vs. gzip on a test corpus.',
-              order: 3,
-              isFinal: true,
-            },
-          ],
-        },
-      },
-      {
-        course: {
-          slug: 'stanford-cs103',
-          courseCode: 'CS 103',
-          title: 'Mathematical Foundations of Computing',
-          termLabel: 'Year 1 · Freshman',
-        },
-        project: {
-          subject: { slug: 'cs103', name: 'CS 103' },
-          slug: 'cs103-main',
-          name: 'CS 103 — Mathematical Foundations of Computing',
-          description:
-            'Logic, proofs, sets, functions, relations, finite automata, regular languages, and an introduction to computability and complexity.',
-          level: 1,
-          rubric: [
-            { criterion: 'Proof Correctness & Rigour', maxScore: 60 },
-            { criterion: 'Formal Notation', maxScore: 20 },
-            { criterion: 'Clarity of Argument', maxScore: 20 },
-          ],
-          milestones: [
-            {
-              title: 'Propositional Logic & Proof Techniques',
-              description:
-                'Write formal proofs using direct proof, contradiction, and induction. Solve 10 logic puzzles and submit proofs.',
-              order: 0,
-            },
-            {
-              title: 'Sets, Functions & Relations',
-              description:
-                'Prove properties of sets and functions (injective, surjective, bijective). Solve problems on equivalence relations and partial orders.',
-              order: 1,
-            },
-            {
-              title: 'Finite Automata & Regular Languages',
-              description:
-                'Construct DFAs and NFAs. Convert NFA→DFA. Prove languages non-regular using the Pumping Lemma.',
-              order: 2,
-            },
-            {
-              title: 'Final: Computability & Complexity',
-              description:
-                'Prove a language is undecidable via reduction from the Halting Problem. Solve 3 NP-completeness reductions. Write a 4-page proof report.',
-              order: 3,
-              isFinal: true,
-            },
-          ],
-        },
-      },
-      {
-        course: {
-          slug: 'stanford-cs107',
-          courseCode: 'CS 107',
-          title: 'Computer Organization & Systems',
-          termLabel: 'Year 1 · Freshman',
-        },
-        project: {
-          subject: { slug: 'cs107', name: 'CS 107' },
-          slug: 'cs107-main',
-          name: 'CS 107 — Computer Organization & Systems',
-          description:
-            'C programming, data representation, memory layout, x86-64 assembly, caching, and the toolchain (gcc, gdb, valgrind, make).',
-          level: 1,
-          rubric: [
-            { criterion: 'Memory Safety (Valgrind-clean)', maxScore: 40 },
-            { criterion: 'Correctness', maxScore: 40 },
-            { criterion: 'Performance', maxScore: 20 },
-          ],
-          milestones: [
-            {
-              title: 'C Programming & Pointers',
-              description:
-                'Write C programs using pointers, arrays, and structs. Debug memory errors with valgrind. Implement a linked list and hash table in C.',
-              order: 0,
-            },
-            {
-              title: 'Bits, Bytes & Memory',
-              description:
-                "Implement integer encoding (two's complement), floating-point bit manipulation, and a bitset. Analyse memory alignment and padding.",
-              order: 1,
-            },
-            {
-              title: 'x86-64 Assembly',
-              description:
-                'Read and hand-trace x86-64 assembly from compiled C. Implement 3 functions in inline assembly. Optimise a hot loop using SIMD intrinsics.',
-              order: 2,
-            },
-            {
-              title: 'Final: Custom Memory Allocator',
-              description:
-                'Implement malloc, realloc, and free using an explicit free-list with coalescing. Achieve ≥ 60% memory utilisation on the trace files provided.',
-              order: 3,
-              isFinal: true,
-            },
-          ],
-        },
-      },
-    ],
-  },
-
   // ─ YEAR 2: SOPHOMORE ────────────────────────────────────────────────────
   {
     year: 2,
@@ -849,7 +654,18 @@ async function removeOldYearCourses() {
 async function seed() {
   await removeOldYearCourses();
 
-  console.log('🎓  Seeding Stanford CS — individual courses per subject…\n');
+  console.log('🎓  Seeding Year 1 Foundation (shared module)…\n');
+  await seedYear1Curriculum(prisma, {
+    log: (msg) => console.log(msg),
+    instructorUserId: INSTRUCTOR_ID,
+  });
+  await seedYear2Cs107(prisma, {
+    log: (msg) => console.log(msg),
+    instructorUserId: INSTRUCTOR_ID,
+  });
+  console.log('');
+
+  console.log('🎓  Seeding Stanford CS Years 2–4…\n');
 
   for (const { year, yearLabel, courses } of CURRICULUM) {
     console.log(`── ${yearLabel} ${'─'.repeat(50 - yearLabel.length)}`);
