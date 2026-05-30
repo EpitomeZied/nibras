@@ -44,6 +44,8 @@ import {
   listCs106lProjectDefinitions,
   readCs106lTaskText,
 } from './lib/cs106l';
+import { seedOpenCurricula } from './lib/open-curricula-seed';
+import { seedOpenCurriculaProjects } from './lib/open-curricula-projects-seed';
 import {
   buildDashboardHomeRecord,
   buildInstructorHomeDashboard,
@@ -1762,6 +1764,9 @@ export class PrismaStore implements AppStore {
         skipDuplicates: true,
       });
     }
+    await seedOpenCurricula(this.prisma);
+    await seedOpenCurriculaProjects(this.prisma, apiBaseUrl);
+
     this.seeded = true;
   }
 
@@ -2973,7 +2978,11 @@ export class PrismaStore implements AppStore {
 
     const [yearCourses, publicCourses, membershipCourses] = await Promise.all([
       this.prisma.course.findMany({
-        where: { isActive: true, deletedAt: null, termLabel: { startsWith: `Year ${studentLevel}` } },
+        where: {
+          isActive: true,
+          deletedAt: null,
+          termLabel: { startsWith: `Year ${studentLevel}` },
+        },
         orderBy: { createdAt: 'asc' },
       }),
       this.prisma.course.findMany({
@@ -3062,7 +3071,7 @@ export class PrismaStore implements AppStore {
     const memberIds = new Set(memberships.map((entry) => entry.courseId));
     const requestByCourse = new Map(requests.map((entry) => [entry.courseId, entry]));
 
-      return courses.map((course) => {
+    return courses.map((course) => {
       const request = requestByCourse.get(course.id);
       let enrollmentRequestStatus: import('./store').CourseBrowseItemRecord['enrollmentRequestStatus'] =
         'none';
@@ -3085,11 +3094,7 @@ export class PrismaStore implements AppStore {
     });
   }
 
-  async enrollInPublicCourse(
-    apiBaseUrl: string,
-    userId: string,
-    courseId: string
-  ): Promise<void> {
+  async enrollInPublicCourse(apiBaseUrl: string, userId: string, courseId: string): Promise<void> {
     await this.seed(apiBaseUrl);
     const course = await this.prisma.course.findFirst({
       where: { id: courseId, isActive: true, isPublic: true, deletedAt: null },
@@ -3182,7 +3187,9 @@ export class PrismaStore implements AppStore {
     courseId: string,
     opts?: { status?: 'pending' | 'approved' | 'rejected' }
   ): Promise<
-    Array<import('./store').CourseEnrollmentRequestRecord & { username: string; githubLogin: string }>
+    Array<
+      import('./store').CourseEnrollmentRequestRecord & { username: string; githubLogin: string }
+    >
   > {
     await this.seed(apiBaseUrl);
     const rows = await this.prisma.courseEnrollmentRequest.findMany({
@@ -3233,7 +3240,9 @@ export class PrismaStore implements AppStore {
         data: { status: 'approved', reviewedBy: reviewerId, reviewedAt: now },
       }),
     ]);
-    const updated = await this.prisma.courseEnrollmentRequest.findUnique({ where: { id: requestId } });
+    const updated = await this.prisma.courseEnrollmentRequest.findUnique({
+      where: { id: requestId },
+    });
     if (!updated) return null;
     return {
       id: updated.id,

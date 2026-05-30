@@ -35,6 +35,12 @@ npm run db:push          # Push schema without migration (dev only)
 npm run db:migrate       # Create a named migration
 npm run db:deploy        # Apply migrations (production path)
 npm run db:local:reset   # Tear down and recreate local Docker DB (destructive)
+
+# Optional curriculum seeds (not run by default prisma db seed)
+npm run seed:stanford
+npm run seed:stanford-projects
+npm run seed:open-curricula          # MIT Missing Semester + similar public courses
+npm run seed:open-curricula-projects
 ```
 
 ## Architecture
