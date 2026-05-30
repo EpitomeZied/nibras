@@ -480,9 +480,35 @@ open http://127.0.0.1:3000
 
 ### CLI Installation
 
+#### One-line install (recommended)
+
+Cross-platform installers download the release script, verify Node.js/npm/git, and install the pinned `@nibras/cli` package from npm.
+
+**macOS · Linux · Git Bash:**
+
+```bash
+curl -fsSL "https://github.com/nibras-platform/nibras/releases/download/v2.0.0/install.sh" | bash
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm "https://github.com/nibras-platform/nibras/releases/download/v2.0.0/install.ps1" | iex
+```
+
+**From a checkout:**
+
+```bash
+bash scripts/install.sh
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/install.ps1
+```
+
 #### Install from NPM (Global)
 
-The published `@nibras/cli` package is available on npm:
+The published `@nibras/cli` package is also available on npm:
 
 ```bash
 # Install the latest stable version

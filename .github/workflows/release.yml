@@ -72,6 +72,14 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --workspace apps/cli --access public --dry-run
 
+      - name: Prepare cross-platform install scripts
+        run: |
+          VERSION="$(node -p "require('./apps/cli/package.json').version")"
+          for script in install.sh install.ps1; do
+            sed "s/@NIBRAS_CLI_VERSION@/${VERSION}/g" "scripts/${script}" > "/tmp/${script}"
+            chmod +x "/tmp/install.sh" 2>/dev/null || true
+          done
+
       - name: Publish CLI to npm
         run: npm publish --workspace apps/cli --access public
         env:
@@ -81,3 +89,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          files: |
+            /tmp/install.sh
+            /tmp/install.ps1

@@ -13,9 +13,12 @@ import {
   buildHostedLoginCommand,
   buildStudentQuickStart,
   discoverOnboardingApiBaseUrl,
+  getInstallCommand,
   getInstallTroubleshootingCommand,
   getOnboardingConfigPath,
   getOnboardingDirExample,
+  getUnixInstallCommand,
+  getWindowsInstallCommand,
   NPM_INSTALL_COMMAND,
   PINNED_RELEASE_TAG,
 } from './onboarding-content.js';
@@ -1048,6 +1051,7 @@ export default function OnboardingPage() {
   const dirExample = getOnboardingDirExample(os, windowsShell);
   const loginCommand = hostedApiBaseUrl ? buildHostedLoginCommand(hostedApiBaseUrl) : null;
   const studentQuickStart = hostedApiBaseUrl ? buildStudentQuickStart(hostedApiBaseUrl) : null;
+  const primaryInstallCommand = getInstallCommand(os, windowsShell);
   const installTroubleshootingCommand = getInstallTroubleshootingCommand(os, windowsShell);
 
   const loginOutput: TerminalLine[] = [
@@ -1374,9 +1378,9 @@ export default function OnboardingPage() {
             onToggleComplete={() => toggleStep('step-02')}
           >
             <p className={styles.bodyText}>
-              Install the current CLI release ({PINNED_RELEASE_TAG}) directly from the GitHub
-              release. This makes the <code className={styles.inlineCode}>nibras</code> command
-              available everywhere in your terminal.
+              Install the current CLI release ({PINNED_RELEASE_TAG}) with the one-line installer for
+              your platform. It checks Node.js and npm, removes stale global installs, and installs
+              the pinned <code className={styles.inlineCode}>@nibras/cli</code> package from npm.
             </p>
             <VideoPlaceholder title="Installing the Nibras CLI" />
 
@@ -1395,13 +1399,32 @@ export default function OnboardingPage() {
               </div>
             )}
 
-            <OsCode
-              os={os}
-              mac={NPM_INSTALL_COMMAND}
-              linux={NPM_INSTALL_COMMAND}
-              windows={NPM_INSTALL_COMMAND}
-            />
-            <p className={styles.hint}>This installs the pinned @nibras/cli release from npm.</p>
+            {os === 'windows' ? (
+              <>
+                <WindowsShellTabs shell={windowsShell} setShell={setWindowsShell} />
+                <CliCodeBlock code={primaryInstallCommand} />
+              </>
+            ) : (
+              <OsCode
+                os={os}
+                mac={getUnixInstallCommand()}
+                linux={getUnixInstallCommand()}
+                windows={getWindowsInstallCommand()}
+              />
+            )}
+            <p className={styles.hint}>
+              Prefer npm directly? Run <code className={styles.inlineCode}>{NPM_INSTALL_COMMAND}</code>
+              .
+            </p>
+            <p className={styles.hint}>
+              From a git clone:{' '}
+              <code className={styles.inlineCode}>bash scripts/install.sh</code> (macOS / Linux /
+              Git Bash) or{' '}
+              <code className={styles.inlineCode}>
+                powershell -ExecutionPolicy Bypass -File scripts/install.ps1
+              </code>{' '}
+              (Windows).
+            </p>
             <p className={styles.hint}>
               Verify: <code className={styles.inlineCode}>nibras --version</code> should start with{' '}
               <code className={styles.inlineCode}>{PINNED_RELEASE_TAG}</code>, for example{' '}

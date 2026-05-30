@@ -219,13 +219,41 @@ git --version
 
 ## 2. Install the Nibras CLI
 
-Install the pinned release from npm. Run this in your terminal (all platforms):
+Use the one-line installer for your platform. It checks prerequisites, cleans up stale installs, and installs the pinned release from npm.
+
+### macOS · Linux · Git Bash
+
+```bash
+curl -fsSL "https://github.com/nibras-platform/nibras/releases/download/v2.0.0/install.sh" | bash
+```
+
+### Windows (PowerShell)
+
+Open a **new** PowerShell window (not Command Prompt):
+
+```powershell
+irm "https://github.com/nibras-platform/nibras/releases/download/v2.0.0/install.ps1" | iex
+```
+
+### Alternative — npm only
+
+If you prefer not to use the installer script:
 
 ```bash
 npm install -g @nibras/cli@2.0.0
 ```
 
-If npm returns `404 Not Found`, ask your instructor or admin to confirm that this CLI release has been published to npm.
+### From a source checkout
+
+```bash
+bash scripts/install.sh
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/install.ps1
+```
+
+If npm returns `404 Not Found`, ask your instructor or admin to confirm that this CLI release has been published to npm and attached to the GitHub release.
 
 > **Behind a corporate proxy?** Set `npm_config_https_proxy` and `npm_config_proxy` before running, or configure them in `.npmrc`.
 

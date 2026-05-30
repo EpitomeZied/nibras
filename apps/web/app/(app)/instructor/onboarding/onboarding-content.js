@@ -1,8 +1,34 @@
 import { discoverApiBaseUrlWith, normalizeApiBaseUrl } from '../../../lib/session-core.js';
 
 export const PINNED_RELEASE_TAG = 'v2.0.0';
+export const CLI_RELEASE_REPO = 'nibras-platform/nibras';
 export const NPM_INSTALL_COMMAND = 'npm install -g @nibras/cli@2.0.0';
-export const GIT_INSTALL_COMMAND = NPM_INSTALL_COMMAND;
+
+export function getReleaseInstallAssetUrl(tag, filename) {
+  return `https://github.com/${CLI_RELEASE_REPO}/releases/download/${tag}/${filename}`;
+}
+
+/** One-line install for macOS, Linux, and Git Bash (uses GitHub release assets). */
+export function getUnixInstallCommand(tag = PINNED_RELEASE_TAG) {
+  const url = getReleaseInstallAssetUrl(tag, 'install.sh');
+  return `curl -fsSL "${url}" | bash`;
+}
+
+/** One-line install for Windows PowerShell (uses GitHub release assets). */
+export function getWindowsInstallCommand(tag = PINNED_RELEASE_TAG) {
+  const url = getReleaseInstallAssetUrl(tag, 'install.ps1');
+  return `irm "${url}" | iex`;
+}
+
+export function getInstallCommand(os, windowsShell = 'powershell', tag = PINNED_RELEASE_TAG) {
+  if (os === 'windows') {
+    if (windowsShell === 'gitbash') {
+      return getUnixInstallCommand(tag);
+    }
+    return getWindowsInstallCommand(tag);
+  }
+  return getUnixInstallCommand(tag);
+}
 
 export function getOnboardingConfigPath(os) {
   if (os === 'windows') {

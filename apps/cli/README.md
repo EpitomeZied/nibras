@@ -4,6 +4,20 @@ Official Nibras command-line interface for hosted project setup, testing, and su
 
 ## Install
 
+**macOS · Linux · Git Bash:**
+
+```bash
+curl -fsSL "https://github.com/nibras-platform/nibras/releases/download/v2.0.0/install.sh" | bash
+```
+
+**Windows (PowerShell):**
+
+```powershell
+irm "https://github.com/nibras-platform/nibras/releases/download/v2.0.0/install.ps1" | iex
+```
+
+**npm (all platforms):**
+
 ```bash
 npm install -g @nibras/cli@2.0.0
 ```
