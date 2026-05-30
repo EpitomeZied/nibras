@@ -44,7 +44,9 @@
     "seed:open-curricula": "npx tsx prisma/seed-open-curricula.ts",
     "seed:open-curricula-projects": "npx tsx prisma/seed-open-curricula-projects.ts",
     "seed:year1": "npx tsx prisma/seed-year1.ts",
-    "seed:year2": "npx tsx prisma/seed-year2.ts"
+    "seed:year2": "npx tsx prisma/seed-year2.ts",
+    "seed:year3": "npx tsx prisma/seed-year3.ts",
+    "seed:year4": "npx tsx prisma/seed-year4.ts"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts",
@@ -53,7 +55,9 @@
     "seed:open-curricula": "npx tsx prisma/seed-open-curricula.ts",
     "seed:open-curricula-projects": "npx tsx prisma/seed-open-curricula-projects.ts",
     "seed:year1": "npx tsx prisma/seed-year1.ts",
-    "seed:year2": "npx tsx prisma/seed-year2.ts"
+    "seed:year2": "npx tsx prisma/seed-year2.ts",
+    "seed:year3": "npx tsx prisma/seed-year3.ts",
+    "seed:year4": "npx tsx prisma/seed-year4.ts"
   },
   "files": [
     "apps",

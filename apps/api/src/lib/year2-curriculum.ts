@@ -3,45 +3,8 @@
  * Planner codes CS201–CS206 map to these slugs; see docs/year2-curriculum.md.
  */
 import type { Prisma } from '@prisma/client';
-import type {
-  Year1Assignment,
-  Year1CourseDefinition,
-  Year1Milestone,
-  Year1ProjectDefinition,
-  Year1RubricItem,
-} from './year1-curriculum';
-
-function project(
-  subject: { slug: string; name: string },
-  slug: string,
-  name: string,
-  description: string,
-  level: number,
-  rubric: Year1RubricItem[],
-  milestones: Year1Milestone[]
-): Year1ProjectDefinition {
-  return { subject, slug, name, description, level, rubric, milestones };
-}
-
-function assignments(
-  items: Array<{
-    title: string;
-    description: string;
-    content: string;
-    dueAt: string;
-    pointsPossible?: number;
-    sortOrder?: number;
-  }>
-): Year1Assignment[] {
-  return items.map((item, index) => ({
-    pointsPossible: item.pointsPossible ?? 100,
-    sortOrder: item.sortOrder ?? index,
-    title: item.title,
-    description: item.description,
-    content: item.content,
-    dueAt: item.dueAt,
-  }));
-}
+import type { Year1CourseDefinition } from './year1-curriculum';
+import { curriculumAssignments as assignments, curriculumProject as project } from './curriculum-helpers';
 
 const CS107: Year1CourseDefinition = {
   slug: 'stanford-cs107',

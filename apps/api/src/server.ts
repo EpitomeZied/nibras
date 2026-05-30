@@ -61,22 +61,26 @@ async function syncCurriculumOnStartup(): Promise<void> {
 
   const { seedYear1Curriculum } = await import('./lib/year1-seed');
   const { seedYear2Curriculum } = await import('./lib/year2-seed');
+  const { seedYear3Curriculum } = await import('./lib/year3-seed');
+  const { seedYear4Curriculum } = await import('./lib/year4-seed');
   const { getSharedPrisma } = await import('./lib/prisma');
   try {
     const prisma = getSharedPrisma();
     await seedYear1Curriculum(prisma);
     await seedYear2Curriculum(prisma);
+    await seedYear3Curriculum(prisma);
+    await seedYear4Curriculum(prisma);
     console.log(
       JSON.stringify({
         level: 'info',
-        msg: 'Year 1 and Year 2 curricula synced on startup',
+        msg: 'Years 1–4 curricula synced on startup',
       })
     );
   } catch (err) {
     console.error(
       JSON.stringify({
         level: 'error',
-        msg: 'Year 1 and Year 2 curriculum sync failed on startup',
+        msg: 'Years 1–4 curriculum sync failed on startup',
         error: err instanceof Error ? err.message : String(err),
       })
     );
