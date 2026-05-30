@@ -189,6 +189,7 @@ export async function getUserAiCredentialPublic(
   userId: string
 ): Promise<{
   configured: boolean;
+  tutorAvailable: boolean;
   provider: string;
   model: string;
   baseUrl: string | null;
@@ -196,10 +197,12 @@ export async function getUserAiCredentialPublic(
   encryptionReady: boolean;
 }> {
   const encryptionReady = getEncryptionKeyStatus() === 'ok';
+  const platformTutor = hasPlatformAiKey();
   const row = await prisma.userAiCredential.findUnique({ where: { userId } });
   if (!row) {
     return {
       configured: false,
+      tutorAvailable: platformTutor,
       provider: 'openai',
       model: AI_PROVIDER_PRESETS.openai.defaultModel,
       baseUrl: null,
@@ -216,6 +219,7 @@ export async function getUserAiCredentialPublic(
   const preset = resolveProviderPreset(row.provider);
   return {
     configured: true,
+    tutorAvailable: true,
     provider: row.provider,
     model: row.model,
     baseUrl: row.baseUrl?.trim() || preset.baseUrl,

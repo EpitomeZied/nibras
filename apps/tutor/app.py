@@ -934,7 +934,8 @@ OUTPUT FORMAT — STRICT JSON ONLY
   "tags": ["tag1", "tag2"],
   "reasoning": "",
   "concepts_used": ["concept1", "concept2"],
-  "might_be_unclear": ["term1", "term2"]
+  "might_be_unclear": ["term1", "term2"],
+  "follow_ups": ["follow-up question 1", "follow-up question 2"]
 }
 """
 
@@ -944,14 +945,24 @@ def generate_ai_answer(
     question: str,
     history: list = None,
     *,
+    context: str = "",
     oai_client: OpenAI | None = None,
     model: str | None = None,
     using_personal_key: bool = False,
 ) -> dict:
     try:
-        active_client = oai_client or client
+        active_client = oai_client or platform_client
         active_model = model or CHAT_MODEL
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        system_content = SYSTEM_PROMPT
+        if context:
+            system_content += (
+                f"\n\n════════════════════════════════\n"
+                f"STUDENT CONTEXT\n"
+                f"════════════════════════════════\n"
+                f"{context}\n"
+                f"Tailor hints and examples to this context when relevant."
+            )
+        messages = [{"role": "system", "content": system_content}]
         if history:
             for msg in history[-10:]:
                 role = msg.get("role", "user")
@@ -989,11 +1000,17 @@ def generate_ai_answer(
         if not isinstance(might_be_unclear, list):
             might_be_unclear = []
 
+        follow_ups = data.get("follow_ups", [])
+        if not isinstance(follow_ups, list):
+            follow_ups = []
+        follow_ups = [str(q).strip() for q in follow_ups if str(q).strip()][:3]
+
         return {
             "status":           "ok",
             "answer":           answer,
             "hints":            hints,
             "tags":             data.get("tags", ["systems"]),
+            "follow_ups":       follow_ups,
             # XAI
             "reasoning":        reasoning,
             "concepts_used":    concepts_used,
@@ -1049,12 +1066,14 @@ def ask():
         })
 
     history = body.get("history", [])
+    context = body.get("context", "").strip()
     oai_client, chat_model, client_err = require_llm_client(body)
     if client_err:
         return jsonify(client_err), 503
     ai_response = generate_ai_answer(
         question,
         history=history,
+        context=context,
         oai_client=oai_client,
         model=chat_model,
         using_personal_key=request_uses_personal_api_key(body),
@@ -1091,6 +1110,7 @@ def ask():
                 "question":      matched_q["question_text"],
                 "votesCount":    matched_q.get("votesCount", 0),
                 "answersCount":  matched_q.get("answersCount", 0),
+                "follow_ups":    ai_response.get("follow_ups", []),
                 # XAI
                 "xai":           xai,
             },
@@ -1103,6 +1123,7 @@ def ask():
             "answer":   ai_answer,
             "hints":    ai_hints,
             "tags":     ai_tags,
+            "follow_ups": ai_response.get("follow_ups", []),
             # XAI
             "xai":      xai,
         },

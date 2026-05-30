@@ -19,10 +19,19 @@ export type ChatAskResponse = {
   answer: string;
   hints: string[];
   tags: string[];
+  followUps: string[];
+  communityQuestionId: string | null;
   communityQuestion: string | null;
   matchScore: number | null;
   xai: XaiData | null;
   refused?: boolean;
+};
+
+export type ExplainTermResponse = {
+  term: string;
+  explanation: string;
+  example: string;
+  related: string[];
 };
 
 export type ChatPublishRequest = {
@@ -99,6 +108,17 @@ export async function ask(payload: ChatAskRequest): Promise<ChatAskResponse> {
     method: 'POST',
     auth: true,
     body: payload as unknown as Record<string, unknown>,
+  });
+}
+
+export async function explainTerm(payload: {
+  term: string;
+  context?: string;
+}): Promise<ExplainTermResponse> {
+  return serviceFetch<ExplainTermResponse>('community', '/v1/community/chatbot/explain', {
+    method: 'POST',
+    auth: true,
+    body: payload,
   });
 }
 

@@ -947,6 +947,7 @@ export function registerCommunityRoutes(
       question_id?: string;
       question?: string;
       match_score?: number;
+      follow_ups?: string[];
       xai?: {
         reasoning?: string;
         concepts_used?: string[];
@@ -985,6 +986,7 @@ export function registerCommunityRoutes(
             await tutorRequestPayload(auth.user.id, {
               question: body.question,
               history: body.history ?? [],
+              context: body.context?.trim() ?? '',
             })
           ),
           signal: AbortSignal.timeout(30000),
@@ -1031,8 +1033,10 @@ export function registerCommunityRoutes(
           answer: data?.answer || '',
           hints: data?.hints || [],
           tags: data?.tags || [],
-          communityQuestion: data?.question_id || null,
-          matchScore: data?.match_score || null,
+          followUps: data?.follow_ups || [],
+          communityQuestionId: data?.question_id || null,
+          communityQuestion: data?.question || null,
+          matchScore: data?.match_score ?? null,
           xai: data?.xai || null,
         };
 
@@ -1061,7 +1065,7 @@ export function registerCommunityRoutes(
                     xaiConcepts: result.xai?.concepts_used ?? [],
                     xaiUnclear: result.xai?.might_be_unclear ?? [],
                     responseType: chatBotResponse.type ?? null,
-                    communityQuestionId: result.communityQuestion,
+                    communityQuestionId: result.communityQuestionId,
                     matchScore: result.matchScore,
                   },
                 ],
@@ -1080,6 +1084,60 @@ export function registerCommunityRoutes(
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
         reply.code(502).send(Errors.unavailable(`AI Tutor request failed: ${message}`));
+      }
+    }
+  );
+
+  app.post(
+    '/v1/community/chatbot/explain',
+    { schema: { tags: ['community'], summary: 'Explain an unclear term from a tutor answer' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const body = request.body as { term?: string; context?: string };
+      if (!body.term?.trim()) {
+        reply.code(400).send(Errors.validation('term is required.'));
+        return;
+      }
+      if (!CHATBOT_V1_URL) {
+        reply.code(503).send(Errors.unavailable('AI Tutor service is not configured.'));
+        return;
+      }
+      const access = await resolveTutorAccess(auth.user.id, reply);
+      if (!access) return;
+      try {
+        const resp = await fetch(`${CHATBOT_V1_URL}/api/explain`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            await tutorRequestPayload(auth.user.id, {
+              term: body.term.trim(),
+              context: body.context?.trim() ?? '',
+            })
+          ),
+          signal: AbortSignal.timeout(30000),
+        });
+        const rawBody = await resp.text().catch(() => '');
+        let parsed: Record<string, unknown> | null = null;
+        try {
+          parsed = rawBody ? (JSON.parse(rawBody) as Record<string, unknown>) : null;
+        } catch {
+          parsed = null;
+        }
+        if (!resp.ok || !parsed) {
+          const detail =
+            (typeof parsed?.error === 'string' ? parsed.error : null) ||
+            rawBody ||
+            'Explain request failed.';
+          reply
+            .code(resp.status >= 500 ? resp.status : 502)
+            .send(Errors.unavailable(String(detail).slice(0, 300)));
+          return;
+        }
+        return parsed;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        reply.code(502).send(Errors.unavailable(`Explain request failed: ${message}`));
       }
     }
   );

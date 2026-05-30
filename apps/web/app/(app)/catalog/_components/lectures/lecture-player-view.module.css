@@ -120,6 +120,30 @@
   border-color: var(--primary, #22c55e);
 }
 
+.videoActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.askHassonaBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in oklab, var(--primary, #22c55e) 40%, var(--border));
+  background: color-mix(in oklab, var(--primary, #22c55e) 10%, var(--surface));
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.askHassonaBtn:hover {
+  border-color: var(--primary, #22c55e);
+}
+
 .projectLink {
   margin-top: 8px;
   font-size: 14px;

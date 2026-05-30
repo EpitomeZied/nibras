@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { IdeProblemContext } from '../_content/problem-context';
+import { buildTutorAskHref } from '../../tutor/_content/tutor-context';
 import styles from '../page.module.css';
 
 type ProblemBannerProps = {
@@ -23,6 +24,16 @@ export default function ProblemBanner({ context, onDismiss }: ProblemBannerProps
         <p className={styles.problemBannerDesc}>{context.description}</p>
       </div>
       <div className={styles.problemBannerActions}>
+        <Link
+          href={buildTutorAskHref({
+            problem: context.slug,
+            problemSource: context.source,
+            prompt: `I'm stuck on "${context.title}". Can you give me a hint without spoiling the solution?`,
+          })}
+          className={styles.secondaryButton}
+        >
+          Ask Hassona
+        </Link>
         <Link href={backHref} className={styles.secondaryButton}>
           Back to list
         </Link>

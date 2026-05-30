@@ -17,6 +17,9 @@ export type ChatMessage = {
   hints?: string[];
   tags?: string[];
   xai?: XaiData | null;
+  communityQuestionId?: string | null;
+  communityQuestion?: string | null;
+  matchScore?: number | null;
 };
 
 export type ChatPanelProps = {
@@ -25,6 +28,7 @@ export type ChatPanelProps = {
   onFollowUp?: (text: string) => void;
   onExplainTerm?: (term: string, context: string) => void;
   onRetry?: (messageId: string) => void;
+  onRegenerate?: (messageId: string) => void;
   placeholder?: string;
   composerHint?: string;
   busy?: boolean;
@@ -33,6 +37,33 @@ export type ChatPanelProps = {
   renderContent?: (message: ChatMessage) => React.ReactNode;
   suggestedPrompts?: string[];
 };
+
+function HintsAccordion({ hints }: { hints: string[] }) {
+  const [open, setOpen] = useState(false);
+  const useful = hints.filter((hint) => hint.trim() && !/no hints needed/i.test(hint));
+  if (useful.length === 0) return null;
+
+  return (
+    <div className={styles.hintsSection}>
+      <button
+        type="button"
+        className={styles.hintsToggle}
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span>Need a nudge?</span>
+        <span className={`${styles.xaiChevron} ${open ? styles.xaiChevronOpen : ''}`}>&#9660;</span>
+      </button>
+      <div className={`${styles.hintsContent} ${open ? styles.hintsContentOpen : ''}`}>
+        <ol className={styles.hintsList}>
+          {useful.map((hint, idx) => (
+            <li key={`${idx}-${hint.slice(0, 24)}`}>{hint}</li>
+          ))}
+        </ol>
+      </div>
+    </div>
+  );
+}
 
 function XaiAccordion({
   xai,
@@ -110,6 +141,7 @@ export default function ChatPanel({
   onFollowUp,
   onExplainTerm,
   onRetry,
+  onRegenerate,
   placeholder = 'Ask the tutor a question…',
   composerHint,
   busy,
@@ -145,9 +177,22 @@ export default function ChatPanel({
 
   const lastUserContent = [...messages].reverse().find((m) => m.role === 'user')?.content ?? '';
 
+  async function copyText(text: string) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // clipboard unavailable
+    }
+  }
+
   return (
     <div className={styles.panel}>
-      <div className={styles.scroller} ref={scrollerRef}>
+      <div
+        className={styles.scroller}
+        ref={scrollerRef}
+        aria-live="polite"
+        aria-relevant="additions"
+      >
         {messages.length === 0 ? (
           <div className={styles.empty}>
             <strong>{emptyTitle}</strong>
@@ -192,10 +237,35 @@ export default function ChatPanel({
                     )}
                   </>
                 )}
+                {!message.pending && !message.error && message.content && (
+                  <button
+                    type="button"
+                    className={styles.copyBtn}
+                    onClick={() => void copyText(message.content)}
+                    title="Copy message"
+                  >
+                    Copy
+                  </button>
+                )}
+                {message.role === 'assistant' &&
+                  !message.pending &&
+                  !message.error &&
+                  onRegenerate && (
+                    <button
+                      type="button"
+                      className={styles.retryBtn}
+                      onClick={() => onRegenerate(message.id)}
+                    >
+                      Regenerate
+                    </button>
+                  )}
               </header>
               <div className={styles.body}>
                 {renderContent ? renderContent(message) : <p>{message.content}</p>}
               </div>
+              {message.role === 'assistant' && !message.pending && message.hints && (
+                <HintsAccordion hints={message.hints} />
+              )}
               {message.role === 'assistant' && !message.pending && message.xai && (
                 <XaiAccordion
                   xai={message.xai}

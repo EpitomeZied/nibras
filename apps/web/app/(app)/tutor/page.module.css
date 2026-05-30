@@ -1,6 +1,6 @@
 .page {
   display: flex;
-  height: calc(100vh - 64px);
+  height: calc(100vh - 64px - 42px);
   position: relative;
   overflow: hidden;
 }
@@ -199,7 +199,34 @@
   outline: none;
 }
 
-/* ── Chat area ──────────────────────────────────────────────────────────── */
+.sidebarDesktop {
+  /* desktop styles applied via media query */
+}
+
+@media (min-width: 1024px) {
+  .sidebar {
+    position: relative;
+    transform: translateX(0);
+    z-index: 1;
+    flex-shrink: 0;
+  }
+
+  .overlay {
+    display: none;
+  }
+
+  .closeSidebarBtn {
+    display: none;
+  }
+
+  .menuBtn {
+    display: none;
+  }
+
+  .page {
+    flex-direction: row;
+  }
+}
 
 .chatArea {
   flex: 1;
@@ -327,4 +354,83 @@
   border: none;
   border-radius: 0;
   max-height: none;
+}
+
+.convSearch {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12.5px;
+  font-family: inherit;
+}
+
+.convSearch:focus {
+  outline: none;
+  border-color: var(--primary, #22c55e);
+}
+
+.loadMoreBtn {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.loadMoreBtn:hover {
+  border-color: var(--primary, #22c55e);
+  color: var(--text);
+}
+
+.warningBanner {
+  padding: 8px 20px;
+  font-size: 12.5px;
+  color: var(--warning, #f59e0b);
+  background: color-mix(in oklab, var(--warning, #f59e0b) 10%, var(--surface));
+  border-bottom: 1px solid color-mix(in oklab, var(--warning, #f59e0b) 25%, var(--border));
+}
+
+.contextBanner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  font-size: 12.5px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--primary, #22c55e) 6%, var(--surface));
+}
+
+.contextLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.contextText {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.publishBtn {
+  margin-top: 10px;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.publishBtn:hover {
+  border-color: var(--primary, #22c55e);
+  color: var(--text);
 }

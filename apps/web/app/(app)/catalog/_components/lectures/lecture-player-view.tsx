@@ -14,6 +14,7 @@ import { friendlyMessage } from '../../../../lib/api-clients/errors';
 import LectureSidebar from './lecture-sidebar';
 import LectureResourcesPanel from './lecture-resources-panel';
 import LectureCommentsPanel from './lecture-comments-panel';
+import { buildTutorAskHref } from '../../../tutor/_content/tutor-context';
 import styles from './lecture-player-view.module.css';
 
 type Props = {
@@ -191,13 +192,25 @@ export default function LecturePlayerView({ courseId }: Props) {
                       <kbd>M</kbd> mark watched
                     </span>
                   </div>
-                  <button
-                    type="button"
-                    className={styles.markWatchedBtn}
-                    onClick={() => void markWatched(active)}
-                  >
-                    Mark watched
-                  </button>
+                  <div className={styles.videoActions}>
+                    <button
+                      type="button"
+                      className={styles.markWatchedBtn}
+                      onClick={() => void markWatched(active)}
+                    >
+                      Mark watched
+                    </button>
+                    <Link
+                      href={buildTutorAskHref({
+                        courseId,
+                        lectureId: active.id,
+                        prompt: `Help me understand "${active.title}"`,
+                      })}
+                      className={styles.askHassonaBtn}
+                    >
+                      Ask Hassona
+                    </Link>
+                  </div>
                 </div>
                 <LectureResourcesPanel resources={active.resources ?? []} />
                 <LectureCommentsPanel videoId={active.id} />

@@ -131,6 +131,7 @@ export const AiProviderIdSchema = z.enum(['openai', 'groq', 'openrouter']);
 
 export const AiCredentialResponseSchema = z.object({
   configured: z.boolean(),
+  tutorAvailable: z.boolean(),
   provider: AiProviderIdSchema.or(z.string()),
   model: z.string(),
   baseUrl: z.string().nullable().optional(),
