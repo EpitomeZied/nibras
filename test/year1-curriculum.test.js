@@ -25,6 +25,13 @@ test('YEAR1_COURSES defines seven foundation courses', () => {
   }
 });
 
+test('year1-eng101 includes 25 Stanford Writing in the Sciences lectures', () => {
+  const eng101 = YEAR1_COURSES.find((c) => c.slug === 'year1-eng101');
+  assert.ok(eng101);
+  assert.equal(eng101.lectures?.length, 25);
+  assert.equal(eng101.sequentialVideos, true);
+});
+
 test('seedYear1Curriculum upserts seven Year 1 courses in database', async (t) => {
   if (!process.env.DATABASE_URL) {
     t.skip('DATABASE_URL not set');

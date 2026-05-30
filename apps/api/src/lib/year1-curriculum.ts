@@ -3,6 +3,7 @@
  * Planner codes CS101–PHY101 map to these slugs; see docs/year1-curriculum.md.
  */
 import type { Prisma } from '@prisma/client';
+import { ENG101_LECTURES } from './year1-eng101-lectures';
 
 export type Year1Milestone = {
   title: string;
@@ -321,16 +322,27 @@ Solve two optimization problems and sketch one function using first and second d
     title: 'Academic Writing',
     termLabel: 'Year 1 · Fall',
     description:
-      'Foundations of academic writing: thesis, evidence, structure, and revision for technical students.',
+      'Foundations of academic writing: clarity, structure, evidence, and revision for technical students. Lecture videos from Stanford\'s open "Writing in the Sciences" course (Units 1–4, Kristin Sainani).',
     syllabusJson: {
-      schedule: 'Year 1 · Fall — writing workshop.',
-      topics: ['Thesis', 'Evidence', 'Revision'],
+      schedule: 'Year 1 · Fall — writing workshop with Stanford lecture series.',
+      topics: [
+        'Effective writing',
+        'Active voice',
+        'Paragraphs',
+        'Revision',
+        'Thesis',
+        'Evidence',
+      ],
       plannerCode: 'ENG101',
     },
+    sequentialVideos: true,
     sections: [
-      { title: 'Thesis and Structure', sortOrder: 0 },
-      { title: 'Evidence and Citation', sortOrder: 1 },
+      { title: 'Unit 1: Principles of Effective Writing', sortOrder: 0 },
+      { title: 'Unit 2: Active Voice and Verbs', sortOrder: 1 },
+      { title: 'Unit 3: Punctuation and Paragraphs', sortOrder: 2 },
+      { title: 'Unit 4: The Writing Process', sortOrder: 3 },
     ],
+    lectures: ENG101_LECTURES,
     assignments: [
       {
         title: 'Essay 1: Outline and Thesis',
@@ -390,6 +402,12 @@ Submit the revised essay plus a 300-word reflection describing substantive edits
           description: 'Final 1500-word essay and revision memo.',
           order: 2,
           isFinal: true,
+        },
+      ],
+      resourcesJson: [
+        {
+          label: 'Writing in the Sciences (Stanford) — YouTube playlist',
+          url: 'https://www.youtube.com/playlist?list=PL8yeejfiNxNBT2rTomRjmWNlgh4DBmHST',
         },
       ],
     },

@@ -62,7 +62,7 @@ node scripts/seed-stanford-v2.js
 1. Sign in as a student with `yearLevel: 1`.
 2. Confirm seven courses appear (auto-enrolled when `termLabel` starts with `Year 1`).
 3. Open **Planner** — place CS101–PHY101 in Year 1 Fall/Spring; confirm **Year 1 Foundation** shows 22 units.
-4. Per course: sections, assignments, project milestones; CS courses also have lecture videos.
+4. Per course: sections, assignments, project milestones; CS courses and ENG 101 also have lecture videos (ENG 101: 25 Stanford Writing in the Sciences lectures, Units 1–4).
 5. Submit a text assignment and a milestone submission to confirm the review queue.
 
 ## Source files
