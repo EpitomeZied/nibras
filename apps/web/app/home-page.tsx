@@ -170,13 +170,7 @@ export default function HomePage() {
                 <span
                   key={part.line}
                   className={`${styles.heroTerminalTitleLine} ${
-                    part.variant === 'accent'
-                      ? styles.heroTerminalTitleAccent
-                      : part.variant === 'muted'
-                        ? styles.heroTerminalTitleMuted
-                        : part.variant === 'italic'
-                          ? styles.heroTerminalTitleItalic
-                          : ''
+                    part.variant === 'italic' ? styles.heroTerminalTitleItalic : ''
                   }`}
                 >
                   {part.line}
