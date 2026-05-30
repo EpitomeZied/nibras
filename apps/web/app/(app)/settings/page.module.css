@@ -1065,8 +1065,16 @@
 }
 
 .saveConfigBtn:disabled {
-  opacity: 0.45;
-  cursor: default;
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.providerCardActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
 }
 
 .providerCard {

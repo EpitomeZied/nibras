@@ -116,8 +116,10 @@ export default function AiIntegrationTab() {
         setModel(data.model || preset.defaultModel);
         setMaskedKey(data.maskedKey);
         setEncryptionReady(data.encryptionReady !== false);
+      } catch {
+        if (alive) setEncryptionReady(false);
       } finally {
-        if (!alive) setLoading(false);
+        if (alive) setLoading(false);
       }
     })();
     return () => {
@@ -213,9 +215,10 @@ export default function AiIntegrationTab() {
           type="button"
           className={styles.saveConfigBtn}
           onClick={() => void handleSave()}
-          disabled={saving || loading || !encryptionReady}
+          disabled={saving || !encryptionReady}
+          aria-busy={saving || loading}
         >
-          {saving ? 'Saving…' : 'Save configuration'}
+          {saving ? 'Saving…' : loading ? 'Loading…' : 'Save configuration'}
         </button>
       </div>
 
@@ -318,16 +321,27 @@ export default function AiIntegrationTab() {
           />
         </div>
 
-        {configured ? (
+        <div className={styles.providerCardActions}>
           <button
             type="button"
-            className={styles.removeKeyBtn}
-            onClick={() => void handleRemove()}
-            disabled={saving}
+            className={styles.saveConfigBtn}
+            onClick={() => void handleSave()}
+            disabled={saving || !encryptionReady}
+            aria-busy={saving}
           >
-            Remove personal key
+            {saving ? 'Saving…' : 'Save configuration'}
           </button>
-        ) : null}
+          {configured ? (
+            <button
+              type="button"
+              className={styles.removeKeyBtn}
+              onClick={() => void handleRemove()}
+              disabled={saving}
+            >
+              Remove personal key
+            </button>
+          ) : null}
+        </div>
       </article>
 
       {status ? <p className={styles.statusLine}>{status}</p> : null}
