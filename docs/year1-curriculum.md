@@ -36,13 +36,20 @@ Optional CLI projects for CS 106B (after course seed):
 npm run seed:stanford-projects
 ```
 
-The API also upserts Year 1 courses on first `prisma-store` bootstrap (local dev and deploy).
+The API also upserts Year 1 courses on **API startup** (after deploy) and on first `prisma-store` bootstrap.
 
-Production manual seed:
+### Production (nibrasplatform.me)
+
+After deploy, the API container runs `seedYear1Curriculum` on startup (see `apps/api/src/server.ts`). No manual step is required for the seven Year 1 courses.
+
+Optional manual seed (e.g. re-run after editing curriculum without redeploying):
 
 ```bash
 DATABASE_URL='postgresql://...' npm run seed:year1
+DATABASE_URL='postgresql://...' npm run seed:stanford-projects
 ```
+
+Use the Supabase `DATABASE_URL` from Azure Container Apps secret `database-url` if you need to seed from your laptop.
 
 Full Stanford Years 2–4 (includes Year 1 via shared module):
 
