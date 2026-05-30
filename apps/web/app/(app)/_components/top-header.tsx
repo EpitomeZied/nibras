@@ -5,7 +5,7 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import DropdownMenu, { DropdownChevron, DropdownGroup, useDropdownClose } from './ui/dropdown-menu';
 import { usePathname } from 'next/navigation';
 import UserAvatar from './widgets/UserAvatar';
-import NibrasLogoMark from '@/app/_components/nibras-logo-mark';
+import NibrasLogo from '@/app/_components/nibras-logo';
 import { WEB_BASE_URL } from '@/app/lib/web-base-url';
 import { prefs, PREF_EVENTS } from '../../lib/prefs';
 import NotificationsPanel from './notifications-panel';
@@ -583,7 +583,7 @@ export default function TopHeader({
                 title="Visit NibrasPlaftorm.me"
                 style={{ display: 'inline-flex', alignItems: 'center', textDecoration: 'none' }}
               >
-                <NibrasLogoMark variant="inverse" width={compact ? 82 : 90} priority />
+                <NibrasLogo variant="inverse" width={compact ? 82 : 90} priority />
               </a>
               <span
                 style={{

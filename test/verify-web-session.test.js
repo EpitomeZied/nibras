@@ -13,9 +13,7 @@ const sampleUser = {
   githubAccount: { login: 'demo-gh' },
 };
 
-const sampleMemberships = [
-  { courseId: 'course_1', role: 'student', level: 1 },
-];
+const sampleMemberships = [{ courseId: 'course_1', role: 'student', level: 1 }];
 
 test('buildMeResponseFromSession maps user and memberships', async () => {
   const { buildMeResponseFromSession } = await import('../apps/web/lib/verify-web-session.ts');
@@ -29,9 +27,7 @@ test('buildMeResponseFromSession maps user and memberships', async () => {
   assert.equal(response.user.username, 'demo');
   assert.equal(response.user.githubLogin, 'demo-gh');
   assert.equal(response.apiBaseUrl, 'https://nibrasplatform.me');
-  assert.deepEqual(response.memberships, [
-    { courseId: 'course_1', role: 'student', level: 1 },
-  ]);
+  assert.deepEqual(response.memberships, [{ courseId: 'course_1', role: 'student', level: 1 }]);
 });
 
 test('resolveGithubLogin falls back to username when GitHub account is absent', async () => {
@@ -49,8 +45,7 @@ test('resolveGithubLogin falls back to username when GitHub account is absent', 
 });
 
 test('resolveWebSessionMeResponseWith returns null for missing session', async () => {
-  const { resolveWebSessionMeResponseWith } =
-    await import('../apps/web/lib/verify-web-session.ts');
+  const { resolveWebSessionMeResponseWith } = await import('../apps/web/lib/verify-web-session.ts');
 
   const result = await resolveWebSessionMeResponseWith({
     prisma: {
@@ -69,8 +64,7 @@ test('resolveWebSessionMeResponseWith returns null for missing session', async (
 });
 
 test('resolveWebSessionMeResponseWith returns null for revoked session', async () => {
-  const { resolveWebSessionMeResponseWith } =
-    await import('../apps/web/lib/verify-web-session.ts');
+  const { resolveWebSessionMeResponseWith } = await import('../apps/web/lib/verify-web-session.ts');
 
   const result = await resolveWebSessionMeResponseWith({
     prisma: {
@@ -95,8 +89,7 @@ test('resolveWebSessionMeResponseWith returns null for revoked session', async (
 });
 
 test('resolveWebSessionMeResponseWith returns null for expired session', async () => {
-  const { resolveWebSessionMeResponseWith } =
-    await import('../apps/web/lib/verify-web-session.ts');
+  const { resolveWebSessionMeResponseWith } = await import('../apps/web/lib/verify-web-session.ts');
 
   const result = await resolveWebSessionMeResponseWith({
     prisma: {
@@ -121,8 +114,7 @@ test('resolveWebSessionMeResponseWith returns null for expired session', async (
 });
 
 test('resolveWebSessionMeResponseWith returns MeResponse for valid session', async () => {
-  const { resolveWebSessionMeResponseWith } =
-    await import('../apps/web/lib/verify-web-session.ts');
+  const { resolveWebSessionMeResponseWith } = await import('../apps/web/lib/verify-web-session.ts');
 
   const result = await resolveWebSessionMeResponseWith({
     prisma: {

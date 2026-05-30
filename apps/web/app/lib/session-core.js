@@ -127,7 +127,8 @@ export function formatApiFetchError(apiBaseUrl) {
   return `Unable to reach the Nibras API at ${apiBaseUrl}. Start \`npm run api:dev\` for local API access, start \`npm run proxy:dev\` for same-origin proxy access, or update \`.env\` and your tunnel URL.`;
 }
 
-export const DEFAULT_FETCH_TIMEOUT_MS = 8_000;
+// Azure dashboard/home queries can take ~8s; keep headroom above that.
+export const DEFAULT_FETCH_TIMEOUT_MS = 25_000;
 
 export async function fetchWithTimeout(url, init = {}, timeoutMs = DEFAULT_FETCH_TIMEOUT_MS) {
   return fetch(url, {

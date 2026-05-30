@@ -132,7 +132,7 @@ test('fetchWithTimeout exposes the default timeout constant', async () => {
   const { DEFAULT_FETCH_TIMEOUT_MS, fetchWithTimeout } =
     await import('../apps/web/app/lib/session-core.js');
 
-  assert.equal(DEFAULT_FETCH_TIMEOUT_MS, 8_000);
+  assert.equal(DEFAULT_FETCH_TIMEOUT_MS, 25_000);
 
   const controller = new AbortController();
   let capturedSignal = null;
