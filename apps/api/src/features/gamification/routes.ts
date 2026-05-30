@@ -2,7 +2,6 @@ import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
 import { requireUser } from '../../lib/auth';
 import { AppStore } from '../../store';
-import { BADGE_CATALOG } from './badges-catalog';
 import { GamificationService } from './service';
 
 export function registerGamificationRoutes(
@@ -11,22 +10,6 @@ export function registerGamificationRoutes(
   prisma: PrismaClient
 ): void {
   const gamification = new GamificationService(prisma);
-
-  app.addHook('onReady', async () => {
-    try {
-      const count = await gamification.ensureBadgeCatalog();
-      gamification.markCatalogSynced();
-      app.log.info(
-        { count, expected: BADGE_CATALOG.length },
-        'Badge catalog synced on API ready'
-      );
-      if (count < BADGE_CATALOG.length) {
-        app.log.warn('Badge catalog incomplete after sync');
-      }
-    } catch (err) {
-      app.log.error({ err }, 'Failed to sync badge catalog on startup');
-    }
-  });
 
   app.get(
     '/v1/gamification/achievements-dashboard',
@@ -78,12 +61,12 @@ export function registerGamificationRoutes(
       };
       const page = Math.max(1, parseInt(query.page || '1', 10) || 1);
       const limit = Math.min(100, Math.max(1, parseInt(query.limit || '25', 10) || 25));
-      const period = (['all', 'month', 'week', 'today'].includes(query.period || '')
-        ? query.period
-        : 'all') as 'all' | 'month' | 'week' | 'today';
-      const scope = (['global', 'course', 'cohort'].includes(query.scope || '')
-        ? query.scope
-        : 'global') as 'global' | 'course' | 'cohort';
+      const period = (
+        ['all', 'month', 'week', 'today'].includes(query.period || '') ? query.period : 'all'
+      ) as 'all' | 'month' | 'week' | 'today';
+      const scope = (
+        ['global', 'course', 'cohort'].includes(query.scope || '') ? query.scope : 'global'
+      ) as 'global' | 'course' | 'cohort';
 
       return gamification.getLeaderboard(auth.user.id, {
         period,
@@ -102,12 +85,12 @@ export function registerGamificationRoutes(
       const auth = await requireUser(request, reply, store);
       if (!auth) return;
       const query = request.query as { period?: string; scope?: string; courseId?: string };
-      const period = (['all', 'month', 'week', 'today'].includes(query.period || '')
-        ? query.period
-        : 'all') as 'all' | 'month' | 'week' | 'today';
-      const scope = (['global', 'course', 'cohort'].includes(query.scope || '')
-        ? query.scope
-        : 'global') as 'global' | 'course' | 'cohort';
+      const period = (
+        ['all', 'month', 'week', 'today'].includes(query.period || '') ? query.period : 'all'
+      ) as 'all' | 'month' | 'week' | 'today';
+      const scope = (
+        ['global', 'course', 'cohort'].includes(query.scope || '') ? query.scope : 'global'
+      ) as 'global' | 'course' | 'cohort';
 
       return gamification.getMyLeaderboardRank(auth.user.id, {
         period,

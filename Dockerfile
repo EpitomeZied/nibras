@@ -27,6 +27,7 @@ RUN npm run build && npm run web:build
 FROM node:20-alpine AS api
 WORKDIR /app
 ENV NODE_ENV=production
+ENV HOST=0.0.0.0
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json

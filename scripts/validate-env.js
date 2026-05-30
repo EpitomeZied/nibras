@@ -10,6 +10,11 @@ const REQUIRED = [
   'GITHUB_APP_PRIVATE_KEY',
   'GITHUB_APP_NAME',
   'GITHUB_WEBHOOK_SECRET',
+  'BETTER_AUTH_SECRET',
+  'BETTER_AUTH_URL',
+  'NIBRAS_WEB_BASE_URL',
+  'NEXT_PUBLIC_NIBRAS_API_BASE_URL',
+  'NEXT_PUBLIC_NIBRAS_WEB_BASE_URL',
 ];
 
 const missing = REQUIRED.filter((key) => !process.env[key]);
@@ -31,6 +36,32 @@ if (encKey) {
     console.error('     openssl rand -hex 32\n');
     process.exit(1);
   }
+}
+
+// Semantic warnings for common deployment mistakes
+let warnings = 0;
+
+if (process.env.HOST && process.env.HOST !== '0.0.0.0') {
+  console.warn('⚠️  HOST is "%s" — should be 0.0.0.0 for Docker deployments', process.env.HOST);
+  warnings++;
+}
+
+if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('@db:')) {
+  console.warn(
+    '⚠️  DATABASE_URL uses hostname "db" — docker-compose.prod.yml names the service "postgres"'
+  );
+  warnings++;
+}
+
+if (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('@127.0.0.1:')) {
+  console.warn(
+    '⚠️  DATABASE_URL uses 127.0.0.1 — use the Docker service name (e.g. "postgres") in containers'
+  );
+  warnings++;
+}
+
+if (warnings > 0) {
+  console.warn('\n%d warning(s) above — review before deploying.\n', warnings);
 }
 
 console.log('✓  All required environment variables are set.');

@@ -92,7 +92,7 @@ async function main(): Promise<void> {
   await syncBadgeCatalogOnStartup();
   await syncCurriculumOnStartup();
   const port = Number(process.env.PORT || '4848');
-  const host = process.env.HOST || '127.0.0.1';
+  const host = process.env.HOST || '0.0.0.0';
   const app = buildApp();
   await app.listen({ port, host });
 

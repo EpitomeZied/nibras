@@ -140,7 +140,10 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
           { name: 'competitions', description: 'Contests, practice problems, and rankings' },
           { name: 'reputation', description: 'User reputation scores' },
           { name: 'analytics', description: 'Instructor analytics and dashboards' },
-          { name: 'daily-problem', description: 'Daily problem assignments, streaks, and configuration' },
+          {
+            name: 'daily-problem',
+            description: 'Daily problem assignments, streaks, and configuration',
+          },
           { name: 'system', description: 'Health, readiness, and metrics' },
         ],
       },
@@ -309,6 +312,12 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
 
   // Capture unhandled errors in Sentry when DSN is configured
   app.setErrorHandler(async (error: { statusCode?: number; message?: string }, request, reply) => {
+    const statusCode = error.statusCode || 500;
+
+    if (statusCode >= 500) {
+      request.log.error({ err: error, requestId: request.id }, 'Unhandled server error');
+    }
+
     if (process.env.SENTRY_DSN) {
       Sentry.withScope((scope) => {
         scope.setTag('requestId', request.id);
@@ -317,9 +326,9 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
         Sentry.captureException(error);
       });
     }
-    const statusCode = error.statusCode || 500;
+
     const code =
-      statusCode === 429 ? 'RATE_LIMITED' : statusCode >= 500 ? 'INTERNAL_ERROR' : 'INTERNAL_ERROR';
+      statusCode === 429 ? 'RATE_LIMITED' : statusCode >= 500 ? 'INTERNAL_ERROR' : 'CLIENT_ERROR';
     void reply.status(statusCode).send({ error: error.message || 'Internal server error.', code });
   });
 
@@ -348,15 +357,16 @@ export function buildApp(store: AppStore = createDefaultStore()): FastifyInstanc
   registerProgramRoutes(app, store);
   registerAdminRoutes(app, store);
   registerNotificationRoutes(app, store);
-  registerCommunityRoutes(app, store, getSharedPrisma());
   if (process.env.DATABASE_URL) {
-    registerAiCredentialRoutes(app, store, getSharedPrisma());
+    const prisma = getSharedPrisma();
+    registerCommunityRoutes(app, store, prisma);
+    registerAiCredentialRoutes(app, store, prisma);
+    registerGamificationRoutes(app, store, prisma);
+    registerCompetitionsRoutes(app, store, prisma, githubConfig);
+    registerReputationRoutes(app, store, prisma);
+    registerUserRoutes(app, store, prisma);
+    registerAnalyticsRoutes(app, store, prisma);
   }
-  registerGamificationRoutes(app, store, getSharedPrisma());
-  registerCompetitionsRoutes(app, store, getSharedPrisma(), githubConfig);
-  registerReputationRoutes(app, store, getSharedPrisma());
-  registerUserRoutes(app, store, store instanceof PrismaStore ? getSharedPrisma() : undefined);
-  registerAnalyticsRoutes(app, store, getSharedPrisma());
   registerIdeRoutes(app, store);
   if (process.env.DATABASE_URL) {
     registerDailyProblemRoutes(app, store, getSharedPrisma());
