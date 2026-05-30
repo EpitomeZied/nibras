@@ -1,33 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import type { StudentHomeDashboard, StudentUpcomingDeadline } from '@nibras/contracts';
-
-type StudentCourseSnapshot = StudentHomeDashboard['courseSnapshots'][number];
+import type {
+  DailyTodayResponse,
+  StudentHomeDashboard,
+  StudentUpcomingDeadline,
+} from '@nibras/contracts';
 import type { AchievementsDashboard } from '../../../lib/services/gamification';
+import { difficultyLabel } from '../../../lib/services/daily-problem';
 import { useFetch } from '../../../lib/use-fetch';
 import BadgeCard from '../../_components/widgets/BadgeCard';
 import styles from '../page.module.css';
 import { deadlineDueLabel, deadlineToneClass } from './dashboard-utils';
 import { EmptyPanel, SectionHeader } from './dashboard-shared';
 
-type DailyTodayResponse = {
-  paused: boolean;
-  pausedUntil?: string;
-  assignment?: {
-    id: string;
-    assignedDate: string;
-    solved: boolean;
-    problem: { title: string; difficulty: number; platform: string };
-  };
-  streak: { current: number; longest: number; totalCompleted: number; freezesLeft: number };
-};
+type StudentCourseSnapshot = StudentHomeDashboard['courseSnapshots'][number];
 
 function DailyWidget() {
   const { data } = useFetch<DailyTodayResponse>('/v1/daily-problem/today');
   if (!data) return null;
-
-  const diffLabel = (d: number) => (d <= 1000 ? 'Easy' : d <= 1800 ? 'Medium' : 'Hard');
 
   return (
     <section className={styles.panel}>
@@ -49,7 +40,7 @@ function DailyWidget() {
         <div style={{ fontSize: '0.8125rem' }}>
           <strong>{data.assignment.problem.title}</strong>
           <span style={{ marginLeft: 8, fontSize: '0.75rem', color: 'var(--text-muted, #666)' }}>
-            {diffLabel(data.assignment.problem.difficulty)}
+            {difficultyLabel(data.assignment.problem.difficulty)}
           </span>
           {data.assignment.solved && (
             <span style={{ marginLeft: 8, color: '#16a34a', fontWeight: 600 }}>

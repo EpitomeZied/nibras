@@ -9,6 +9,7 @@ export * from './gamification';
 export * from './notifications';
 export * from './community';
 export * from './user-profile';
+export * from './daily-problem';
 
 export const BuildpackSchema = z.object({
   node: z.string().min(1),

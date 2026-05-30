@@ -1,22 +1,35 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import type { DailyHistoryResponse, DailySolveResponse } from '@nibras/contracts';
 import { buildIdeProblemUrl } from '../../ide/_content/ide-links';
+import { buildTutorAskHref } from '../../tutor/_content/tutor-context';
 import { useFetch } from '../../../lib/use-fetch';
-import { apiFetch } from '../../../lib/session';
+import { friendlyMessage } from '../../../lib/api-clients/errors';
+import {
+  buildDailyDiscussHref,
+  difficultyClassName,
+  difficultyLabel,
+  formatResetCountdown,
+  msUntilMidnight,
+  getDailyHistory,
+  getDailyLeaderboard,
+  historyStatus,
+  pauseDailyProblems,
+  patchDailyConfig,
+  resumeDailyProblems,
+  skipDailyToday,
+  solveDailyToday,
+  verifyDailyToday,
+} from '../../../lib/services/daily-problem';
 import StatTile from '../../_components/widgets/StatTile';
 import EmptyState from '../../_components/widgets/EmptyState';
+import LeaderboardTable from '../../_components/widgets/LeaderboardTable';
+import { useSession } from '../../_components/session-context';
+import DailyHowItWorks from './_components/daily-how-it-works';
+import DailySettingsPanel from './_components/daily-settings-panel';
 import styles from './page.module.css';
-
-type DailyProblem = {
-  id: string;
-  title: string;
-  url: string;
-  platform: string;
-  difficulty: number;
-  tags: string[];
-};
 
 type DailyTodayResponse = {
   paused: boolean;
@@ -27,7 +40,14 @@ type DailyTodayResponse = {
     solved: boolean;
     solvedAt?: string;
     skipped: boolean;
-    problem: DailyProblem;
+    problem: {
+      id: string;
+      title: string;
+      url: string;
+      platform: string;
+      difficulty: number;
+      tags: string[];
+    };
   };
   streak: {
     current: number;
@@ -42,22 +62,15 @@ type DailyStatsResponse = {
   longestStreak: number;
   totalCompleted: number;
   freezesLeft: number;
-  calendar: { date: string; status: 'solved' | 'missed' | 'skipped' | 'pending' }[];
-};
-
-type DailyHistoryResponse = {
-  items: {
-    id: string;
-    assignedDate: string;
-    solved: boolean;
-    solvedAt?: string;
-    skipped: boolean;
-    missedAt?: string;
-    problem: DailyProblem;
-  }[];
-  total: number;
-  page: number;
-  limit: number;
+  calendar: { date: string; status: 'solved' | 'missed' | 'skipped' | 'pending' | 'none' }[];
+  nextMilestone?: {
+    kind: 'streak' | 'completed';
+    target: number;
+    current: number;
+    remaining: number;
+    label: string;
+    reputationBonus?: number;
+  } | null;
 };
 
 type DailyConfigResponse = {
@@ -69,19 +82,21 @@ type DailyConfigResponse = {
   streakFreezes: number;
 };
 
-function difficultyLabel(d: number): string {
-  if (d <= 1000) return 'Easy';
-  if (d <= 1800) return 'Medium';
-  return 'Hard';
-}
-
-function difficultyClass(d: number): string {
-  if (d <= 1000) return styles.badgeEasy;
-  if (d <= 1800) return styles.badgeMedium;
-  return styles.badgeHard;
+function chipClassForStatus(status: ReturnType<typeof historyStatus>): string {
+  switch (status) {
+    case 'Solved':
+      return styles.chipSolved;
+    case 'Skipped':
+      return styles.chipSkipped;
+    case 'Missed':
+      return styles.chipMissed;
+    default:
+      return styles.chipPending;
+  }
 }
 
 export default function DailyProblemPage() {
+  const { user } = useSession();
   const {
     data: today,
     loading,
@@ -90,78 +105,156 @@ export default function DailyProblemPage() {
   } = useFetch<DailyTodayResponse>('/v1/daily-problem/today');
   const { data: stats, reload: reloadStats } =
     useFetch<DailyStatsResponse>('/v1/daily-problem/stats');
-  const { data: history, reload: reloadHistory } = useFetch<DailyHistoryResponse>(
-    '/v1/daily-problem/history?limit=20'
-  );
   const { data: config, reload: reloadConfig } = useFetch<DailyConfigResponse>(
     '/v1/daily-problem/config'
   );
 
+  const [historyItems, setHistoryItems] = useState<DailyHistoryResponse['items']>([]);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [leaderboardRows, setLeaderboardRows] = useState<
+    Array<{
+      rank: number;
+      userId: string;
+      username: string;
+      score: number;
+      meta?: string;
+    }>
+  >([]);
   const [acting, setActing] = useState(false);
   const [pauseDays, setPauseDays] = useState(7);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [solveCelebration, setSolveCelebration] = useState<DailySolveResponse | null>(null);
+  const [resetCountdown, setResetCountdown] = useState('');
+  const [openedIde, setOpenedIde] = useState(false);
 
   const reloadAll = useCallback(() => {
     reload();
     reloadStats();
-    reloadHistory();
     reloadConfig();
-  }, [reload, reloadStats, reloadHistory, reloadConfig]);
+    setHistoryPage(1);
+  }, [reload, reloadStats, reloadConfig]);
 
-  const handleSolve = async () => {
-    setActing(true);
+  const loadHistory = useCallback(async (page: number, append: boolean) => {
+    setHistoryLoading(true);
     try {
-      const res = await apiFetch('/v1/daily-problem/today/solve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ solved: true }),
+      const data = await getDailyHistory(page, 20);
+      setHistoryTotal(data.total);
+      setHistoryPage(data.page);
+      setHistoryItems((prev) => (append ? [...prev, ...data.items] : data.items));
+    } catch (err) {
+      setActionError(friendlyMessage(err));
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadHistory(1, false);
+  }, [loadHistory]);
+
+  useEffect(() => {
+    getDailyLeaderboard(20)
+      .then((res) =>
+        setLeaderboardRows(
+          res.entries.map((e) => ({
+            rank: e.rank,
+            userId: e.userId,
+            username: e.username,
+            score: e.currentStreak,
+            meta: `${e.longestStreak} best · ${e.totalCompleted} solved`,
+          }))
+        )
+      )
+      .catch(() => {
+        /* optional */
       });
-      if (res.ok) reloadAll();
-    } finally {
-      setActing(false);
-    }
-  };
+  }, []);
 
-  const handleSkip = async () => {
+  useEffect(() => {
+    const tz = config?.timezone ?? 'UTC';
+    const tick = () => setResetCountdown(formatResetCountdown(msUntilMidnight(tz)));
+    tick();
+    const id = window.setInterval(tick, 60_000);
+    return () => window.clearInterval(id);
+  }, [config?.timezone]);
+
+  const runAction = async (fn: () => Promise<void>) => {
     setActing(true);
+    setActionError(null);
     try {
-      const res = await apiFetch('/v1/daily-problem/today/skip', { method: 'POST' });
-      if (res.ok) reloadAll();
+      await fn();
+    } catch (err) {
+      setActionError(friendlyMessage(err));
     } finally {
       setActing(false);
     }
   };
 
-  const handlePause = async () => {
-    setActing(true);
-    try {
-      const res = await apiFetch('/v1/daily-problem/pause', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ days: pauseDays }),
-      });
-      if (res.ok) reloadAll();
-    } finally {
-      setActing(false);
+  const handleSolve = () => {
+    if (
+      !openedIde &&
+      !window.confirm(
+        'Mark this problem as solved? Open the IDE first if you want to practice here.'
+      )
+    ) {
+      return;
     }
-  };
-
-  const handleResume = async () => {
-    setActing(true);
-    try {
-      const res = await apiFetch('/v1/daily-problem/resume', { method: 'POST' });
-      if (res.ok) reloadAll();
-    } finally {
-      setActing(false);
-    }
-  };
-
-  const handleToggleEnabled = async (enabled: boolean) => {
-    await apiFetch('/v1/daily-problem/config', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ enabled }),
+    void runAction(async () => {
+      const result = await solveDailyToday();
+      setSolveCelebration(result);
+      reloadAll();
+      void loadHistory(1, false);
     });
-    reloadAll();
+  };
+
+  const handleSkip = () => {
+    const freezes = today?.streak.freezesLeft ?? 0;
+    if (
+      !window.confirm(
+        `Skip today's problem? This uses 1 of ${freezes} streak freeze${freezes === 1 ? '' : 's'} remaining.`
+      )
+    ) {
+      return;
+    }
+    void runAction(async () => {
+      await skipDailyToday();
+      reloadAll();
+      void loadHistory(1, false);
+    });
+  };
+
+  const handleVerify = () => {
+    void runAction(async () => {
+      const result = await verifyDailyToday();
+      if (result.verified) {
+        setSolveCelebration(result);
+        reloadAll();
+        void loadHistory(1, false);
+      }
+    });
+  };
+
+  const handlePause = () => {
+    void runAction(async () => {
+      await pauseDailyProblems(pauseDays);
+      reloadAll();
+    });
+  };
+
+  const handleResume = () => {
+    void runAction(async () => {
+      await resumeDailyProblems();
+      reloadAll();
+    });
+  };
+
+  const handleToggleEnabled = (enabled: boolean) => {
+    void runAction(async () => {
+      await patchDailyConfig({ enabled });
+      reloadAll();
+    });
   };
 
   if (loading) {
@@ -169,7 +262,7 @@ export default function DailyProblemPage() {
       <div className={styles.page}>
         <div className={styles.statsRow}>
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className={styles.panel} style={{ height: 80 }} />
+            <div key={i} className={`${styles.panel} ${styles.skeleton}`} />
           ))}
         </div>
       </div>
@@ -185,10 +278,22 @@ export default function DailyProblemPage() {
   }
 
   const streak = today?.streak ?? { current: 0, longest: 0, totalCompleted: 0, freezesLeft: 0 };
+  const assignment = today?.assignment;
+  const milestone = stats?.nextMilestone;
 
   return (
     <div className={styles.page}>
-      {/* Stats row */}
+      <DailyHowItWorks />
+
+      {actionError ? (
+        <div className={styles.errorBanner} role="alert">
+          {actionError}
+          <button type="button" className={styles.dismissBtn} onClick={() => setActionError(null)}>
+            Dismiss
+          </button>
+        </div>
+      ) : null}
+
       <div className={styles.statsRow}>
         <StatTile
           label="Current Streak"
@@ -201,62 +306,146 @@ export default function DailyProblemPage() {
         <StatTile label="Freezes Left" value={streak.freezesLeft} caption="Auto-save on miss" />
       </div>
 
-      {/* Main grid */}
+      {[7, 30, 100].includes(streak.current) ? (
+        <button
+          type="button"
+          className={styles.btnShareStreak}
+          onClick={() => {
+            const text = `I'm on a ${streak.current}-day daily problem streak on Nibras! 🔥`;
+            void navigator.clipboard?.writeText(text);
+          }}
+        >
+          Share {streak.current}-day streak
+        </button>
+      ) : null}
+
+      {milestone ? (
+        <div className={styles.milestoneBar}>
+          <div className={styles.milestoneText}>
+            <strong>{milestone.remaining}</strong> to {milestone.label}
+            {milestone.reputationBonus ? ` (+${milestone.reputationBonus} rep)` : ''}
+          </div>
+          <div className={styles.milestoneTrack}>
+            <div
+              className={styles.milestoneFill}
+              style={{ width: `${Math.min(100, (milestone.current / milestone.target) * 100)}%` }}
+            />
+          </div>
+        </div>
+      ) : null}
+
       <div className={styles.mainGrid}>
-        {/* Today's problem */}
         <div className={styles.panel}>
-          <div className={styles.panelTitle}>Today&apos;s Problem</div>
+          <div className={styles.panelHeader}>
+            <div className={styles.panelTitle}>Today&apos;s Problem</div>
+            {config?.timezone && resetCountdown ? (
+              <span className={styles.resetHint}>Resets in {resetCountdown}</span>
+            ) : null}
+          </div>
 
           {today?.paused && (
             <div className={styles.pausedBanner}>
               Paused until {new Date(today.pausedUntil!).toLocaleDateString()}
-              <button className={styles.btnSmall} onClick={handleResume} disabled={acting}>
+              <button
+                type="button"
+                className={styles.btnSmall}
+                onClick={handleResume}
+                disabled={acting}
+              >
                 Resume
               </button>
             </div>
           )}
 
-          {!today?.paused && today?.assignment && (
+          {!today?.paused && assignment && (
             <div className={styles.problemCard}>
               <div className={styles.problemTitle}>
-                <a href={today.assignment.problem.url} target="_blank" rel="noopener noreferrer">
-                  {today.assignment.problem.title}
+                <a href={assignment.problem.url} target="_blank" rel="noopener noreferrer">
+                  {assignment.problem.title}
                 </a>
               </div>
               <div className={styles.problemMeta}>
                 <span
-                  className={`${styles.badge} ${difficultyClass(today.assignment.problem.difficulty)}`}
+                  className={`${styles.badge} ${difficultyClassName(assignment.problem.difficulty, styles)}`}
                 >
-                  {difficultyLabel(today.assignment.problem.difficulty)}
+                  {difficultyLabel(assignment.problem.difficulty)}
                 </span>
-                <span className={styles.tag}>{today.assignment.problem.platform}</span>
-                {today.assignment.problem.tags.slice(0, 4).map((t) => (
+                <span className={styles.tag}>{assignment.problem.platform}</span>
+                {assignment.problem.tags.slice(0, 4).map((t) => (
                   <span key={t} className={styles.tag}>
                     {t}
                   </span>
                 ))}
               </div>
 
-              {today.assignment.solved ? (
-                <div className={styles.solvedBanner}>&#10003; Solved today!</div>
-              ) : today.assignment.skipped ? (
+              {assignment.solved || solveCelebration ? (
+                <div className={styles.solvedBanner}>
+                  <div>&#10003; Solved today!</div>
+                  {solveCelebration?.reputationEarned ? (
+                    <div className={styles.celebrationMeta}>
+                      +{solveCelebration.reputationEarned} reputation
+                      {solveCelebration.milestoneBonus
+                        ? ` (includes +${solveCelebration.milestoneBonus} milestone bonus)`
+                        : ''}
+                      {solveCelebration.newBadges?.length
+                        ? ` · New badge${solveCelebration.newBadges.length > 1 ? 's' : ''}: ${solveCelebration.newBadges.join(', ')}`
+                        : ''}
+                    </div>
+                  ) : null}
+                </div>
+              ) : assignment.skipped ? (
                 <div className={styles.pausedBanner}>Skipped (freeze used)</div>
               ) : (
                 <div className={styles.actions}>
                   <Link
                     href={buildIdeProblemUrl({
                       source: 'daily',
-                      problem: today.assignment.problem.id,
-                      title: today.assignment.problem.title,
+                      problem: assignment.problem.id,
+                      title: assignment.problem.title,
+                      description: `Practice "${assignment.problem.title}" — open the platform link for the full statement.`,
+                      externalUrl: assignment.problem.url,
                     })}
                     className={styles.ideLink}
+                    onClick={() => setOpenedIde(true)}
                   >
                     Open in IDE
                   </Link>
-                  <button className={styles.btnSolve} onClick={handleSolve} disabled={acting}>
+                  <Link
+                    href={buildTutorAskHref({
+                      problem: assignment.problem.id,
+                      problemSource: 'daily',
+                      prompt: `I'm working on today's daily problem "${assignment.problem.title}". Can you give me a hint without spoiling the solution?`,
+                    })}
+                    className={styles.secondaryLink}
+                  >
+                    Ask Hassona
+                  </Link>
+                  <Link
+                    href={buildDailyDiscussHref(assignment.assignedDate, assignment.problem.title)}
+                    className={styles.secondaryLink}
+                  >
+                    Discuss
+                  </Link>
+                  {assignment.problem.platform === 'codeforces' ? (
+                    <button
+                      type="button"
+                      className={styles.btnVerify}
+                      onClick={handleVerify}
+                      disabled={acting}
+                    >
+                      Verify on Codeforces
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    className={styles.btnSolve}
+                    onClick={handleSolve}
+                    disabled={acting}
+                  >
                     Mark as Solved
                   </button>
                   <button
+                    type="button"
                     className={styles.btnSkip}
                     onClick={handleSkip}
                     disabled={acting || streak.freezesLeft <= 0}
@@ -271,7 +460,7 @@ export default function DailyProblemPage() {
             </div>
           )}
 
-          {!today?.paused && !today?.assignment && (
+          {!today?.paused && !assignment && (
             <EmptyState
               title="No problem available"
               description={
@@ -288,7 +477,6 @@ export default function DailyProblemPage() {
           )}
         </div>
 
-        {/* Calendar heatmap */}
         <div className={styles.panel}>
           <div className={styles.panelTitle}>Last 90 Days</div>
           <div className={styles.calendar}>
@@ -315,46 +503,65 @@ export default function DailyProblemPage() {
               <span>
                 <span className={styles.legendDot} style={{ background: '#93c5fd' }} /> Pending
               </span>
+              <span>
+                <span className={styles.legendDot} style={{ background: '#e5e5e5' }} /> No
+                assignment
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Bottom row */}
       <div className={styles.mainGrid}>
-        {/* History */}
         <div className={styles.panel}>
           <div className={styles.panelTitle}>History</div>
-          {history && history.items.length > 0 ? (
-            <div className={styles.historyList}>
-              {history.items.map((item) => {
-                let status: string;
-                let chipClass: string;
-                if (item.solved) {
-                  status = 'Solved';
-                  chipClass = styles.chipSolved;
-                } else if (item.skipped) {
-                  status = 'Skipped';
-                  chipClass = styles.chipSkipped;
-                } else if (item.missedAt) {
-                  status = 'Missed';
-                  chipClass = styles.chipMissed;
-                } else {
-                  status = 'Pending';
-                  chipClass = styles.chipPending;
-                }
-                return (
-                  <div key={item.id} className={styles.historyItem}>
-                    <div>
-                      <span className={styles.historyTitle}>{item.problem.title}</span>
-                      <br />
-                      <span className={styles.historyDate}>{item.assignedDate}</span>
+          {historyItems.length > 0 ? (
+            <>
+              <div className={styles.historyList}>
+                {historyItems.map((item) => {
+                  const status = historyStatus(item);
+                  return (
+                    <div key={item.id} className={styles.historyItem}>
+                      <div>
+                        <a
+                          href={item.problem.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={styles.historyTitle}
+                        >
+                          {item.problem.title}
+                        </a>
+                        <br />
+                        <span className={styles.historyDate}>{item.assignedDate}</span>
+                        <Link
+                          href={buildIdeProblemUrl({
+                            source: 'daily',
+                            problem: item.problem.id,
+                            title: item.problem.title,
+                          })}
+                          className={styles.historyIdeLink}
+                        >
+                          Open in IDE
+                        </Link>
+                      </div>
+                      <span className={`${styles.statusChip} ${chipClassForStatus(status)}`}>
+                        {status}
+                      </span>
                     </div>
-                    <span className={`${styles.statusChip} ${chipClass}`}>{status}</span>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+              {historyItems.length < historyTotal ? (
+                <button
+                  type="button"
+                  className={styles.btnLoadMore}
+                  onClick={() => void loadHistory(historyPage + 1, true)}
+                  disabled={historyLoading}
+                >
+                  {historyLoading ? 'Loading…' : 'Load more'}
+                </button>
+              ) : null}
+            </>
           ) : (
             <EmptyState
               title="No history yet"
@@ -363,72 +570,35 @@ export default function DailyProblemPage() {
           )}
         </div>
 
-        {/* Settings */}
         <div className={styles.panel}>
           <div className={styles.panelTitle}>Settings</div>
-          <div className={styles.settingsForm}>
-            <div className={styles.toggleRow}>
-              <span className={styles.fieldLabel}>Daily Problems</span>
-              <button
-                className={styles.btnSmall}
-                onClick={() => handleToggleEnabled(!config?.enabled)}
-              >
-                {config?.enabled ? 'Disable' : 'Enable'}
-              </button>
-            </div>
-
-            <div className={styles.fieldGroup}>
-              <span className={styles.fieldLabel}>Timezone</span>
-              <span style={{ fontSize: '0.8125rem' }}>{config?.timezone ?? 'UTC'}</span>
-            </div>
-
-            <div className={styles.fieldGroup}>
-              <span className={styles.fieldLabel}>Difficulty Preference</span>
-              <span style={{ fontSize: '0.8125rem' }}>
-                {config?.difficultyPref?.length
-                  ? config.difficultyPref.map((d) => difficultyLabel(d)).join(', ')
-                  : 'All difficulties'}
-              </span>
-            </div>
-
-            <div className={styles.fieldGroup}>
-              <span className={styles.fieldLabel}>Vacation Mode</span>
-              {today?.paused ? (
-                <div>
-                  <span style={{ fontSize: '0.8125rem' }}>
-                    Paused until {new Date(today.pausedUntil!).toLocaleDateString()}
-                  </span>
-                  <button
-                    className={styles.btnSmall}
-                    onClick={handleResume}
-                    disabled={acting}
-                    style={{ marginLeft: 8 }}
-                  >
-                    Resume
-                  </button>
-                </div>
-              ) : (
-                <div className={styles.pauseActions}>
-                  <select
-                    className={styles.fieldInput}
-                    value={pauseDays}
-                    onChange={(e) => setPauseDays(Number(e.target.value))}
-                  >
-                    {[1, 3, 7, 14, 30].map((d) => (
-                      <option key={d} value={d}>
-                        {d} day{d > 1 ? 's' : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <button className={styles.btnSmall} onClick={handlePause} disabled={acting}>
-                    Pause
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
+          <DailySettingsPanel
+            config={config ?? null}
+            paused={Boolean(today?.paused)}
+            pausedUntil={today?.pausedUntil}
+            pauseDays={pauseDays}
+            acting={acting}
+            onPauseDaysChange={setPauseDays}
+            onPause={handlePause}
+            onResume={handleResume}
+            onToggleEnabled={handleToggleEnabled}
+            onConfigSaved={reloadAll}
+            onError={setActionError}
+          />
         </div>
       </div>
+
+      {leaderboardRows.length > 0 ? (
+        <div className={styles.panel}>
+          <div className={styles.panelTitle}>Streak Leaderboard</div>
+          <LeaderboardTable
+            rows={leaderboardRows}
+            highlightUserId={user?.id}
+            scoreLabel="Streak"
+            showDelta={false}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -8,6 +8,7 @@ export type IdeProblemContext = {
   title: string;
   description: string;
   sampleStdin?: string;
+  externalUrl?: string;
 };
 
 type ProblemStarter = {
@@ -129,6 +130,7 @@ export function resolveProblemContext(searchParams: URLSearchParams): IdeProblem
     searchParams.get('desc')?.trim() ||
     curated?.description ||
     'Practice this problem in the Nibras IDE.';
+  const externalUrl = searchParams.get('url')?.trim() || undefined;
 
   return {
     source,
@@ -136,6 +138,7 @@ export function resolveProblemContext(searchParams: URLSearchParams): IdeProblem
     title,
     description,
     sampleStdin: curated?.sampleStdin,
+    externalUrl,
   };
 }
 

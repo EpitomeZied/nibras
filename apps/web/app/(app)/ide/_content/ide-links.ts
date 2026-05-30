@@ -5,6 +5,7 @@ export type IdeProblemLinkParams = {
   problem: string;
   title: string;
   description?: string;
+  externalUrl?: string;
 };
 
 export function buildIdeProblemUrl(params: IdeProblemLinkParams): string {
@@ -15,6 +16,9 @@ export function buildIdeProblemUrl(params: IdeProblemLinkParams): string {
   });
   if (params.description) {
     search.set('desc', params.description);
+  }
+  if (params.externalUrl) {
+    search.set('url', params.externalUrl);
   }
   return `/ide?${search.toString()}`;
 }

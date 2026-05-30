@@ -22,6 +22,16 @@ export default function ProblemBanner({ context, onDismiss }: ProblemBannerProps
         </span>
         <h2 className={styles.problemBannerTitle}>{context.title}</h2>
         <p className={styles.problemBannerDesc}>{context.description}</p>
+        {context.externalUrl ? (
+          <a
+            href={context.externalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.problemBannerExternal}
+          >
+            Open full problem statement
+          </a>
+        ) : null}
       </div>
       <div className={styles.problemBannerActions}>
         <Link

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@nibras/contracts": "*",
+    "@nibras/daily-problem": "*",
     "@nibras/github": "*",
     "@nibras/grading": "*",
     "@prisma/client": "^6.5.0",

@@ -16,6 +16,7 @@
     "@fastify/swagger-ui": "^5.2.5",
     "@nibras/contracts": "file:../../packages/contracts",
     "@nibras/core": "file:../../packages/core",
+    "@nibras/daily-problem": "file:../../packages/daily-problem",
     "@nibras/github": "file:../../packages/github",
     "@prisma/client": "^6.5.0",
     "@sentry/node": "^10.46.0",

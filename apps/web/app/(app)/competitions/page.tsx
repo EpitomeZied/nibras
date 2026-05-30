@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './page.module.css';
 import EmptyState from '../_components/widgets/EmptyState';
 import ContestCalendar from './_components/ContestCalendar';
+import DailyHubCard from './_components/daily-hub-card';
 import CalendarViewToggle, { type CalendarView } from './_components/CalendarViewToggle';
 import PlatformFilter from './_components/PlatformFilter';
 import SelectField from '../_components/ui/select-field';
@@ -421,6 +422,8 @@ export default function CompetitionsPage() {
           </button>
         </div>
       </header>
+
+      <DailyHubCard />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <PlatformFilter selected={platformFilter} onChange={setPlatformFilter} />

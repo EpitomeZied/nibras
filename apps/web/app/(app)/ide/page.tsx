@@ -3,8 +3,9 @@
 import dynamic from 'next/dynamic';
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import type { IdeLanguage, IdeRunResponse } from '@nibras/contracts';
+import type { DailyProblemContext, IdeLanguage, IdeRunResponse } from '@nibras/contracts';
 import { friendlyMessage } from '../../lib/api-clients/errors';
+import { serviceFetchOptional } from '../../lib/api-clients/service-fetch';
 import { getIdeStatus, listIdeLanguages, runIdeCode } from '../../lib/services/ide';
 import IdePanels, { type IdeRunHistoryEntry } from './_components/IdePanels';
 import ProblemBanner from './_components/ProblemBanner';
@@ -123,6 +124,31 @@ function IdePageContent() {
       }
     }
   }, [urlProblemContext]);
+
+  useEffect(() => {
+    if (urlProblemContext?.source !== 'daily') return;
+    let cancelled = false;
+
+    void serviceFetchOptional<DailyProblemContext>('competitions', '/v1/daily-problem/today/context')
+      .then((ctx) => {
+        if (cancelled || !ctx) return;
+        setProblemContext({
+          source: 'daily',
+          slug: ctx.id,
+          title: ctx.title,
+          description: ctx.description,
+          externalUrl: ctx.url,
+        });
+        setDismissedProblem(false);
+      })
+      .catch(() => {
+        /* fall back to query params */
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [urlProblemContext?.source, urlProblemContext?.slug]);
 
   useEffect(() => {
     let cancelled = false;

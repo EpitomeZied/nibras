@@ -267,6 +267,19 @@
   color: var(--text-muted);
 }
 
+.problemBannerExternal {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary, #2563eb);
+  text-decoration: none;
+}
+
+.problemBannerExternal:hover {
+  text-decoration: underline;
+}
+
 .problemBannerActions {
   display: flex;
   flex-wrap: wrap;
