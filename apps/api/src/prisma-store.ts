@@ -32,8 +32,10 @@ import {
 } from '@prisma/client';
 import {
   createPrivateRepository,
+  formatGitHubApiErrorMessage,
   generateRepositoryFromTemplate,
   GitHubAppConfig,
+  refreshGitHubUserToken,
 } from '@nibras/github';
 import { encrypt as encryptValue, decrypt as decryptValue } from '@nibras/core';
 import { enqueueVerificationJob } from './lib/queue';
@@ -2081,19 +2083,84 @@ export class PrismaStore implements AppStore {
     if (!account) {
       return null;
     }
-    // Decrypt token if encryption key is configured; fall back to stored value
-    const maybeDecrypt = (value: string | null): string | null => {
-      if (!value || !process.env.NIBRAS_ENCRYPTION_KEY) return value;
-      try {
-        return decryptValue(value);
-      } catch {
-        return value;
-      }
-    };
     return {
       login: account.login,
       installationId: account.installationId,
-      userAccessToken: maybeDecrypt(account.userAccessToken),
+      userAccessToken: this.decryptGithubToken(account.userAccessToken),
+    };
+  }
+
+  private decryptGithubToken(value: string | null): string | null {
+    if (!value || !process.env.NIBRAS_ENCRYPTION_KEY) return value;
+    try {
+      return decryptValue(value);
+    } catch {
+      return value;
+    }
+  }
+
+  private encryptGithubToken(value: string | undefined | null): string | null {
+    if (!value) return null;
+    if (!process.env.NIBRAS_ENCRYPTION_KEY) return value;
+    try {
+      return encryptValue(value);
+    } catch {
+      return value;
+    }
+  }
+
+  async ensureFreshGithubUserToken(
+    userId: string,
+    githubConfig: GitHubAppConfig
+  ): Promise<{
+    login: string;
+    userAccessToken: string;
+  } | null> {
+    const account = await this.prisma.githubAccount.findUnique({
+      where: { userId },
+    });
+    if (!account) {
+      return null;
+    }
+
+    let accessToken = this.decryptGithubToken(account.userAccessToken);
+    if (!accessToken) {
+      return null;
+    }
+
+    const refreshToken = this.decryptGithubToken(account.userRefreshToken);
+    const expiresAt = account.userAccessTokenExpiresAt;
+    const refreshBufferMs = 5 * 60 * 1000;
+    const shouldRefresh =
+      Boolean(refreshToken) &&
+      Boolean(expiresAt) &&
+      expiresAt!.getTime() <= Date.now() + refreshBufferMs;
+
+    if (shouldRefresh && refreshToken) {
+      try {
+        const refreshed = await refreshGitHubUserToken(githubConfig, refreshToken);
+        accessToken = refreshed.accessToken;
+        await this.prisma.githubAccount.update({
+          where: { userId },
+          data: {
+            userAccessToken: this.encryptGithubToken(refreshed.accessToken),
+            userRefreshToken: this.encryptGithubToken(refreshed.refreshToken),
+            userAccessTokenExpiresAt: refreshed.expiresIn
+              ? new Date(Date.now() + refreshed.expiresIn * 1000)
+              : null,
+            userRefreshTokenExpiresAt: refreshed.refreshTokenExpiresIn
+              ? new Date(Date.now() + refreshed.refreshTokenExpiresIn * 1000)
+              : null,
+          },
+        });
+      } catch {
+        // Fall back to the stored token when refresh fails (e.g. revoked refresh token).
+      }
+    }
+
+    return {
+      login: account.login,
+      userAccessToken: accessToken,
     };
   }
 
@@ -2647,7 +2714,7 @@ export class PrismaStore implements AppStore {
     userId: string,
     githubConfig: GitHubAppConfig
   ): Promise<RepoRecord> {
-    const account = await this.getGithubAccountForUser(userId);
+    const account = await this.ensureFreshGithubUserToken(userId, githubConfig);
     const project = await this.prisma.project.findUnique({
       where: { slug: projectKey },
       include: {
@@ -2659,20 +2726,25 @@ export class PrismaStore implements AppStore {
     }
     const hydratedProject = toProjectRecord(project);
     const repoName = `nibras-${projectKey.replace('/', '-')}`;
-    const generated =
-      hydratedProject.starter.kind === 'bundle'
-        ? await createPrivateRepository(
-            githubConfig,
-            account.userAccessToken,
-            account.login,
-            repoName
-          )
-        : await generateRepositoryFromTemplate(
-            githubConfig,
-            account.userAccessToken,
-            account.login,
-            repoName
-          );
+    let generated;
+    try {
+      generated =
+        hydratedProject.starter.kind === 'bundle'
+          ? await createPrivateRepository(
+              githubConfig,
+              account.userAccessToken,
+              account.login,
+              repoName
+            )
+          : await generateRepositoryFromTemplate(
+              githubConfig,
+              account.userAccessToken,
+              account.login,
+              repoName
+            );
+    } catch (err) {
+      throw new Error(formatGitHubApiErrorMessage(err));
+    }
     const record = await this.prisma.userProjectRepo.upsert({
       where: {
         userId_projectId: {

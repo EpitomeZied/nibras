@@ -1189,11 +1189,14 @@ Nibras requires a GitHub App for:
 
 3. **Configure Permissions:**
    - **Repository permissions:**
+     - **Administration: Read & Write** (required for Nibras 75 workspace fork and `nibras setup` repo creation)
      - Contents: Read & Write
      - Metadata: Read only
      - Commit statuses: Read & Write
    - **User permissions:**
      - Email addresses: Read only
+
+   After changing permissions, **approve the upgrade** on every app installation. Users must disconnect and reconnect GitHub to pick up new permissions.
 
 4. **Enable Features:**
    - ✅ **Device Flow:** Required for CLI authentication
@@ -1240,6 +1243,7 @@ NIBRAS_WEB_BASE_URL=https://xxx.ngrok.io
 
 | Permission                | Purpose                     | Why Needed                           |
 | ------------------------- | --------------------------- | ------------------------------------ |
+| **Administration** (R/W)  | Create/fork/generate repos  | Nibras 75 workspace, `nibras setup`  |
 | **Contents** (R/W)        | Read/write repository code  | Push submissions, clone starter code |
 | **Metadata** (R)          | Read repository metadata    | Get repo info, commit history        |
 | **Commit Statuses** (R/W) | Update commit status checks | Show test results on GitHub          |

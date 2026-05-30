@@ -210,6 +210,18 @@ In the GitHub App settings:
 2. **Permissions → Account permissions → Email addresses:** set to **Read-only**.  
    Without this, GitHub OAuth may return `?error=email_not_found` for users with a private primary email.
 
+3. **Permissions → Repository permissions:**
+   - **Administration:** Read & write (Nibras 75 fork + course repo provisioning)
+   - **Contents:** Read & write
+   - **Metadata:** Read-only
+   - **Commit statuses:** Read & write
+
+   After saving, approve the permission upgrade on every installation. Users must reconnect GitHub after the upgrade.
+
+4. **API env vars for Nibras 75:** set `NIBRAS_75_TEMPLATE_OWNER` and `NIBRAS_75_TEMPLATE_REPO` on the API container. The repo must be public (or accessible), marked as a **Template repository**, and contain the starter layout.
+
+5. **User re-authorization:** if fork fails with "Resource not accessible by integration", reconnect GitHub on `/competitions/nibras-75` after the admin completes steps 3–4.
+
 ### 5. Connect GitHub Actions to Azure (OIDC — recommended)
 
 Run this once from [Azure Cloud Shell](https://shell.azure.com) (or any machine

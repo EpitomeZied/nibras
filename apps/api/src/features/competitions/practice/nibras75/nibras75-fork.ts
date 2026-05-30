@@ -3,9 +3,12 @@ import { Prisma } from '@prisma/client';
 import {
   createPrivateRepository,
   forkRepository,
+  formatGitHubApiErrorMessage,
   generateRepositoryFromTemplate,
   getGitHubRepository,
+  GITHUB_REPO_PROVISION_PERMISSION_MESSAGE,
   GitHubRequestError,
+  isGitHubIntegrationAccessDenied,
   type GitHubAppConfig,
 } from '@nibras/github';
 import type { AppStore } from '../../../../store';
@@ -21,29 +24,17 @@ function sanitizeRepoName(login: string): string {
   return base.slice(0, 100) || 'nibras-75-workspace';
 }
 
-function githubErrorMessage(err: unknown, step: string): string {
-  if (err instanceof GitHubRequestError) {
-    try {
-      const parsed = JSON.parse(err.bodyText) as { message?: string };
-      if (parsed.message) {
-        return `${step}: ${parsed.message}`;
-      }
-    } catch {
-      // fall through
-    }
-    return `${step}: ${err.message}`;
-  }
-  if (err instanceof Error) {
-    return `${step}: ${err.message}`;
-  }
-  return `${step}: ${String(err)}`;
-}
-
 function repoAlreadyExists(err: unknown): boolean {
   if (!(err instanceof GitHubRequestError)) return false;
   if (err.statusCode !== 422) return false;
   const text = err.bodyText.toLowerCase();
   return text.includes('already exists') || text.includes('name already exists');
+}
+
+function failuresIncludeIntegrationAccessDenied(failures: string[]): boolean {
+  return failures.some((message) =>
+    message.toLowerCase().includes('resource not accessible by integration')
+  );
 }
 
 async function loadExistingUserRepo(
@@ -81,7 +72,7 @@ export async function forkNibras75Workspace(
   const existing = await prisma.nibras75Workspace.findUnique({ where: { userId } });
   if (existing) return existing;
 
-  const account = await store.getGithubAccountForUser(userId);
+  const account = await store.ensureFreshGithubUserToken(userId, githubConfig);
   if (!account?.userAccessToken) {
     throw new Error('Link your GitHub account before forking the Nibras 75 workspace.');
   }
@@ -97,6 +88,7 @@ export async function forkNibras75Workspace(
 
   const failures: string[] = [];
   let generated: RepoSnapshot | null = null;
+  let integrationAccessDenied = false;
 
   // Template repos must be created via /generate (fork API fails on template sources).
   try {
@@ -107,7 +99,8 @@ export async function forkNibras75Workspace(
       repoName
     );
   } catch (err) {
-    failures.push(githubErrorMessage(err, 'Template'));
+    integrationAccessDenied ||= isGitHubIntegrationAccessDenied(err);
+    failures.push(formatGitHubApiErrorMessage(err, 'Template'));
     if (repoAlreadyExists(err)) {
       generated = await loadExistingUserRepo(
         githubConfig,
@@ -128,7 +121,8 @@ export async function forkNibras75Workspace(
         repoName
       );
     } catch (err) {
-      failures.push(githubErrorMessage(err, 'Fork'));
+      integrationAccessDenied ||= isGitHubIntegrationAccessDenied(err);
+      failures.push(formatGitHubApiErrorMessage(err, 'Fork'));
       if (repoAlreadyExists(err)) {
         generated = await loadExistingUserRepo(
           githubConfig,
@@ -162,7 +156,8 @@ export async function forkNibras75Workspace(
         repoName
       );
     } catch (err) {
-      failures.push(githubErrorMessage(err, 'Create'));
+      integrationAccessDenied ||= isGitHubIntegrationAccessDenied(err);
+      failures.push(formatGitHubApiErrorMessage(err, 'Create'));
       if (repoAlreadyExists(err)) {
         generated = await loadExistingUserRepo(
           githubConfig,
@@ -175,6 +170,12 @@ export async function forkNibras75Workspace(
   }
 
   if (!generated) {
+    if (
+      integrationAccessDenied ||
+      failuresIncludeIntegrationAccessDenied(failures)
+    ) {
+      throw new Error(GITHUB_REPO_PROVISION_PERMISSION_MESSAGE);
+    }
     throw new Error(
       failures.length > 0
         ? `Could not create your Nibras 75 repo. ${failures.join(' ')}`

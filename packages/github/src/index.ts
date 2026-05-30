@@ -56,6 +56,54 @@ export class GitHubRequestError extends Error {
   }
 }
 
+const GITHUB_INTEGRATION_ACCESS_DENIED = 'resource not accessible by integration';
+
+/** User-facing guidance when the GitHub App lacks repo-creation permissions. */
+export const GITHUB_REPO_PROVISION_PERMISSION_MESSAGE =
+  'Your GitHub connection cannot create repositories. Ask your Nibras admin to grant the GitHub App Administration (Read & write) permission, then disconnect and reconnect GitHub.';
+
+export function isGitHubIntegrationAccessDenied(err: unknown): boolean {
+  if (!(err instanceof GitHubRequestError) || err.statusCode !== 403) {
+    return false;
+  }
+  return err.bodyText.toLowerCase().includes(GITHUB_INTEGRATION_ACCESS_DENIED);
+}
+
+export function formatGitHubApiErrorMessage(err: unknown, step?: string): string {
+  if (isGitHubIntegrationAccessDenied(err)) {
+    return GITHUB_REPO_PROVISION_PERMISSION_MESSAGE;
+  }
+  if (err instanceof GitHubRequestError) {
+    try {
+      const parsed = JSON.parse(err.bodyText) as { message?: string };
+      if (parsed.message) {
+        return step ? `${step}: ${parsed.message}` : parsed.message;
+      }
+    } catch {
+      // fall through
+    }
+    return step ? `${step}: ${err.message}` : err.message;
+  }
+  if (err instanceof Error) {
+    return step ? `${step}: ${err.message}` : err.message;
+  }
+  const text = String(err);
+  return step ? `${step}: ${text}` : text;
+}
+
+function parseOAuthTokenPayload(payload: Record<string, unknown>): GitHubTokenResponse {
+  return {
+    accessToken: String(payload.access_token),
+    refreshToken: payload.refresh_token ? String(payload.refresh_token) : undefined,
+    expiresIn: payload.expires_in ? Number(payload.expires_in) : undefined,
+    refreshTokenExpiresIn: payload.refresh_token_expires_in
+      ? Number(payload.refresh_token_expires_in)
+      : undefined,
+    scope: payload.scope ? String(payload.scope) : undefined,
+    tokenType: payload.token_type ? String(payload.token_type) : undefined,
+  };
+}
+
 export type GitHubRepositoryPermission = 'admin' | 'write' | 'read';
 
 export type GitHubRepository = {
@@ -250,16 +298,34 @@ export async function pollGitHubDeviceFlow(
       String(payload.error_description || payload.error || 'Failed to poll GitHub device flow.')
     );
   }
-  return {
-    accessToken: String(payload.access_token),
-    refreshToken: payload.refresh_token ? String(payload.refresh_token) : undefined,
-    expiresIn: payload.expires_in ? Number(payload.expires_in) : undefined,
-    refreshTokenExpiresIn: payload.refresh_token_expires_in
-      ? Number(payload.refresh_token_expires_in)
-      : undefined,
-    scope: payload.scope ? String(payload.scope) : undefined,
-    tokenType: payload.token_type ? String(payload.token_type) : undefined,
-  };
+  return parseOAuthTokenPayload(payload);
+}
+
+export async function refreshGitHubUserToken(
+  config: GitHubAppConfig,
+  refreshToken: string
+): Promise<GitHubTokenResponse> {
+  const params = new URLSearchParams({
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+  });
+  const response = await fetch('https://github.com/login/oauth/access_token', {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'content-type': 'application/x-www-form-urlencoded',
+    },
+    body: params.toString(),
+  });
+  const payload = (await response.json()) as Record<string, unknown>;
+  if (!response.ok || payload.error) {
+    throw new Error(
+      String(payload.error_description || payload.error || 'Failed to refresh GitHub user token.')
+    );
+  }
+  return parseOAuthTokenPayload(payload);
 }
 
 export async function exchangeGitHubOAuthCode(
@@ -285,16 +351,7 @@ export async function exchangeGitHubOAuthCode(
       String(payload.error_description || payload.error || 'Failed to exchange GitHub OAuth code.')
     );
   }
-  return {
-    accessToken: String(payload.access_token),
-    refreshToken: payload.refresh_token ? String(payload.refresh_token) : undefined,
-    expiresIn: payload.expires_in ? Number(payload.expires_in) : undefined,
-    refreshTokenExpiresIn: payload.refresh_token_expires_in
-      ? Number(payload.refresh_token_expires_in)
-      : undefined,
-    scope: payload.scope ? String(payload.scope) : undefined,
-    tokenType: payload.token_type ? String(payload.token_type) : undefined,
-  };
+  return parseOAuthTokenPayload(payload);
 }
 
 export async function getGitHubUser(

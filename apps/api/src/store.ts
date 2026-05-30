@@ -3,6 +3,7 @@ import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { resolveOutboundEmail } from '@nibras/contracts';
 import { ProjectManifest } from '@nibras/contracts';
+import type { GitHubAppConfig } from '@nibras/github';
 import {
   buildCs106lManifest,
   buildCs106lStarter,
@@ -1086,6 +1087,13 @@ export interface AppStore {
     login: string;
     installationId: string | null;
     userAccessToken: string | null;
+  } | null>;
+  ensureFreshGithubUserToken(
+    userId: string,
+    githubConfig: GitHubAppConfig
+  ): Promise<{
+    login: string;
+    userAccessToken: string;
   } | null>;
   linkGitHubInstallation(userId: string, installationId: string): Promise<UserRecord>;
   refreshCliSession(apiBaseUrl: string, refreshToken: string): Promise<SessionRecord | null>;
@@ -2995,6 +3003,23 @@ export class FileStore implements AppStore {
     return {
       login: account.login,
       installationId: account.installationId,
+      userAccessToken: account.userAccessToken,
+    };
+  }
+
+  async ensureFreshGithubUserToken(
+    userId: string,
+    _githubConfig: GitHubAppConfig
+  ): Promise<{
+    login: string;
+    userAccessToken: string;
+  } | null> {
+    const account = await this.getGithubAccountForUser(userId);
+    if (!account?.userAccessToken) {
+      return null;
+    }
+    return {
+      login: account.login,
       userAccessToken: account.userAccessToken,
     };
   }

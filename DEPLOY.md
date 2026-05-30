@@ -28,12 +28,37 @@ This guide covers deploying Nibras on Railway or Fly.io. The stack consists of f
 | `GITHUB_WEBHOOK_SECRET`    | Secret configured in GitHub App webhook settings                           |
 | `GITHUB_TEMPLATE_OWNER`    | GitHub org/user that owns template repos                                   |
 | `GITHUB_TEMPLATE_REPO`     | Template repository name                                                   |
+| `NIBRAS_75_TEMPLATE_OWNER` | GitHub owner of the Nibras 75 solutions template (public, marked as template) |
+| `NIBRAS_75_TEMPLATE_REPO`  | Nibras 75 template repo name (default: `nibras-75`)                        |
 | `RESEND_API_KEY`           | (Optional) Resend API key for email notifications                          |
 | `NIBRAS_EMAIL_FROM`        | (Optional) Verified sender address, e.g. `Nibras <noreply@yourdomain.com>` |
 | `SENTRY_DSN`               | (Optional) Sentry DSN for error tracking                                   |
 | `RATE_LIMIT_MAX`           | (Optional) Global rate limit per minute, default `100`                     |
 
-### Web service (Next.js)
+### GitHub App permissions (required)
+
+In your GitHub App settings → **Permissions & events**, configure:
+
+| Permission | Setting | Required for |
+| ---------- | ------- | ------------ |
+| **Administration** | Read & write | Nibras 75 repo fork, `nibras setup` repo provisioning |
+| Contents | Read & write | Submissions, starter code |
+| Metadata | Read-only | Repository metadata |
+| Commit statuses | Read & write | CI status on commits |
+| Email addresses (Account) | Read-only | OAuth sign-in |
+
+After saving, **approve the permission upgrade** on every installation. Users who linked GitHub before the upgrade must disconnect and reconnect GitHub (Settings → Applications, or use **Connect GitHub** on `/competitions/nibras-75`).
+
+### Nibras 75 template repository
+
+Set on the **API** service:
+
+- `NIBRAS_75_TEMPLATE_OWNER` — GitHub user/org that owns the template
+- `NIBRAS_75_TEMPLATE_REPO` — repo name (default in code: `nibras-75`)
+
+The template repo must exist, be **public** (or accessible to forking users), and have **Template repository** enabled under Settings → General.
+
+---
 
 | Variable                          | Description                                                         |
 | --------------------------------- | ------------------------------------------------------------------- |

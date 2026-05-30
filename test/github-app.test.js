@@ -5,7 +5,12 @@ const crypto = require('node:crypto');
 const {
   createAppJwt,
   createSignedState,
+  formatGitHubApiErrorMessage,
   getGitHubUser,
+  GitHubRequestError,
+  GITHUB_REPO_PROVISION_PERMISSION_MESSAGE,
+  isGitHubIntegrationAccessDenied,
+  refreshGitHubUserToken,
   verifySignedState,
   verifyWebhookSignature,
 } = require('../packages/github/dist/index');
@@ -232,5 +237,55 @@ test('GitHub webhook endpoint rejects invalid signatures and accepts valid ones'
         process.env[key] = value;
       }
     }
+  }
+});
+
+test('isGitHubIntegrationAccessDenied detects GitHub App permission failures', () => {
+  const err = new GitHubRequestError(
+    '{"message":"Resource not accessible by integration"}',
+    403,
+    '{"message":"Resource not accessible by integration"}'
+  );
+  assert.equal(isGitHubIntegrationAccessDenied(err), true);
+  assert.equal(
+    formatGitHubApiErrorMessage(err, 'Template'),
+    GITHUB_REPO_PROVISION_PERMISSION_MESSAGE
+  );
+});
+
+test('refreshGitHubUserToken exchanges a refresh token for a new access token', async () => {
+  const originalFetch = global.fetch;
+  global.fetch = async (_url, init) => {
+    const body = new URLSearchParams(String(init?.body));
+    assert.equal(body.get('grant_type'), 'refresh_token');
+    assert.equal(body.get('refresh_token'), 'ghr_test');
+    return new Response(
+      JSON.stringify({
+        access_token: 'ghu_new',
+        expires_in: 28800,
+        refresh_token: 'ghr_new',
+        refresh_token_expires_in: 15897600,
+        token_type: 'bearer',
+      }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  };
+
+  try {
+    const token = await refreshGitHubUserToken(
+      {
+        appId: '1',
+        clientId: 'client-id',
+        clientSecret: 'client-secret',
+        privateKey: 'stub',
+        webhookSecret: 'webhook-secret',
+        appName: 'nibras-dev',
+      },
+      'ghr_test'
+    );
+    assert.equal(token.accessToken, 'ghu_new');
+    assert.equal(token.refreshToken, 'ghr_new');
+  } finally {
+    global.fetch = originalFetch;
   }
 });
