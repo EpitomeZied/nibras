@@ -21,6 +21,7 @@ import {
   type NavDropdownGroup,
 } from './nav-config';
 import { getShellUserIdentity } from './session-context';
+import { hasInstructorAccess } from '../instructor/_components/instructor-access';
 
 type ShellSessionUser = {
   username: string;
@@ -135,9 +136,9 @@ function UserDropdown({
   loading: boolean;
   identity: string;
 }) {
-  const isAdmin = user?.systemRole === 'admin';
+  const canTeach = hasInstructorAccess(user);
   const menuItems = [
-    ...(isAdmin ? [{ label: 'Builder', icon: <IconBuilder />, href: '/instructor' }] : []),
+    ...(canTeach ? [{ label: 'Instructor', icon: <IconBuilder />, href: '/instructor' }] : []),
     { label: 'Profile', icon: <IconProfile />, href: '/users' },
     { label: 'Settings', icon: <IconSettings />, href: '/settings' },
     {

@@ -22,3 +22,17 @@ export const analyticsSections: SectionNavItem[] = [
   { href: '/instructor/analytics/courses', label: 'Courses' },
   { href: '/instructor/analytics/engagement', label: 'Engagement' },
 ];
+
+export function instructorCourseSections(courseId: string): SectionNavItem[] {
+  return [
+    { href: `/instructor/courses/${courseId}`, label: 'Overview' },
+    { href: `/instructor/courses/${courseId}/submissions`, label: 'Submissions' },
+    { href: `/instructor/courses/${courseId}/members`, label: 'Members' },
+    { href: `/instructor/courses/${courseId}/content`, label: 'Lectures' },
+    { href: `/instructor/courses/${courseId}/assignments`, label: 'Assignments' },
+    { href: `/instructor/courses/${courseId}/grades`, label: 'Grades' },
+    { href: `/instructor/courses/${courseId}/discussions`, label: 'Discussions' },
+    { href: `/instructor/courses/${courseId}/analytics`, label: 'Analytics' },
+    { href: `/instructor/courses/${courseId}/settings`, label: 'Settings' },
+  ];
+}

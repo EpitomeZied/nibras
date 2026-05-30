@@ -126,6 +126,7 @@ export const AssignmentSubmissionsListSchema = z.object({
 
 export type CourseAssignmentType = z.infer<typeof CourseAssignmentTypeSchema>;
 export type McqAssignmentConfig = z.infer<typeof McqAssignmentConfigSchema>;
+export type McqAssignmentConfigInput = z.infer<typeof McqAssignmentConfigInputSchema>;
 export type CourseAssignment = z.infer<typeof CourseAssignmentSchema>;
 export type CourseAssignmentDetail = z.infer<typeof CourseAssignmentDetailSchema>;
 export type AssignmentDisplayStatus = z.infer<typeof AssignmentDisplayStatusSchema>;

@@ -899,3 +899,72 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.mcqBuilder {
+  display: grid;
+  gap: 12px;
+}
+
+.mcqQuestionCard {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+}
+
+.mcqQuestionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.mcqOptions {
+  display: grid;
+  gap: 8px;
+}
+
+.mcqOptionRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.threadActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.lectureDnDList {
+  display: grid;
+  gap: 8px;
+}
+
+.lectureDnDItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: grab;
+}
+
+.lectureDnDItemDragging {
+  opacity: 0.55;
+}
+
+.lectureCommentPanel {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.listStack {
+  display: grid;
+  gap: 10px;
+}

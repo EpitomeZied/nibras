@@ -674,6 +674,8 @@ export const CreateReviewRequestSchema = z.object({
   rubric: z.array(TrackingRubricItemSchema).default([]),
 });
 
+export const UpdateReviewRequestSchema = CreateReviewRequestSchema;
+
 export const ReviewQueueResponseSchema = z.object({
   submissions: z.array(TrackingSubmissionSchema),
 });

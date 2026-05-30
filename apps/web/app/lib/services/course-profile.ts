@@ -4,6 +4,7 @@ import type {
   CourseEnrollmentRequest,
   CourseGradesRollup,
   CreateCourseEnrollmentRequest,
+  InstructorCourseGradesResponse,
   TrackingCourseDetail,
   UpdateCourseProfileRequest,
   VideoAnalyticsResponse,
@@ -27,6 +28,14 @@ export async function getMyCourseGrades(courseId: string) {
   return serviceFetch<CourseGradesRollup>(
     'tracking',
     `/v1/tracking/courses/${courseId}/grades/me`,
+    { auth: true }
+  );
+}
+
+export async function getInstructorCourseGrades(courseId: string) {
+  return serviceFetch<InstructorCourseGradesResponse>(
+    'tracking',
+    `/v1/tracking/courses/${courseId}/grades`,
     { auth: true }
   );
 }

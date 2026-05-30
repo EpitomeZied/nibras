@@ -5,6 +5,13 @@ export const PINNED_RELEASE_TAG: string;
 export const NPM_INSTALL_COMMAND: string;
 export const GIT_INSTALL_COMMAND: string;
 
+export function getInstallCommand(
+  os: OnboardingOs,
+  windowsShell?: WindowsShell,
+  tag?: string
+): string;
+export function getUnixInstallCommand(tag?: string): string;
+export function getWindowsInstallCommand(tag?: string): string;
 export function getOnboardingConfigPath(os: OnboardingOs): string;
 export function getOnboardingDirExample(os: OnboardingOs, windowsShell?: WindowsShell): string;
 export function getInstallTroubleshootingCommand(
@@ -18,3 +25,5 @@ export function discoverOnboardingApiBaseUrl(args: {
   pageOrigin: string | null | undefined;
   probe: (candidate: string) => Promise<boolean>;
 }): Promise<string>;
+
+export const ONBOARDING_STEP_VIDEOS: Partial<Record<string, string>>;

@@ -20,6 +20,7 @@ import {
   getUnixInstallCommand,
   getWindowsInstallCommand,
   NPM_INSTALL_COMMAND,
+  ONBOARDING_STEP_VIDEOS,
   PINNED_RELEASE_TAG,
 } from './onboarding-content.js';
 import styles from './page.module.css';
@@ -202,13 +203,7 @@ function getSteps(mode: ViewMode) {
 }
 
 /** YouTube walkthroughs embedded in setup steps (16:9, up to 1080px wide). */
-const STEP_VIDEOS: Partial<Record<string, string>> = {
-  'step-01': 'EPtpi7PvtII',
-  'step-03': '3XgKwFjB_v4',
-  'step-05': 'hBMsjdeLuJI',
-  'step-06': 'pZLOjB6XWK8',
-  'step-07': '2QrjBe-D0BE',
-};
+const STEP_VIDEOS = ONBOARDING_STEP_VIDEOS;
 
 function stepNumber(stepId: string, mode: ViewMode): string {
   return getSteps(mode).find((s) => s.id === stepId)?.number ?? '—';
@@ -1382,7 +1377,10 @@ export default function OnboardingPage() {
               your platform. It checks Node.js and npm, removes stale global installs, and installs
               the pinned <code className={styles.inlineCode}>@nibras/cli</code> package from npm.
             </p>
-            <VideoPlaceholder title="Installing the Nibras CLI" />
+            <VideoPlaceholder
+              title="Installing the Nibras CLI"
+              youtubeId={STEP_VIDEOS['step-02']}
+            />
 
             {os === 'windows' && (
               <div className={`${styles.callout} ${styles.calloutInfo}`}>

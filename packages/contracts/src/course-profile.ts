@@ -61,6 +61,20 @@ export const CourseGradesRollupSchema = z.object({
   ),
 });
 
+export const InstructorStudentGradeRowSchema = z.object({
+  userId: z.string().min(1),
+  username: z.string(),
+  githubLogin: z.string().nullable(),
+  displayName: z.string().nullable(),
+  projects: CourseGradesRollupSchema.shape.projects,
+  assignments: CourseGradesRollupSchema.shape.assignments,
+});
+
+export const InstructorCourseGradesResponseSchema = z.object({
+  courseId: z.string().min(1),
+  students: z.array(InstructorStudentGradeRowSchema),
+});
+
 export const VideoAnalyticsItemSchema = z.object({
   videoId: z.string().min(1),
   title: z.string(),
@@ -77,4 +91,6 @@ export const VideoAnalyticsResponseSchema = z.object({
 export type TrackingCourseDetail = z.infer<typeof TrackingCourseDetailSchema>;
 export type UpdateCourseProfileRequest = z.infer<typeof UpdateCourseProfileRequestSchema>;
 export type CourseGradesRollup = z.infer<typeof CourseGradesRollupSchema>;
+export type InstructorStudentGradeRow = z.infer<typeof InstructorStudentGradeRowSchema>;
+export type InstructorCourseGradesResponse = z.infer<typeof InstructorCourseGradesResponseSchema>;
 export type VideoAnalyticsResponse = z.infer<typeof VideoAnalyticsResponseSchema>;

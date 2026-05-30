@@ -129,7 +129,10 @@ function IdePageContent() {
     if (urlProblemContext?.source !== 'daily') return;
     let cancelled = false;
 
-    void serviceFetchOptional<DailyProblemContext>('competitions', '/v1/daily-problem/today/context')
+    void serviceFetchOptional<DailyProblemContext>(
+      'competitions',
+      '/v1/daily-problem/today/context'
+    )
       .then((ctx) => {
         if (cancelled || !ctx) return;
         setProblemContext({

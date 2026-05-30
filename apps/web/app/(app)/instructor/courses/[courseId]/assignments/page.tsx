@@ -17,6 +17,8 @@ import {
   updateCourseAssignment,
 } from '../../../../../lib/services/course-assignments';
 import { friendlyMessage } from '../../../../../lib/api-clients/errors';
+import type { McqAssignmentConfigInput } from '@nibras/contracts';
+import McqBuilder, { createDefaultMcqConfig } from '../../../_components/mcq-builder';
 import styles from '../../../instructor.module.css';
 
 export default function InstructorAssignmentsPage({
@@ -34,24 +36,8 @@ export default function InstructorAssignmentsPage({
   const [dueAt, setDueAt] = useState('');
   const [points, setPoints] = useState('100');
   const [assignmentType, setAssignmentType] = useState<CourseAssignmentType>('text');
-  const [mcqJson, setMcqJson] = useState(
-    JSON.stringify(
-      {
-        questions: [
-          {
-            id: 'q1',
-            prompt: 'Sample question?',
-            options: [
-              { id: 'a', text: 'Option A' },
-              { id: 'b', text: 'Option B' },
-            ],
-            correctOptionId: 'a',
-          },
-        ],
-      },
-      null,
-      2
-    )
+  const [mcqConfig, setMcqConfig] = useState<McqAssignmentConfigInput>(() =>
+    createDefaultMcqConfig()
   );
   const [saving, setSaving] = useState(false);
   const [gradeAssignmentId, setGradeAssignmentId] = useState<string | null>(null);
@@ -96,9 +82,9 @@ export default function InstructorAssignmentsPage({
     try {
       let config: ReturnType<typeof McqAssignmentConfigInputSchema.parse> | undefined;
       if (assignmentType === 'mcq' || assignmentType === 'quiz') {
-        const parsed = McqAssignmentConfigInputSchema.safeParse(JSON.parse(mcqJson));
+        const parsed = McqAssignmentConfigInputSchema.safeParse(mcqConfig);
         if (!parsed.success) {
-          setError(parsed.error.issues[0]?.message ?? 'Invalid MCQ configuration JSON.');
+          setError(parsed.error.issues[0]?.message ?? 'Invalid MCQ configuration.');
           return;
         }
         config = parsed.data;
@@ -192,19 +178,7 @@ export default function InstructorAssignmentsPage({
             style={{ padding: 8, borderRadius: 8, border: '1px solid var(--border)' }}
           />
           {(assignmentType === 'mcq' || assignmentType === 'quiz') && (
-            <textarea
-              value={mcqJson}
-              onChange={(e) => setMcqJson(e.target.value)}
-              placeholder="MCQ config JSON"
-              rows={12}
-              style={{
-                padding: 8,
-                borderRadius: 8,
-                border: '1px solid var(--border)',
-                fontFamily: 'monospace',
-                fontSize: 12,
-              }}
-            />
+            <McqBuilder value={mcqConfig} onChange={setMcqConfig} />
           )}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <input

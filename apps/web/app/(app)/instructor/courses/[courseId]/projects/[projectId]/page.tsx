@@ -131,6 +131,12 @@ export default function ProjectDetailPage({
             Team Formation
           </Link>
           <Link
+            href={`/instructor/courses/${courseId}/projects/${projectId}/interests`}
+            className={styles.btnSecondary}
+          >
+            Interest Requests
+          </Link>
+          <Link
             href={`/instructor/courses/${courseId}/projects/${projectId}/edit`}
             className={styles.btnSecondary}
           >

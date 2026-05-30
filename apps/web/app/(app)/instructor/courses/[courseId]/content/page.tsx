@@ -9,6 +9,7 @@ import type {
   VideoProvider,
 } from '@nibras/contracts';
 import VideoEmbed from '../../../../_components/VideoEmbed';
+import InstructorVideoCommentsPanel from '../../../_components/instructor-video-comments-panel';
 import { friendlyMessage } from '../../../../../lib/api-clients/errors';
 import {
   createCourseSection,
@@ -55,6 +56,8 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
   const [editVideoLinkedProject, setEditVideoLinkedProject] = useState('');
   const [editVideoMoveSection, setEditVideoMoveSection] = useState('');
   const [editVideoResources, setEditVideoResources] = useState<CourseResourceLink[]>([]);
+  const [dragSectionId, setDragSectionId] = useState<string | null>(null);
+  const [dragVideoId, setDragVideoId] = useState<string | null>(null);
 
   const { data: projects } = useFetch<Array<{ id: string; title: string; status: string }>>(
     `/v1/tracking/courses/${courseId}/projects`
@@ -162,6 +165,42 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
     try {
       await updateCourseVideo(courseId, video.id, { sortOrder: target.sortOrder });
       await updateCourseVideo(courseId, target.id, { sortOrder: video.sortOrder });
+      await load();
+    } catch (err) {
+      setError(friendlyMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function reorderSection(sourceId: string, targetId: string) {
+    if (sourceId === targetId) return;
+    const sourceIdx = sections.findIndex((section) => section.id === sourceId);
+    const targetIdx = sections.findIndex((section) => section.id === targetId);
+    if (sourceIdx < 0 || targetIdx < 0) return;
+    const source = sections[sourceIdx];
+    const target = sections[targetIdx];
+    setSaving(true);
+    try {
+      await updateCourseSection(courseId, source.id, { sortOrder: target.sortOrder });
+      await updateCourseSection(courseId, target.id, { sortOrder: source.sortOrder });
+      await load();
+    } catch (err) {
+      setError(friendlyMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function reorderVideo(sourceId: string, targetId: string) {
+    if (!activeSection || sourceId === targetId) return;
+    const source = activeSection.videos.find((video) => video.id === sourceId);
+    const target = activeSection.videos.find((video) => video.id === targetId);
+    if (!source || !target) return;
+    setSaving(true);
+    try {
+      await updateCourseVideo(courseId, source.id, { sortOrder: target.sortOrder });
+      await updateCourseVideo(courseId, target.id, { sortOrder: source.sortOrder });
       await load();
     } catch (err) {
       setError(friendlyMessage(err));
@@ -303,7 +342,18 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
           <aside className={localStyles.sidebar}>
             <strong style={{ fontSize: 13, padding: '4px 8px' }}>Sections</strong>
             {sections.map((section, sIdx) => (
-              <div key={section.id} className={localStyles.sectionRow}>
+              <div
+                key={section.id}
+                className={`${localStyles.sectionRow} ${dragSectionId === section.id ? styles.lectureDnDItemDragging : ''}`}
+                draggable={!saving}
+                onDragStart={() => setDragSectionId(section.id)}
+                onDragEnd={() => setDragSectionId(null)}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={() => {
+                  if (dragSectionId) void reorderSection(dragSectionId, section.id);
+                  setDragSectionId(null);
+                }}
+              >
                 <button
                   type="button"
                   className={`${localStyles.sectionBtn} ${
@@ -428,7 +478,18 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
                     <p className={styles.muted}>No videos in this section yet.</p>
                   ) : (
                     activeSection.videos.map((video) => (
-                      <div key={video.id} className={localStyles.videoRow}>
+                      <div
+                        key={video.id}
+                        className={`${localStyles.videoRow} ${dragVideoId === video.id ? styles.lectureDnDItemDragging : ''}`}
+                        draggable={!saving && editingVideoId !== video.id}
+                        onDragStart={() => setDragVideoId(video.id)}
+                        onDragEnd={() => setDragVideoId(null)}
+                        onDragOver={(event) => event.preventDefault()}
+                        onDrop={() => {
+                          if (dragVideoId) void reorderVideo(dragVideoId, video.id);
+                          setDragVideoId(null);
+                        }}
+                      >
                         {editingVideoId === video.id ? (
                           <div className={localStyles.form} style={{ flex: 1 }}>
                             <label>
@@ -600,6 +661,7 @@ export default function CourseContentPage({ params }: { params: Promise<{ course
                 {previewVideo && (
                   <div className={localStyles.preview}>
                     <VideoEmbed video={previewVideo} />
+                    <InstructorVideoCommentsPanel videoId={previewVideo.id} />
                   </div>
                 )}
 

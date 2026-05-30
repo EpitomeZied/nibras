@@ -96,3 +96,15 @@ export async function discoverOnboardingApiBaseUrl({ configuredApiBaseUrl, pageO
     probe,
   });
 }
+
+/** YouTube walkthrough IDs keyed by onboarding step id. */
+export const ONBOARDING_STEP_VIDEOS = {
+  'step-01': 'EPtpi7PvtII',
+  'step-02': 'SqcGvP8ZKq0',
+  'step-03': '3XgKwFjB_v4',
+  'step-04': 'xwK3D3H10kA',
+  'step-05': 'hBMsjdeLuJI',
+  'step-06': 'pZLOjB6XWK8',
+  'step-07': '2QrjBe-D0BE',
+  'step-08': '9bZkp7q19f0',
+};

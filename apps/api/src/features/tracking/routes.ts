@@ -11,6 +11,7 @@ import {
   CreateProjectTemplateRequestSchema,
   CreateMilestoneRequestSchema,
   CreateReviewRequestSchema,
+  UpdateReviewRequestSchema,
   CreateTrackingCourseRequestSchema,
   CreateTrackingProjectRequestSchema,
   CreateTrackingSubmissionRequestSchema,
@@ -1625,6 +1626,84 @@ export function registerTrackingRoutes(app: FastifyInstance, store: AppStore): v
 
       reply.code(201);
       return TrackingReviewSchema.parse(review);
+    }
+  );
+
+  app.patch(
+    '/v1/tracking/submissions/:submissionId/review',
+    { schema: { tags: ['tracking'], summary: 'Update an existing submission review' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const params = request.params as { submissionId: string };
+      if (!validateId(params.submissionId, reply, 'submissionId')) return;
+      const submission = await store.getSubmissionForAdmin(
+        requestBaseUrl(request),
+        params.submissionId
+      );
+      if (!submission) {
+        reply.code(404).send(Errors.notFound('Submission'));
+        return;
+      }
+      const project = await store.getTrackingProjectById(
+        requestBaseUrl(request),
+        submission.projectId
+      );
+      if (!project || !canManageProject(auth, project)) {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const payload = UpdateReviewRequestSchema.parse(request.body);
+      const review = await store.updateTrackingReview(
+        requestBaseUrl(request),
+        auth.user.id,
+        params.submissionId,
+        payload
+      );
+      if (!review) {
+        reply.code(404).send({ error: 'No review found to update.' });
+        return;
+      }
+      return TrackingReviewSchema.parse(review);
+    }
+  );
+
+  app.post(
+    '/v1/tracking/submissions/:submissionId/retry',
+    { schema: { tags: ['tracking'], summary: 'Re-queue submission for verification' } },
+    async (request, reply) => {
+      const auth = await requireUser(request, reply, store);
+      if (!auth) return;
+      const params = request.params as { submissionId: string };
+      if (!validateId(params.submissionId, reply, 'submissionId')) return;
+      const submission = await store.getSubmissionForAdmin(
+        requestBaseUrl(request),
+        params.submissionId
+      );
+      if (!submission) {
+        reply.code(404).send(Errors.notFound('Submission'));
+        return;
+      }
+      const project = await store.getTrackingProjectById(
+        requestBaseUrl(request),
+        submission.projectId
+      );
+      if (!project || !canManageProject(auth, project)) {
+        reply.code(403).send(Errors.forbidden());
+        return;
+      }
+      const updated = await store.overrideSubmissionStatus(
+        requestBaseUrl(request),
+        params.submissionId,
+        'queued',
+        'Manually re-queued by instructor.',
+        auth.user.id
+      );
+      if (!updated) {
+        reply.code(404).send(Errors.notFound('Submission'));
+        return;
+      }
+      return { ok: true, submissionId: params.submissionId, status: 'queued' };
     }
   );
 

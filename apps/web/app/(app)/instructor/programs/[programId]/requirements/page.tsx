@@ -1,7 +1,6 @@
 'use client';
 
-import { use } from 'react';
-import { useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import type { ProgramSummary, ProgramVersionDetail } from '@nibras/contracts';
 import { apiFetch } from '../../../../../lib/session';
 import { useFetch } from '../../../../../lib/use-fetch';
@@ -26,7 +25,7 @@ export default function ProgramRequirementsPage({
   const [catalogNumber, setCatalogNumber] = useState('');
   const [courseTitle, setCourseTitle] = useState('');
   const [defaultUnits, setDefaultUnits] = useState(3);
-  const department = 'Computer Science';
+  const [department, setDepartment] = useState('Computer Science');
   const [groupTitle, setGroupTitle] = useState('');
   const [category, setCategory] = useState<
     'foundation' | 'core' | 'depth' | 'elective' | 'capstone' | 'policy'
@@ -35,6 +34,14 @@ export default function ProgramRequirementsPage({
     'required' | 'choose_n' | 'elective_pool' | 'track_gate'
   >('required');
   const [courseIds, setCourseIds] = useState('');
+
+  useEffect(() => {
+    if (!program?.title) return;
+    setDepartment((prev) => {
+      if (prev !== 'Computer Science') return prev;
+      return program.title.replace(/\s*Program$/i, '').trim() || program.title;
+    });
+  }, [program?.title]);
 
   async function createCatalogCourse() {
     await apiFetch(`/v1/programs/${programId}/catalog-courses`, {
@@ -144,6 +151,15 @@ export default function ProgramRequirementsPage({
                     id="courseTitle"
                     value={courseTitle}
                     onChange={(event) => setCourseTitle(event.target.value)}
+                  />
+                </div>
+                <div className={styles.formGroup}>
+                  <label htmlFor="department">Department</label>
+                  <input
+                    id="department"
+                    value={department}
+                    onChange={(event) => setDepartment(event.target.value)}
+                    placeholder="e.g. Computer Science"
                   />
                 </div>
                 <div className={styles.formGroup}>

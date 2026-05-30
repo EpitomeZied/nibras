@@ -5715,6 +5715,64 @@ export class PrismaStore implements AppStore {
     return toReviewRecord(review);
   }
 
+  async updateTrackingReview(
+    apiBaseUrl: string,
+    userId: string,
+    submissionId: string,
+    payload: {
+      status: StoreReviewStatus;
+      score: number | null;
+      feedback: string;
+      rubric: TrackingRubricItemRecord[];
+    }
+  ): Promise<ReviewRecord | null> {
+    await this.seed(apiBaseUrl);
+    const existing = await this.prisma.review.findFirst({
+      where: { submissionAttemptId: submissionId },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!existing) return null;
+
+    const submission = await this.prisma.submissionAttempt.findUniqueOrThrow({
+      where: { id: submissionId },
+    });
+    const review = await this.prisma.review.update({
+      where: { id: existing.id },
+      data: {
+        reviewerUserId: userId,
+        status: payload.status as ReviewStatus,
+        score: payload.score,
+        feedback: payload.feedback,
+        rubricJson: payload.rubric,
+        reviewedAt: new Date(),
+      },
+    });
+    await this.prisma.submissionAttempt.update({
+      where: { id: submissionId },
+      data: {
+        status:
+          payload.status === 'changes_requested'
+            ? SubmissionStatus.failed
+            : payload.status === 'approved' || payload.status === 'graded'
+              ? SubmissionStatus.passed
+              : SubmissionStatus.needs_review,
+        summary: payload.feedback || payload.status,
+      },
+    });
+    await this.prisma.auditLog.create({
+      data: {
+        userId,
+        projectId: submission.projectId,
+        milestoneId: submission.milestoneId,
+        submissionAttemptId: submissionId,
+        action: 'review.updated',
+        targetType: 'review',
+        targetId: review.id,
+      },
+    });
+    return toReviewRecord(review);
+  }
+
   async getTrackingReview(apiBaseUrl: string, submissionId: string): Promise<ReviewRecord | null> {
     await this.seed(apiBaseUrl);
     const review = await this.prisma.review.findFirst({

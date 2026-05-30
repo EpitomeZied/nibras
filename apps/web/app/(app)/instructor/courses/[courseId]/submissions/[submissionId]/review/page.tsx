@@ -99,6 +99,8 @@ export default function SubmissionReviewPage({
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [hasExistingReview, setHasExistingReview] = useState(false);
+  const [retrying, setRetrying] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -123,8 +125,9 @@ export default function SubmissionReviewPage({
           setRubricScores(scores);
         }
 
-        if (reviewResult.status === 'fulfilled') {
+        if (reviewResult.status === 'fulfilled' && reviewResult.value.ok) {
           const rd = (await reviewResult.value.json()) as Review;
+          setHasExistingReview(true);
           setReviewData(rd);
           setReviewStatus(rd.status);
           // Pre-fill score from AI result if no manual score yet
@@ -164,6 +167,45 @@ export default function SubmissionReviewPage({
     })();
   }, [submissionId]);
 
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+          event.preventDefault();
+          document.getElementById('review-submit')?.click();
+        }
+        return;
+      }
+      if (event.key === 'a' && event.altKey) {
+        event.preventDefault();
+        setReviewStatus('approved');
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, []);
+
+  async function handleRetryVerification() {
+    setRetrying(true);
+    setSubmitError(null);
+    try {
+      const res = await apiFetch(`/v1/tracking/submissions/${submissionId}/retry`, {
+        method: 'POST',
+        auth: true,
+      });
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string };
+        throw new Error(body.error || `Retry failed (${res.status}).`);
+      }
+      setSuccessMsg('Submission re-queued for verification.');
+      setSubmission((prev) => (prev ? { ...prev, status: 'queued' } : prev));
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : 'Retry failed.');
+    } finally {
+      setRetrying(false);
+    }
+  }
+
   function updateRubricScore(index: number, value: number) {
     setRubricScores((prev) => prev.map((row, i) => (i === index ? { ...row, score: value } : row)));
   }
@@ -197,7 +239,7 @@ export default function SubmissionReviewPage({
 
     try {
       const res = await apiFetch(`/v1/tracking/submissions/${submissionId}/review`, {
-        method: 'POST',
+        method: hasExistingReview ? 'PATCH' : 'POST',
         auth: true,
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(payload),
@@ -206,7 +248,12 @@ export default function SubmissionReviewPage({
         const body = (await res.json()) as { error?: string };
         throw new Error(body.error || `Request failed (${res.status}).`);
       }
-      setSuccessMsg('✅ Review submitted! The student has been notified.');
+      setHasExistingReview(true);
+      setSuccessMsg(
+        hasExistingReview
+          ? '✅ Review updated successfully.'
+          : '✅ Review submitted! The student has been notified.'
+      );
       setTimeout(() => {
         router.push(`/instructor/courses/${courseId}/submissions`);
       }, 2000);
@@ -250,7 +297,20 @@ export default function SubmissionReviewPage({
             <Link href={`/instructor/courses/${courseId}/submissions`}>Submissions</Link> / Review
           </p>
           <h1>Review Submission</h1>
+          <p className={styles.muted} style={{ margin: '6px 0 0' }}>
+            Shortcuts: Alt+A approve · Ctrl/Cmd+Enter submit
+          </p>
         </div>
+        {(submission.status === 'failed' || submission.status === 'queued') && (
+          <button
+            type="button"
+            className={styles.btnSecondary}
+            disabled={retrying}
+            onClick={() => void handleRetryVerification()}
+          >
+            {retrying ? 'Re-queueing…' : '↻ Re-queue verification'}
+          </button>
+        )}
       </div>
 
       <div className={styles.detailGrid}>
@@ -688,7 +748,12 @@ export default function SubmissionReviewPage({
               )}
 
               <div className={styles.formActions}>
-                <button type="submit" className={styles.btnPrimary} disabled={submitting}>
+                <button
+                  id="review-submit"
+                  type="submit"
+                  className={styles.btnPrimary}
+                  disabled={submitting}
+                >
                   {submitting ? 'Submitting…' : 'Submit Review'}
                 </button>
                 <Link

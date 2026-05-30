@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { use } from 'react';
 import { useFetch } from '../../../../lib/use-fetch';
+import { useInstructorCourseShell } from '../../_components/instructor-course-shell';
 import styles from '../../instructor.module.css';
 
 type Project = {
@@ -24,6 +25,7 @@ type Submission = {
 
 export default function CourseDetailPage({ params }: { params: Promise<{ courseId: string }> }) {
   const { courseId } = use(params);
+  const { course } = useInstructorCourseShell();
   const {
     data: projects,
     loading: loadingProjects,
@@ -46,47 +48,23 @@ export default function CourseDetailPage({ params }: { params: Promise<{ courseI
   }
 
   return (
-    <div className={styles.page}>
+    <div>
       <div className={styles.detailHeader}>
-        <div>
-          <p className={styles.breadcrumb}>
-            <Link href="/instructor">Instructor</Link> / Course
-          </p>
-          <h1>Course Detail</h1>
-        </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Link href={`/instructor/courses/${courseId}/members`} className={styles.btnSecondary}>
-            Members
-          </Link>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <Link href={`/instructor/courses/${courseId}/templates`} className={styles.btnSecondary}>
             Templates
-          </Link>
-          <Link
-            href={`/instructor/courses/${courseId}/submissions`}
-            className={styles.btnSecondary}
-          >
-            Submissions
-          </Link>
-          <Link href={`/instructor/courses/${courseId}/analytics`} className={styles.btnSecondary}>
-            Analytics
-          </Link>
-          <Link href={`/instructor/courses/${courseId}/content`} className={styles.btnSecondary}>
-            Lectures
-          </Link>
-          <Link
-            href={`/instructor/courses/${courseId}/assignments`}
-            className={styles.btnSecondary}
-          >
-            Assignments
-          </Link>
-          <Link href={`/instructor/courses/${courseId}/settings`} className={styles.btnSecondary}>
-            Settings
           </Link>
           <Link href={`/instructor/courses/${courseId}/projects/new`} className={styles.btnPrimary}>
             + New Project
           </Link>
         </div>
       </div>
+
+      {course?.description && (
+        <p className={styles.muted} style={{ marginBottom: 16, lineHeight: 1.6 }}>
+          {course.description}
+        </p>
+      )}
 
       {loading && <p className={styles.muted}>Loading…</p>}
       {error && <p className={styles.errorText}>{error}</p>}

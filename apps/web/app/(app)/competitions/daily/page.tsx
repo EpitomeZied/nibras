@@ -366,7 +366,7 @@ export default function DailyProblemPage() {
               </div>
               <div className={styles.problemMeta}>
                 <span
-                  className={`${styles.badge} ${difficultyClassName(assignment.problem.difficulty, styles)}`}
+                  className={`${styles.badge} ${difficultyClassName(assignment.problem.difficulty, styles as { badgeEasy: string; badgeMedium: string; badgeHard: string })}`}
                 >
                   {difficultyLabel(assignment.problem.difficulty)}
                 </span>

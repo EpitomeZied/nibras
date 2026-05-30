@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { apiFetch } from '../../lib/session';
 import { useFetch } from '../../lib/use-fetch';
 import { useSession } from '../_components/session-context';
+import { hasInstructorAccess } from './_components/instructor-access';
 import styles from './instructor.module.css';
 
 type Course = {
@@ -60,22 +61,21 @@ function QuickStartStep({
 export default function InstructorPage() {
   const { user, loading: sessionLoading } = useSession();
   const isAdmin = user?.systemRole === 'admin';
+  const canAccess = hasInstructorAccess(user);
   const router = useRouter();
 
-  // Redirect non-admins away once session is resolved
   useEffect(() => {
-    if (!sessionLoading && user && !isAdmin) {
+    if (!sessionLoading && user && !canAccess) {
       router.replace('/dashboard');
     }
-  }, [sessionLoading, user, isAdmin, router]);
+  }, [sessionLoading, user, canAccess, router]);
 
   const { data: fetchedCourses, loading, error } = useFetch<Course[]>('/v1/tracking/courses');
   const [courses, setCourses] = useState<Course[] | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
-  // Block render until session resolves; redirect effect handles non-admins
-  if (sessionLoading || !isAdmin) return null;
+  if (sessionLoading || !canAccess) return null;
 
   // Use local state if we've done any mutations, otherwise use fetched data
   const allCourses = courses ?? fetchedCourses ?? [];
@@ -212,9 +212,15 @@ export default function InstructorPage() {
             preference intake to suggested and locked teams.
           </p>
           <div className={styles.workbenchActions}>
-            <Link href="/projects" className={styles.btnSecondary}>
-              View Student Side
-            </Link>
+            {allCourses[0] ? (
+              <Link href={`/instructor/courses/${allCourses[0].id}`} className={styles.btnPrimary}>
+                Open Course Projects
+              </Link>
+            ) : (
+              <Link href="/instructor/courses/new" className={styles.btnPrimary}>
+                Create Course First
+              </Link>
+            )}
           </div>
         </div>
 

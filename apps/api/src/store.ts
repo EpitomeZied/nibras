@@ -1651,6 +1651,17 @@ export interface AppStore {
       rubric: TrackingRubricItemRecord[];
     }
   ): Promise<ReviewRecord>;
+  updateTrackingReview(
+    apiBaseUrl: string,
+    userId: string,
+    submissionId: string,
+    payload: {
+      status: ReviewStatus;
+      score: number | null;
+      feedback: string;
+      rubric: TrackingRubricItemRecord[];
+    }
+  ): Promise<ReviewRecord | null>;
   getTrackingReview(apiBaseUrl: string, submissionId: string): Promise<ReviewRecord | null>;
   getTrackingReviewsBySubmissionIds(
     apiBaseUrl: string,
@@ -5764,6 +5775,57 @@ export class FileStore implements AppStore {
         submissionId,
         action: 'review.created',
         summary: `Review completed with status ${statusLabel(payload.status)}.`,
+      })
+    );
+    this.write(data);
+    return review;
+  }
+
+  async updateTrackingReview(
+    apiBaseUrl: string,
+    userId: string,
+    submissionId: string,
+    payload: {
+      status: ReviewStatus;
+      score: number | null;
+      feedback: string;
+      rubric: TrackingRubricItemRecord[];
+    }
+  ): Promise<ReviewRecord | null> {
+    const data = this.read(apiBaseUrl);
+    const submission = data.submissions.find((entry) => entry.id === submissionId);
+    if (!submission) return null;
+    const review =
+      data.reviews
+        .filter((entry) => entry.submissionId === submissionId)
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt))[0] || null;
+    if (!review) return null;
+
+    review.reviewerUserId = userId;
+    review.status = payload.status;
+    review.score = payload.score;
+    review.feedback = payload.feedback;
+    review.rubric = payload.rubric;
+    review.reviewedAt = nowIso();
+    review.updatedAt = nowIso();
+    submission.status =
+      payload.status === 'changes_requested'
+        ? 'failed'
+        : payload.status === 'graded' || payload.status === 'approved'
+          ? 'passed'
+          : 'needs_review';
+    submission.summary = payload.feedback || statusLabel(payload.status);
+    submission.updatedAt = nowIso();
+    data.activity.unshift(
+      makeActivityRecord({
+        actorUserId: userId,
+        courseId:
+          data.projects.find((entry) => entry.id === submission.projectId)?.courseId || null,
+        projectId: submission.projectId,
+        milestoneId: submission.milestoneId,
+        submissionId,
+        action: 'review.updated',
+        summary: `Review updated with status ${statusLabel(payload.status)}.`,
       })
     );
     this.write(data);
