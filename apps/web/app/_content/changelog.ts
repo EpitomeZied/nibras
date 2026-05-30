@@ -25,7 +25,7 @@ export const changelogCategoryMeta: Record<ChangelogCategory, { label: string; i
 
 export const changelogReleases: ChangelogRelease[] = [
   {
-    date: 'May 29, 2026',
+    date: 'June 1, 2026',
     version: 'v2.0.1',
     title: 'Platform 2.0 — catalog LMS, community, profiles, gamification, and auth',
     categories: [
@@ -84,6 +84,26 @@ export const changelogReleases: ChangelogRelease[] = [
             text: 'Documentation — Introduction, FAQ, and Getting Started as separate pages under /docs',
             author: 'EpitomeZied',
           },
+          {
+            text: 'Year 1–4 curriculum — optional seed scripts (seed:year1–year4), API startup sync for all four undergraduate years, and curriculum docs',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'IDE — problem context banner, run history, editor theme/font/wrap preferences, copy output, CPU/memory limits in status, and IDE links from Daily and Nibras 75 competition pages',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'AI providers — Groq, OpenRouter, and OpenAI presets with per-provider base URL and model selection in Settings; tutor forwards user credentials',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Hadith verse footer — shared footer component with custom typography on Catalog and Community pages',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Community bookmarks — save button on question list and detail pages',
+            author: 'EpitomeZied',
+          },
         ],
       },
       {
@@ -137,6 +157,18 @@ export const changelogReleases: ChangelogRelease[] = [
             text: 'Reputation history — clearer event labels with project, question, and streak context',
             author: 'EpitomeZied',
           },
+          {
+            text: 'Landing hero — dynamic terminal title lines and refreshed mission-control copy',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Course video thumbnails — YouTube previews via CSP-allowed i.ytimg.com CDN URLs',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Prisma connections — shared client instance and cleaner disconnect handling',
+            author: 'EpitomeZied',
+          },
         ],
       },
       {
@@ -152,6 +184,14 @@ export const changelogReleases: ChangelogRelease[] = [
           },
           {
             text: 'Web production build — Prettier and ProfileHeader type fixes for CI Docker image builds',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Year 1 curriculum sync — production API startup seeds freshman courses without a manual step',
+            author: 'EpitomeZied',
+          },
+          {
+            text: 'Course browse schema — nullable description and thumbnailUrl for catalog listings',
             author: 'EpitomeZied',
           },
         ],
